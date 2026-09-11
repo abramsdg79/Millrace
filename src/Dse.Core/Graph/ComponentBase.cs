@@ -18,21 +18,34 @@ public abstract class ComponentBase : ISimComponent, IQualifiable
 
     public virtual bool HasDirectFeedthrough => true;
 
-    protected InputPort<T> AddInput<T>(string name, T defaultValue = default, bool required = false)
-        where T : unmanaged
+    /// <summary>
+    /// Registers a port on this component. Ports are listed in registration
+    /// order and their owner id is rewritten when a composite qualifies this
+    /// component, so every port — signal or flow — must go through here.
+    /// </summary>
+    protected TPort AddPort<TPort>(TPort port)
+        where TPort : Port
     {
-        var port = new InputPort<T>(name, Id, defaultValue, required);
+        ArgumentNullException.ThrowIfNull(port);
+        if (!string.Equals(port.OwnerId, Id, StringComparison.Ordinal))
+        {
+            throw new ArgumentException(
+                $"Port '{port.QualifiedName}' belongs to '{port.OwnerId}', not to '{Id}'. " +
+                $"Construct ports with this component's Id.",
+                nameof(port));
+        }
+
         _ports.Add(port);
         return port;
     }
 
+    protected InputPort<T> AddInput<T>(string name, T defaultValue = default, bool required = false)
+        where T : unmanaged =>
+        AddPort(new InputPort<T>(name, Id, defaultValue, required));
+
     protected OutputPort<T> AddOutput<T>(string name)
-        where T : unmanaged
-    {
-        var port = new OutputPort<T>(name, Id);
-        _ports.Add(port);
-        return port;
-    }
+        where T : unmanaged =>
+        AddPort(new OutputPort<T>(name, Id));
 
     public virtual void Initialize(in InitContext ctx)
     {

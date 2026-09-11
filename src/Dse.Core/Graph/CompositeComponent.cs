@@ -1,3 +1,5 @@
+using Dse.Core.Flow;
+
 namespace Dse.Core.Graph;
 
 /// <summary>
@@ -47,6 +49,10 @@ public abstract class CompositeComponent : ISimNode, IQualifiable
 
     public OutputPort<T> Output<T>(string alias)
         where T : unmanaged => Resolve<OutputPort<T>>(alias);
+
+    public FlowInlet Inlet(string alias) => Resolve<FlowInlet>(alias);
+
+    public FlowOutlet Outlet(string alias) => Resolve<FlowOutlet>(alias);
 
     /// <summary>Every evaluatable component beneath this one, depth-first in declaration order.</summary>
     internal IEnumerable<ISimComponent> Leaves()
