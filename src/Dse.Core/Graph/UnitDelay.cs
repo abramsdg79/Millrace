@@ -3,9 +3,12 @@ using Dse.Core.Contexts;
 namespace Dse.Core.Graph;
 
 /// <summary>
-/// Emits the previous tick's input. Because it declares no direct feedthrough it
-/// creates no ordering edge, which is how a genuine feedback loop — belt load
-/// raising torque demand, lowering speed, changing belt load — is made solvable.
+/// Emits the value latched at the end of the previous tick. Because it declares
+/// no direct feedthrough it creates no ordering edge, which is how a genuine
+/// feedback loop — belt load raising torque demand, lowering speed, changing
+/// belt load — is made solvable. Latching happens in <see cref="Latch"/>, after
+/// every component has evaluated, so the lag is exactly one tick regardless of
+/// where the resolver places this component relative to its producer.
 /// </summary>
 public sealed class UnitDelay<T> : ComponentBase
     where T : unmanaged
@@ -29,6 +32,7 @@ public sealed class UnitDelay<T> : ComponentBase
     public override void Evaluate(in TickContext ctx)
     {
         Out.Value = _held;
-        _held = In.Value;
     }
+
+    public override void Latch() => _held = In.Value;
 }

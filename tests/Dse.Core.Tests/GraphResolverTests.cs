@@ -82,7 +82,7 @@ public class GraphResolverTests
             [gain, delay], out ISimComponent[] ordered, out _);
 
         Assert.True(resolved);
-        Assert.Equal(2, ordered.Length);
+        Assert.Equal(new[] { "D", "G" }, ordered.Select(c => c.Id));
     }
 
     [Fact]

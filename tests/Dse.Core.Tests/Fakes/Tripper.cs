@@ -1,3 +1,4 @@
+using System.Globalization;
 using Dse.Core.Contexts;
 using Dse.Core.Graph;
 
@@ -26,7 +27,7 @@ public sealed class Tripper : ComponentBase
         if (!_tripped && In.Value > _threshold)
         {
             _tripped = true;
-            ctx.Log(Id, "TRIP", $"Input exceeded {_threshold}.");
+            ctx.Log(Id, "TRIP", $"Input exceeded {_threshold.ToString(CultureInfo.InvariantCulture)}.");
         }
 
         Tripped.Value = _tripped;

@@ -97,6 +97,14 @@ public sealed class Simulation
         }
     }
 
+    /// <summary>
+    /// Two passes over the resolved order. First every component evaluates,
+    /// reading inputs already written this tick by its producers. Then every
+    /// component latches, capturing this tick's inputs for components (such as
+    /// <see cref="UnitDelay{T}"/>) that hold state across ticks. Splitting the
+    /// passes is what keeps a delay's lag at exactly one tick no matter where
+    /// the resolver places it relative to its producer.
+    /// </summary>
     private void EvaluateSignals()
     {
         var context = new TickContext(
@@ -105,6 +113,11 @@ public sealed class Simulation
         foreach (ISimComponent component in _components)
         {
             component.Evaluate(context);
+        }
+
+        foreach (ISimComponent component in _components)
+        {
+            component.Latch();
         }
     }
 

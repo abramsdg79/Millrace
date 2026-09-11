@@ -21,4 +21,12 @@ public interface ISimComponent : ISimNode
     void Initialize(in InitContext ctx);
 
     void Evaluate(in TickContext ctx);
+
+    /// <summary>
+    /// Called once per tick after every component has evaluated. Components
+    /// without direct feedthrough capture their inputs here, so the value they
+    /// hold is always the one their producer wrote this tick, whatever the
+    /// evaluation order.
+    /// </summary>
+    void Latch();
 }

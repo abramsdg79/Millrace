@@ -36,10 +36,12 @@ public class UnitDelayTests
 
         source.Evaluate(NewTickContext(0));
         delay.Evaluate(NewTickContext(0));
+        delay.Latch();
         Assert.Equal(0.0, delay.Out.Value);
 
         source.Evaluate(NewTickContext(1));
         delay.Evaluate(NewTickContext(1));
+        delay.Latch();
         Assert.Equal(5.0, delay.Out.Value);
     }
 

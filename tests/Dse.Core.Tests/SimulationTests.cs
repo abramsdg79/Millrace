@@ -136,6 +136,63 @@ public class SimulationTests
     }
 
     [Fact]
+    public void UnitDelayLagsExactlyOneTickInsideAFeedbackLoop()
+    {
+        var counter = new Counter("C");
+        var delay = new UnitDelay<double>("D");
+        var recorder = new Recorder("R");
+        counter.Out.ConnectTo(delay.In);
+        delay.Out.ConnectTo(counter.In);
+        delay.Out.ConnectTo(recorder.In);
+
+        // Registered so the resolver, not registration order, decides evaluation order.
+        Simulation sim = new SimulationBuilder(Options)
+            .Add(recorder).Add(counter).Add(delay)
+            .Build();
+
+        sim.Tick();
+        sim.Tick();
+        sim.Tick();
+        sim.Tick();
+
+        Assert.Equal(new[] { 0.0, 1.0, 2.0, 3.0 }, recorder.Samples);
+    }
+
+    [Fact]
+    public void UnitDelayLagsExactlyOneTickOutsideALoop()
+    {
+        var source = new ConstantSource("S", 5.0);
+        var delay = new UnitDelay<double>("D");
+        var recorder = new Recorder("R");
+        source.Out.ConnectTo(delay.In);
+        delay.Out.ConnectTo(recorder.In);
+
+        Simulation sim = new SimulationBuilder(Options)
+            .Add(recorder).Add(delay).Add(source)
+            .Build();
+
+        sim.Tick();
+        sim.Tick();
+        sim.Tick();
+
+        Assert.Equal(new[] { 0.0, 5.0, 5.0 }, recorder.Samples);
+    }
+
+    [Fact]
+    public void ValidateReportsAnInputDrivenByAComponentNotInThePlant()
+    {
+        var orphan = new ConstantSource("Orphan", 1.0);
+        var gain = new Gain("G", 2.0);
+        orphan.Out.ConnectTo(gain.In);
+
+        ValidationResult result = new SimulationBuilder(Options).Add(gain).Validate();
+
+        Assert.Equal("DSE004", result.Errors[0].Code);
+        Assert.Contains("Orphan", result.Errors[0].Message, StringComparison.Ordinal);
+        Assert.Contains("G.In", result.Errors[0].Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void InitializeRunsOnceBeforeTheFirstTick()
     {
         var counter = new InitCounter("I");
@@ -171,6 +228,23 @@ public class SimulationTests
         public override void Evaluate(in Contexts.TickContext ctx)
         {
         }
+    }
+
+    /// <summary>Increments its input by one. Used to close a feedback loop through a delay.</summary>
+    private sealed class Counter : ComponentBase
+    {
+        public Counter(string id)
+            : base(id)
+        {
+            In = AddInput<double>("In");
+            Out = AddOutput<double>("Out");
+        }
+
+        public InputPort<double> In { get; }
+
+        public OutputPort<double> Out { get; }
+
+        public override void Evaluate(in Contexts.TickContext ctx) => Out.Value = In.Value + 1.0;
     }
 
     private sealed class CallbackProbe : ComponentBase

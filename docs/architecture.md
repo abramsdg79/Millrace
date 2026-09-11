@@ -8,7 +8,11 @@ determinism guarantee:
 1. **Drain events** due at or before this tick, ordered by `(dueTick, sequence)`.
    The sequence number is monotonic, so events due on the same tick always fire
    in the order they were scheduled.
-2. **Evaluate the signal graph** in resolved topological order.
+2. **Evaluate the signal graph**, in two passes over the resolved topological
+   order: first every component evaluates, then every component latches. The
+   latch pass is where a component with no direct feedthrough (a `UnitDelay`)
+   captures this tick's input for the next tick, independent of where the
+   resolver placed it relative to its producer.
 3. **Advance flow** — material transport. Not yet implemented.
 4. **Publish the I/O image** — the snapshot external readers see. Not yet
    implemented.
@@ -40,7 +44,11 @@ Some loops are real physics, not mistakes: belt load raises motor torque demand,
 which lowers speed, which changes belt load. Validation detects the cycle, names
 the components in it, and refuses to run until a `UnitDelay` breaks it.
 `UnitDelay` declares `HasDirectFeedthrough => false`, so it creates no ordering
-edge. One tick of lag at 10 ms is physically irrelevant.
+edge. Because it emits in the evaluate pass but captures its input in the
+latch pass, it lags its producer by exactly one tick whether or not it sits
+inside a loop — the resolver is free to place it before or after its producer
+without changing that guarantee. One tick of lag at 10 ms is physically
+irrelevant.
 
 ## Determinism rules
 

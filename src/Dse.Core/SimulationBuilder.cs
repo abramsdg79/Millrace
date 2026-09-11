@@ -72,6 +72,22 @@ public sealed class SimulationBuilder
             }
         }
 
+        foreach (ISimComponent component in _components)
+        {
+            foreach (Port port in component.Ports)
+            {
+                if (port.SourcePort is { } source && !seen.Contains(source.OwnerId))
+                {
+                    errors.Add(new ValidationError(
+                        "DSE004",
+                        $"Input '{port.QualifiedName}' is driven by '{source.QualifiedName}', but " +
+                        $"component '{source.OwnerId}' is not part of the plant. Add it to the " +
+                        $"builder, or add the composite that contains it.",
+                        [component.Id, source.OwnerId]));
+                }
+            }
+        }
+
         if (!GraphResolver.TryResolve(_components, out _, out IReadOnlyList<string> cycle))
         {
             string path = string.Join(" -> ", cycle.Append(cycle.Count > 0 ? cycle[0] : string.Empty));

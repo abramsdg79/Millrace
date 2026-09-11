@@ -40,6 +40,10 @@ public abstract class ComponentBase : ISimComponent, IQualifiable
 
     public abstract void Evaluate(in TickContext ctx);
 
+    public virtual void Latch()
+    {
+    }
+
     void IQualifiable.Qualify(string prefix)
     {
         Id = $"{prefix}.{Id}";
