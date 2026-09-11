@@ -11,16 +11,19 @@ causally through the plant.
 
 ## Status
 
-Under construction. This repository currently contains the simulation core:
+Under construction. This repository currently contains the simulation core —
 deterministic clock, per-component random streams, typed signal ports,
 composite components, topological resolution with algebraic-loop detection,
-validation, telemetry, an ordered event log, and a runner with real-time and
-scaled execution.
+validation, telemetry, an ordered event log, a runner with real-time and scaled
+execution — and the material layer: bulk and discrete payloads, typed flow
+ports, offer/accept transport resolved downstream-first, cell-based bulk belts
+and position-based discrete belts, residence transforms, and a per-tick mass
+conservation audit.
 
-Material flow, the industrial component library, the I/O and real-time layers,
-declarative configuration and the reference samples are planned. See
-`docs/superpowers/specs/` for the design and `docs/superpowers/plans/` for the
-implementation plans.
+The industrial component library, the I/O and real-time layers, declarative
+configuration and the reference samples are planned. See
+`docs/superpowers/specs/` for the design, `docs/superpowers/plans/` for the
+implementation plans, and `docs/architecture.md` for how the engine works.
 
 ## Build and test
 

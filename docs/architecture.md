@@ -13,7 +13,10 @@ determinism guarantee:
    latch pass is where a component with no direct feedthrough (a `UnitDelay`)
    captures this tick's input for the next tick, independent of where the
    resolver placed it relative to its producer.
-3. **Advance flow** — material transport. Not yet implemented.
+3. **Advance flow** — one downstream-first sweep over the material graph: each
+   node discharges through its outgoing links into consumers that have already
+   advanced and made room, then advances its own contents. The conservation
+   audit runs after the sweep.
 4. **Publish the I/O image** — the snapshot external readers see. Not yet
    implemented.
 5. **Emit the tick frame.** Not yet implemented; the event log is already
@@ -49,6 +52,56 @@ latch pass, it lags its producer by exactly one tick whether or not it sits
 inside a loop — the resolver is free to place it before or after its producer
 without changing that guarantee. One tick of lag at 10 ms is physically
 irrelevant.
+
+## Material flow
+
+Mass travels on a second port graph, separate from signals. A `FlowOutlet`
+feeds exactly one `FlowInlet` and an inlet has exactly one source — mass cannot
+fan out or merge implicitly — and both ends must carry the same `PayloadKind`.
+Flow ports never create signal-ordering edges: transport is phase 3, after
+every component has evaluated, so a belt whose speed comes from a controller
+that reads the belt's load is not an algebraic loop.
+
+A component that holds material implements `IFlowNode` (usually by deriving
+from `FlowComponentBase`) and, per port, one side of the transport protocol:
+
+- **Bulk** — `IBulkProducer.OfferMass` says how much the producer wants to push,
+  `IBulkConsumer.AcceptMass` how much the consumer can take, and the engine
+  moves the minimum with `Withdraw` then `Deposit`. Back pressure is not a
+  feature of any node; it is what a full consumer's `AcceptMass` returns.
+- **Discrete** — `IItemProducer.TryPeekItem` shows the head item,
+  `IItemConsumer.CanAcceptItem` says whether it fits, and the engine moves whole
+  items until one side says no. `WithdrawItem` must return exactly the item
+  last shown.
+
+Bulk is a `BulkLot`: mass, one `MaterialType`, and `MaterialProperties`
+(density, moisture, temperature) that blend by mass-weighted average when lots
+merge. Discrete is an `ItemInstance` with an id from the simulation's
+`ItemIdSequence` (so replays mint the same ids), a mass, properties, and a
+state array sized by its material's schema.
+
+`BulkBelt` is an array of cells. Each tick a fraction `v·dt/cellSize` of every
+cell moves to its neighbour, resolved from the head backwards so a blocked
+discharge builds load along the belt; validation refuses `cellSize <
+maxSpeed·dt` (`DSE006`). A cell never exceeds `maxLinearDensity·cellSize`, so
+the inlet accepts only the room in the first cell. Speed zero freezes the load
+profile exactly. `DiscreteBelt` carries items at continuous positions with no
+diffusion; items queue behind a blocked head at the minimum spacing.
+
+Transforms (`IMaterialTransform`) run on resident material every tick, before
+it moves and whatever the speed, with ambient conditions taken from the node's
+signal inputs. Bulk cells pass an empty state span in this version; items pass
+their own.
+
+Every tick the engine sums each node's `MassHeld`, `MassCreated` and
+`MassDestroyed` and throws `MassConservationException` if
+`created − destroyed − held` drifts beyond `SimulationOptions.ConservationTolerance`
+(relative to the mass sourced). A node that injects mass reports it in
+`MassCreated`; a node that removes it — a sink, a declared loss — reports it in
+`MassDestroyed`. Anything else is a bug, and the audit finds it on the tick it
+happens. Validation also rejects recirculation loops (`DSE005`), inlets fed
+from outside the plant (`DSE007`) and flow ports whose owner lacks the
+producer/consumer contract (`DSE008`).
 
 ## Determinism rules
 
