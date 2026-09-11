@@ -51,6 +51,26 @@ public class GraphResolverTests
     }
 
     [Fact]
+    public void ReportsOnlyTheComponentsInTheCycleWhenAnObserverHangsOffIt()
+    {
+        var x = new Recorder("X");
+        var b = new Gain("B", 1.0);
+        var c = new Gain("C", 1.0);
+        b.Out.ConnectTo(x.In);
+        b.Out.ConnectTo(c.In);
+        c.Out.ConnectTo(b.In);
+
+        bool resolved = GraphResolver.TryResolve(
+            [x, b, c], out _, out IReadOnlyList<string> cycle);
+
+        Assert.False(resolved);
+        Assert.Contains("B", cycle);
+        Assert.Contains("C", cycle);
+        Assert.DoesNotContain("X", cycle);
+        Assert.Equal(2, cycle.Count);
+    }
+
+    [Fact]
     public void AUnitDelayBreaksTheLoop()
     {
         var gain = new Gain("G", 0.5);

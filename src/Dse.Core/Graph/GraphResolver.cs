@@ -98,7 +98,14 @@ public static class GraphResolver
         return false;
     }
 
-    /// <summary>Walks the components that never reached in-degree zero to name one loop.</summary>
+    /// <summary>
+    /// Walks the residual subgraph's predecessors — backward, from a stalled
+    /// component toward whatever still owes it an input — to name one loop. A
+    /// forward walk over dependents can dead-end on a residual component that
+    /// merely consumes from a cycle without being part of it (an observer);
+    /// every residual component is guaranteed a residual predecessor, so the
+    /// backward walk cannot dead-end.
+    /// </summary>
     private static List<string> FindCycle(
         IReadOnlyList<ISimComponent> components,
         List<int>[] dependents,
@@ -119,6 +126,29 @@ public static class GraphResolver
             return [];
         }
 
+        int count = inDegree.Length;
+        var predecessors = new List<int>[count];
+        for (int i = 0; i < count; i++)
+        {
+            predecessors[i] = [];
+        }
+
+        for (int producer = 0; producer < count; producer++)
+        {
+            if (inDegree[producer] <= 0)
+            {
+                continue;
+            }
+
+            foreach (int dependent in dependents[producer])
+            {
+                if (inDegree[dependent] > 0)
+                {
+                    predecessors[dependent].Add(producer);
+                }
+            }
+        }
+
         var path = new List<int>();
         var onPath = new Dictionary<int, int>();
         int current = start;
@@ -126,25 +156,11 @@ public static class GraphResolver
         {
             onPath[current] = path.Count;
             path.Add(current);
-
-            int next = -1;
-            foreach (int dependent in dependents[current])
-            {
-                if (inDegree[dependent] > 0)
-                {
-                    next = dependent;
-                    break;
-                }
-            }
-
-            if (next < 0)
-            {
-                return path.Select(i => components[i].Id).ToList();
-            }
-
-            current = next;
+            current = predecessors[current][0];
         }
 
-        return path.Skip(onPath[current]).Select(i => components[i].Id).ToList();
+        List<string> loop = path.Skip(onPath[current]).Select(i => components[i].Id).ToList();
+        loop.Reverse();
+        return loop;
     }
 }
