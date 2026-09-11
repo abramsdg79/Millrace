@@ -133,6 +133,35 @@ internal sealed class FlowGraph
         }
     }
 
+    /// <summary>Sums every node's ledger. O(nodes); no allocation.</summary>
+    public MassBalance Balance()
+    {
+        double created = 0.0;
+        double destroyed = 0.0;
+        double held = 0.0;
+        foreach (IFlowNode node in _order)
+        {
+            created += node.MassCreated;
+            destroyed += node.MassDestroyed;
+            held += node.MassHeld;
+        }
+
+        return new MassBalance(created, destroyed, held);
+    }
+
+    /// <summary>
+    /// Throws when |drift| exceeds <paramref name="relativeTolerance"/> × max(1 kg, mass sourced).
+    /// </summary>
+    public void AssertConserved(long tick, double relativeTolerance)
+    {
+        MassBalance balance = Balance();
+        double allowed = relativeTolerance * Math.Max(1.0, balance.Created);
+        if (Math.Abs(balance.Drift) > allowed)
+        {
+            throw new MassConservationException(tick, balance);
+        }
+    }
+
     private static void Transfer(in FlowLink link)
     {
         if (link.Outlet.Kind == PayloadKind.Bulk)
