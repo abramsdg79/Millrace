@@ -11,16 +11,19 @@ namespace Dse.Core.Flow;
 /// every cell moves to its neighbour (Eulerian advection), resolved from the
 /// head backwards so a blocked discharge builds load along the belt instead of
 /// overfilling one cell. Stopping the belt freezes the load profile in place;
-/// restarting resumes it. Diffusion is tunable by cell size.
+/// restarting resumes it. Diffusion is tunable by cell size. Before the cells
+/// move, every resident transform is applied to each non-empty cell's
+/// material — every tick, whatever the speed, so a stopped oven still bakes.
 /// </summary>
 public sealed class BulkBelt : FlowComponentBase, IBulkProducer, IBulkConsumer
 {
     private readonly BulkLot[] _cells;
     private readonly double _cellCapacity;
+    private readonly IMaterialTransform[] _transforms;
     private double _dt;
     private TelemetryHandle _loadTelemetry;
 
-    public BulkBelt(string id, double length, double cellSize, double maxSpeed, double maxLinearDensity)
+    public BulkBelt(string id, double length, double cellSize, double maxSpeed, double maxLinearDensity, IReadOnlyList<IMaterialTransform>? transforms = null)
         : base(id)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
@@ -45,10 +48,12 @@ public sealed class BulkBelt : FlowComponentBase, IBulkProducer, IBulkConsumer
         MaxLinearDensity = maxLinearDensity;
         _cellCapacity = maxLinearDensity * cellSize;
         _cells = new BulkLot[cellCount];
+        _transforms = transforms is null ? [] : transforms.ToArray();
 
         In = AddInlet("In", PayloadKind.Bulk);
         Out = AddOutlet("Out", PayloadKind.Bulk);
         Speed = AddInput<double>("Speed");
+        AmbientTemperature = AddInput<double>("AmbientTemperature", defaultValue: 20.0);
         Load = AddOutput<double>("Load");
         PeakLinearDensity = AddOutput<double>("PeakLinearDensity");
     }
@@ -59,6 +64,9 @@ public sealed class BulkBelt : FlowComponentBase, IBulkProducer, IBulkConsumer
 
     /// <summary>Belt speed in m/s. Unconnected reads zero: a belt with no drive does not move.</summary>
     public InputPort<double> Speed { get; }
+
+    /// <summary>Ambient temperature handed to the transforms, °C. Unconnected reads 20 °C.</summary>
+    public InputPort<double> AmbientTemperature { get; }
 
     /// <summary>Total mass on the belt, kg, as of the last evaluate.</summary>
     public OutputPort<double> Load { get; }
@@ -154,6 +162,8 @@ public sealed class BulkBelt : FlowComponentBase, IBulkProducer, IBulkConsumer
 
     public override void Advance(double dt)
     {
+        ApplyTransforms(dt);
+
         double fraction = Fraction(dt);
         if (fraction <= 0.0)
         {
@@ -174,6 +184,31 @@ public sealed class BulkBelt : FlowComponentBase, IBulkProducer, IBulkConsumer
             BulkLot taken = _cells[i].Take(moving, out BulkLot remaining);
             _cells[i] = remaining;
             _cells[i + 1] = _cells[i + 1].Merge(taken);
+        }
+    }
+
+    private void ApplyTransforms(double dt)
+    {
+        if (_transforms.Length == 0)
+        {
+            return;
+        }
+
+        var context = new TransformContext(AmbientTemperature.Value);
+        for (int i = 0; i < _cells.Length; i++)
+        {
+            if (_cells[i].IsEmpty)
+            {
+                continue;
+            }
+
+            MaterialProperties properties = _cells[i].Properties;
+            foreach (IMaterialTransform transform in _transforms)
+            {
+                transform.Apply(ref properties, Span<double>.Empty, dt, in context);
+            }
+
+            _cells[i] = _cells[i] with { Properties = properties };
         }
     }
 
