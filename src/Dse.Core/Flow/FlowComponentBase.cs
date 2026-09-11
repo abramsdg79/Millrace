@@ -26,7 +26,7 @@ public abstract class FlowComponentBase : ComponentBase, IFlowNode
     {
     }
 
-    public virtual void Advance(double dt)
+    public virtual void Advance(in TickContext ctx)
     {
     }
 

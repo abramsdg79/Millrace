@@ -77,6 +77,19 @@ public class SimulationFlowTests
     }
 
     [Fact]
+    public void ValidateReportsAnOutletFeedingAComponentThatWasNotAdded()
+    {
+        var feeder = new BulkFeeder("F", Ore, 1.0);
+        var sink = new BulkSink("S");
+        feeder.Out.ConnectTo(sink.In);
+
+        ValidationResult result = new SimulationBuilder(Options()).Add(feeder).Validate();
+
+        Assert.Equal("DSE007", result.Errors[0].Code);
+        Assert.Contains("S.In", result.Errors[0].Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TheAuditRunsAfterEveryFlowPhase()
     {
         var feeder = new BulkFeeder("F", Ore, 10.0);

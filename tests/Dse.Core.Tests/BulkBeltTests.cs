@@ -1,3 +1,4 @@
+using Dse.Core.Contexts;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Tests.Fakes;
@@ -18,6 +19,8 @@ public class BulkBeltTests
         belt.Initialize(TestContexts.Init(belt.Id, dt: Dt));
         return belt;
     }
+
+    private static TickContext NewTick(long tick = 0) => TestContexts.Tick(tick, Dt);
 
     private static OutputPort<double> Drive(BulkBelt belt, double speed)
     {
@@ -64,7 +67,7 @@ public class BulkBeltTests
         ValidationError error = Assert.Single(tooFast.ValidateFlow(Dt));
         Assert.Equal("DSE006", error.Code);
         Assert.Equal(new[] { "CV" }, error.ComponentIds);
-        Assert.Contains("cell", error.Message, StringComparison.Ordinal);
+        Assert.Contains("Use cells of at least", error.Message, StringComparison.Ordinal);
 
         Assert.Empty(NewBelt(maxSpeed: 1.0).ValidateFlow(Dt));
     }
@@ -90,7 +93,7 @@ public class BulkBeltTests
 
         for (int i = 0; i < 4; i++)
         {
-            belt.Advance(Dt);
+            belt.Advance(NewTick());
         }
 
         Assert.Equal(new[] { 0.0, 0.0, 0.0, 0.0, 1.0 }, Masses(belt));
@@ -104,10 +107,10 @@ public class BulkBeltTests
         Drive(belt, 0.5);
         Deposit(belt, 1.0);
 
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
         Assert.Equal(new[] { 0.5, 0.5, 0.0, 0.0, 0.0 }, Masses(belt));
 
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
         Assert.Equal(new[] { 0.25, 0.5, 0.25, 0.0, 0.0 }, Masses(belt));
     }
 
@@ -117,13 +120,13 @@ public class BulkBeltTests
         BulkBelt belt = NewBelt();
         OutputPort<double> speed = Drive(belt, 1.0);
         Deposit(belt, 1.0);
-        belt.Advance(Dt);
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
+        belt.Advance(NewTick());
 
         speed.Value = 0.0;
         for (int i = 0; i < 3; i++)
         {
-            belt.Advance(Dt);
+            belt.Advance(NewTick());
         }
 
         Assert.Equal(new[] { 0.0, 0.0, 1.0, 0.0, 0.0 }, Masses(belt));
@@ -138,7 +141,7 @@ public class BulkBeltTests
         Deposit(belt, 1.0);
         for (int i = 0; i < 4; i++)
         {
-            belt.Advance(Dt);
+            belt.Advance(NewTick());
         }
 
         BulkLot lot = belt.Withdraw(belt.Out, 0.4);
@@ -172,7 +175,7 @@ public class BulkBeltTests
                 Deposit(belt, Math.Min(1.0, room));
             }
 
-            belt.Advance(Dt);
+            belt.Advance(NewTick());
             Assert.All(Masses(belt), mass => Assert.True(mass <= 2.0 + 1e-9));
         }
 
@@ -187,10 +190,22 @@ public class BulkBeltTests
         BulkBelt belt = NewBelt(maxSpeed: 1.0);
         OutputPort<double> speed = Drive(belt, 1.5);
 
-        Assert.Throws<InvalidOperationException>(() => belt.Advance(Dt));
+        Assert.Throws<InvalidOperationException>(() => belt.Advance(NewTick()));
 
         speed.Value = -1.0;
         Assert.Throws<InvalidOperationException>(() => belt.OfferMass(belt.Out));
+    }
+
+    [Fact]
+    public void ANonFiniteSpeedThrows()
+    {
+        BulkBelt belt = NewBelt();
+        OutputPort<double> speed = Drive(belt, double.NaN);
+
+        Assert.Throws<InvalidOperationException>(() => belt.Advance(NewTick()));
+
+        speed.Value = double.PositiveInfinity;
+        Assert.Throws<InvalidOperationException>(() => belt.Advance(NewTick()));
     }
 
     [Fact]

@@ -13,8 +13,9 @@ public sealed class SimulationOptions
 
     /// <summary>
     /// Audit sourced − sunk − held after every flow phase and throw on drift.
-    /// On by default: the check is O(nodes) and a violation is a bug worth
-    /// stopping for. Switch it off per run for throughput, never silently.
+    /// On by default: the check is O(total parcels held) — cheap enough to leave
+    /// on — and a violation is a bug worth stopping for. Switch it off per run
+    /// for throughput, never silently.
     /// </summary>
     public bool CheckConservation { get; init; } = true;
 

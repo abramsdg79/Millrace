@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Dse.Core.Contexts;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Tests.Fakes;
@@ -16,6 +17,8 @@ public class FlowGraphTests
     private static IReadOnlySet<string> Ids(params IFlowNode[] nodes) =>
         nodes.Select(n => n.Id).ToHashSet(StringComparer.Ordinal);
 
+    private static TickContext Tick(long tick = 0) => TestContexts.Tick(tick, dt: 1.0);
+
     private static BulkFeeder FeederWith(double kilograms)
     {
         var feeder = new BulkFeeder("F", Ore, rateKgPerSecond: kilograms);
@@ -30,7 +33,7 @@ public class FlowGraphTests
         var buffer = new BulkBuffer("B", capacityKg: 4.0);
         feeder.Out.ConnectTo(buffer.In);
 
-        FlowGraph.Build([feeder, buffer]).Step(1.0);
+        FlowGraph.Build([feeder, buffer]).Step(Tick());
 
         Assert.Equal(4.0, buffer.MassHeld, 9);
         Assert.Equal(6.0, feeder.MassHeld, 9);
@@ -49,12 +52,12 @@ public class FlowGraphTests
 
         Assert.Equal(new[] { "S", "B", "F" }, graph.Nodes.Select(n => n.Id));
 
-        graph.Step(1.0);
+        graph.Step(Tick());
         Assert.Equal(0.0, sink.TotalReceived);
         Assert.Equal(4.0, buffer.MassHeld, 9);
 
         // The buffer drains into the sink before the feeder refills it.
-        graph.Step(1.0);
+        graph.Step(Tick());
         Assert.Equal(4.0, sink.TotalReceived, 9);
         Assert.Equal(4.0, buffer.MassHeld, 9);
         Assert.Equal(2.0, feeder.MassHeld, 9);
@@ -73,7 +76,7 @@ public class FlowGraphTests
         var buffer = new ItemBuffer("B", capacity: 2);
         feeder.Out.ConnectTo(buffer.In);
 
-        FlowGraph.Build([feeder, buffer]).Step(1.0);
+        FlowGraph.Build([feeder, buffer]).Step(Tick());
 
         Assert.Equal(2, buffer.Count);
         Assert.Equal(1.0, feeder.MassHeld, 9);
@@ -89,7 +92,7 @@ public class FlowGraphTests
         cheat.Out.ConnectTo(sink.In);
 
         InvalidOperationException error =
-            Assert.Throws<InvalidOperationException>(() => FlowGraph.Build([cheat, sink]).Step(1.0));
+            Assert.Throws<InvalidOperationException>(() => FlowGraph.Build([cheat, sink]).Step(Tick()));
         Assert.Contains("C", error.Message, StringComparison.Ordinal);
     }
 
@@ -98,7 +101,7 @@ public class FlowGraphTests
     {
         FlowGraph graph = FlowGraph.Build([]);
 
-        graph.Step(1.0);
+        graph.Step(Tick());
 
         Assert.Empty(graph.Nodes);
         Assert.Same(FlowGraph.Empty, graph);
@@ -132,6 +135,34 @@ public class FlowGraphTests
         Assert.Equal("DSE007", error.Code);
         Assert.Contains("F.Out", error.Message, StringComparison.Ordinal);
         Assert.Contains("B.In", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ValidateReportsAnOutletFeedingOutsideThePlant()
+    {
+        var feeder = new BulkFeeder("F", Ore, 1.0);
+        var buffer = new BulkBuffer("B", 1.0);
+        feeder.Out.ConnectTo(buffer.In);
+
+        ValidationError error = Assert.Single(FlowGraph.Validate([feeder], Ids(feeder), 0.01));
+
+        Assert.Equal("DSE007", error.Code);
+        Assert.Contains("F.Out", error.Message, StringComparison.Ordinal);
+        Assert.Contains("B.In", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ValidateReportsAnOutletFeedingAComponentThatIsNotAFlowNode()
+    {
+        var feeder = new BulkFeeder("F", Ore, 1.0);
+        var consumer = new SignalOnlyConsumer("C");
+        feeder.Out.ConnectTo(consumer.In);
+        IReadOnlySet<string> plantIds = new HashSet<string>(StringComparer.Ordinal) { "F", "C" };
+
+        ValidationError error = Assert.Single(FlowGraph.Validate([feeder], plantIds, 0.01));
+
+        Assert.Equal("DSE008", error.Code);
+        Assert.Contains(nameof(IFlowNode), error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -226,6 +257,18 @@ public class FlowGraphTests
             : base(id) => Out = AddPort(new FlowOutlet("Out", Id, PayloadKind.Bulk));
 
         public FlowOutlet Out { get; }
+
+        public override void Evaluate(in Contexts.TickContext ctx)
+        {
+        }
+    }
+
+    private sealed class SignalOnlyConsumer : ComponentBase
+    {
+        public SignalOnlyConsumer(string id)
+            : base(id) => In = AddPort(new FlowInlet("In", Id, PayloadKind.Bulk));
+
+        public FlowInlet In { get; }
 
         public override void Evaluate(in Contexts.TickContext ctx)
         {

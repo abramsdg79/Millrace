@@ -19,7 +19,7 @@ public class FlowNodeTests
         Assert.Equal(0.0, buffer.MassCreated);
         Assert.Equal(0.0, buffer.MassDestroyed);
         Assert.Empty(buffer.ValidateFlow(0.01));
-        buffer.Advance(0.01);
+        buffer.Advance(TestContexts.Tick(0));
         buffer.Evaluate(TestContexts.Tick(0));
         Assert.Equal(0.0, buffer.MassHeld);
     }

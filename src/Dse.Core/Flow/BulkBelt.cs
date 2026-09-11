@@ -160,11 +160,12 @@ public sealed class BulkBelt : FlowComponentBase, IBulkProducer, IBulkConsumer
         return taken;
     }
 
-    public override void Advance(double dt)
+    public override void Advance(in TickContext ctx)
     {
-        ApplyTransforms(dt);
+        double dt = ctx.Dt;
 
         double fraction = Fraction(dt);
+        ApplyTransforms(dt);
         if (fraction <= 0.0)
         {
             return;
@@ -215,6 +216,16 @@ public sealed class BulkBelt : FlowComponentBase, IBulkProducer, IBulkConsumer
     private double Fraction(double dt)
     {
         double speed = Speed.Value;
+        if (!double.IsFinite(speed))
+        {
+            throw new InvalidOperationException(
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"Belt '{Id}' speed is {speed}, which is not a finite number. Drive it from a " +
+                    $"signal that cannot produce NaN or infinity; a non-finite speed corrupts the " +
+                    $"belt's mass and blinds the conservation audit."));
+        }
+
         if (speed < 0.0)
         {
             throw new InvalidOperationException(

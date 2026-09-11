@@ -1,3 +1,4 @@
+using Dse.Core.Contexts;
 using Dse.Core.Graph;
 using Dse.Core.Validation;
 
@@ -22,9 +23,11 @@ public interface IFlowNode : ISimComponent
     /// <summary>
     /// Internal motion for one time step: cells shift, items travel, transforms
     /// run. Called after this node's outgoing links have transferred and after
-    /// every downstream node has already advanced.
+    /// every downstream node has already advanced. The context is how a node
+    /// logs an event or reads simulation time during this phase, since phase 3
+    /// runs after the signal phase has already latched.
     /// </summary>
-    void Advance(double dt);
+    void Advance(in TickContext ctx);
 
     /// <summary>Flow-specific build-time checks, such as the CFL condition. Empty when valid.</summary>
     IEnumerable<ValidationError> ValidateFlow(double dt);

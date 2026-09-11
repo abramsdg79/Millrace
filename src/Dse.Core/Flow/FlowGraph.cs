@@ -1,3 +1,4 @@
+using Dse.Core.Contexts;
 using Dse.Core.Graph;
 using Dse.Core.Validation;
 
@@ -51,6 +52,9 @@ internal sealed class FlowGraph
                         break;
                     case FlowInlet { IsConnected: true } inlet when !ImplementsConsumer(node, inlet.Kind):
                         errors.Add(ContractGap(node, inlet, ConsumerContract(inlet.Kind)));
+                        break;
+                    case FlowOutlet { Target: { } target } outlet when !byId.ContainsKey(target.OwnerId):
+                        errors.Add(MissingConsumer(node, outlet, target, plantIds));
                         break;
                     case FlowOutlet { IsConnected: true } outlet when !ImplementsProducer(node, outlet.Kind):
                         errors.Add(ContractGap(node, outlet, ProducerContract(outlet.Kind)));
@@ -118,9 +122,11 @@ internal sealed class FlowGraph
     /// <summary>
     /// Phase 3. For each node, most downstream first: discharge through its
     /// outgoing links into consumers that have already advanced and made room,
-    /// then advance its own contents.
+    /// then advance its own contents. The context is threaded through to
+    /// <see cref="IFlowNode.Advance"/> so a node can log an event or read
+    /// simulation time while it transports material.
     /// </summary>
-    public void Step(double dt)
+    public void Step(in TickContext ctx)
     {
         for (int i = 0; i < _order.Length; i++)
         {
@@ -129,11 +135,15 @@ internal sealed class FlowGraph
                 Transfer(in link);
             }
 
-            _order[i].Advance(dt);
+            _order[i].Advance(in ctx);
         }
     }
 
-    /// <summary>Sums every node's ledger. O(nodes); no allocation.</summary>
+    /// <summary>
+    /// Sums every node's ledger. O(total parcels) — <see cref="BulkBelt.MassHeld"/>
+    /// sums every cell and <see cref="DiscreteBelt.MassHeld"/> sums every item — but
+    /// cheap enough to leave on. No allocation.
+    /// </summary>
     public MassBalance Balance()
     {
         double created = 0.0;
@@ -156,7 +166,10 @@ internal sealed class FlowGraph
     {
         MassBalance balance = Balance();
         double allowed = relativeTolerance * Math.Max(1.0, balance.Created);
-        if (Math.Abs(balance.Drift) > allowed)
+        // Written as !(|drift| <= allowed) rather than (|drift| > allowed) so that a
+        // NaN drift — every comparison with NaN is false — trips the audit instead of
+        // passing it silently.
+        if (!(Math.Abs(balance.Drift) <= allowed))
         {
             throw new MassConservationException(tick, balance);
         }
@@ -298,4 +311,23 @@ internal sealed class FlowGraph
                 $"component '{source.OwnerId}' is not part of the plant. Add it to the " +
                 $"builder, or add the composite that contains it.",
                 [node.Id, source.OwnerId]);
+
+    private static ValidationError MissingConsumer(
+        IFlowNode node,
+        FlowOutlet outlet,
+        FlowInlet target,
+        IReadOnlySet<string> plantIds) =>
+        plantIds.Contains(target.OwnerId)
+            ? new ValidationError(
+                "DSE008",
+                $"Outlet '{outlet.QualifiedName}' feeds '{target.QualifiedName}', but " +
+                $"'{target.OwnerId}' is not an {nameof(IFlowNode)}. Derive it from " +
+                $"{nameof(FlowComponentBase)} or implement {nameof(IFlowNode)}.",
+                [node.Id, target.OwnerId])
+            : new ValidationError(
+                "DSE007",
+                $"Outlet '{outlet.QualifiedName}' feeds '{target.QualifiedName}', but " +
+                $"component '{target.OwnerId}' is not part of the plant. Add it to the " +
+                $"builder, or add the composite that contains it.",
+                [node.Id, target.OwnerId]);
 }

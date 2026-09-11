@@ -14,6 +14,10 @@ namespace Dse.Core.Flow;
 /// </summary>
 public sealed class DiscreteBelt : FlowComponentBase, IItemProducer, IItemConsumer
 {
+    // Advance clamps the head item to exactly Length, so this guards only against
+    // accumulated floating-point rounding across many ticks. It must stay an
+    // absolute tolerance: a relative one would scale with belt length and
+    // discharge long belts early.
     private const double HeadTolerance = 1e-9;
 
     // Index 0 is nearest the head; items board at the end.
@@ -121,8 +125,9 @@ public sealed class DiscreteBelt : FlowComponentBase, IItemProducer, IItemConsum
         return item;
     }
 
-    public override void Advance(double dt)
+    public override void Advance(in TickContext ctx)
     {
+        double dt = ctx.Dt;
         double step = SpeedOrThrow() * dt;
         ApplyTransforms(dt);
 
@@ -159,6 +164,16 @@ public sealed class DiscreteBelt : FlowComponentBase, IItemProducer, IItemConsum
     private double SpeedOrThrow()
     {
         double speed = Speed.Value;
+        if (!double.IsFinite(speed))
+        {
+            throw new InvalidOperationException(
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"Belt '{Id}' speed is {speed}, which is not a finite number. Drive it from a " +
+                    $"signal that cannot produce NaN or infinity; a non-finite speed corrupts the " +
+                    $"belt's mass and blinds the conservation audit."));
+        }
+
         if (speed < 0.0)
         {
             throw new InvalidOperationException(

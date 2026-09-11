@@ -1,3 +1,4 @@
+using Dse.Core.Contexts;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Tests.Fakes;
@@ -19,6 +20,8 @@ public class DiscreteBeltTests
         belt.Initialize(TestContexts.Init(belt.Id, dt: Dt));
         return belt;
     }
+
+    private static TickContext NewTick(long tick = 0) => TestContexts.Tick(tick, Dt);
 
     private static OutputPort<double> Drive(DiscreteBelt belt, double speed)
     {
@@ -49,10 +52,10 @@ public class DiscreteBeltTests
         Drive(belt, 1.0);
         belt.DepositItem(belt.In, Item(1));
 
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
         Assert.Equal(new[] { 0.5 }, Positions(belt));
 
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
         Assert.Equal(new[] { 1.0 }, Positions(belt));
     }
 
@@ -66,11 +69,11 @@ public class DiscreteBeltTests
 
         for (int i = 0; i < 3; i++)
         {
-            belt.Advance(Dt);
+            belt.Advance(NewTick());
             Assert.False(belt.TryPeekItem(belt.Out, out _));
         }
 
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
 
         Assert.True(belt.TryPeekItem(belt.Out, out ItemInstance? head));
         Assert.Same(item, head);
@@ -86,7 +89,7 @@ public class DiscreteBeltTests
         belt.DepositItem(belt.In, item);
         for (int i = 0; i < 4; i++)
         {
-            belt.Advance(Dt);
+            belt.Advance(NewTick());
         }
 
         Assert.Same(item, belt.WithdrawItem(belt.Out));
@@ -100,12 +103,12 @@ public class DiscreteBeltTests
         DiscreteBelt belt = NewBelt(minSpacing: 0.5);
         Drive(belt, 1.0);
         belt.DepositItem(belt.In, Item(1));
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
         belt.DepositItem(belt.In, Item(2));
 
         for (int i = 0; i < 6; i++)
         {
-            belt.Advance(Dt);
+            belt.Advance(NewTick());
         }
 
         Assert.Equal(new[] { 2.0, 1.5 }, Positions(belt));
@@ -121,7 +124,7 @@ public class DiscreteBeltTests
         belt.DepositItem(belt.In, Item(1));
 
         Assert.False(belt.CanAcceptItem(belt.In, Item(2)));
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
         Assert.True(belt.CanAcceptItem(belt.In, Item(2)));
     }
 
@@ -142,11 +145,11 @@ public class DiscreteBeltTests
         DiscreteBelt belt = NewBelt();
         OutputPort<double> speed = Drive(belt, 1.0);
         belt.DepositItem(belt.In, Item(1));
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
 
         speed.Value = 0.0;
-        belt.Advance(Dt);
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
+        belt.Advance(NewTick());
 
         Assert.Equal(new[] { 0.5 }, Positions(belt));
     }
@@ -162,11 +165,11 @@ public class DiscreteBeltTests
         ItemInstance billet = Item(1, Billet, 12.0);
         belt.DepositItem(belt.In, billet);
 
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
         Assert.Equal(110.0, billet.Properties.Temperature, 9);
         Assert.Equal(0.5, billet.State[slot], 9);
 
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
         Assert.Equal(155.0, billet.Properties.Temperature, 9);
         Assert.Equal(1.0, billet.State[slot], 9);
     }
@@ -190,9 +193,21 @@ public class DiscreteBeltTests
         DiscreteBelt belt = NewBelt();
         OutputPort<double> speed = Drive(belt, 1.5);
 
-        Assert.Throws<InvalidOperationException>(() => belt.Advance(Dt));
+        Assert.Throws<InvalidOperationException>(() => belt.Advance(NewTick()));
 
         speed.Value = -0.5;
-        Assert.Throws<InvalidOperationException>(() => belt.Advance(Dt));
+        Assert.Throws<InvalidOperationException>(() => belt.Advance(NewTick()));
+    }
+
+    [Fact]
+    public void ANonFiniteSpeedThrows()
+    {
+        DiscreteBelt belt = NewBelt();
+        OutputPort<double> speed = Drive(belt, double.NaN);
+
+        Assert.Throws<InvalidOperationException>(() => belt.Advance(NewTick()));
+
+        speed.Value = double.PositiveInfinity;
+        Assert.Throws<InvalidOperationException>(() => belt.Advance(NewTick()));
     }
 }

@@ -85,11 +85,14 @@ public sealed class Simulation
     {
         Initialize();
 
-        DrainDueEvents();       // phase 1
-        EvaluateSignals();      // phase 2
-        AdvanceFlow();          // phase 3
-        PublishIo();            // phase 4
-        EmitFrame();            // phase 5
+        var context = new TickContext(
+            Clock.TickCount, Clock.DeltaSeconds, Clock.Now, Events);
+
+        DrainDueEvents();             // phase 1
+        EvaluateSignals(in context);  // phase 2
+        AdvanceFlow(in context);      // phase 3
+        PublishIo();                  // phase 4
+        EmitFrame();                  // phase 5
 
         Clock.Advance();
     }
@@ -119,11 +122,8 @@ public sealed class Simulation
     /// passes is what keeps a delay's lag at exactly one tick no matter where
     /// the resolver places it relative to its producer.
     /// </summary>
-    private void EvaluateSignals()
+    private void EvaluateSignals(in TickContext context)
     {
-        var context = new TickContext(
-            Clock.TickCount, Clock.DeltaSeconds, Clock.Now, Events);
-
         foreach (ISimComponent component in _components)
         {
             component.Evaluate(context);
@@ -140,9 +140,9 @@ public sealed class Simulation
     /// discharges into consumers that have already made room, then advances its
     /// own contents — followed by the conservation audit.
     /// </summary>
-    private void AdvanceFlow()
+    private void AdvanceFlow(in TickContext context)
     {
-        _flow.Step(Clock.DeltaSeconds);
+        _flow.Step(in context);
         if (_checkConservation)
         {
             _flow.AssertConserved(Clock.TickCount, _conservationTolerance);

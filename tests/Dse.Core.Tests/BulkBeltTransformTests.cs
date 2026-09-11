@@ -1,3 +1,4 @@
+using Dse.Core.Contexts;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Telemetry;
@@ -13,6 +14,8 @@ public class BulkBeltTransformTests
 
     private static readonly MaterialType Ore = new("Ore", PayloadKind.Bulk);
     private static readonly MaterialProperties Cold = new(1600.0, 0.1, 0.0);
+
+    private static TickContext NewTick(long tick = 0) => TestContexts.Tick(tick, Dt);
 
     private static BulkBelt NewBelt(params IMaterialTransform[] transforms)
     {
@@ -35,10 +38,10 @@ public class BulkBeltTransformTests
         BulkBelt belt = NewBelt(new Heater(ratePerSecond: 1.0));
         belt.Deposit(belt.In, BulkLot.Of(Ore, 1.0, Cold));
 
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
         Assert.Equal(10.0, belt.Cells[0].Properties.Temperature, 9);
 
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
         Assert.Equal(15.0, belt.Cells[0].Properties.Temperature, 9);
     }
 
@@ -51,7 +54,7 @@ public class BulkBeltTransformTests
         ambient.Value = 100.0;
         belt.Deposit(belt.In, BulkLot.Of(Ore, 1.0, Cold));
 
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
 
         Assert.Equal(50.0, belt.Cells[0].Properties.Temperature, 9);
     }
@@ -63,7 +66,7 @@ public class BulkBeltTransformTests
         Drive(belt, 1.0);
         belt.Deposit(belt.In, BulkLot.Of(Ore, 1.0, Cold));
 
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
 
         Assert.Equal(0.0, belt.Cells[0].Mass);
         Assert.Equal(10.0, belt.Cells[1].Properties.Temperature, 9);
@@ -76,7 +79,7 @@ public class BulkBeltTransformTests
         BulkBelt belt = NewBelt(counter);
         belt.Deposit(belt.In, BulkLot.Of(Ore, 1.0, Cold));
 
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
 
         Assert.Equal(1, counter.Calls);
         Assert.Equal(0, counter.StateLengthSeen);
@@ -88,7 +91,7 @@ public class BulkBeltTransformTests
         BulkBelt belt = NewBelt();
         belt.Deposit(belt.In, BulkLot.Of(Ore, 1.0, Cold));
 
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
 
         Assert.Equal(Cold, belt.Cells[0].Properties);
     }
@@ -99,7 +102,7 @@ public class BulkBeltTransformTests
         BulkBelt belt = NewBelt();
         Drive(belt, 1.0);
         belt.Deposit(belt.In, BulkLot.Of(Ore, 1.5, Cold));
-        belt.Advance(Dt);
+        belt.Advance(NewTick());
         belt.Deposit(belt.In, BulkLot.Of(Ore, 0.5, Cold));
 
         belt.Evaluate(TestContexts.Tick(0, Dt));

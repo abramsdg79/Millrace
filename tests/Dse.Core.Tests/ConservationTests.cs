@@ -1,4 +1,5 @@
 using System.Globalization;
+using Dse.Core.Contexts;
 using Dse.Core.Flow;
 using Dse.Core.Tests.Fakes;
 using Dse.Core.Tests.Fakes.Flow;
@@ -18,6 +19,8 @@ public class ConservationTests
         return feeder;
     }
 
+    private static TickContext Tick(long tick = 0) => TestContexts.Tick(tick, dt: 1.0);
+
     [Fact]
     public void BalanceSumsCreatedDestroyedAndHeld()
     {
@@ -28,10 +31,10 @@ public class ConservationTests
         buffer.Out.ConnectTo(sink.In);
         FlowGraph graph = FlowGraph.Build([feeder, buffer, sink]);
 
-        graph.Step(1.0);
+        graph.Step(Tick());
         Assert.Equal(new MassBalance(10.0, 0.0, 10.0), graph.Balance());
 
-        graph.Step(1.0);
+        graph.Step(Tick());
         MassBalance balance = graph.Balance();
         Assert.Equal(10.0, balance.Created, 9);
         Assert.Equal(4.0, balance.Destroyed, 9);
@@ -47,7 +50,7 @@ public class ConservationTests
         feeder.Out.ConnectTo(sink.In);
         FlowGraph graph = FlowGraph.Build([feeder, sink]);
 
-        graph.Step(1.0);
+        graph.Step(Tick());
         graph.AssertConserved(tick: 0, relativeTolerance: 1e-9);
     }
 
@@ -59,7 +62,7 @@ public class ConservationTests
         feeder.Out.ConnectTo(leaky.In);
         FlowGraph graph = FlowGraph.Build([feeder, leaky]);
 
-        graph.Step(1.0);
+        graph.Step(Tick());
         MassConservationException error = Assert.Throws<MassConservationException>(
             () => graph.AssertConserved(tick: 3, relativeTolerance: 1e-9));
 
@@ -69,13 +72,31 @@ public class ConservationTests
     }
 
     [Fact]
+    public void ANonFiniteDriftTripsTheAudit()
+    {
+        // BulkLot.Take rejects a NaN mass outright (ArgumentOutOfRangeException.ThrowIfNegative
+        // treats NaN as negative here), so a leaking node cannot be coaxed into holding NaN mass
+        // through the normal transport path. Use a purpose-built node instead, so the test stays
+        // honest about what it is proving: that AssertConserved trips on a non-finite held mass,
+        // however it arose.
+        var node = new NonFiniteHeldNode("N");
+        FlowGraph graph = FlowGraph.Build([node]);
+
+        graph.Step(Tick());
+
+        MassConservationException error =
+            Assert.Throws<MassConservationException>(() => graph.AssertConserved(0, 1e-9));
+        Assert.True(double.IsNaN(error.Balance.Drift));
+    }
+
+    [Fact]
     public void ToleranceScalesWithTheMassSourced()
     {
         BulkFeeder feeder = FeederWith(1_000_000.0);
         var leaky = new LeakyBuffer("L", keepFraction: 1.0 - 1e-6);
         feeder.Out.ConnectTo(leaky.In);
         FlowGraph graph = FlowGraph.Build([feeder, leaky]);
-        graph.Step(1.0);
+        graph.Step(Tick());
 
         // Drift is about 1 kg on 1,000,000 kg sourced.
         Assert.Throws<MassConservationException>(() => graph.AssertConserved(0, 1e-9));
@@ -107,5 +128,16 @@ public class ConservationTests
 
         Assert.True(options.CheckConservation);
         Assert.Equal(1e-9, options.ConservationTolerance);
+    }
+
+    /// <summary>A flow node with no ports whose held mass is deliberately non-finite.</summary>
+    private sealed class NonFiniteHeldNode : FlowComponentBase
+    {
+        public NonFiniteHeldNode(string id)
+            : base(id)
+        {
+        }
+
+        public override double MassHeld => double.NaN;
     }
 }

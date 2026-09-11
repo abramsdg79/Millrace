@@ -60,7 +60,12 @@ feeds exactly one `FlowInlet` and an inlet has exactly one source — mass canno
 fan out or merge implicitly — and both ends must carry the same `PayloadKind`.
 Flow ports never create signal-ordering edges: transport is phase 3, after
 every component has evaluated, so a belt whose speed comes from a controller
-that reads the belt's load is not an algebraic loop.
+that reads the belt's load is not an algebraic loop. Within phase 3,
+`FlowGraph.Step` visits nodes most-downstream first and, for each, transfers
+its outgoing links before calling its own `Advance`. So material deposited
+into a node during a tick is not moved by that node until the next tick — one
+tick per hand-off, deterministic and identical whether the node is a
+`BulkBelt` or a `DiscreteBelt`.
 
 A component that holds material implements `IFlowNode` (usually by deriving
 from `FlowComponentBase`) and, per port, one side of the transport protocol:
@@ -69,10 +74,19 @@ from `FlowComponentBase`) and, per port, one side of the transport protocol:
   `IBulkConsumer.AcceptMass` how much the consumer can take, and the engine
   moves the minimum with `Withdraw` then `Deposit`. Back pressure is not a
   feature of any node; it is what a full consumer's `AcceptMass` returns.
+  `OfferMass` takes no `dt`, so a rate-based producer must capture the time
+  step itself, in `Initialize` (`BulkBelt` does this); a belt that has not
+  been initialised offers zero. `Simulation` always initialises every
+  component before the first tick, but a unit test that drives a node by hand
+  without a `Simulation` must call `Initialize` itself. `Withdraw` may hand
+  back less than was asked for — the returned lot is what actually moves — but
+  it must remove from the node exactly the mass it returns, or the
+  conservation audit trips.
 - **Discrete** — `IItemProducer.TryPeekItem` shows the head item,
   `IItemConsumer.CanAcceptItem` says whether it fits, and the engine moves whole
   items until one side says no. `WithdrawItem` must return exactly the item
-  last shown.
+  last shown, the same contract as `Withdraw` on the bulk side: what is
+  removed must equal what is returned.
 
 Bulk is a `BulkLot`: mass, one `MaterialType`, and `MaterialProperties`
 (density, moisture, temperature) that blend by mass-weighted average when lots
@@ -84,9 +98,13 @@ state array sized by its material's schema.
 cell moves to its neighbour, resolved from the head backwards so a blocked
 discharge builds load along the belt; validation refuses `cellSize <
 maxSpeed·dt` (`DSE006`). A cell never exceeds `maxLinearDensity·cellSize`, so
-the inlet accepts only the room in the first cell. Speed zero freezes the load
-profile exactly. `DiscreteBelt` carries items at continuous positions with no
-diffusion; items queue behind a blocked head at the minimum spacing.
+the inlet accepts only the room in the first cell. Because of that cap,
+`PeakLinearDensity` can never reach or exceed `MaxLinearDensity`; an overload
+detector watching it must trigger on `>=`, or better, on `Load` driving
+torque and current rather than on a density that will never actually be
+exceeded. Speed zero freezes the load profile exactly. `DiscreteBelt` carries
+items at continuous positions with no diffusion; items queue behind a blocked
+head at the minimum spacing.
 
 Transforms (`IMaterialTransform`) run on resident material every tick, before
 it moves and whatever the speed, with ambient conditions taken from the node's
