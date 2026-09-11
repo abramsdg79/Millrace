@@ -1,0 +1,40 @@
+using Dse.Core.Randomness;
+using Dse.Core.Telemetry;
+
+namespace Dse.Core.Contexts;
+
+/// <summary>What a component is given once, before the first tick.</summary>
+public readonly struct InitContext
+{
+    private readonly TelemetryRegistry _telemetry;
+    private readonly string _componentId;
+
+    public InitContext(
+        DeterministicRandom random,
+        TelemetryRegistry telemetry,
+        string componentId,
+        DateTimeOffset startTime,
+        double dt)
+    {
+        ArgumentNullException.ThrowIfNull(random);
+        ArgumentNullException.ThrowIfNull(telemetry);
+        ArgumentException.ThrowIfNullOrWhiteSpace(componentId);
+
+        Random = random;
+        StartTime = startTime;
+        Dt = dt;
+        _telemetry = telemetry;
+        _componentId = componentId;
+    }
+
+    /// <summary>This component's own random stream, derived from the master seed and its id.</summary>
+    public DeterministicRandom Random { get; }
+
+    public DateTimeOffset StartTime { get; }
+
+    public double Dt { get; }
+
+    /// <summary>Registers a telemetry channel, prefixed with this component's id.</summary>
+    public TelemetryHandle RegisterTelemetry(string name, string unit) =>
+        _telemetry.Register($"{_componentId}.{name}", unit);
+}
