@@ -1,3 +1,4 @@
+using Dse.Core.Flow;
 using Dse.Core.Randomness;
 using Dse.Core.Telemetry;
 
@@ -12,15 +13,18 @@ public readonly struct InitContext
     public InitContext(
         DeterministicRandom random,
         TelemetryRegistry telemetry,
+        ItemIdSequence items,
         string componentId,
         DateTimeOffset startTime,
         double dt)
     {
         ArgumentNullException.ThrowIfNull(random);
         ArgumentNullException.ThrowIfNull(telemetry);
+        ArgumentNullException.ThrowIfNull(items);
         ArgumentException.ThrowIfNullOrWhiteSpace(componentId);
 
         Random = random;
+        Items = items;
         StartTime = startTime;
         Dt = dt;
         _telemetry = telemetry;
@@ -29,6 +33,13 @@ public readonly struct InitContext
 
     /// <summary>This component's own random stream, derived from the master seed and its id.</summary>
     public DeterministicRandom Random { get; }
+
+    /// <summary>
+    /// The simulation's item id counter. Components that create items keep a
+    /// reference and call <see cref="ItemIdSequence.Next"/> per item; it is the
+    /// only source of item ids, which is what makes them deterministic.
+    /// </summary>
+    public ItemIdSequence Items { get; }
 
     public DateTimeOffset StartTime { get; }
 

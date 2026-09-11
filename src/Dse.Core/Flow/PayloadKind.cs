@@ -6,6 +6,6 @@ public enum PayloadKind
     /// <summary>Mass in kilograms plus blended intensive properties.</summary>
     Bulk,
 
-    /// <summary>Whole item instances that move one at a time.</summary>
+    /// <summary>Whole <see cref="ItemInstance"/> values that move one at a time.</summary>
     Discrete,
 }

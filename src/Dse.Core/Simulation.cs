@@ -1,5 +1,6 @@
 using Dse.Core.Contexts;
 using Dse.Core.Events;
+using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Logging;
 using Dse.Core.Randomness;
@@ -33,6 +34,9 @@ public sealed class Simulation
 
     public EventLog Events { get; } = new();
 
+    /// <summary>The item id counter shared by every component in this simulation.</summary>
+    public ItemIdSequence Items { get; } = new();
+
     public IReadOnlyList<ISimComponent> Components => _components;
 
     /// <summary>Schedules an event at a simulation time measured from the start.</summary>
@@ -56,6 +60,7 @@ public sealed class Simulation
             var context = new InitContext(
                 new DeterministicRandom(Hash64.Combine(_seed, component.Id)),
                 Telemetry,
+                Items,
                 component.Id,
                 Clock.StartTime,
                 Clock.DeltaSeconds);

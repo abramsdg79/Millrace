@@ -1,4 +1,5 @@
 using Dse.Core.Contexts;
+using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Logging;
 using Dse.Core.Randomness;
@@ -94,5 +95,5 @@ public class ComponentTests
         new(tick, 0.01, Start + TimeSpan.FromMilliseconds(10 * tick), new EventLog());
 
     private static InitContext NewInitContext(string componentId, TelemetryRegistry registry) =>
-        new(new DeterministicRandom(1UL), registry, componentId, Start, 0.01);
+        new(new DeterministicRandom(1UL), registry, new ItemIdSequence(), componentId, Start, 0.01);
 }
