@@ -13,7 +13,7 @@ public interface ISimComponent : ISimNode
 
     /// <summary>
     /// True when outputs depend on inputs within the same tick. Components that
-    /// return false (such as <c>UnitDelay&lt;T&gt;</c>) create no ordering edge
+    /// return false (such as <see cref="UnitDelay{T}"/>) create no ordering edge
     /// and so may sit inside a feedback loop.
     /// </summary>
     bool HasDirectFeedthrough { get; }
