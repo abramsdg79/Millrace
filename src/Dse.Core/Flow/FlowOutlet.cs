@@ -27,6 +27,14 @@ public sealed class FlowOutlet : FlowPort
                 $"component such as a former.");
         }
 
+        if (string.Equals(inlet.OwnerId, OwnerId, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Cannot connect outlet '{QualifiedName}' to inlet '{inlet.QualifiedName}' on the " +
+                $"same component. Recirculation is not supported; route the material through an " +
+                $"explicit sink and source.");
+        }
+
         if (_target is not null)
         {
             throw new InvalidOperationException(

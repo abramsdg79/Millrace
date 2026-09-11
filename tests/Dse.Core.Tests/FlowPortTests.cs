@@ -58,6 +58,19 @@ public class FlowPortTests
     }
 
     [Fact]
+    public void AnOutletCannotFeedItsOwnComponent()
+    {
+        var node = new BareNode("A");
+
+        InvalidOperationException error =
+            Assert.Throws<InvalidOperationException>(() => node.Out.ConnectTo(node.In));
+        Assert.Contains("A.Out", error.Message, StringComparison.Ordinal);
+        Assert.Contains("A.In", error.Message, StringComparison.Ordinal);
+        Assert.False(node.Out.IsConnected);
+        Assert.False(node.In.IsConnected);
+    }
+
+    [Fact]
     public void FlowLinksDoNotOrderSignalEvaluation()
     {
         var producer = new BareNode("P");
