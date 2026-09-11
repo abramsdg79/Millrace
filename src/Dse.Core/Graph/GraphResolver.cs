@@ -27,7 +27,6 @@ public static class GraphResolver
 
         // dependents[i] = indices of components that must run after i.
         var dependents = new List<int>[count];
-        var inDegree = new int[count];
         for (int i = 0; i < count; i++)
         {
             dependents[i] = [];
@@ -55,112 +54,23 @@ public static class GraphResolver
                 }
 
                 dependents[producer].Add(consumer);
-                inDegree[consumer]++;
             }
         }
 
-        // Ready set kept sorted by registration index so ordering is stable.
-        var ready = new SortedSet<int>();
+        if (!TopologicalSorter.TrySort(dependents, out int[] order, out List<int> loop))
+        {
+            ordered = [];
+            cycle = loop.Select(i => components[i].Id).ToList();
+            return false;
+        }
+
+        ordered = new ISimComponent[count];
         for (int i = 0; i < count; i++)
         {
-            if (inDegree[i] == 0)
-            {
-                ready.Add(i);
-            }
+            ordered[i] = components[order[i]];
         }
 
-        var result = new ISimComponent[count];
-        int placed = 0;
-        while (ready.Count > 0)
-        {
-            int next = ready.Min;
-            ready.Remove(next);
-            result[placed++] = components[next];
-
-            foreach (int dependent in dependents[next])
-            {
-                if (--inDegree[dependent] == 0)
-                {
-                    ready.Add(dependent);
-                }
-            }
-        }
-
-        if (placed == count)
-        {
-            ordered = result;
-            cycle = [];
-            return true;
-        }
-
-        ordered = [];
-        cycle = FindCycle(components, dependents, inDegree);
-        return false;
-    }
-
-    /// <summary>
-    /// Walks the residual subgraph's predecessors — backward, from a stalled
-    /// component toward whatever still owes it an input — to name one loop. A
-    /// forward walk over dependents can dead-end on a residual component that
-    /// merely consumes from a cycle without being part of it (an observer);
-    /// every residual component is guaranteed a residual predecessor, so the
-    /// backward walk cannot dead-end.
-    /// </summary>
-    private static List<string> FindCycle(
-        IReadOnlyList<ISimComponent> components,
-        List<int>[] dependents,
-        int[] inDegree)
-    {
-        int start = -1;
-        for (int i = 0; i < inDegree.Length; i++)
-        {
-            if (inDegree[i] > 0)
-            {
-                start = i;
-                break;
-            }
-        }
-
-        if (start < 0)
-        {
-            return [];
-        }
-
-        int count = inDegree.Length;
-        var predecessors = new List<int>[count];
-        for (int i = 0; i < count; i++)
-        {
-            predecessors[i] = [];
-        }
-
-        for (int producer = 0; producer < count; producer++)
-        {
-            if (inDegree[producer] <= 0)
-            {
-                continue;
-            }
-
-            foreach (int dependent in dependents[producer])
-            {
-                if (inDegree[dependent] > 0)
-                {
-                    predecessors[dependent].Add(producer);
-                }
-            }
-        }
-
-        var path = new List<int>();
-        var onPath = new Dictionary<int, int>();
-        int current = start;
-        while (!onPath.ContainsKey(current))
-        {
-            onPath[current] = path.Count;
-            path.Add(current);
-            current = predecessors[current][0];
-        }
-
-        List<string> loop = path.Skip(onPath[current]).Select(i => components[i].Id).ToList();
-        loop.Reverse();
-        return loop;
+        cycle = [];
+        return true;
     }
 }
