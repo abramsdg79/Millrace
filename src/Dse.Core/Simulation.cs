@@ -19,12 +19,18 @@ public sealed class Simulation
     private readonly ISimComponent[] _components;
     private readonly EventQueue _queue = new();
     private readonly ulong _seed;
+    private readonly FlowGraph _flow;
+    private readonly bool _checkConservation;
+    private readonly double _conservationTolerance;
     private bool _initialized;
 
-    internal Simulation(ISimComponent[] components, SimulationOptions options)
+    internal Simulation(ISimComponent[] components, FlowGraph flow, SimulationOptions options)
     {
         _components = components;
+        _flow = flow;
         _seed = options.Seed;
+        _checkConservation = options.CheckConservation;
+        _conservationTolerance = options.ConservationTolerance;
         Clock = new SimulationClock(options.StartTime, options.TimeStep);
     }
 
@@ -38,6 +44,9 @@ public sealed class Simulation
     public ItemIdSequence Items { get; } = new();
 
     public IReadOnlyList<ISimComponent> Components => _components;
+
+    /// <summary>The plant-wide mass ledger: sourced, sunk, held and their drift.</summary>
+    public MassBalance MassBalance => _flow.Balance();
 
     /// <summary>Schedules an event at a simulation time measured from the start.</summary>
     public long ScheduleAt(TimeSpan fromStart, ISimEvent simEvent) =>
@@ -126,9 +135,18 @@ public sealed class Simulation
         }
     }
 
-    /// <summary>Phase 3. Material transport arrives in plan 2.</summary>
-    private static void AdvanceFlow()
+    /// <summary>
+    /// Phase 3. One downstream-first sweep over the material graph — each node
+    /// discharges into consumers that have already made room, then advances its
+    /// own contents — followed by the conservation audit.
+    /// </summary>
+    private void AdvanceFlow()
     {
+        _flow.Step(Clock.DeltaSeconds);
+        if (_checkConservation)
+        {
+            _flow.AssertConserved(Clock.TickCount, _conservationTolerance);
+        }
     }
 
     /// <summary>Phase 4. The I/O image arrives in plan 4.</summary>

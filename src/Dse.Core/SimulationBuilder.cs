@@ -1,3 +1,4 @@
+using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Time;
 using Dse.Core.Validation;
@@ -99,6 +100,8 @@ public sealed class SimulationBuilder
                 cycle));
         }
 
+        errors.AddRange(FlowGraph.Validate(FlowNodes(), seen, _options.TimeStep.TotalSeconds));
+
         return ValidationResult.From(errors);
     }
 
@@ -112,6 +115,10 @@ public sealed class SimulationBuilder
         }
 
         GraphResolver.TryResolve(_components, out ISimComponent[] ordered, out _);
-        return new Simulation(ordered, _options);
+        FlowGraph flow = FlowGraph.Build(FlowNodes());
+        return new Simulation(ordered, flow, _options);
     }
+
+    /// <summary>The flow nodes among the added leaves, in registration order.</summary>
+    private List<IFlowNode> FlowNodes() => _components.OfType<IFlowNode>().ToList();
 }
