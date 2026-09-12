@@ -12,7 +12,7 @@ namespace Dse.Core.Flow;
 /// spacing; the tail accepts a new item once the last one has moved that far.
 /// Transforms run on every item each tick, before positions move.
 /// </summary>
-public sealed class DiscreteBelt : FlowComponentBase, IItemProducer, IItemConsumer
+public sealed class DiscreteBelt : FlowComponentBase, IItemProducer, IItemConsumer, IMaterialObservable
 {
     // Advance clamps the head item to exactly Length, so this guards only against
     // accumulated floating-point rounding across many ticks. It must stay an
@@ -96,6 +96,26 @@ public sealed class DiscreteBelt : FlowComponentBase, IItemProducer, IItemConsum
     }
 
     public override void Evaluate(in TickContext ctx) => ItemCount.Value = _items.Count;
+
+    /// <summary>Item count comes from items that move only in phase 3; see <see cref="BulkBelt.HasDirectFeedthrough"/>.</summary>
+    public override bool HasDirectFeedthrough => false;
+
+    /// <summary>The head-most item within the window; a photo-eye sees the first thing to reach it.</summary>
+    public bool TryObserve(double position, double window, out MaterialObservation observation)
+    {
+        for (int i = 0; i < _items.Count; i++)
+        {
+            if (Math.Abs(_items[i].Position - position) <= window)
+            {
+                ItemInstance item = _items[i].Item;
+                observation = new MaterialObservation(item.Mass, 0.0, item.Properties, item.Id);
+                return true;
+            }
+        }
+
+        observation = default;
+        return false;
+    }
 
     public bool CanAcceptItem(FlowInlet inlet, ItemInstance item) =>
         _items.Count == 0 || _items[^1].Position >= MinSpacing;

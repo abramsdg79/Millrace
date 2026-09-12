@@ -15,7 +15,7 @@ namespace Dse.Core.Flow;
 /// move, every resident transform is applied to each non-empty cell's
 /// material — every tick, whatever the speed, so a stopped oven still bakes.
 /// </summary>
-public sealed class BulkBelt : FlowComponentBase, IBulkProducer, IBulkConsumer
+public sealed class BulkBelt : FlowComponentBase, IBulkProducer, IBulkConsumer, IMaterialObservable
 {
     private readonly BulkLot[] _cells;
     private readonly double _cellCapacity;
@@ -109,10 +109,30 @@ public sealed class BulkBelt : FlowComponentBase, IBulkProducer, IBulkConsumer
         return _cells[index].Mass / CellSize;
     }
 
+    /// <summary>
+    /// Load and peak density come from the cells, which move only in phase 3,
+    /// so nothing this belt outputs depends on its inputs within a tick.
+    /// </summary>
+    public override bool HasDirectFeedthrough => false;
+
     public override void Initialize(in InitContext ctx)
     {
         _dt = ctx.Dt;
         _loadTelemetry = ctx.RegisterTelemetry("Load", "kg");
+    }
+
+    public bool TryObserve(double position, double window, out MaterialObservation observation)
+    {
+        int index = Math.Clamp((int)(position / CellSize), 0, _cells.Length - 1);
+        BulkLot cell = _cells[index];
+        if (cell.IsEmpty)
+        {
+            observation = default;
+            return false;
+        }
+
+        observation = new MaterialObservation(cell.Mass, cell.Mass / CellSize, cell.Properties, 0L);
+        return true;
     }
 
     public override void Evaluate(in TickContext ctx)
