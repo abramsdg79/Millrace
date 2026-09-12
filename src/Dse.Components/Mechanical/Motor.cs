@@ -79,7 +79,11 @@ public sealed class Motor : ComponentBase, IFaultTarget
     /// <summary>I²t thermal state; 1.0 is equilibrium at rated current.</summary>
     public OutputPort<double> ThermalState { get; }
 
-    /// <summary>True once within 5 % of the target speed after energising.</summary>
+    /// <summary>
+    /// True once within 5 % of the target speed. Clears on a stall and sets
+    /// again on recovery: a stall is a genuine loss of speed, so a run-up
+    /// that stalls and then recovers reaches at-speed twice.
+    /// </summary>
     public OutputPort<bool> AtSpeed { get; }
 
     public MotorRating Rating => _rating;
@@ -129,6 +133,10 @@ public sealed class Motor : ComponentBase, IFaultTarget
             }
 
             _stalled = stalled;
+
+            // Logged once per run-up: on the initial approach to speed after
+            // energising, and again after a stall clears _atSpeed below and
+            // the motor recovers — a stall is a genuine loss of speed.
             if (!_atSpeed && target > 0.0 && _speed >= 0.95 * target)
             {
                 _atSpeed = true;

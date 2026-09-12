@@ -140,6 +140,26 @@ public class MotorTests
     }
 
     [Fact]
+    public void AStallThatRecoversLogsAtSpeedAgain()
+    {
+        var rig = new Rig();
+        rig.Energised.Value = true;
+        rig.Run(10.0);   // AT_SPEED once
+
+        rig.Demand.Value = 13.0;   // above breakdown
+        rig.Run(10.0);   // STALLED; AtSpeed clears; speed decays toward 0
+
+        Assert.True(rig.Motor.Speed.Value < 1.0);
+        Assert.False(rig.Motor.AtSpeed.Value);
+
+        rig.Demand.Value = 0.0;   // demand change is seen one tick late (latched)
+        rig.Run(10.0);   // recovers to speed; AT_SPEED logs again
+
+        Assert.Equal(["ENERGISED", "AT_SPEED", "STALLED", "AT_SPEED"], rig.Codes);
+        Assert.True(rig.Motor.AtSpeed.Value);
+    }
+
+    [Fact]
     public void DeEnergisingCoastsToAStop()
     {
         var rig = new Rig();
