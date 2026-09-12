@@ -1,5 +1,7 @@
+using System.Globalization;
 using Dse.Core.Contexts;
 using Dse.Core.Events;
+using Dse.Core.Faults;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Logging;
@@ -22,6 +24,7 @@ public sealed class Simulation
     private readonly FlowGraph _flow;
     private readonly bool _checkConservation;
     private readonly double _conservationTolerance;
+    private readonly Dictionary<string, IFaultTarget> _faultTargets;
     private bool _initialized;
 
     internal Simulation(ISimComponent[] components, FlowGraph flow, SimulationOptions options)
@@ -32,6 +35,15 @@ public sealed class Simulation
         _checkConservation = options.CheckConservation;
         _conservationTolerance = options.ConservationTolerance;
         Clock = new SimulationClock(options.StartTime, options.TimeStep);
+
+        _faultTargets = new Dictionary<string, IFaultTarget>(StringComparer.Ordinal);
+        foreach (ISimComponent component in components)
+        {
+            if (component is IFaultTarget target)
+            {
+                _faultTargets[component.Id] = target;
+            }
+        }
     }
 
     public SimulationClock Clock { get; }
@@ -55,6 +67,63 @@ public sealed class Simulation
     /// <summary>Schedules an event relative to the current simulation time.</summary>
     public long ScheduleIn(TimeSpan delay, ISimEvent simEvent) =>
         _queue.Schedule(Clock.TickCount + (delay.Ticks / Clock.TimeStep.Ticks), simEvent);
+
+    /// <summary>The faults a component supports. Tooling's "what can break here?".</summary>
+    public IReadOnlyList<FaultDescriptor> FaultsOf(string componentId) =>
+        FaultTarget(componentId).SupportedFaults;
+
+    /// <summary>
+    /// Schedules a fault for phase 1 of the tick at <paramref name="fromStart"/>.
+    /// The target, the fault id and the arguments are resolved now, so a
+    /// mistake fails here with a message naming what exists.
+    /// </summary>
+    public long InjectFaultAt(TimeSpan fromStart, string componentId, string faultId, FaultArguments? arguments = null) =>
+        ScheduleAt(fromStart, FaultEvent.Inject(this, componentId, faultId, arguments ?? FaultArguments.None));
+
+    public long InjectFaultIn(TimeSpan delay, string componentId, string faultId, FaultArguments? arguments = null) =>
+        ScheduleIn(delay, FaultEvent.Inject(this, componentId, faultId, arguments ?? FaultArguments.None));
+
+    public long ClearFaultAt(TimeSpan fromStart, string componentId, string faultId) =>
+        ScheduleAt(fromStart, FaultEvent.Clear(this, componentId, faultId));
+
+    public long ClearFaultIn(TimeSpan delay, string componentId, string faultId) =>
+        ScheduleIn(delay, FaultEvent.Clear(this, componentId, faultId));
+
+    private IFaultTarget FaultTarget(string componentId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(componentId);
+
+        if (_faultTargets.TryGetValue(componentId, out IFaultTarget? target))
+        {
+            return target;
+        }
+
+        bool exists = Array.Exists(_components, c => string.Equals(c.Id, componentId, StringComparison.Ordinal));
+        string targets = _faultTargets.Count == 0
+            ? "none"
+            : string.Join(", ", _faultTargets.Keys.Order(StringComparer.Ordinal));
+        throw new KeyNotFoundException(exists
+            ? $"Component '{componentId}' is not an {nameof(IFaultTarget)}; it declares no faults. Fault targets: {targets}."
+            : $"No component '{componentId}' in the plant. Fault targets: {targets}.");
+    }
+
+    private static FaultDescriptor Descriptor(IFaultTarget target, string faultId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(faultId);
+
+        foreach (FaultDescriptor descriptor in target.SupportedFaults)
+        {
+            if (string.Equals(descriptor.Id, faultId, StringComparison.Ordinal))
+            {
+                return descriptor;
+            }
+        }
+
+        throw new ArgumentException(
+            $"'{target.Id}' supports no fault '{faultId}'. Supported: " +
+            $"{string.Join(", ", target.SupportedFaults.Select(f => f.Id))}.",
+            nameof(faultId));
+    }
 
     /// <summary>Runs Initialize on every component. Called automatically by the first tick.</summary>
     public void Initialize()
@@ -157,5 +226,51 @@ public sealed class Simulation
     /// <summary>Phase 5. Tick frames arrive in plan 4; the event log is already appended during evaluation.</summary>
     private static void EmitFrame()
     {
+    }
+
+    /// <summary>A resolved fault injection or clearance, logged when it lands.</summary>
+    private sealed class FaultEvent : ISimEvent
+    {
+        private readonly Simulation _simulation;
+        private readonly IFaultTarget _target;
+        private readonly string _faultId;
+        private readonly FaultArguments? _arguments;
+
+        private FaultEvent(Simulation simulation, IFaultTarget target, string faultId, FaultArguments? arguments)
+        {
+            _simulation = simulation;
+            _target = target;
+            _faultId = faultId;
+            _arguments = arguments;
+        }
+
+        public static FaultEvent Inject(Simulation simulation, string componentId, string faultId, FaultArguments arguments)
+        {
+            IFaultTarget target = simulation.FaultTarget(componentId);
+            FaultDescriptor descriptor = Descriptor(target, faultId);
+            return new FaultEvent(simulation, target, faultId, descriptor.Resolve(arguments));
+        }
+
+        public static FaultEvent Clear(Simulation simulation, string componentId, string faultId)
+        {
+            IFaultTarget target = simulation.FaultTarget(componentId);
+            Descriptor(target, faultId);
+            return new FaultEvent(simulation, target, faultId, null);
+        }
+
+        public void Apply()
+        {
+            SimulationClock clock = _simulation.Clock;
+            if (_arguments is null)
+            {
+                _target.ClearFault(_faultId);
+                _simulation.Events.Record(clock.TickCount, clock.Now, _target.Id, "FAULT_CLEARED", $"{_faultId} cleared.");
+                return;
+            }
+
+            _target.ApplyFault(_faultId, _arguments);
+            string detail = _arguments.Count == 0 ? string.Empty : $": {_arguments}";
+            _simulation.Events.Record(clock.TickCount, clock.Now, _target.Id, "FAULT", $"{_faultId} injected{detail}.");
+        }
     }
 }
