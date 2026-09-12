@@ -42,6 +42,11 @@ public static class GraphResolver
 
             foreach (Port port in component.Ports)
             {
+                if (!port.CreatesOrderingEdge)
+                {
+                    continue;
+                }
+
                 Port? source = port.SourcePort;
                 if (source is null || !indexById.TryGetValue(source.OwnerId, out int producer))
                 {

@@ -25,4 +25,19 @@ public abstract class Port
 
     /// <summary>The upstream port, or null. Used by the resolver to build edges.</summary>
     internal abstract Port? SourcePort { get; }
+
+    /// <summary>
+    /// Whether the resolver should order this port's owner after the port's
+    /// source. False for outputs, for flow ports, and for latched inputs, which
+    /// read one tick late by design.
+    /// </summary>
+    internal virtual bool CreatesOrderingEdge => SourcePort is not null;
+
+    /// <summary>Called in the latch pass. Latched inputs capture their source here.</summary>
+    internal virtual void Capture()
+    {
+    }
+
+    /// <summary>True for inputs that capture in the latch pass.</summary>
+    internal virtual bool IsLatchedInput => false;
 }

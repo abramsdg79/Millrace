@@ -6,7 +6,7 @@ namespace Dse.Core.Graph;
 /// Emits the value latched at the end of the previous tick. Because it declares
 /// no direct feedthrough it creates no ordering edge, which is how a genuine
 /// feedback loop — belt load raising torque demand, lowering speed, changing
-/// belt load — is made solvable. Latching happens in <see cref="Latch"/>, after
+/// belt load — is made solvable. Latching happens in <see cref="OnLatch"/>, after
 /// every component has evaluated, so the lag is exactly one tick regardless of
 /// where the resolver places this component relative to its producer.
 /// </summary>
@@ -34,5 +34,5 @@ public sealed class UnitDelay<T> : ComponentBase
         Out.Value = _held;
     }
 
-    public override void Latch() => _held = In.Value;
+    protected override void OnLatch() => _held = In.Value;
 }

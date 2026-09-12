@@ -5,6 +5,7 @@ namespace Dse.Core.Graph;
 public abstract class ComponentBase : ISimComponent, IQualifiable
 {
     private readonly List<Port> _ports = [];
+    private readonly List<Port> _latched = [];
 
     protected ComponentBase(string id)
     {
@@ -36,12 +37,17 @@ public abstract class ComponentBase : ISimComponent, IQualifiable
         }
 
         _ports.Add(port);
+        if (port.IsLatchedInput)
+        {
+            _latched.Add(port);
+        }
+
         return port;
     }
 
-    protected InputPort<T> AddInput<T>(string name, T defaultValue = default, bool required = false)
+    protected InputPort<T> AddInput<T>(string name, T defaultValue = default, bool required = false, bool latched = false)
         where T : unmanaged =>
-        AddPort(new InputPort<T>(name, Id, defaultValue, required));
+        AddPort(new InputPort<T>(name, Id, defaultValue, required, latched));
 
     protected OutputPort<T> AddOutput<T>(string name)
         where T : unmanaged =>
@@ -53,7 +59,23 @@ public abstract class ComponentBase : ISimComponent, IQualifiable
 
     public abstract void Evaluate(in TickContext ctx);
 
-    public virtual void Latch()
+    /// <summary>
+    /// The latch pass: every latched input captures this tick's source value,
+    /// then <see cref="OnLatch"/> runs. Sealed so a subclass cannot forget the
+    /// capture; override <see cref="OnLatch"/> for component-specific state.
+    /// </summary>
+    public void Latch()
+    {
+        for (int i = 0; i < _latched.Count; i++)
+        {
+            _latched[i].Capture();
+        }
+
+        OnLatch();
+    }
+
+    /// <summary>Called once per tick after every component has evaluated and this component's latched inputs have captured.</summary>
+    protected virtual void OnLatch()
     {
     }
 
