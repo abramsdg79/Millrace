@@ -24,7 +24,7 @@ public sealed class Conveyor : CompositeComponent
         : base(id)
     {
         ArgumentNullException.ThrowIfNull(options);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(options.PullKeys, nameof(options));
+        ArgumentOutOfRangeException.ThrowIfNegative(options.PullKeys, nameof(options));
         ArgumentOutOfRangeException.ThrowIfNegative(options.SpeedMarginFraction, nameof(options));
 
         double radius = options.PulleyDiameterM / 2.0;

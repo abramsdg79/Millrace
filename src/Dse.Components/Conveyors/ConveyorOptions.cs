@@ -15,7 +15,7 @@ namespace Dse.Components.Conveyors;
 /// <param name="Motor">The motor's rating.</param>
 /// <param name="TailDragN">N, tail pulley bearing drag.</param>
 /// <param name="PullKeys">Number of pull-wire switches along the belt.</param>
-/// <param name="SpeedMarginFraction">How far the belt's declared max speed exceeds the no-load speed.</param>
+/// <param name="SpeedMarginFraction">How far the belt's declared max speed exceeds the no-load speed. Zero leaves no headroom: the belt throws if drive speed ever exceeds its declared maximum.</param>
 public sealed record ConveyorOptions(
     double LengthM,
     double CellSizeM,

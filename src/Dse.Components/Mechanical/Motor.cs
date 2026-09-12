@@ -190,7 +190,7 @@ public sealed class Motor : ComponentBase, IFaultTarget
                 _friction = Math.Max(0.0, arguments.Get("torque"));
                 break;
             case ThermalBias:
-                _thermal += arguments.Get("amount");
+                _thermal = Math.Max(0.0, _thermal + arguments.Get("amount"));
                 break;
         }
     }

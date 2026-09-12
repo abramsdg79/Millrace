@@ -121,6 +121,7 @@ public sealed class BulkBelt : FlowComponentBase, IBulkProducer, IBulkConsumer, 
         _loadTelemetry = ctx.RegisterTelemetry("Load", "kg");
     }
 
+    /// <summary>The cell under the position; window is ignored, since a bulk belt's resolution is one cell.</summary>
     public bool TryObserve(double position, double window, out MaterialObservation observation)
     {
         int index = Math.Clamp((int)(position / CellSize), 0, _cells.Length - 1);

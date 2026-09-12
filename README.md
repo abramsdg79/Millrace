@@ -20,12 +20,15 @@ transport, cell-based and position-based belts, residence transforms, a
 per-tick mass conservation audit), the fault channel, and the first
 component library: sources, sinks, a transfer chute, a former, bulk and
 item process units, three transforms, an instrument base with the full
-sensor-fault vocabulary, six instruments, a motor with an I²t thermal model,
+sensor-fault vocabulary, seven instruments, a motor with an I²t thermal model,
 a drivetrain, a safety circuit, a starter, and a `Conveyor` composite that
 trips its own overload when the belt downstream of it blocks.
 
 The I/O and real-time layers, declarative configuration and the reference
 samples are planned.
+
+See `docs/superpowers/specs/` for the design, `docs/superpowers/plans/` for the
+implementation plans, and `docs/architecture.md` for how the engine works.
 
 ## Build and test
 
