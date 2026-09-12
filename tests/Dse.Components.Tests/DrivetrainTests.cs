@@ -105,8 +105,10 @@ public class DrivetrainTests
         var feed = new BulkSource("Feed", Ore, 40.0);
         var pile = new BulkSink("Pile");
         var run = new Switch("Run", true);
+        var feedOn = new Switch("FeedOn", false);
 
         run.Out.ConnectTo(motor.Energised);
+        feedOn.Out.ConnectTo(feed.Enabled);
         motor.Speed.ConnectTo(gearbox.InputSpeed);
         gearbox.OutputSpeed.ConnectTo(pulley.ShaftSpeed);
         pulley.BeltSpeed.ConnectTo(belt.Speed);
@@ -119,13 +121,16 @@ public class DrivetrainTests
         belt.Out.ConnectTo(pile.In);
 
         Simulation sim = new SimulationBuilder(Options())
-            .Add(pile).Add(belt).Add(feed).Add(run).Add(motor).Add(gearbox).Add(pulley).Add(tail).Add(friction)
+            .Add(pile).Add(belt).Add(feed).Add(run).Add(feedOn).Add(motor).Add(gearbox).Add(pulley).Add(tail).Add(friction)
             .Build();
 
+        // Feed off: run up to speed on an empty belt, and sample the empty-belt current before any material lands.
         sim.RunFor(TimeSpan.FromSeconds(5));
         double emptyCurrent = motor.Current.Value;
         Assert.InRange(pulley.BeltSpeed.Value, 1.8, 1.9);   // 150 / 20 × 0.25 less droop
+        Assert.Equal(0.0, belt.Load.Value);
 
+        feedOn.Value = true;
         sim.RunFor(TimeSpan.FromSeconds(30));               // belt fills to ~215 kg steady load
 
         // Empty: 118 N → 1.55 N·m → 1.03 A. Loaded: 202 N → 2.66 N·m → 1.35 A.
