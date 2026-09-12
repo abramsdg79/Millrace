@@ -40,6 +40,7 @@ public sealed class BulkProcessUnit : FlowComponentBase, IBulkConsumer, IBulkPro
     private BulkLot _batch;
     private ProcessPhase _phase;
     private double _elapsed;
+    private double _dischargeStartMass;
     private double _lost;
     private long _cycles;
     private bool _jammed;
@@ -183,7 +184,7 @@ public sealed class BulkProcessUnit : FlowComponentBase, IBulkConsumer, IBulkPro
         {
             ProcessPhase.Filling => ReceivedFraction(),
             ProcessPhase.Processing => _holdSeconds is { } seconds && seconds > 0.0 ? Math.Min(1.0, _elapsed / seconds) : 0.0,
-            ProcessPhase.Discharging => 1.0 - (_batch.Mass / Math.Max(_batch.Mass, BatchTarget())),
+            ProcessPhase.Discharging => _dischargeStartMass > 0.0 ? 1.0 - (_batch.Mass / _dischargeStartMass) : 1.0,
             _ => 0.0,
         };
         _batchTelemetry.Write(MassHeld);
@@ -324,6 +325,8 @@ public sealed class BulkProcessUnit : FlowComponentBase, IBulkConsumer, IBulkPro
             _batch = _batch with { Mass = _batch.Mass - loss };
             _lost += loss;
         }
+
+        _dischargeStartMass = _batch.Mass;
 
         Transition(
             ProcessPhase.Discharging,

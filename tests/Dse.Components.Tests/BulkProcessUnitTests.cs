@@ -2,8 +2,10 @@ using Dse.Components.Flow;
 using Dse.Components.Tests.Fakes;
 using Dse.Components.Transforms;
 using Dse.Core;
+using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Flow;
+using Dse.Core.Logging;
 using Dse.Core.Time;
 using Xunit;
 
@@ -147,6 +149,80 @@ public class BulkProcessUnitTests
         Assert.False(soak.IsSatisfied(0.0, in props, [1.0]));
         Assert.True(soak.IsSatisfied(0.0, in props, [2.0]));
         Assert.False(soak.IsSatisfied(0.0, in props, ReadOnlySpan<double>.Empty));
+    }
+
+    [Fact]
+    public void DischargingProgressTracksTheStartingBatchNotTheRecipeTarget()
+    {
+        // Drive the unit directly (bypassing Simulation/FlowGraph) so the exact
+        // instant the batch empties can be observed: with an unlimited-capacity
+        // sink a full batch always transfers in the same tick that Advance also
+        // sees it empty and moves on to Idle, so a plant-level RunFor can never
+        // catch Progress mid-Discharging — Evaluate always runs before that
+        // tick's transfer+Advance, and by the next tick's Evaluate the phase has
+        // already moved on. This is exactly the state a discharge fault (or any
+        // consumer that simply hasn't withdrawn yet) would leave the unit in.
+        var unit = new BulkProcessUnit(
+            "Mixer",
+            [new RecipeLine("Flour", Flour, 6.0), new RecipeLine("Water", Water, 4.0)],
+            Hold.ForSeconds(1.0),
+            Dough,
+            yield: 0.9);
+
+        unit.Deposit(unit.Inlet("Flour"), BulkLot.Of(Flour, 6.0, new MaterialProperties(600.0, 0.12, 20.0)));
+        unit.Deposit(unit.Inlet("Water"), BulkLot.Of(Water, 4.0, new MaterialProperties(1000.0, 1.0, 10.0)));
+
+        var log = new EventLog();
+        var ctx = new TickContext(0, 1.0, DateTimeOffset.UnixEpoch, log);
+        unit.Advance(ctx);   // Idle -> Filling -> Processing (recipe already complete)
+        Assert.Equal(ProcessPhase.Processing, unit.CurrentPhase);
+
+        unit.Advance(ctx);   // elapsed 0 -> 1.0 s; the 1 s hold releases: yield 0.9 leaves 9 kg
+        Assert.Equal(ProcessPhase.Discharging, unit.CurrentPhase);
+
+        unit.Evaluate(ctx);
+        Assert.Equal(0.0, unit.Progress.Value, 9);
+
+        unit.Withdraw(unit.Out, unit.MassHeld);   // a consumer takes the whole batch
+        unit.Evaluate(ctx);
+        Assert.Equal(1.0, unit.Progress.Value, 9);
+    }
+
+    [Fact]
+    public void TryObserveReportsEmptyThenBlendedLinesThenTheBatch()
+    {
+        var unit = new BulkProcessUnit(
+            "Mixer",
+            [new RecipeLine("Flour", Flour, 6.0), new RecipeLine("Water", Water, 4.0)],
+            Hold.ForSeconds(1.0),
+            Dough);
+
+        Assert.False(unit.TryObserve(0.0, 0.0, out _));
+
+        unit.Deposit(unit.Inlet("Flour"), BulkLot.Of(Flour, 3.0, new MaterialProperties(600.0, 0.12, 20.0)));
+        unit.Deposit(unit.Inlet("Water"), BulkLot.Of(Water, 1.0, new MaterialProperties(1000.0, 1.0, 10.0)));
+
+        var log = new EventLog();
+        var ctx = new TickContext(0, 1.0, DateTimeOffset.UnixEpoch, log);
+        unit.Advance(ctx);   // Idle -> Filling; recipe not yet complete (3/6 flour, 1/4 water)
+        Assert.Equal(ProcessPhase.Filling, unit.CurrentPhase);
+
+        Assert.True(unit.TryObserve(0.0, 0.0, out MaterialObservation filling));
+        Assert.Equal(4.0, filling.Mass, 9);
+        Assert.Equal(0.0, filling.LinearDensity, 9);
+        Assert.Equal(0L, filling.ItemId);
+        Assert.Equal((3.0 * 20.0 + 1.0 * 10.0) / 4.0, filling.Properties.Temperature, 9);
+
+        unit.Deposit(unit.Inlet("Flour"), BulkLot.Of(Flour, 3.0, new MaterialProperties(600.0, 0.12, 20.0)));
+        unit.Deposit(unit.Inlet("Water"), BulkLot.Of(Water, 3.0, new MaterialProperties(1000.0, 1.0, 10.0)));
+        unit.Advance(ctx);   // Filling -> Processing; recipe now complete (6 flour, 4 water)
+        Assert.Equal(ProcessPhase.Processing, unit.CurrentPhase);
+
+        Assert.True(unit.TryObserve(0.0, 0.0, out MaterialObservation processing));
+        Assert.Equal(10.0, processing.Mass, 9);
+        Assert.Equal(0.0, processing.LinearDensity, 9);
+        Assert.Equal(0L, processing.ItemId);
+        Assert.Equal((0.6 * 20.0) + (0.4 * 10.0), processing.Properties.Temperature, 9);
     }
 
     [Fact]
