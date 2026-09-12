@@ -45,6 +45,9 @@ public sealed class BulkSink : FlowComponentBase, IBulkConsumer
     /// <summary>Properties of the last lot deposited.</summary>
     public MaterialProperties LastProperties { get; private set; }
 
+    /// <summary>Material type of the last lot deposited, or null before any.</summary>
+    public MaterialType? LastType { get; private set; }
+
     public override double MassHeld => 0.0;
 
     public override double MassDestroyed => _received;
@@ -76,5 +79,6 @@ public sealed class BulkSink : FlowComponentBase, IBulkConsumer
         _received += lot.Mass;
         _sinceEvaluate += lot.Mass;
         LastProperties = lot.Properties;
+        LastType = lot.Type;
     }
 }
