@@ -1,0 +1,108 @@
+using Dse.Components.Mechanical;
+using Dse.Components.Tests.Fakes;
+using Dse.Core;
+using Dse.Core.Time;
+using Xunit;
+
+namespace Dse.Components.Tests;
+
+public class MotorStarterTests
+{
+    private static SimulationOptions Options() => new()
+    {
+        Seed = 1UL,
+        StartTime = new DateTimeOffset(2026, 1, 1, 6, 0, 0, TimeSpan.Zero),
+        TimeStep = TimeSpan.FromMilliseconds(10),
+    };
+
+    private sealed record Rig(Simulation Sim, MotorStarter Starter, Switch Command, Switch Safety, Setpoint Thermal, Switch Reset);
+
+    private static Rig Build()
+    {
+        var starter = new MotorStarter("K1");
+        var command = new Switch("Cmd");
+        var safety = new Switch("Safe", true);
+        var thermal = new Setpoint("Theta", 0.5);
+        var reset = new Switch("Reset");
+        command.Out.ConnectTo(starter.Command);
+        safety.Out.ConnectTo(starter.SafetyOk);
+        thermal.Out.ConnectTo(starter.ThermalState);
+        reset.Out.ConnectTo(starter.Reset);
+        Simulation sim = new SimulationBuilder(Options()).Add(starter).Add(command).Add(safety).Add(thermal).Add(reset).Build();
+        return new Rig(sim, starter, command, safety, thermal, reset);
+    }
+
+    [Fact]
+    public void ClosesOnCommandAndOpensWhenSafetyDrops()
+    {
+        Rig rig = Build();
+        rig.Sim.Tick();
+        Assert.False(rig.Starter.Contactor.Value);
+
+        rig.Command.Value = true;
+        rig.Sim.Tick();
+        Assert.True(rig.Starter.Contactor.Value);
+
+        rig.Safety.Value = false;
+        rig.Sim.Tick();
+        Assert.False(rig.Starter.Contactor.Value);
+        Assert.False(rig.Starter.Tripped.Value);
+
+        rig.Safety.Value = true;
+        rig.Sim.Tick();
+        Assert.True(rig.Starter.Contactor.Value);   // command still held: no trip, so it closes again
+        Assert.Equal(["CONTACTOR_CLOSED", "CONTACTOR_OPENED", "CONTACTOR_CLOSED"], rig.Sim.Events.Records.Select(r => r.Code));
+    }
+
+    [Fact]
+    public void TripsOnTheThermalStateAndResetsOnlyAfterCooling()
+    {
+        Rig rig = Build();
+        rig.Command.Value = true;
+        rig.Sim.Tick();
+
+        rig.Thermal.Value = 1.1;
+        rig.Sim.Tick();
+        Assert.True(rig.Starter.Tripped.Value);
+        Assert.False(rig.Starter.Contactor.Value);
+
+        rig.Reset.Value = true;                    // still hot
+        rig.Sim.Tick();
+        Assert.True(rig.Starter.Tripped.Value);
+        rig.Reset.Value = false;
+
+        rig.Thermal.Value = 0.8;
+        rig.Sim.Tick();
+        Assert.True(rig.Starter.Tripped.Value);    // cooled, but no reset edge yet
+
+        rig.Reset.Value = true;
+        rig.Sim.Tick();
+        Assert.False(rig.Starter.Tripped.Value);
+        Assert.True(rig.Starter.Contactor.Value);
+        Assert.Equal(
+            ["CONTACTOR_CLOSED", "OVERLOAD_TRIP", "CONTACTOR_OPENED", "OVERLOAD_RESET", "CONTACTOR_CLOSED"],
+            rig.Sim.Events.Records.Select(r => r.Code));
+        Assert.Contains("1.1", rig.Sim.Events.Records[1].Message);
+    }
+
+    [Fact]
+    public void ContactorFaults()
+    {
+        Rig rig = Build();
+        rig.Sim.InjectFaultIn(TimeSpan.Zero, "K1", MotorStarter.ContactorWelded);
+        rig.Sim.Tick();
+        Assert.True(rig.Starter.Contactor.Value);   // no command, yet closed
+
+        rig.Sim.ClearFaultIn(TimeSpan.Zero, "K1", MotorStarter.ContactorWelded);
+        rig.Sim.InjectFaultIn(TimeSpan.Zero, "K1", MotorStarter.ContactorOpen);
+        rig.Command.Value = true;
+        rig.Sim.Tick();
+        Assert.False(rig.Starter.Contactor.Value);
+    }
+
+    [Fact]
+    public void RejectsAResetLevelAboveTheTripLevel()
+    {
+        Assert.Throws<ArgumentException>(() => new MotorStarter("K1", tripLevel: 1.0, resetLevel: 1.0));
+    }
+}
