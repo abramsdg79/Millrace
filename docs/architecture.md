@@ -53,6 +53,17 @@ inside a loop — the resolver is free to place it before or after its producer
 without changing that guarantee. One tick of lag at 10 ms is physically
 irrelevant.
 
+## Latched inputs
+
+A component that knows one of its inputs is a *reflection* — the torque a
+load pushes back up a shaft — can declare that input `latched: true`. A
+latched input reads the value captured in the latch pass of the previous
+tick and creates no ordering edge, so a chain of bidirectional mechanical
+elements (motor ⇄ gearbox ⇄ drive pulley) resolves without a `UnitDelay`.
+`UnitDelay` remains the wiring-time tool for loops between components that
+did not anticipate them. Belts declare no direct feedthrough at all: their
+outputs (load, item count) come from material that moves only in phase 3.
+
 ## Material flow
 
 Mass travels on a second port graph, separate from signals. A `FlowOutlet`
@@ -120,6 +131,31 @@ Every tick the engine sums each node's `MassHeld`, `MassCreated` and
 happens. Validation also rejects recirculation loops (`DSE005`), inlets fed
 from outside the plant (`DSE007`) and flow ports whose owner lacks the
 producer/consumer contract (`DSE008`).
+
+Two more rules for flow-node authors, both consequences of the phase
+structure. **Material changes only in `Advance`.** A source creates mass, a
+former cuts pieces, a process unit fills, holds and releases — all in phase
+3, never in `Evaluate`. `Evaluate` only publishes outputs from the frozen
+state. **Instruments read a node through `IMaterialObservable`.** Because
+nothing moves in phase 2, a belt scale or a pyrometer may hold a reference
+to the node it is mounted on and call `TryObserve` in its `Evaluate`,
+whatever the evaluation order. It may call nothing else on the node.
+
+## Faults
+
+A component that can be broken implements `IFaultTarget`: it publishes
+`FaultDescriptor`s (id, description, parameters with defaults) and accepts
+`ApplyFault` / `ClearFault`. `Simulation.InjectFaultAt` resolves the target,
+the fault and the arguments when the fault is *scheduled*, so a mistake fails
+at the call site naming what exists, and delivers it through the event queue
+in phase 1 of the due tick, logging `FAULT` / `FAULT_CLEARED`. Faults change
+state and behaviour only; the graph is immutable, so injection cannot
+perturb evaluation order.
+
+Every instrument derives from `InstrumentBase` and gets calibration, noise,
+drift, lag, freeze, fail-high and fail-low for free; its `Truth` telemetry
+is what it should have read. Physical faults — bearing friction, belt slip,
+a welded contactor, a blocked chute — are declared per component.
 
 ## Determinism rules
 

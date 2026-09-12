@@ -11,19 +11,21 @@ causally through the plant.
 
 ## Status
 
-Under construction. This repository currently contains the simulation core —
-deterministic clock, per-component random streams, typed signal ports,
-composite components, topological resolution with algebraic-loop detection,
-validation, telemetry, an ordered event log, a runner with real-time and scaled
-execution — and the material layer: bulk and discrete payloads, typed flow
-ports, offer/accept transport resolved downstream-first, cell-based bulk belts
-and position-based discrete belts, residence transforms, and a per-tick mass
-conservation audit.
+Under construction. This repository contains the simulation core
+(deterministic clock, per-component random streams, typed signal ports with
+latched inputs, composites, topological resolution with algebraic-loop
+detection, validation, telemetry, an ordered event log, a runner), the
+material layer (bulk and discrete payloads, typed flow ports, offer/accept
+transport, cell-based and position-based belts, residence transforms, a
+per-tick mass conservation audit), the fault channel, and the first
+component library: sources, sinks, a transfer chute, a former, bulk and
+item process units, three transforms, an instrument base with the full
+sensor-fault vocabulary, six instruments, a motor with an I²t thermal model,
+a drivetrain, a safety circuit, a starter, and a `Conveyor` composite that
+trips its own overload when the belt downstream of it blocks.
 
-The industrial component library, the I/O and real-time layers, declarative
-configuration and the reference samples are planned. See
-`docs/superpowers/specs/` for the design, `docs/superpowers/plans/` for the
-implementation plans, and `docs/architecture.md` for how the engine works.
+The I/O and real-time layers, declarative configuration and the reference
+samples are planned.
 
 ## Build and test
 
