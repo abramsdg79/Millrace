@@ -150,6 +150,29 @@ and says so.
   stalls neither the simulation nor other subscribers; under `Lossless` it is
   faulted at capacity, under `Conflate` it loses intermediate values only.
 
+## Execution rulings (made while running this plan, 2026-09-13)
+
+The code is the authority where it differs from the task text below.
+
+- **R28 — `TagImage.Snapshot()`.** Task 5's threaded test read two tags with two
+  independent `Read(int)` calls and could straddle a `Publish` swap; spec 9.3
+  guarantees a consistent snapshot *per read*, not across reads. `TagImage`
+  gained `public ReadOnlyMemory<TagValue> Snapshot()` (Core only; `ITagReader`
+  is unchanged) and the test reads both tags from one snapshot.
+- **R29 — a saturated reading was already `Uncertain` in plan 3's tests.**
+  `InstrumentBaseTests.ReadingsAreClampedToTheRange` (truth 12 in range 0..10)
+  asserts `Uncertain:OutOfRange`, not the mechanical `Good` swap Task 7 listed.
+- **R30 — `RealtimeHub.Publish` never signals a disposed hub.** `_disposed` is
+  `volatile`, `Publish` returns after the counters when disposed and wraps
+  `Set()` in a `catch (ObjectDisposedException)`; a frame published after
+  `Dispose` is counted, never signalled, never throws.
+- **Test text corrections:** `Assert.Single(first.Changes)` replaces the
+  xUnit2013-violating `Assert.Equal(1, …Count)` in Task 10;
+  `state.Get(…).Value.Quality` replaces `state.Get(…).Quality` in Task 13
+  (`TagState` carries quality inside `Value`). Task 11 and 12 test counts are
+  36 and 49 (one more than stated) because of Task 10's added
+  `PublishAfterDisposeDoesNotThrow`.
+
 ## Plan-1 to plan-3 facts this plan builds on
 
 - `Simulation.Tick()` already calls `DrainDueEvents`, `EvaluateSignals`,
