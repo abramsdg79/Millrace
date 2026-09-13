@@ -22,10 +22,19 @@ component library: sources, sinks, a transfer chute, a former, bulk and
 item process units, three transforms, an instrument base with the full
 sensor-fault vocabulary, seven instruments, a motor with an I²t thermal model,
 a drivetrain, a safety circuit, a starter, and a `Conveyor` composite that
-trips its own overload when the belt downstream of it blocks.
+trips its own overload when the belt downstream of it blocks — plus the I/O
+and real-time layers.
 
-The I/O and real-time layers, declarative configuration and the reference
-samples are planned.
+It also contains the I/O layer (a declared, printable tag directory with
+units, ranges and per-tag quality; a lock-free double-buffered image any thread
+may read; queued writes that land at phase 1 of the next tick; one immutable
+`TickFrame` per tick) and the in-process real-time layer (`Dse.Realtime`: a
+ring-buffered hub, a live state engine for late joiners, subscriptions with
+prefix filters, deadbands, decimation and declared backpressure, and a
+validated command bus), which references the I/O contract only.
+
+Declarative configuration, scenarios and replay, the control blocks, the CLI
+and the reference samples are planned.
 
 See `docs/superpowers/specs/` for the design, `docs/superpowers/plans/` for the
 implementation plans, and `docs/architecture.md` for how the engine works.

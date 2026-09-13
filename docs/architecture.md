@@ -183,3 +183,67 @@ freely by tests. Instrumentation is what the plant can actually measure, and
 arrives with the component library: sensors are ordinary components subject to
 noise, drift, lag and failure. A test asserting true belt speed uses telemetry.
 A controller must go through a sensor, and can be lied to.
+
+## The I/O image
+
+Tags are the plant's front door. A leaf component that has something a plant
+would measure or command implements `ITagProvider` and returns `TagBinding`s
+with names relative to itself — a belt scale declares `Value` with the unit and
+range from its spec and its `Health` port as the quality source; a starter
+declares `Command` and `Reset` as writable and `Contactor` and `Tripped` as
+read-only. The builder prefixes each name with the component id. A composite's
+`Expose(alias, port)` renames the tag to `CompositeId.Alias`, applied
+inside-out so the outermost alias wins, which is how `CV001.Start` and
+`CV001.TonnesPerHour` arise. `SimulationBuilder.Bind` adds a tag for a port
+nothing declared, or replaces a declared one. Every port has at most one
+binding; names are unique; the directory is sorted by name and printable with
+`ToText()`.
+
+Truth stays telemetry. The motor, gearbox, pulleys and belts declare no tags: a
+SCADA that could read true motor current would not need the current sensor.
+
+A writable tag drives an `InputPort` from outside. If the plant already wires
+an output into that input, the declared tag degrades to read-only (the tag
+observes the command instead of issuing it); an explicit `Bind` of a writable
+tag on a driven input is validation error `DSE010`.
+
+`Simulation.IO` is the image. Reads (`Read`, `ReadDouble`, `Handle<T>` …) see
+the snapshot published at the last tick's phase 4, from any thread, without a
+lock: the array is written once, swapped with a volatile write and never
+touched again. Writes queue lock-free and land at phase 1 of the next tick, in
+enqueue order, before scheduled events; each is logged as `WRITE` from the tag
+name, so the write timeline is in the event stream. Every tag value carries a
+`TagQuality`: instruments report `Uncertain:OutOfRange` when the unclamped
+reading leaves their range and `Bad:SensorFailure` under fail-high or fail-low.
+
+Phase 5 wraps the published array, its dirty mask and the tick's event-log
+records in an immutable `TickFrame` and hands it to the attached
+`ITickFrameSink` in one non-blocking call. Nothing downstream of that call can
+affect the run.
+
+## The real-time boundary
+
+`Dse.Realtime` references only `Dse.Io.Abstractions`. It cannot see the model,
+which is what makes a protocol adapter a genuine bolt-on.
+
+`RealtimeHub` is the frame sink. `Publish` is a single-producer enqueue into a
+ring; when the ring is full the incoming frame is dropped and counted, and the
+simulation thread never waits. `Pump` — called by `DispatcherThread` in
+production, directly in tests — drains the ring into `LiveState` (current
+value, quality and last-change tick per tag, plus recent events) and then
+offers each frame to every `Subscription`. `Subscribe` captures the state
+snapshot and registers the subscription under the pump lock, so no frame can
+fall between them: deltas start at the tick after the snapshot.
+
+A subscription diffs each frame against the values it last delivered, filtered
+by tag prefix and deadband (absolute per tag, or a percent of the directory
+range), and optionally decimated to one delta per interval of simulation time
+with the frames in between merged. Under `Conflate` it keeps the latest value
+per tag and never faults; under `Lossless` it queues every delta and faults at
+capacity or on a ring gap rather than drop an event. Consumers pull with
+`TryRead` or wait on `Available`; a slow consumer stalls nothing.
+
+Inbound writes take their own channel: `CommandBus` validates a command against
+the directory — unknown tag, read-only, wrong kind, outside the declared range —
+forwards accepted ones to `ITagWriter`, and reports every command to an
+optional `ICommandRecorder`, which is where a scenario recorder attaches.
