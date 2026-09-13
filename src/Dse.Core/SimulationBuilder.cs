@@ -10,6 +10,7 @@ public sealed class SimulationBuilder
 {
     private readonly List<ISimComponent> _components = [];
     private readonly SimulationOptions _options;
+    private bool _built;
 
     public SimulationBuilder(SimulationOptions options)
     {
@@ -21,6 +22,7 @@ public sealed class SimulationBuilder
     public SimulationBuilder Add(ISimNode node)
     {
         ArgumentNullException.ThrowIfNull(node);
+        ThrowIfBuilt();
 
         switch (node)
         {
@@ -108,6 +110,8 @@ public sealed class SimulationBuilder
     /// <summary>Validates and constructs the simulation. Throws if the plant is invalid.</summary>
     public Simulation Build()
     {
+        ThrowIfBuilt();
+
         ValidationResult result = Validate();
         if (!result.IsValid)
         {
@@ -116,9 +120,32 @@ public sealed class SimulationBuilder
 
         GraphResolver.TryResolve(_components, out ISimComponent[] ordered, out _);
         FlowGraph flow = FlowGraph.Build(FlowNodes());
+        FreezePorts();
+        _built = true;
         return new Simulation(ordered, flow, _options);
     }
 
     /// <summary>The flow nodes among the added leaves, in registration order.</summary>
     private List<IFlowNode> FlowNodes() => _components.OfType<IFlowNode>().ToList();
+
+    private void FreezePorts()
+    {
+        foreach (ISimComponent component in _components)
+        {
+            foreach (Port port in component.Ports)
+            {
+                port.Freeze();
+            }
+        }
+    }
+
+    private void ThrowIfBuilt()
+    {
+        if (_built)
+        {
+            throw new InvalidOperationException(
+                "This builder has already produced a simulation; the plant is immutable after Build(). " +
+                "Create a new builder for a different plant.");
+        }
+    }
 }

@@ -40,4 +40,10 @@ public abstract class Port
 
     /// <summary>True for inputs that capture in the latch pass.</summary>
     internal virtual bool IsLatchedInput => false;
+
+    /// <summary>True once the plant containing this port has been built; wiring is then immutable.</summary>
+    internal bool IsFrozen { get; private set; }
+
+    /// <summary>Marks the port immutable. Called by <see cref="Dse.Core.SimulationBuilder.Build"/> for every port.</summary>
+    internal void Freeze() => IsFrozen = true;
 }
