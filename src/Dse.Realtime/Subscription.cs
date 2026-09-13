@@ -27,9 +27,11 @@ public sealed class Subscription : IDisposable
     private string? _faultReason;
     private bool _disposed;
     private long _delivered;
+    private readonly long _droppedAtSubscribe;
 
-    internal Subscription(RealtimeHub hub, SubscriptionOptions options, StateSnapshot initial)
+    internal Subscription(RealtimeHub hub, SubscriptionOptions options, StateSnapshot initial, long droppedAtSubscribe)
     {
+        _droppedAtSubscribe = droppedAtSubscribe;
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(options.Capacity);
 
         _hub = hub;
@@ -256,14 +258,19 @@ public sealed class Subscription : IDisposable
         }
     }
 
-    /// <summary>Pump thread: the ring dropped frames since the last pump.</summary>
-    internal void NotifyGap(long dropped)
+    /// <summary>
+    /// Pump thread: the hub's total dropped-frame count as of this pump. Faults a
+    /// Lossless subscription only when frames were dropped since it subscribed
+    /// (spec 10.7): a gap that predates the subscription is not its concern.
+    /// </summary>
+    internal void NotifyGap(long droppedTotal)
     {
         lock (_sync)
         {
-            if (_queue is not null)
+            if (_queue is not null && droppedTotal > _droppedAtSubscribe)
             {
-                FaultLocked($"ring overflow: {dropped} frame(s) dropped; a Lossless subscription cannot continue.");
+                long dropped = droppedTotal - _droppedAtSubscribe;
+                FaultLocked($"ring overflow: {dropped} frame(s) dropped since subscribing; a Lossless subscription cannot continue.");
             }
         }
     }

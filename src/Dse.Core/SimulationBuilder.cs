@@ -106,11 +106,22 @@ public sealed class SimulationBuilder
             }
         }
 
+        tags = CollectTags(seen, errors);
+
+        var writablePorts = new HashSet<Port>(ReferenceEqualityComparer.Instance);
+        foreach (TagBinding tag in tags)
+        {
+            if (tag.Access == TagAccess.ReadWrite)
+            {
+                writablePorts.Add(tag.Port);
+            }
+        }
+
         foreach (ISimComponent component in _components)
         {
             foreach (Port port in component.Ports)
             {
-                if (port.IsMissingRequiredConnection)
+                if (port.IsMissingRequiredConnection && !writablePorts.Contains(port))
                 {
                     errors.Add(new ValidationError(
                         "DSE002",
@@ -149,8 +160,6 @@ public sealed class SimulationBuilder
         }
 
         errors.AddRange(FlowGraph.Validate(FlowNodes(), seen, _options.TimeStep.TotalSeconds));
-
-        tags = CollectTags(seen, errors);
 
         return ValidationResult.From(errors);
     }

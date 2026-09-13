@@ -44,6 +44,35 @@ public class IoIntegrationTests
         public IEnumerable<TagBinding> DescribeTags() => [TagBinding.Read("Stolen", _foreign, "V", 0.0, 1.0)];
     }
 
+    /// <summary>A required input whose only driver is a writable tag.</summary>
+    private sealed class Demanding : ComponentBase, ITagProvider
+    {
+        public Demanding(string id)
+            : base(id) => Command = AddInput<bool>("Command", required: true);
+
+        public InputPort<bool> Command { get; }
+
+        public override void Evaluate(in TickContext ctx)
+        {
+        }
+
+        public IEnumerable<TagBinding> DescribeTags() => [TagBinding.Write("Command", Command, "Run command")];
+    }
+
+    [Fact]
+    public void ARequiredInputDrivenOnlyByAWritableTagBuilds()
+    {
+        var d = new Demanding("D");
+        ValidationResult validation = new SimulationBuilder(Options).Add(new Demanding("D")).Validate();
+        Assert.Empty(validation.Errors);
+
+        Simulation sim = new SimulationBuilder(Options).Add(d).Build();
+        sim.IO.WriteBool("D.Command", true);
+        sim.Tick();
+
+        Assert.True(d.Command.Value);
+    }
+
     [Fact]
     public void DirectoryListsDeclaredTagsWithFullNames()
     {

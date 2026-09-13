@@ -154,6 +154,30 @@ public class RealtimeHubTests
     }
 
     [Fact]
+    public void SubscribingAfterAnOverflowDoesNotFaultTheNewSubscriber()
+    {
+        using var hub = new RealtimeHub(Frames.Directory(), ringCapacity: 1);
+
+        hub.Publish(Frames.Full(0, 1.0, false, 0));
+        hub.Publish(Frames.Full(1, 2.0, false, 0));
+
+        using Subscription sub = hub.Subscribe(Lossless);
+        hub.Pump();
+
+        Assert.False(sub.IsFaulted);
+        Assert.True(sub.TryRead(out FrameDelta delta));
+        Assert.Equal(0L, delta.Tick);
+        Assert.Equal(1L, hub.DroppedFrames);
+
+        hub.Publish(Frames.Full(2, 3.0, false, 0));
+        hub.Publish(Frames.Full(3, 4.0, false, 0));
+        hub.Pump();
+
+        Assert.True(sub.IsFaulted);
+        Assert.Contains("1 frame(s) dropped since subscribing", sub.FaultReason, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void DisposeUnsubscribes()
     {
         using var hub = new RealtimeHub(Frames.Directory());

@@ -106,9 +106,10 @@ public sealed class RealtimeHub : ITickFrameSink, IDisposable
             long gap = Interlocked.Exchange(ref _droppedSinceLastPump, 0L);
             if (gap > 0L)
             {
+                long droppedNow = Volatile.Read(ref _dropped);
                 foreach (Subscription subscription in _subscriptions)
                 {
-                    subscription.NotifyGap(gap);
+                    subscription.NotifyGap(droppedNow);
                 }
             }
 
@@ -130,14 +131,17 @@ public sealed class RealtimeHub : ITickFrameSink, IDisposable
 
     /// <summary>
     /// Captures the state snapshot and registers the subscription in one step
-    /// under the pump lock, so no frame can fall between them (spec 10.7).
+    /// under the pump lock, so no frame can fall between them (spec 10.7). Also
+    /// captures the current dropped-frame count, so a later gap only faults the
+    /// subscription if the drop happened after it subscribed.
     /// </summary>
     public Subscription Subscribe(SubscriptionOptions? options = null)
     {
         lock (_pumpLock)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            var subscription = new Subscription(this, options ?? new SubscriptionOptions(), State.Snapshot());
+            var subscription = new Subscription(
+                this, options ?? new SubscriptionOptions(), State.Snapshot(), Volatile.Read(ref _dropped));
             _subscriptions.Add(subscription);
             return subscription;
         }

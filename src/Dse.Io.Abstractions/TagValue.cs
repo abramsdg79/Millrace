@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Dse.Io;
 
 /// <summary>
-/// One tag's value with its quality. Sixteen bytes, no references, immutable.
+/// One tag's value with its quality. Twenty-four bytes with padding, no references, immutable.
 /// Equality compares kind, payload bits and quality, so a quality change alone
 /// counts as a change. Doubles compare by bit pattern.
 /// </summary>

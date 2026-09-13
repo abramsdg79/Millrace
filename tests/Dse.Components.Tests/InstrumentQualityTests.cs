@@ -45,6 +45,20 @@ public class InstrumentQualityTests
     }
 
     [Fact]
+    public void AReadingExactlyAtTheRangeLimitIsGood()
+    {
+        (Simulation sim, ProbeInstrument probe, Setpoint truth) = Plant();
+
+        truth.Value = 10.0;
+        sim.Tick();
+        Assert.Equal((10.0, TagQuality.Good), (probe.Value.Value, probe.Health.Value));
+
+        truth.Value = 0.0;
+        sim.Tick();
+        Assert.Equal((0.0, TagQuality.Good), (probe.Value.Value, probe.Health.Value));
+    }
+
+    [Fact]
     public void FailFaultsAreBadNotUncertain()
     {
         (Simulation sim, ProbeInstrument probe, Setpoint truth) = Plant();
