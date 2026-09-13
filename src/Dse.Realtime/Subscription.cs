@@ -18,6 +18,11 @@ public sealed class Subscription : IDisposable
     private readonly Queue<FrameDelta>? _queue;
     private readonly DeltaAccumulator? _pending;
     private readonly List<TagChange> _scratch = [];
+    private readonly bool[] _included;
+    private readonly double[] _deadband;
+    private readonly DeltaAccumulator? _window;
+    private readonly TimeSpan _decimation;
+    private DateTimeOffset? _lastEmit;
     private bool _faulted;
     private string? _faultReason;
     private bool _disposed;
@@ -45,6 +50,56 @@ public sealed class Subscription : IDisposable
         else
         {
             _pending = new DeltaAccumulator(_lastSent.Length, options.Capacity);
+        }
+
+        ITagDirectory directory = hub.Directory;
+        if (directory.Count != _lastSent.Length)
+        {
+            throw new ArgumentException("The snapshot does not match the hub's directory.", nameof(initial));
+        }
+
+        ArgumentOutOfRangeException.ThrowIfNegative(options.DeadbandPercentOfRange);
+        if (options.Decimation is { } decimation)
+        {
+            if (decimation <= TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(options), decimation, "Decimation must be positive.");
+            }
+
+            _decimation = decimation;
+            _window = new DeltaAccumulator(_lastSent.Length, int.MaxValue);
+        }
+
+        _included = new bool[_lastSent.Length];
+        _deadband = new double[_lastSent.Length];
+        for (int i = 0; i < _included.Length; i++)
+        {
+            TagDescriptor tag = directory[i];
+            _included[i] = options.Prefixes is null || Matches(tag.Name, options.Prefixes);
+            _deadband[i] = double.NaN;
+            if (tag.Kind == TagKind.Double && options.DeadbandPercentOfRange > 0.0 && tag.HasRange)
+            {
+                _deadband[i] = (tag.RangeHigh - tag.RangeLow) * options.DeadbandPercentOfRange / 100.0;
+            }
+        }
+
+        if (options.Deadbands is not null)
+        {
+            foreach ((string name, double band) in options.Deadbands)
+            {
+                if (!directory.TryFind(name, out TagDescriptor tag))
+                {
+                    throw new ArgumentException($"Deadband for unknown tag '{name}'.", nameof(options));
+                }
+
+                if (tag.Kind != TagKind.Double)
+                {
+                    throw new ArgumentException($"Deadband on '{name}', a {tag.Kind} tag; deadbands apply to double tags only.", nameof(options));
+                }
+
+                ArgumentOutOfRangeException.ThrowIfNegative(band, nameof(options));
+                _deadband[tag.Index] = band;
+            }
         }
     }
 
@@ -169,12 +224,34 @@ public sealed class Subscription : IDisposable
             }
 
             Collect(frame, _scratch);
-            if (_scratch.Count == 0 && frame.Events.Count == 0)
+            bool content = _scratch.Count > 0 || frame.Events.Count > 0;
+
+            if (_window is null)
             {
-                return;
+                if (content)
+                {
+                    Deliver(frame.Tick, frame.SimTime, _scratch, frame.Events);
+                }
+            }
+            else
+            {
+                if (content)
+                {
+                    _window.Add(frame.Tick, frame.SimTime, _scratch, frame.Events);
+                }
+
+                if (_lastEmit is null || frame.SimTime - _lastEmit.Value >= _decimation)
+                {
+                    if (_window.HasContent)
+                    {
+                        FrameDelta merged = _window.Flush();
+                        Deliver(merged.Tick, merged.SimTime, merged.Changes, merged.Events);
+                    }
+
+                    _lastEmit = frame.SimTime;
+                }
             }
 
-            Deliver(frame.Tick, frame.SimTime, _scratch, frame.Events);
             _scratch.Clear();
         }
     }
@@ -223,17 +300,32 @@ public sealed class Subscription : IDisposable
         ReadOnlySpan<TagValue> values = frame.Values.Span;
         for (int i = 0; i < _lastSent.Length; i++)
         {
-            if (values[i] == _lastSent[i])
+            if (!_included[i])
             {
                 continue;
             }
 
-            into.Add(new TagChange(i, values[i]));
-            _lastSent[i] = values[i];
+            TagValue value = values[i];
+            TagValue last = _lastSent[i];
+            if (value == last)
+            {
+                continue;
+            }
+
+            double band = _deadband[i];
+            if (!double.IsNaN(band)
+                && value.Quality == last.Quality
+                && Math.Abs(value.AsDouble - last.AsDouble) < band)
+            {
+                continue;
+            }
+
+            into.Add(new TagChange(i, value));
+            _lastSent[i] = value;
         }
     }
 
-    private void Deliver(long tick, DateTimeOffset simTime, List<TagChange> changes, IReadOnlyList<DiscreteEvent> events)
+    private void Deliver(long tick, DateTimeOffset simTime, IReadOnlyList<TagChange> changes, IReadOnlyList<DiscreteEvent> events)
     {
         if (_queue is not null)
         {
@@ -243,7 +335,7 @@ public sealed class Subscription : IDisposable
                 return;
             }
 
-            _queue.Enqueue(new FrameDelta(tick, simTime, changes.ToArray(), events));
+            _queue.Enqueue(new FrameDelta(tick, simTime, changes as TagChange[] ?? changes.ToArray(), events));
         }
         else
         {
@@ -264,5 +356,28 @@ public sealed class Subscription : IDisposable
         _faultReason = reason;
         _queue?.Clear();
         _available.Set();
+    }
+
+    private static bool Matches(string name, IReadOnlyList<string> prefixes)
+    {
+        for (int i = 0; i < prefixes.Count; i++)
+        {
+            string prefix = prefixes[i];
+            if (name.Length == prefix.Length)
+            {
+                if (string.Equals(name, prefix, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+            else if (name.Length > prefix.Length
+                     && name[prefix.Length] == '.'
+                     && name.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
