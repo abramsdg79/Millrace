@@ -1,6 +1,7 @@
 using System.Globalization;
 using Dse.Core.Contexts;
 using Dse.Core.Graph;
+using Dse.Core.Io;
 
 namespace Dse.Components.Instruments;
 
@@ -36,6 +37,11 @@ public sealed class ZeroSpeedSwitch : InstrumentBase
 
     /// <summary>s the reading must stay below the threshold.</summary>
     public double DelaySeconds { get; }
+
+    protected override string ValueDescription => "Monitored speed";
+
+    public override IEnumerable<TagBinding> DescribeTags() =>
+        base.DescribeTags().Append(TagBinding.Read("Stopped", Stopped, "Below the threshold for the delay"));
 
     protected override double Measure(in TickContext ctx) => Speed.Value;
 

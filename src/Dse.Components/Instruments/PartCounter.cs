@@ -2,6 +2,7 @@ using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
+using Dse.Core.Io;
 using Dse.Core.Telemetry;
 
 namespace Dse.Components.Instruments;
@@ -12,7 +13,7 @@ namespace Dse.Components.Instruments;
 /// passing through the window within one tick are one count — exactly what
 /// a real photo-eye misses.
 /// </summary>
-public sealed class PartCounter : ComponentBase, IFaultTarget
+public sealed class PartCounter : ComponentBase, IFaultTarget, ITagProvider
 {
     /// <summary>The eye is obscured: it sees nothing until cleared.</summary>
     public const string Blinded = "blinded";
@@ -54,6 +55,12 @@ public sealed class PartCounter : ComponentBase, IFaultTarget
     public double WindowM { get; }
 
     public IReadOnlyList<FaultDescriptor> SupportedFaults => Faults;
+
+    public IEnumerable<TagBinding> DescribeTags() =>
+    [
+        TagBinding.Read("Count", Count, "count", "Items counted"),
+        TagBinding.Read("Present", Present, "Item in the window"),
+    ];
 
     public override void Initialize(in InitContext ctx) =>
         _countTelemetry = ctx.RegisterTelemetry("Count", "count");

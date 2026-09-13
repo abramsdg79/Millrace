@@ -3,6 +3,7 @@ using Dse.Components.Tests.Fakes;
 using Dse.Core;
 using Dse.Core.Faults;
 using Dse.Core.Time;
+using Dse.Io;
 using Xunit;
 
 namespace Dse.Components.Tests;
@@ -40,7 +41,7 @@ public class SignalInstrumentTests
         t.Value = 250.0;
         sim.Tick();
 
-        Assert.Equal((5.0, InstrumentHealth.Bad), (speed.Value.Value, speed.Health.Value));
+        Assert.Equal((5.0, TagQuality.Bad(QualityDetail.SensorFailure)), (speed.Value.Value, speed.Health.Value));
         Assert.Equal(25.0, current.Value.Value);
         Assert.Equal(180.0, temperature.Value.Value);
         Assert.Equal(250.0, sim.Telemetry.Read("TT.Truth"));

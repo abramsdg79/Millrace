@@ -4,6 +4,7 @@ using Dse.Core;
 using Dse.Core.Faults;
 using Dse.Core.Graph;
 using Dse.Core.Time;
+using Dse.Io;
 using Xunit;
 
 namespace Dse.Components.Tests;
@@ -44,7 +45,7 @@ public class InstrumentBaseTests
         var (probe, _) = Probe(Clean, 3.5);
         Run(probe, 3);
         Assert.Equal(3.5, probe.Value.Value);
-        Assert.Equal(InstrumentHealth.Good, probe.Health.Value);
+        Assert.Equal(TagQuality.Good, probe.Health.Value);
     }
 
     [Fact]
@@ -53,7 +54,7 @@ public class InstrumentBaseTests
         var (probe, _) = Probe(Clean, 12.0);
         Run(probe, 1);
         Assert.Equal(10.0, probe.Value.Value);
-        Assert.Equal(InstrumentHealth.Good, probe.Health.Value);
+        Assert.Equal(TagQuality.Uncertain(QualityDetail.OutOfRange), probe.Health.Value);
     }
 
     [Fact]
@@ -114,7 +115,7 @@ public class InstrumentBaseTests
         truth.Value = 6.0;
         Run(probe, 5);
         Assert.Equal(2.0, probe.Value.Value);
-        Assert.Equal(InstrumentHealth.Good, probe.Health.Value);
+        Assert.Equal(TagQuality.Good, probe.Health.Value);
 
         probe.ClearFault(InstrumentFaults.Freeze);
         Run(probe, 1);
@@ -127,16 +128,16 @@ public class InstrumentBaseTests
         var (probe, _) = Probe(Clean, 2.0);
         probe.ApplyFault(InstrumentFaults.FailHigh, FaultArguments.None);
         Run(probe, 1);
-        Assert.Equal((10.0, InstrumentHealth.Bad), (probe.Value.Value, probe.Health.Value));
+        Assert.Equal((10.0, TagQuality.Bad(QualityDetail.SensorFailure)), (probe.Value.Value, probe.Health.Value));
 
         probe.ClearFault(InstrumentFaults.FailHigh);
         probe.ApplyFault(InstrumentFaults.FailLow, FaultArguments.None);
         Run(probe, 1);
-        Assert.Equal((0.0, InstrumentHealth.Bad), (probe.Value.Value, probe.Health.Value));
+        Assert.Equal((0.0, TagQuality.Bad(QualityDetail.SensorFailure)), (probe.Value.Value, probe.Health.Value));
 
         probe.ClearFault(InstrumentFaults.FailLow);
         Run(probe, 1);
-        Assert.Equal((2.0, InstrumentHealth.Good), (probe.Value.Value, probe.Health.Value));
+        Assert.Equal((2.0, TagQuality.Good), (probe.Value.Value, probe.Health.Value));
     }
 
     [Fact]

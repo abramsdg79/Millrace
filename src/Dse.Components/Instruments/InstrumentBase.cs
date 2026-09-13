@@ -1,8 +1,10 @@
 using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Graph;
+using Dse.Core.Io;
 using Dse.Core.Randomness;
 using Dse.Core.Telemetry;
+using Dse.Io;
 
 namespace Dse.Components.Instruments;
 
@@ -12,7 +14,7 @@ namespace Dse.Components.Instruments;
 /// failure — so a new instrument arrives with the whole fault vocabulary
 /// working. Telemetry <c>Truth</c> is the unfaulted measurement, for tests.
 /// </summary>
-public abstract class InstrumentBase : ComponentBase, IFaultTarget
+public abstract class InstrumentBase : ComponentBase, IFaultTarget, ITagProvider
 {
     private DeterministicRandom? _random;
     private TelemetryHandle _truthTelemetry;
@@ -43,7 +45,7 @@ public abstract class InstrumentBase : ComponentBase, IFaultTarget
 
         Spec = spec;
         Value = AddOutput<double>("Value");
-        Health = AddOutput<InstrumentHealth>("Health");
+        Health = AddOutput<TagQuality>("Health");
     }
 
     public InstrumentSpec Spec { get; }
@@ -51,7 +53,12 @@ public abstract class InstrumentBase : ComponentBase, IFaultTarget
     /// <summary>The reading, in <see cref="InstrumentSpec.Unit"/>, clamped to the range.</summary>
     public OutputPort<double> Value { get; }
 
-    public OutputPort<InstrumentHealth> Health { get; }
+    /// <summary>
+    /// What the transmitter reports about its own signal, in the I/O layer's
+    /// terms: Good; Uncertain:OutOfRange when the reading saturated at a range
+    /// limit; Bad:SensorFailure under fail-high or fail-low.
+    /// </summary>
+    public OutputPort<TagQuality> Health { get; }
 
     public IReadOnlyList<FaultDescriptor> SupportedFaults => InstrumentFaults.All;
 
@@ -98,16 +105,20 @@ public abstract class InstrumentBase : ComponentBase, IFaultTarget
         }
 
         double output = _frozen ? _lastOutput : _filtered;
-        InstrumentHealth health = InstrumentHealth.Good;
+        TagQuality health = TagQuality.Good;
         if (_failHigh)
         {
             output = Spec.RangeHigh;
-            health = InstrumentHealth.Bad;
+            health = TagQuality.Bad(QualityDetail.SensorFailure);
         }
         else if (_failLow)
         {
             output = Spec.RangeLow;
-            health = InstrumentHealth.Bad;
+            health = TagQuality.Bad(QualityDetail.SensorFailure);
+        }
+        else if (output < Spec.RangeLow || output > Spec.RangeHigh)
+        {
+            health = TagQuality.Uncertain(QualityDetail.OutOfRange);
         }
 
         output = Math.Clamp(output, Spec.RangeLow, Spec.RangeHigh);
@@ -121,6 +132,18 @@ public abstract class InstrumentBase : ComponentBase, IFaultTarget
     protected virtual void OnEvaluated(double reading, in TickContext ctx)
     {
     }
+
+    /// <summary>The description published for the <c>Value</c> tag; override to say what is measured.</summary>
+    protected virtual string ValueDescription => "Measured value";
+
+    /// <summary>
+    /// Publishes <c>Value</c> with the spec's unit and range and this
+    /// instrument's health as quality (R25). Override and concatenate to add tags.
+    /// </summary>
+    public virtual IEnumerable<TagBinding> DescribeTags() =>
+    [
+        TagBinding.Read("Value", Value, Spec.Unit, Spec.RangeLow, Spec.RangeHigh, ValueDescription, Health),
+    ];
 
     public void ApplyFault(string faultId, FaultArguments arguments)
     {
