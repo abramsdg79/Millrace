@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dse.Components", "src\Dse.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dse.Components.Tests", "tests\Dse.Components.Tests\Dse.Components.Tests.csproj", "{5A73A608-572B-4E1F-9695-6E0E9F67DE0F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dse.Io.Abstractions.Tests", "tests\Dse.Io.Abstractions.Tests\Dse.Io.Abstractions.Tests.csproj", "{10C91360-E31E-4C14-BB45-1793EF18088D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +89,18 @@ Global
 		{5A73A608-572B-4E1F-9695-6E0E9F67DE0F}.Release|x64.Build.0 = Release|Any CPU
 		{5A73A608-572B-4E1F-9695-6E0E9F67DE0F}.Release|x86.ActiveCfg = Release|Any CPU
 		{5A73A608-572B-4E1F-9695-6E0E9F67DE0F}.Release|x86.Build.0 = Release|Any CPU
+		{10C91360-E31E-4C14-BB45-1793EF18088D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10C91360-E31E-4C14-BB45-1793EF18088D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10C91360-E31E-4C14-BB45-1793EF18088D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{10C91360-E31E-4C14-BB45-1793EF18088D}.Debug|x64.Build.0 = Debug|Any CPU
+		{10C91360-E31E-4C14-BB45-1793EF18088D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{10C91360-E31E-4C14-BB45-1793EF18088D}.Debug|x86.Build.0 = Debug|Any CPU
+		{10C91360-E31E-4C14-BB45-1793EF18088D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10C91360-E31E-4C14-BB45-1793EF18088D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10C91360-E31E-4C14-BB45-1793EF18088D}.Release|x64.ActiveCfg = Release|Any CPU
+		{10C91360-E31E-4C14-BB45-1793EF18088D}.Release|x64.Build.0 = Release|Any CPU
+		{10C91360-E31E-4C14-BB45-1793EF18088D}.Release|x86.ActiveCfg = Release|Any CPU
+		{10C91360-E31E-4C14-BB45-1793EF18088D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -97,5 +111,6 @@ Global
 		{26F7D23A-67DA-4D24-A3B6-CD08221BE803} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{023BF18B-43FC-47A4-9DE8-4A207A6BB398} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{5A73A608-572B-4E1F-9695-6E0E9F67DE0F} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{10C91360-E31E-4C14-BB45-1793EF18088D} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

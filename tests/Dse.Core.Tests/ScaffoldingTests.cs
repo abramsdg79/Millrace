@@ -8,7 +8,7 @@ public class ScaffoldingTests
     [Fact]
     public void CoreAssemblyIsReferenceable()
     {
-        Assembly core = typeof(Dse.Io.Placeholder).Assembly;
+        Assembly core = typeof(Dse.Io.TagValue).Assembly;
         Assert.Equal("Dse.Io.Abstractions", core.GetName().Name);
     }
 }
