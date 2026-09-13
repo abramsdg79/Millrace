@@ -166,6 +166,23 @@ The code is the authority where it differs from the task text below.
   `volatile`, `Publish` returns after the counters when disposed and wraps
   `Set()` in a `catch (ObjectDisposedException)`; a frame published after
   `Dispose` is counted, never signalled, never throws.
+- **R31 — writable tags satisfy a required input at validation time.** The
+  builder collects tags before the `DSE002` check and skips it for any port a
+  `ReadWrite` binding drives; the plan's Task 6 ordering (collect last) made
+  R23 unreachable for `required: true` inputs.
+- **R32 — a ring gap faults only subscriptions that existed when it happened.**
+  `Subscribe` stamps the hub's `DroppedFrames`; `NotifyGap` receives the
+  running total and faults a Lossless subscription only when it has advanced
+  past the stamp. A subscriber attached after an overflow burst is not
+  disconnected on its first pump.
+- **Follow-ups parked at the final review (not built):** `SnapshotTick` and
+  `Snapshot()` are not read atomically (frame consumers use `TickFrame.Tick`);
+  `RealtimeHub.Pending` can read negative from a third thread;
+  `DispatcherThread.Dispose` waits up to `idleWait`; a dispatcher whose `Pump`
+  throws records `Failure` and goes silent — add observability before a
+  protocol adapter exists; `Subscription.Dispose` must not race a waiter on
+  `Available`; `AttachFrameSink` is documented "any time" but the field is not
+  volatile.
 - **Test text corrections:** `Assert.Single(first.Changes)` replaces the
   xUnit2013-violating `Assert.Equal(1, …Count)` in Task 10;
   `state.Get(…).Value.Quality` replaces `state.Get(…).Quality` in Task 13
