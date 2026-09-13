@@ -75,6 +75,30 @@ public abstract class CompositeComponent : ISimNode, IQualifiable
         }
     }
 
+    /// <summary>Every nested composite, children before parents, this one last. Build-time only.</summary>
+    internal IEnumerable<CompositeComponent> CompositesInsideOut()
+    {
+        foreach (ISimNode child in _children)
+        {
+            if (child is CompositeComponent composite)
+            {
+                foreach (CompositeComponent nested in composite.CompositesInsideOut())
+                {
+                    yield return nested;
+                }
+            }
+        }
+
+        yield return this;
+    }
+
+    /// <summary>Exposed signal ports (not flow ports) by alias, in ordinal alias order. Build-time only.</summary>
+    internal IEnumerable<(string Alias, Port Port)> ExposedSignalPorts() =>
+        _aliases
+            .Where(pair => pair.Value is not FlowPort)
+            .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+            .Select(pair => (pair.Key, pair.Value));
+
     private TPort Resolve<TPort>(string alias)
         where TPort : Port
     {

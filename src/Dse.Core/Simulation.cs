@@ -3,10 +3,12 @@ using Dse.Core.Events;
 using Dse.Core.Faults;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
+using Dse.Core.Io;
 using Dse.Core.Logging;
 using Dse.Core.Randomness;
 using Dse.Core.Telemetry;
 using Dse.Core.Time;
+using Dse.Io;
 
 namespace Dse.Core;
 
@@ -26,7 +28,11 @@ public sealed class Simulation
     private readonly Dictionary<string, IFaultTarget> _faultTargets;
     private bool _initialized;
 
-    internal Simulation(ISimComponent[] components, FlowGraph flow, SimulationOptions options)
+    internal Simulation(
+        ISimComponent[] components,
+        FlowGraph flow,
+        SimulationOptions options,
+        TagImage io)
     {
         _components = components;
         _flow = flow;
@@ -34,6 +40,7 @@ public sealed class Simulation
         _checkConservation = options.CheckConservation;
         _conservationTolerance = options.ConservationTolerance;
         Clock = new SimulationClock(options.StartTime, options.TimeStep);
+        IO = io;
 
         _faultTargets = new Dictionary<string, IFaultTarget>(StringComparer.Ordinal);
         foreach (ISimComponent component in components)
@@ -46,6 +53,30 @@ public sealed class Simulation
     }
 
     public SimulationClock Clock { get; }
+
+    /// <summary>The I/O image: the string and handle read API, and the queued write API (spec 9).</summary>
+    public TagImage IO { get; }
+
+    /// <summary>Where phase 5 hands each frame, or null when nothing is attached.</summary>
+    public ITickFrameSink? FrameSink { get; private set; }
+
+    /// <summary>
+    /// Attaches the one frame sink (spec 10.1). May be called at any time —
+    /// a late-attached consumer sees frames from the next tick on, and the
+    /// first frame it receives carries the full image — but only once.
+    /// </summary>
+    public void AttachFrameSink(ITickFrameSink sink)
+    {
+        ArgumentNullException.ThrowIfNull(sink);
+        if (FrameSink is not null)
+        {
+            throw new InvalidOperationException(
+                "A frame sink is already attached. The simulation publishes to exactly one sink; " +
+                "fan-out is the real-time layer's job.");
+        }
+
+        FrameSink = sink;
+    }
 
     public TelemetryRegistry Telemetry { get; } = new();
 
@@ -145,6 +176,7 @@ public sealed class Simulation
             component.Initialize(context);
         }
 
+        IO.Prime();
         _initialized = true;
     }
 
@@ -155,12 +187,14 @@ public sealed class Simulation
 
         var context = new TickContext(
             Clock.TickCount, Clock.DeltaSeconds, Clock.Now, Events);
+        int eventsBefore = Events.Records.Count;
 
-        DrainDueEvents();             // phase 1
-        EvaluateSignals(in context);  // phase 2
-        AdvanceFlow(in context);      // phase 3
-        PublishIo();                  // phase 4
-        EmitFrame();                  // phase 5
+        IO.ApplyPendingWrites(in context);                                   // phase 1: external writes (R24)
+        DrainDueEvents();                                                    // phase 1: scheduled events
+        EvaluateSignals(in context);                                         // phase 2
+        AdvanceFlow(in context);                                             // phase 3
+        (TagValue[] values, DirtyMask dirty) = IO.Publish(Clock.TickCount);  // phase 4
+        EmitFrame(in context, values, dirty, eventsBefore);                  // phase 5
 
         Clock.Advance();
     }
@@ -217,14 +251,24 @@ public sealed class Simulation
         }
     }
 
-    /// <summary>Phase 4. The I/O image arrives in plan 4.</summary>
-    private static void PublishIo()
+    /// <summary>Phase 5. Wraps the phase-4 snapshot and this tick's events into a frame, if anyone is listening.</summary>
+    private void EmitFrame(in TickContext context, TagValue[] values, DirtyMask dirty, int eventsBefore)
     {
-    }
+        if (FrameSink is null)
+        {
+            return;
+        }
 
-    /// <summary>Phase 5. Tick frames arrive in plan 4; the event log is already appended during evaluation.</summary>
-    private static void EmitFrame()
-    {
+        IReadOnlyList<SimEventRecord> records = Events.Records;
+        int count = records.Count - eventsBefore;
+        DiscreteEvent[] events = count == 0 ? [] : new DiscreteEvent[count];
+        for (int i = 0; i < count; i++)
+        {
+            SimEventRecord record = records[eventsBefore + i];
+            events[i] = new DiscreteEvent(record.Tick, record.SimTime, record.Source, record.Code, record.Message);
+        }
+
+        FrameSink.Publish(new TickFrame(context.Tick, context.SimTime, values, dirty, events));
     }
 
     /// <summary>A resolved fault injection or clearance, logged when it lands.</summary>
