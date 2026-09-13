@@ -3,6 +3,7 @@ using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
+using Dse.Core.Io;
 using Dse.Core.Telemetry;
 
 namespace Dse.Components.Flow;
@@ -13,7 +14,7 @@ namespace Dse.Components.Flow;
 /// carrying the hopper's blended properties, and queued for the outlet. The
 /// crossing is explicit because real plants contain exactly this machine.
 /// </summary>
-public sealed class Former : FlowComponentBase, IBulkConsumer, IItemProducer, IMaterialObservable, IFaultTarget
+public sealed class Former : FlowComponentBase, IBulkConsumer, IItemProducer, IMaterialObservable, IFaultTarget, ITagProvider
 {
     /// <summary>The cutter jams: nothing is formed until cleared. Bulk still accumulates.</summary>
     public const string Jam = "jam";
@@ -101,6 +102,13 @@ public sealed class Former : FlowComponentBase, IBulkConsumer, IItemProducer, IM
     public override double MassHeld => _hopper.Mass + (_ready.Count * PieceMassKg);
 
     public IReadOnlyList<FaultDescriptor> SupportedFaults => Faults;
+
+    public IEnumerable<TagBinding> DescribeTags() =>
+    [
+        TagBinding.Read("PiecesFormed", PiecesFormed, "count", "Pieces formed"),
+        TagBinding.Read("HopperLevel", HopperLevel, "fraction", 0.0, 1.0, "Hopper mass over capacity"),
+        TagBinding.Read("Queued", Queued, "count", "Pieces waiting at the outlet"),
+    ];
 
     public override void Initialize(in InitContext ctx)
     {

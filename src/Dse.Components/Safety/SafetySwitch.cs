@@ -1,6 +1,7 @@
 using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Graph;
+using Dse.Core.Io;
 
 namespace Dse.Components.Safety;
 
@@ -9,7 +10,7 @@ namespace Dse.Components.Safety;
 /// actuates it. Wiring that opens fails safe; a contact that welds fails
 /// dangerous. Both are real, and both are faults here.
 /// </summary>
-public abstract class SafetySwitch : ComponentBase, IFaultTarget
+public abstract class SafetySwitch : ComponentBase, IFaultTarget, ITagProvider
 {
     /// <summary>The loop is open: reads not-OK whatever the operator does.</summary>
     public const string WiringOpen = "wiring-open";
@@ -41,6 +42,12 @@ public abstract class SafetySwitch : ComponentBase, IFaultTarget
     public OutputPort<bool> Ok { get; }
 
     public IReadOnlyList<FaultDescriptor> SupportedFaults => Faults;
+
+    public IEnumerable<TagBinding> DescribeTags() =>
+    [
+        TagBinding.Write("Actuated", Actuated, "Actuated by the operator"),
+        TagBinding.Read("Ok", Ok, "Safety loop healthy"),
+    ];
 
     protected abstract string ActuatedCode { get; }
 

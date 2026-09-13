@@ -2,6 +2,7 @@ using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
+using Dse.Core.Io;
 using Dse.Core.Telemetry;
 
 namespace Dse.Components.Flow;
@@ -11,7 +12,7 @@ namespace Dse.Components.Flow;
 /// and offers everything it holds, so a blocked outlet fills it and a full
 /// chute stops the belt feeding it — spec 7.8's chain, with no code of its own.
 /// </summary>
-public sealed class TransferChute : FlowComponentBase, IBulkConsumer, IBulkProducer, IMaterialObservable, IFaultTarget
+public sealed class TransferChute : FlowComponentBase, IBulkConsumer, IBulkProducer, IMaterialObservable, IFaultTarget, ITagProvider
 {
     /// <summary>Material bridges in the chute: nothing discharges until cleared.</summary>
     public const string Blockage = "blockage";
@@ -55,6 +56,12 @@ public sealed class TransferChute : FlowComponentBase, IBulkConsumer, IBulkProdu
     public override double MassHeld => _held.Mass;
 
     public IReadOnlyList<FaultDescriptor> SupportedFaults => Faults;
+
+    public IEnumerable<TagBinding> DescribeTags() =>
+    [
+        TagBinding.Read("Level", Level, "fraction", 0.0, 1.0, "Held mass over capacity"),
+        TagBinding.Read("Full", Full, "At capacity"),
+    ];
 
     public override void Initialize(in InitContext ctx) =>
         _heldTelemetry = ctx.RegisterTelemetry("Held", "kg");

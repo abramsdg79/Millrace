@@ -2,6 +2,7 @@ using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
+using Dse.Core.Io;
 using Dse.Core.Telemetry;
 
 namespace Dse.Components.Flow;
@@ -12,7 +13,7 @@ namespace Dse.Components.Flow;
 /// blocked outlet fills; once it is full the feeder waits, so nothing is
 /// created that the plant cannot take. Mass is created in <see cref="Advance"/>.
 /// </summary>
-public sealed class BulkSource : FlowComponentBase, IBulkProducer, IFaultTarget
+public sealed class BulkSource : FlowComponentBase, IBulkProducer, IFaultTarget, ITagProvider
 {
     /// <summary>The supply runs out: nothing is created until cleared.</summary>
     public const string Starve = "starve";
@@ -71,6 +72,15 @@ public sealed class BulkSource : FlowComponentBase, IBulkProducer, IFaultTarget
     public override double MassCreated => _created;
 
     public IReadOnlyList<FaultDescriptor> SupportedFaults => Faults;
+
+    public IEnumerable<TagBinding> DescribeTags() =>
+    [
+        TagBinding.Write("Enabled", Enabled, "Feeder enabled"),
+        TagBinding.Write("Rate", Rate, "kg/s", description: "Feed rate"),
+        double.IsFinite(HopperCapacityKg)
+            ? TagBinding.Read("HopperMass", HopperMass, "kg", 0.0, HopperCapacityKg, "Mass in the hopper")
+            : TagBinding.Read("HopperMass", HopperMass, "kg", description: "Mass in the hopper"),
+    ];
 
     public override void Initialize(in InitContext ctx)
     {

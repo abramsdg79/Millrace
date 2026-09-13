@@ -2,6 +2,7 @@ using System.Globalization;
 using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Graph;
+using Dse.Core.Io;
 
 namespace Dse.Components.Safety;
 
@@ -11,7 +12,7 @@ namespace Dse.Components.Safety;
 /// power-up, when it needs its first reset. Its output goes straight to the
 /// starter's safety input, so the circuit works with no controller at all.
 /// </summary>
-public sealed class SafetyRelay : ComponentBase, IFaultTarget
+public sealed class SafetyRelay : ComponentBase, IFaultTarget, ITagProvider
 {
     /// <summary>The relay stays energised whatever the channels say.</summary>
     public const string StuckEnergised = "stuck-energised";
@@ -65,6 +66,12 @@ public sealed class SafetyRelay : ComponentBase, IFaultTarget
     public OutputPort<bool> Ok { get; }
 
     public IReadOnlyList<FaultDescriptor> SupportedFaults => Faults;
+
+    public IEnumerable<TagBinding> DescribeTags() =>
+    [
+        TagBinding.Write("Reset", Reset, "Safety reset, rising edge"),
+        TagBinding.Read("Ok", Ok, "Relay energised"),
+    ];
 
     public override void Evaluate(in TickContext ctx)
     {

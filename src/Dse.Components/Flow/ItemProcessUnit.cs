@@ -4,6 +4,7 @@ using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
+using Dse.Core.Io;
 using Dse.Core.Telemetry;
 
 namespace Dse.Components.Flow;
@@ -15,7 +16,7 @@ namespace Dse.Components.Flow;
 /// applies the yield, and discharges in arrival order. A furnace and a press
 /// are configurations of this class.
 /// </summary>
-public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemProducer, IMaterialObservable, IFaultTarget
+public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemProducer, IMaterialObservable, IFaultTarget, ITagProvider
 {
     /// <summary>The discharge fails to open: nothing leaves until cleared.</summary>
     public const string DischargeJam = "discharge-jam";
@@ -118,6 +119,13 @@ public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemPro
     public override double MassDestroyed => _lost;
 
     public IReadOnlyList<FaultDescriptor> SupportedFaults => Faults;
+
+    public IEnumerable<TagBinding> DescribeTags() =>
+    [
+        TagBinding.ReadEnum("Phase", Phase, "Unit phase"),
+        TagBinding.Read("ItemCount", ItemCount, "count", "Items in the unit"),
+        TagBinding.Read("Progress", Progress, "fraction", 0.0, 1.0, "Progress through the current phase"),
+    ];
 
     public override void Initialize(in InitContext ctx)
     {

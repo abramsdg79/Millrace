@@ -3,6 +3,7 @@ using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
+using Dse.Core.Io;
 using Dse.Core.Telemetry;
 
 namespace Dse.Components.Flow;
@@ -15,7 +16,7 @@ namespace Dse.Components.Flow;
 /// release the yield is applied and the loss booked as a declared loss.
 /// A mixer, a prover and a furnace are configurations of this class.
 /// </summary>
-public sealed class BulkProcessUnit : FlowComponentBase, IBulkConsumer, IBulkProducer, IMaterialObservable, IFaultTarget
+public sealed class BulkProcessUnit : FlowComponentBase, IBulkConsumer, IBulkProducer, IMaterialObservable, IFaultTarget, ITagProvider
 {
     /// <summary>The discharge valve fails to open: nothing leaves until cleared.</summary>
     public const string DischargeJam = "discharge-jam";
@@ -155,6 +156,13 @@ public sealed class BulkProcessUnit : FlowComponentBase, IBulkConsumer, IBulkPro
     public override double MassDestroyed => _lost;
 
     public IReadOnlyList<FaultDescriptor> SupportedFaults => Faults;
+
+    public IEnumerable<TagBinding> DescribeTags() =>
+    [
+        TagBinding.ReadEnum("Phase", Phase, "Unit phase"),
+        TagBinding.Read("BatchMass", BatchMass, "kg", description: "Mass in the unit"),
+        TagBinding.Read("Progress", Progress, "fraction", 0.0, 1.0, "Progress through the current phase"),
+    ];
 
     /// <summary>The inlet for a recipe line, by its name.</summary>
     public FlowInlet Inlet(string name)

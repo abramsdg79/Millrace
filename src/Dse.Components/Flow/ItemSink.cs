@@ -1,6 +1,7 @@
 using Dse.Core.Contexts;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
+using Dse.Core.Io;
 using Dse.Core.Telemetry;
 
 namespace Dse.Components.Flow;
@@ -10,7 +11,7 @@ namespace Dse.Components.Flow;
 /// (so a test can inspect what arrived) but not the items themselves — a
 /// long run must not grow without bound.
 /// </summary>
-public sealed class ItemSink : FlowComponentBase, IItemConsumer
+public sealed class ItemSink : FlowComponentBase, IItemConsumer, ITagProvider
 {
     private long _count;
     private double _mass;
@@ -45,6 +46,12 @@ public sealed class ItemSink : FlowComponentBase, IItemConsumer
     public override double MassHeld => 0.0;
 
     public override double MassDestroyed => _mass;
+
+    public IEnumerable<TagBinding> DescribeTags() =>
+    [
+        TagBinding.Read("Count", Count, "count", "Items received"),
+        TagBinding.Read("Full", Full, "At capacity"),
+    ];
 
     public override void Initialize(in InitContext ctx) =>
         _receivedTelemetry = ctx.RegisterTelemetry("Received", "count");

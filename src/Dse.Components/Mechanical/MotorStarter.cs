@@ -2,6 +2,7 @@ using System.Globalization;
 using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Graph;
+using Dse.Core.Io;
 
 namespace Dse.Components.Mechanical;
 
@@ -13,7 +14,7 @@ namespace Dse.Components.Mechanical;
 /// reset level. The safety input bypasses everything: a dropped safety relay
 /// opens the contactor with no controller involved.
 /// </summary>
-public sealed class MotorStarter : ComponentBase, IFaultTarget
+public sealed class MotorStarter : ComponentBase, IFaultTarget, ITagProvider
 {
     /// <summary>The contactor is welded closed.</summary>
     public const string ContactorWelded = "contactor-welded";
@@ -77,6 +78,14 @@ public sealed class MotorStarter : ComponentBase, IFaultTarget
     public OutputPort<bool> Tripped { get; }
 
     public IReadOnlyList<FaultDescriptor> SupportedFaults => Faults;
+
+    public IEnumerable<TagBinding> DescribeTags() =>
+    [
+        TagBinding.Write("Command", Command, "Run command"),
+        TagBinding.Write("Reset", Reset, "Overload reset, rising edge"),
+        TagBinding.Read("Contactor", Contactor, "Contactor closed"),
+        TagBinding.Read("Tripped", Tripped, "Overload relay tripped"),
+    ];
 
     public override void Evaluate(in TickContext ctx)
     {

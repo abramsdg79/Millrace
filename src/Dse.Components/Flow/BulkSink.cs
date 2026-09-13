@@ -1,6 +1,7 @@
 using Dse.Core.Contexts;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
+using Dse.Core.Io;
 using Dse.Core.Telemetry;
 
 namespace Dse.Components.Flow;
@@ -10,7 +11,7 @@ namespace Dse.Components.Flow;
 /// Everything deposited is removed from the ledger. With a capacity it fills,
 /// says so once, and then accepts nothing, so the plant behind it backs up.
 /// </summary>
-public sealed class BulkSink : FlowComponentBase, IBulkConsumer
+public sealed class BulkSink : FlowComponentBase, IBulkConsumer, ITagProvider
 {
     private double _received;
     private double _sinceEvaluate;
@@ -51,6 +52,13 @@ public sealed class BulkSink : FlowComponentBase, IBulkConsumer
     public override double MassHeld => 0.0;
 
     public override double MassDestroyed => _received;
+
+    public IEnumerable<TagBinding> DescribeTags() =>
+    [
+        TagBinding.Read("Received", Received, "kg", description: "Cumulative mass received"),
+        TagBinding.Read("Rate", Rate, "kg/s", description: "Receiving rate"),
+        TagBinding.Read("Full", Full, "At capacity"),
+    ];
 
     public override void Initialize(in InitContext ctx) =>
         _receivedTelemetry = ctx.RegisterTelemetry("Received", "kg");

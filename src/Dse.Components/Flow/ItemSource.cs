@@ -3,6 +3,7 @@ using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
+using Dse.Core.Io;
 using Dse.Core.Telemetry;
 
 namespace Dse.Components.Flow;
@@ -12,7 +13,7 @@ namespace Dse.Components.Flow;
 /// the simulation's sequence, queued until the outlet takes them. A full queue
 /// pauses minting; the interval timer keeps running so cadence resumes cleanly.
 /// </summary>
-public sealed class ItemSource : FlowComponentBase, IItemProducer, IFaultTarget
+public sealed class ItemSource : FlowComponentBase, IItemProducer, IFaultTarget, ITagProvider
 {
     /// <summary>The supply runs out: nothing is minted until cleared.</summary>
     public const string Starve = "starve";
@@ -78,6 +79,12 @@ public sealed class ItemSource : FlowComponentBase, IItemProducer, IFaultTarget
     public override double MassCreated => _created;
 
     public IReadOnlyList<FaultDescriptor> SupportedFaults => Faults;
+
+    public IEnumerable<TagBinding> DescribeTags() =>
+    [
+        TagBinding.Write("Enabled", Enabled, "Minting enabled"),
+        TagBinding.Read("Queued", Queued, "count", "Items waiting at the outlet"),
+    ];
 
     public override void Initialize(in InitContext ctx)
     {
