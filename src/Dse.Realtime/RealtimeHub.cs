@@ -18,7 +18,7 @@ public sealed class RealtimeHub : ITickFrameSink, IDisposable
     private long _published;
     private long _dropped;
     private long _droppedSinceLastPump;
-    private bool _disposed;
+    private volatile bool _disposed;
 
     /// <summary>Creates a hub for <paramref name="directory"/> with a ring of <paramref name="ringCapacity"/> frames.</summary>
     public RealtimeHub(ITagDirectory directory, int ringCapacity = 4096, int recentEventCapacity = 256)
@@ -59,7 +59,13 @@ public sealed class RealtimeHub : ITickFrameSink, IDisposable
         }
     }
 
-    /// <inheritdoc/>
+    /// <summary>Accepts a frame without blocking.</summary>
+    /// <remarks>
+    /// A frame published after <see cref="Dispose"/> is still counted (into
+    /// <see cref="PublishedFrames"/> or <see cref="DroppedFrames"/>) but is
+    /// never signalled and never throws: the simulation thread must not fault
+    /// on consumer-side housekeeping.
+    /// </remarks>
     public void Publish(TickFrame frame)
     {
         ArgumentNullException.ThrowIfNull(frame);
@@ -73,9 +79,18 @@ public sealed class RealtimeHub : ITickFrameSink, IDisposable
             Interlocked.Increment(ref _droppedSinceLastPump);
         }
 
-        if (!_disposed)
+        if (_disposed)
+        {
+            return;
+        }
+
+        try
         {
             _framesAvailable.Set();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Disposed between the flag check and the signal: nothing to wake.
         }
     }
 

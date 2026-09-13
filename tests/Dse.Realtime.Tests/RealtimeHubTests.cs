@@ -178,6 +178,17 @@ public class RealtimeHubTests
     }
 
     [Fact]
+    public void PublishAfterDisposeDoesNotThrow()
+    {
+        var hub = new RealtimeHub(Frames.Directory());
+        hub.Dispose();
+
+        hub.Publish(Frames.Full(0, 1.0, false, 0));
+
+        Assert.Equal(1L, hub.PublishedFrames);
+    }
+
+    [Fact]
     public void ProducerAndPumpOnDifferentThreadsLoseNothingWhenTheRingIsLargeEnough()
     {
         using var hub = new RealtimeHub(Frames.Directory(), ringCapacity: 1 << 16);
