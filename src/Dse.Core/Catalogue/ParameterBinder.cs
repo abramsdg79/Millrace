@@ -80,7 +80,7 @@ public static class ParameterBinder
             }
 
             JsonElement element = json.GetProperty(parameter.Name);
-            if (TryBindValue(parameter, element, childPath, context, construct, issues, values, out object? bound))
+            if (TryBindValue(parameter, element, childPath, context, construct, issues, values, json, out object? bound))
             {
                 values[parameter.Name] = bound;
             }
@@ -138,6 +138,7 @@ public static class ParameterBinder
         bool construct,
         List<BindingIssue> issues,
         Dictionary<string, object?> siblings,
+        JsonElement objectJson,
         out object? bound)
     {
         bound = null;
@@ -251,7 +252,7 @@ public static class ParameterBinder
                 return TryBindMaterial(parameter, element, path, context, issues, out bound);
 
             case ParameterKind.MaterialState:
-                return TryBindState(parameter, element, path, issues, siblings, out bound);
+                return TryBindState(parameter, element, path, issues, siblings, objectJson, out bound);
 
             default:
                 throw new InvalidOperationException($"Parameter kind {parameter.Kind} has no binder.");
@@ -458,6 +459,7 @@ public static class ParameterBinder
         string path,
         List<BindingIssue> issues,
         Dictionary<string, object?> siblings,
+        JsonElement objectJson,
         out object? bound)
     {
         bound = null;
@@ -469,7 +471,19 @@ public static class ParameterBinder
 
         if (!siblings.TryGetValue(parameter.MaterialParameter, out object? sibling) || sibling is not MaterialDescriptor material)
         {
-            // The material itself failed to bind and has been reported; a second issue here is noise.
+            // CatalogueBuilder guarantees the sibling is a declared Material parameter, so the
+            // only way it is absent from `siblings` here is that it failed to bind (already
+            // reported) or is optional and was left out.
+            bool materialGiven = objectJson.ValueKind == JsonValueKind.Object
+                && objectJson.TryGetProperty(parameter.MaterialParameter, out _);
+            if (!materialGiven)
+            {
+                issues.Add(Bad(
+                    path,
+                    $"'{parameter.Name}' names a state of '{parameter.MaterialParameter}', which was not given.",
+                    $"Give '{parameter.MaterialParameter}' as well, or remove '{parameter.Name}'."));
+            }
+
             return false;
         }
 

@@ -149,6 +149,52 @@ public class CatalogueModelTests
         Assert.False(catalogue.TryGetComponent("Alpha", out _));
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void AMaterialStateMustNameASiblingMaterial(int scenario)
+    {
+        ComponentDescriptor descriptor = scenario switch
+        {
+            // (a) MaterialParameter names nothing declared beside it.
+            1 => new ComponentDescriptor("names-nothing", ComponentCategory.Signal, "X.", (id, p) => new UnitDelay<bool>(id))
+            {
+                Parameters = [Param.MaterialState("state", "S.", "material")],
+            },
+            // (b) The sibling it names is not a Material parameter.
+            2 => new ComponentDescriptor("names-a-double", ComponentCategory.Signal, "X.", (id, p) => new UnitDelay<bool>(id))
+            {
+                Parameters = [Param.Double("material", "Not a material."), Param.MaterialState("state", "S.", "material")],
+            },
+            // (c) The state is inside a group and the material is outside it.
+            _ => new ComponentDescriptor("state-outside-group", ComponentCategory.Signal, "X.", (id, p) => new UnitDelay<bool>(id))
+            {
+                Parameters =
+                [
+                    Param.Material("material", "M."),
+                    Param.Group("g", "G.", new GroupDefinition("G", Param.MaterialState("state", "S.", "material"))),
+                ],
+            },
+        };
+
+        var ex = Assert.Throws<ArgumentException>(() => new CatalogueBuilder().Add(descriptor));
+        Assert.Contains("no material parameter of that name", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ACorrectMaterialStatePairIsAccepted()
+    {
+        ComponentCatalogue catalogue = new CatalogueBuilder()
+            .Add(new ObjectDescriptor(ObjectSlots.Hold, "state-at-least", "Waits.", p => new object())
+            {
+                Parameters = [Param.Material("material", "M."), Param.MaterialState("state", "S.", "material")],
+            })
+            .Build();
+
+        Assert.True(catalogue.TryGetObject(ObjectSlots.Hold, "state-at-least", out _));
+    }
+
     [Fact]
     public void ARepeatByCountExpandsFromOne()
     {

@@ -243,6 +243,23 @@ public class ParameterBinderTests
     }
 
     [Fact]
+    public void AStateOfAnOmittedOptionalMaterialIsAnIssue()
+    {
+        ParameterDescriptor[] schema =
+        [
+            Param.Material("output", "O.", optional: true),
+            Param.MaterialState("state", "S.", "output"),
+        ];
+
+        var (_, issues) = Bind(schema, """{ "state": "bake" }""");
+
+        BindingIssue issue = Assert.Single(issues);
+        Assert.Equal(BindingIssueKind.BadParameter, issue.Kind);
+        Assert.Equal("$.p.state", issue.Path);
+        Assert.Contains("Give 'output' as well", issue.Fix, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ResolvesAReferenceToItsCapability()
     {
         var (values, issues) = Bind([Param.Reference<IMaterialObservable>("belt", "Belt.")], """{ "belt": "BELT" }""");

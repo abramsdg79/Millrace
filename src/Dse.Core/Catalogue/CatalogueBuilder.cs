@@ -45,6 +45,7 @@ public sealed partial class CatalogueBuilder
         ArgumentNullException.ThrowIfNull(descriptor);
         RequireKebabCase(descriptor.Type, "Component type");
         RequireUniqueParameters(descriptor.Parameters, $"component '{descriptor.Type}'");
+        RequireMaterialStateNamesSibling(descriptor.Parameters, $"component '{descriptor.Type}'");
         RequireUniquePortNames(descriptor);
         if (_components.TryGetValue(descriptor.Type, out var existing))
         {
@@ -60,6 +61,7 @@ public sealed partial class CatalogueBuilder
         ArgumentNullException.ThrowIfNull(descriptor);
         RequireKebabCase(descriptor.Type, $"Object type in slot '{descriptor.Slot}'");
         RequireUniqueParameters(descriptor.Parameters, $"{descriptor.Slot} '{descriptor.Type}'");
+        RequireMaterialStateNamesSibling(descriptor.Parameters, $"{descriptor.Slot} '{descriptor.Type}'");
         if (descriptor.Parameters.Any(p => string.Equals(p.Name, "type", StringComparison.Ordinal)))
         {
             throw new ArgumentException(
@@ -125,6 +127,34 @@ public sealed partial class CatalogueBuilder
             if (parameter.Children.Count > 0)
             {
                 RequireUniqueParameters(parameter.Children, $"{owner}, group '{parameter.Name}'");
+            }
+        }
+    }
+
+    private static void RequireMaterialStateNamesSibling(IReadOnlyList<ParameterDescriptor> parameters, string owner)
+    {
+        List<string> materials = parameters
+            .Where(p => p.Kind == ParameterKind.Material)
+            .Select(p => p.Name)
+            .ToList();
+
+        foreach (ParameterDescriptor parameter in parameters)
+        {
+            if (parameter.Kind == ParameterKind.MaterialState
+                && !materials.Contains(parameter.MaterialParameter, StringComparer.Ordinal))
+            {
+                string declared = materials.Count == 0
+                    ? "none"
+                    : string.Join(", ", materials.Order(StringComparer.Ordinal));
+                throw new ArgumentException(
+                    $"Parameter '{parameter.Name}' on {owner} is a material state of '{parameter.MaterialParameter}', " +
+                    $"but no material parameter of that name is declared beside it. Declared material parameters: {declared}.",
+                    nameof(parameters));
+            }
+
+            if (parameter.Children.Count > 0)
+            {
+                RequireMaterialStateNamesSibling(parameter.Children, $"{owner}, group '{parameter.Name}'");
             }
         }
     }
