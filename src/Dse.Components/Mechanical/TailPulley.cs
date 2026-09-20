@@ -1,3 +1,4 @@
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Graph;
@@ -15,6 +16,17 @@ public sealed class TailPulley : ComponentBase, IFaultTarget
         new(BearingFriction, "Extra drag at the pulley bearing.",
             new FaultParameter("drag", "N", 0.0, "Added to the pulley's drag while active.")),
     ];
+
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "tail-pulley",
+        ComponentCategory.Mechanical,
+        "The idle pulley at the tail: contributes bearing drag.",
+        (id, p) => new TailPulley(id, p.Double("bearingDragN")))
+    {
+        Parameters = [Param.Double("bearingDragN", "Constant drag from the bearings.", "N", min: 0.0)],
+        Ports = [PortSpec.Out<double>("Drag", "N")],
+        Faults = Faults,
+    };
 
     private double _faultDrag;
 

@@ -1,3 +1,4 @@
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Graph;
 
@@ -11,6 +12,25 @@ namespace Dse.Components.Mechanical;
 public sealed class BeltFriction : ComponentBase
 {
     private const double Gravity = 9.80665;
+
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "belt-friction",
+        ComponentCategory.Mechanical,
+        "Rolling resistance of a loaded belt: force from carried mass, belt mass and added drag.",
+        (id, p) => new BeltFriction(id, p.Double("emptyBeltMassKg"), p.Double("frictionCoefficient")))
+    {
+        Parameters =
+        [
+            Param.Double("emptyBeltMassKg", "Mass of the moving belt and idlers with no load.", "kg", min: 0.0),
+            Param.Double("frictionCoefficient", "Rolling resistance coefficient.", @default: 0.03, min: 0.0),
+        ],
+        Ports =
+        [
+            PortSpec.In<double>("Load", "kg", "Mass on the belt."),
+            PortSpec.In<double>("Drag", "N", "Additional drag, such as the tail pulley's."),
+            PortSpec.Out<double>("Force", "N"),
+        ],
+    };
 
     public BeltFriction(string id, double emptyBeltMassKg, double frictionCoefficient = 0.03)
         : base(id)

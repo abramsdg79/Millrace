@@ -11,5 +11,11 @@ internal static class ComponentsFixtures
 {
     public static ComponentCatalogue Catalogue { get; } = new CatalogueBuilder().Add<ComponentsModule>().Build();
 
-    public static ConformanceFixtures Create() => new();
+    public static ConformanceFixtures Create() => new ConformanceFixtures()
+        // Task 5 — mechanical
+        .Parameters("motor", """{ "rating": { "ratedPowerW": 750, "ratedSpeedRadPerS": 150, "ratedCurrentA": 2 } }""")
+        .Parameters("gearbox", """{ "ratio": 20 }""")
+        .Parameters("drive-pulley", """{ "diameterM": 0.5 }""")
+        .Parameters("tail-pulley", """{ "bearingDragN": 80 }""")
+        .Parameters("belt-friction", """{ "emptyBeltMassKg": 250 }""");
 }

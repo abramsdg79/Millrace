@@ -1,3 +1,4 @@
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Graph;
@@ -24,6 +25,27 @@ public sealed class DrivePulley : ComponentBase, IFaultTarget
         new(BeltSlip, "The belt slips on the pulley; belt speed is reduced, torque is not.",
             new FaultParameter("fraction", "", 0.1, "Fraction of surface speed lost, 0..1.")),
     ];
+
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "drive-pulley",
+        ComponentCategory.Mechanical,
+        "Turns shaft speed into belt speed and belt force into a torque demand.",
+        (id, p) => new DrivePulley(id, p.Double("diameterM"), p.Double("bearingDragN")))
+    {
+        Parameters =
+        [
+            Param.Double("diameterM", "Pulley diameter.", "m", min: 0.0, exclusiveMin: true),
+            Param.Double("bearingDragN", "Constant drag from the bearings.", "N", @default: 0.0, min: 0.0),
+        ],
+        Ports =
+        [
+            PortSpec.In<double>("ShaftSpeed", "rad/s"),
+            PortSpec.In<double>("BeltForce", "N"),
+            PortSpec.Out<double>("BeltSpeed", "m/s"),
+            PortSpec.Out<double>("TorqueDemand", "N·m"),
+        ],
+        Faults = Faults,
+    };
 
     private double _faultDrag;
     private double _slip;

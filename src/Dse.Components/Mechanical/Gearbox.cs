@@ -1,3 +1,4 @@
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Graph;
 
@@ -10,6 +11,26 @@ namespace Dse.Components.Mechanical;
 /// </summary>
 public sealed class Gearbox : ComponentBase
 {
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "gearbox",
+        ComponentCategory.Mechanical,
+        "A fixed-ratio reducer: divides speed, multiplies torque demand back towards the motor, loses a fixed efficiency.",
+        (id, p) => new Gearbox(id, p.Double("ratio"), p.Double("efficiency")))
+    {
+        Parameters =
+        [
+            Param.Double("ratio", "Input speed over output speed.", min: 0.0, exclusiveMin: true),
+            Param.Double("efficiency", "Fraction of power transmitted.", @default: 0.95, min: 0.0, max: 1.0, exclusiveMin: true),
+        ],
+        Ports =
+        [
+            PortSpec.In<double>("InputSpeed", "rad/s"),
+            PortSpec.In<double>("OutputTorqueDemand", "N·m", "Latched."),
+            PortSpec.Out<double>("OutputSpeed", "rad/s"),
+            PortSpec.Out<double>("InputTorqueDemand", "N·m"),
+        ],
+    };
+
     public Gearbox(string id, double ratio, double efficiency = 0.95)
         : base(id)
     {

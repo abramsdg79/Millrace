@@ -1,3 +1,4 @@
+using Dse.Components.Mechanical;
 using Dse.Core.Catalogue;
 
 namespace Dse.Components;
@@ -17,5 +18,13 @@ public sealed class ComponentsModule : ICatalogueModule
         // Signal
         builder.Add(CoreDescriptors.UnitDelayBool);
         builder.Add(CoreDescriptors.UnitDelayDouble);
+
+        // Mechanical
+        builder.Add(Motor.Descriptor);
+        builder.Add(Gearbox.Descriptor);
+        builder.Add(DrivePulley.Descriptor);
+        builder.Add(TailPulley.Descriptor);
+        builder.Add(BeltFriction.Descriptor);
+        builder.Add(MotorStarter.Descriptor);
     }
 }

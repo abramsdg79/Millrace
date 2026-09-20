@@ -1,8 +1,10 @@
 using System.Globalization;
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Graph;
 using Dse.Core.Io;
+using Dse.Io;
 
 namespace Dse.Components.Mechanical;
 
@@ -27,6 +29,36 @@ public sealed class MotorStarter : ComponentBase, IFaultTarget, ITagProvider
         new(ContactorWelded, "The contactor is welded closed; the motor stays energised whatever the logic says."),
         new(ContactorOpen, "The contactor coil or contacts have failed; the motor cannot be energised."),
     ];
+
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "motor-starter",
+        ComponentCategory.Mechanical,
+        "A direct-on-line starter with a thermal overload relay: closes on command when safe, trips on thermal state, resets on a rising edge.",
+        (id, p) => new MotorStarter(id, p.Double("tripLevel"), p.Double("resetLevel")))
+    {
+        Parameters =
+        [
+            Param.Double("tripLevel", "Thermal state at which the overload relay trips.", @default: 1.1, min: 0.0, exclusiveMin: true),
+            Param.Double("resetLevel", "Thermal state below which a reset is accepted. Must be below tripLevel.", @default: 0.9),
+        ],
+        Ports =
+        [
+            PortSpec.In<bool>("Command", description: "Run command."),
+            PortSpec.In<bool>("SafetyOk", description: "Safety circuit healthy; defaults to true when unwired."),
+            PortSpec.In<double>("ThermalState", description: "The motor's thermal state."),
+            PortSpec.In<bool>("Reset", description: "Overload reset, rising edge."),
+            PortSpec.Out<bool>("Contactor"),
+            PortSpec.Out<bool>("Tripped"),
+        ],
+        Faults = Faults,
+        Tags =
+        [
+            new TagEntry("Command", TagKind.Bool, TagAccess.ReadWrite),
+            new TagEntry("Reset", TagKind.Bool, TagAccess.ReadWrite),
+            new TagEntry("Contactor", TagKind.Bool, TagAccess.ReadOnly),
+            new TagEntry("Tripped", TagKind.Bool, TagAccess.ReadOnly),
+        ],
+    };
 
     private bool _tripped;
     private bool _closed;

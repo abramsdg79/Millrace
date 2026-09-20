@@ -1,4 +1,5 @@
 using System.Globalization;
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Graph;
@@ -29,6 +30,27 @@ public sealed class Motor : ComponentBase, IFaultTarget
         new(ThermalBias, "A step in the thermal state, as a hot start or a blocked fan gives.",
             new FaultParameter("amount", "", 0.5, "Added once, on injection; clearing has no effect, the state decays on its own.")),
     ];
+
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "motor",
+        ComponentCategory.Mechanical,
+        "An induction motor: first-order speed response, current from torque, an I²t thermal state and a breakdown stall.",
+        (id, p) => new Motor(id, MotorRatingGroup.Read(p.Group("rating"))))
+    {
+        Parameters = [Param.Group("rating", "The nameplate and model constants.", MotorRatingGroup.Definition)],
+        Ports =
+        [
+            PortSpec.In<bool>("Energised", description: "The contactor feeding the motor is closed."),
+            PortSpec.In<double>("TorqueDemand", "N·m", "Load torque reflected to the shaft. Latched: read as it stood at the end of the previous tick."),
+            PortSpec.Out<double>("Speed", "rad/s"),
+            PortSpec.Out<double>("Torque", "N·m"),
+            PortSpec.Out<double>("Current", "A"),
+            PortSpec.Out<double>("ThermalState", description: "I²t state; 1.0 is the rated continuous limit."),
+            PortSpec.Out<bool>("AtSpeed"),
+        ],
+        Faults = Faults,
+        Telemetry = [new TelemetryKey("Speed", "rad/s"), new TelemetryKey("Current", "A"), new TelemetryKey("ThermalState")],
+    };
 
     private readonly MotorRating _rating;
     private double _speed;
