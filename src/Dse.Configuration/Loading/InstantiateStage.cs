@@ -39,7 +39,7 @@ internal static class InstantiateStage
             state.Error(
                 ConfigDiagnostics.Rejected,
                 entry.Path,
-                $"'{entry.Id}' ({entry.Descriptor.Type}) rejected its parameters: {WithoutParameterSuffix(ex.Message)}",
+                $"'{entry.Id}' ({entry.Descriptor.Type}) rejected its parameters: {AsSentence(ex.Message)}",
                 "Change the parameter the message names; each value is valid alone, the combination is not.");
             return false;
         }
@@ -47,11 +47,12 @@ internal static class InstantiateStage
         catch (Exception ex)
 #pragma warning restore CA1031
         {
+            string module = state.Catalogue.ModuleOf(entry.Descriptor);
             state.Error(
                 ConfigDiagnostics.Rejected,
                 entry.Path,
-                $"The factory for type '{entry.Descriptor.Type}' failed with {ex.GetType().Name}: {ex.Message}",
-                $"This is a defect in module '{state.Catalogue.ModuleOf(entry.Descriptor)}', not in the plant file; report it with this file. " +
+                $"The factory for type '{entry.Descriptor.Type}' failed with {ex.GetType().Name}: {AsSentence(ex.Message)}",
+                $"Report this to the author of module '{module}' together with this plant file; it is a defect in the module, not in the plant. " +
                 "The module's conformance test should have caught it.");
             return false;
         }
@@ -61,11 +62,17 @@ internal static class InstantiateStage
         return true;
     }
 
-    // ArgumentException appends " (Parameter 'x')" naming a C# parameter, which means nothing to a plant author.
-    private static string WithoutParameterSuffix(string message)
+    // ArgumentException appends " (Parameter 'x')" naming a C# parameter, which means nothing to a plant
+    // author; a third-party exception's message is not guaranteed to be a sentence at all.
+    private static string AsSentence(string message)
     {
         int cut = message.IndexOf(" (Parameter '", StringComparison.Ordinal);
-        string text = cut < 0 ? message : message[..cut];
+        string text = (cut < 0 ? message : message[..cut]).Trim();
+        if (text.Length == 0)
+        {
+            return "No message was given.";
+        }
+
         return text.EndsWith('.') ? text : text + ".";
     }
 }

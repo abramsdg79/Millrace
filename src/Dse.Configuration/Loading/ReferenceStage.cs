@@ -12,7 +12,7 @@ internal static class ReferenceStage
         var byId = state.Components.ToDictionary(c => c.Id, StringComparer.Ordinal);
         foreach (ComponentEntry entry in state.Components)
         {
-            foreach ((string path, string id, ParameterDescriptor parameter) in References(entry.Descriptor.Parameters, entry.Parameters, entry.ParametersPath))
+            foreach ((string path, string id, ParameterDescriptor parameter) in References(entry.Descriptor.Parameters, entry.Parameters, entry.ParametersPath, state.Catalogue))
             {
                 if (!byId.TryGetValue(id, out ComponentEntry? target))
                 {
@@ -30,7 +30,7 @@ internal static class ReferenceStage
                         path,
                         $"'{id}' is a {target.Descriptor.Type}, which cannot supply {parameter.Capability!.Name}; '{parameter.Name}' needs one.",
                         able.Count == 0
-                            ? $"No component in this plant supplies {parameter.Capability.Name}; add one that does, then reference it."
+                            ? $"Add a component that supplies {parameter.Capability.Name}, then reference it."
                             : $"Reference one of {Suggest.List(able)}.");
                 }
                 else
@@ -46,9 +46,9 @@ internal static class ReferenceStage
         }
     }
 
-    /// <summary>Every reference in a parameters object, through groups and group lists, with its JSON path.</summary>
+    /// <summary>Every reference in a parameters object, through groups, group lists, objects and object lists, with its JSON path.</summary>
     private static IEnumerable<(string Path, string Id, ParameterDescriptor Parameter)> References(
-        IReadOnlyList<ParameterDescriptor> schema, JsonElement json, string path)
+        IReadOnlyList<ParameterDescriptor> schema, JsonElement json, string path, ComponentCatalogue catalogue)
     {
         if (json.ValueKind != JsonValueKind.Object)
         {
@@ -70,7 +70,7 @@ internal static class ReferenceStage
                     break;
 
                 case ParameterKind.Group:
-                    foreach (var found in References(parameter.Children, value, childPath))
+                    foreach (var found in References(parameter.Children, value, childPath, catalogue))
                     {
                         yield return found;
                     }
@@ -81,7 +81,7 @@ internal static class ReferenceStage
                     int index = 0;
                     foreach (JsonElement item in value.EnumerateArray())
                     {
-                        foreach (var found in References(parameter.Children, item, string.Create(CultureInfo.InvariantCulture, $"{childPath}[{index}]")))
+                        foreach (var found in References(parameter.Children, item, string.Create(CultureInfo.InvariantCulture, $"{childPath}[{index}]"), catalogue))
                         {
                             yield return found;
                         }
@@ -90,7 +90,50 @@ internal static class ReferenceStage
                     }
 
                     break;
+
+                case ParameterKind.Object:
+                    foreach (var found in ObjectReferences(parameter.Slot, value, childPath, catalogue))
+                    {
+                        yield return found;
+                    }
+
+                    break;
+
+                case ParameterKind.ObjectList when value.ValueKind == JsonValueKind.Array:
+                    int objectIndex = 0;
+                    foreach (JsonElement item in value.EnumerateArray())
+                    {
+                        foreach (var found in ObjectReferences(parameter.Slot, item, string.Create(CultureInfo.InvariantCulture, $"{childPath}[{objectIndex}]"), catalogue))
+                        {
+                            yield return found;
+                        }
+
+                        objectIndex++;
+                    }
+
+                    break;
             }
+        }
+    }
+
+    /// <summary>
+    /// The references inside one <c>{ "type": "…", … }</c> value. An unknown type or a malformed
+    /// object is already reported by stage 2, so this quietly finds nothing rather than duplicating that.
+    /// </summary>
+    private static IEnumerable<(string Path, string Id, ParameterDescriptor Parameter)> ObjectReferences(
+        string slot, JsonElement json, string path, ComponentCatalogue catalogue)
+    {
+        if (json.ValueKind != JsonValueKind.Object
+            || !json.TryGetProperty("type", out JsonElement typeElement)
+            || typeElement.ValueKind != JsonValueKind.String
+            || !catalogue.TryGetObject(slot, typeElement.GetString()!, out ObjectDescriptor? descriptor))
+        {
+            yield break;
+        }
+
+        foreach (var found in References(descriptor.Parameters, json, path, catalogue))
+        {
+            yield return found;
         }
     }
 

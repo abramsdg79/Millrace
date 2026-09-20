@@ -109,6 +109,34 @@ public class ReferenceAndInstantiateTests
         Assert.Equal("DSE111", d.Code);
         Assert.Contains("defect", d.Fix, StringComparison.Ordinal);
         Assert.Contains("'Test'", d.Fix, StringComparison.Ordinal);
+        Assert.StartsWith("Report this", d.Fix, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheCatchAllMessageIsANormalisedSentence()
+    {
+        ConfigDiagnostic d = TestPlants.Only("""{ "components": [ { "id": "X", "type": "silent" } ] }""");
+
+        Assert.EndsWith("bad wiring.", d.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("..", d.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NoComponentSuppliesTheCapabilityAtAllSaysSo()
+    {
+        const string Json = """
+            { "materials": [ { "name": "ore", "kind": "bulk" } ],
+              "components": [
+                { "id": "WT", "type": "belt-scale",
+                  "parameters": { "belt": "FEED", "positionM": 5, "spec": { "unit": "t/h", "rangeLow": 0, "rangeHigh": 800 } } },
+                { "id": "FEED", "type": "bulk-source", "parameters": { "material": "ore", "rateKgPerS": 20 } },
+                { "id": "PILE", "type": "bulk-sink" } ] }
+            """;
+
+        ConfigDiagnostic d = TestPlants.Only(Json);
+
+        Assert.Equal("DSE105", d.Code);
+        Assert.Equal("Add a component that supplies IMaterialObservable, then reference it.", d.Fix);
     }
 
     [Fact]
@@ -135,5 +163,76 @@ public class ReferenceAndInstantiateTests
         Assert.Equal("DSE110", d.Code);
         Assert.Equal("$.components[0].parameters.hold.state", d.Path);
         Assert.Contains("'soak' is closest", d.Fix, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AReferenceInsideAGroupIsFoundAndOrdersConstruction()
+    {
+        const string Json = """
+            { "components": [
+                { "id": "N", "type": "nested-echo", "parameters": { "link": { "target": "Z" } } },
+                { "id": "Z", "type": "echo" } ] }
+            """;
+
+        Assert.Empty(TestPlants.Load(Json).Diagnostics);
+    }
+
+    [Fact]
+    public void AMissingReferenceInsideAGroupListHasAnIndexedPath()
+    {
+        const string Json = """
+            { "components": [
+                { "id": "N", "type": "nested-echo", "parameters": { "links": [ { "target": "Z" }, { "target": "ZZ" } ] } },
+                { "id": "Z", "type": "echo" } ] }
+            """;
+
+        ConfigDiagnostic d = TestPlants.Only(Json);
+
+        Assert.Equal("DSE104", d.Code);
+        Assert.Equal("$.components[0].parameters.links[1].target", d.Path);
+    }
+
+    [Fact]
+    public void AReferenceInsideAnObjectIsFoundAndOrdersConstruction()
+    {
+        // Before ReferenceStage understood object references this raised a spurious DSE104: OE is listed
+        // before Z, but Z must be built first because OE's "probes" reference it.
+        const string Json = """
+            { "components": [
+                { "id": "OE", "type": "object-echo", "parameters": { "probes": [ { "type": "watch", "target": "Z" } ] } },
+                { "id": "Z", "type": "echo" } ] }
+            """;
+
+        Assert.Empty(TestPlants.Load(Json).Diagnostics);
+    }
+
+    [Fact]
+    public void AMissingReferenceInsideAnObjectHasItsPath()
+    {
+        const string Json = """
+            { "components": [
+                { "id": "OE", "type": "object-echo", "parameters": { "probes": [ { "type": "watch", "target": "ZZ" } ] } },
+                { "id": "Z", "type": "echo" } ] }
+            """;
+
+        ConfigDiagnostic d = TestPlants.Only(Json);
+
+        Assert.Equal("DSE104", d.Code);
+        Assert.Equal("$.components[0].parameters.probes[0].target", d.Path);
+    }
+
+    [Fact]
+    public void ACycleThroughAnObjectReferenceIsReported()
+    {
+        const string Json = """
+            { "components": [
+                { "id": "A", "type": "object-echo", "parameters": { "probes": [ { "type": "watch", "target": "B" } ] } },
+                { "id": "B", "type": "object-echo", "parameters": { "probes": [ { "type": "watch", "target": "A" } ] } } ] }
+            """;
+
+        ConfigDiagnostic d = TestPlants.Only(Json);
+
+        Assert.Equal("DSE106", d.Code);
+        Assert.Contains("A -> B -> A", d.Message, StringComparison.Ordinal);
     }
 }
