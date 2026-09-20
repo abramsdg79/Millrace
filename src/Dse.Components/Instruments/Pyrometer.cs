@@ -22,8 +22,12 @@ public sealed class Pyrometer : InstrumentBase
         Parameters =
         [
             Param.Reference<IMaterialObservable>("target", "What it looks at: a belt, a conveyor, a chute or a process unit."),
-            Param.Double("positionM", "Centre of the window, from the tail.", "m", min: 0.0),
-            Param.Double("windowM", "Length of the window.", "m", min: 0.0),
+            Param.Double(
+                "positionM",
+                "Centre of the window, from the tail. Ignored when the target has no length (a chute or a process unit), which reports its whole contents.",
+                "m",
+                min: 0.0),
+            Param.Double("windowM", "Length of the window. Ignored when the target has no length.", "m", min: 0.0),
             Param.Group("spec", "Unit, range, noise and lag.", InstrumentCatalogue.Spec),
         ],
         Ports = [PortSpec.In<double>("Background", "°C", "Read when the window is empty; defaults to 20."), .. InstrumentCatalogue.Outputs],

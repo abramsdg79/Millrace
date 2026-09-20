@@ -23,7 +23,7 @@ public sealed class ZeroSpeedSwitch : InstrumentBase
         Parameters =
         [
             Param.Group("spec", "Unit, range, noise and lag.", InstrumentCatalogue.Spec),
-            Param.Double("thresholdSpeed", "Speed below which the belt counts as stopped, in the spec's unit.", min: 0.0),
+            Param.Double("thresholdSpeed", "Speed below which the watched machine counts as stopped, in the spec's unit.", min: 0.0),
             Param.Double("delaySeconds", "How long the speed must stay below the threshold.", "s", min: 0.0),
         ],
         Ports = [PortSpec.In<double>("Speed", description: "The true speed."), .. InstrumentCatalogue.Outputs, PortSpec.Out<bool>("Stopped")],

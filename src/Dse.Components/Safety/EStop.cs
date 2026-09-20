@@ -6,7 +6,10 @@ namespace Dse.Components.Safety;
 public sealed class EStop : SafetySwitch
 {
     public static ComponentDescriptor Descriptor { get; } =
-        Describe("e-stop", "A latching emergency-stop button in a safety loop.", id => new EStop(id));
+        Describe(
+            "e-stop",
+            "An emergency-stop button in a safety loop: not OK while it is held actuated. The button itself does not latch; the safety relay it feeds does.",
+            id => new EStop(id));
 
     public EStop(string id)
         : base(id)
