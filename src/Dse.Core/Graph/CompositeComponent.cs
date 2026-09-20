@@ -54,6 +54,13 @@ public abstract class CompositeComponent : ISimNode, IQualifiable
 
     public FlowOutlet Outlet(string alias) => Resolve<FlowOutlet>(alias);
 
+    /// <summary>Every exposed port, signal and flow, sorted by alias (ordinal).</summary>
+    public IReadOnlyList<KeyValuePair<string, Port>> ExposedPorts =>
+        _aliases.OrderBy(pair => pair.Key, StringComparer.Ordinal).ToList();
+
+    /// <summary>The leaves this composite flattens to, nested composites included, in child order.</summary>
+    public IReadOnlyList<ISimComponent> LeafComponents => Leaves().ToList();
+
     /// <summary>Every evaluatable component beneath this one, depth-first in declaration order.</summary>
     internal IEnumerable<ISimComponent> Leaves()
     {

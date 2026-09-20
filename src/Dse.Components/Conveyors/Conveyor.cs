@@ -16,7 +16,7 @@ namespace Dse.Components.Conveyors;
 /// torque, raises current, heats the motor, trips the overload — is a
 /// consequence of the wiring, not a rule written anywhere.
 /// </summary>
-public sealed class Conveyor : CompositeComponent
+public sealed class Conveyor : CompositeComponent, ICapabilityProvider
 {
     private const double KgPerSecondToTonnesPerHour = 3.6;
 
@@ -149,4 +149,12 @@ public sealed class Conveyor : CompositeComponent
     public SafetyRelay Safety { get; }
 
     public MotorStarter Starter { get; }
+
+    /// <summary>The belt stands in for the conveyor wherever something observes material.</summary>
+    public bool TryGetCapability(Type capability, out object? instance)
+    {
+        ArgumentNullException.ThrowIfNull(capability);
+        instance = capability.IsInstanceOfType(Belt) ? Belt : null;
+        return instance is not null;
+    }
 }

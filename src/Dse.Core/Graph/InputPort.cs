@@ -105,4 +105,21 @@ public sealed class InputPort<T> : Port
 
     /// <summary>Applies an external write. Called at phase 1 only.</summary>
     internal void SetExternal(T value) => _externalValue = value;
+
+    internal override Type? ValueType => typeof(T);
+
+    internal override bool IsInput => true;
+
+    internal override bool IsRequiredInput => IsRequired;
+
+    internal override bool TryConnectFrom(Port source)
+    {
+        if (source is not OutputPort<T> typed)
+        {
+            return false;
+        }
+
+        ConnectFrom(typed);
+        return true;
+    }
 }

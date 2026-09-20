@@ -204,6 +204,63 @@ public sealed class TagBinding
     /// <summary>Marks the input externally driven. Called by the builder for writable bindings.</summary>
     internal void BindExternal() => _bindExternal?.Invoke();
 
+    /// <summary>
+    /// Binds a port whose value type is not known at compile time — the way a
+    /// configuration file binds tags. Supports bool, double, int and long ports.
+    /// An input may be bound <see cref="TagAccess.ReadOnly"/> to observe a command.
+    /// </summary>
+    public static TagBinding ForPort(
+        string name,
+        Port port,
+        TagAccess access,
+        string unit = "",
+        double rangeLow = double.NaN,
+        double rangeHigh = double.NaN,
+        string description = "")
+    {
+        ArgumentNullException.ThrowIfNull(port);
+        ArgumentNullException.ThrowIfNull(unit);
+        description ??= string.Empty;
+        bool writable = access == TagAccess.ReadWrite;
+
+        switch (port)
+        {
+            case OutputPort<bool> o when !writable:
+                return Read(name, o, description);
+            case OutputPort<double> o when !writable:
+                return Read(name, o, unit, rangeLow, rangeHigh, description);
+            case OutputPort<long> o when !writable:
+                return Read(name, o, unit.Length == 0 ? "count" : unit, description);
+            case OutputPort<int> o when !writable:
+                return Read(name, o, unit.Length == 0 ? "count" : unit, description);
+            case InputPort<bool> i:
+                return writable ? Write(name, i, description) : Write(name, i, description).AsReadOnly();
+            case InputPort<double> i:
+                return writable
+                    ? Write(name, i, unit, rangeLow, rangeHigh, description)
+                    : Write(name, i, unit, rangeLow, rangeHigh, description).AsReadOnly();
+            case InputPort<long> i:
+                return writable
+                    ? Write(name, i, unit.Length == 0 ? "count" : unit, description)
+                    : Write(name, i, unit.Length == 0 ? "count" : unit, description).AsReadOnly();
+        }
+
+        if (writable && IsOutput(port))
+        {
+            throw new ArgumentException(
+                $"Port '{port.QualifiedName}' is an output; a tag can read it but not write it. " +
+                $"Bind it read-only, or bind the input it drives.",
+                nameof(access));
+        }
+
+        throw new ArgumentException(
+            $"Port '{port.QualifiedName}' carries {port.ValueType?.Name ?? "material"}, which has no tag kind. " +
+            $"A tag binds a bool, double, int, long port (an int input is read-only).",
+            nameof(port));
+    }
+
+    private static bool IsOutput(Port port) => port.ValueType is not null && !port.IsInput;
+
     /// <summary>The same binding under a different (usually fully qualified) name.</summary>
     internal TagBinding WithName(string name) => new(
         Port, ValidName(name), Kind, Access, Unit, RangeLow, RangeHigh, Description, _capture, _apply, _bindExternal);

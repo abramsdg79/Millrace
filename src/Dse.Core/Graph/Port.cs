@@ -46,4 +46,20 @@ public abstract class Port
 
     /// <summary>Marks the port immutable. Called by <see cref="Dse.Core.SimulationBuilder.Build"/> for every port.</summary>
     internal void Freeze() => IsFrozen = true;
+
+    /// <summary>
+    /// Connects <paramref name="source"/> to this port when this is an input of
+    /// the same value type. False means "not compatible"; an incompatible
+    /// <em>state</em> (already driven, frozen) throws as <c>ConnectFrom</c> does.
+    /// </summary>
+    internal virtual bool TryConnectFrom(Port source) => false;
+
+    /// <summary>The CLR type this port carries, or null for a flow port.</summary>
+    internal virtual Type? ValueType => null;
+
+    /// <summary>True for an <c>InputPort&lt;T&gt;</c>. Flow ports answer false; ask their type instead.</summary>
+    internal virtual bool IsInput => false;
+
+    /// <summary>True for an input declared <c>required</c>. Read by catalogue conformance.</summary>
+    internal virtual bool IsRequiredInput => false;
 }

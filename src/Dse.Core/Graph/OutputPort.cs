@@ -20,4 +20,6 @@ public sealed class OutputPort<T> : Port
         ArgumentNullException.ThrowIfNull(input);
         input.ConnectFrom(this);
     }
+
+    internal override Type? ValueType => typeof(T);
 }
