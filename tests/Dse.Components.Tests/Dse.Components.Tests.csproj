@@ -22,4 +22,8 @@
     <ProjectReference Include="..\..\src\Dse.Components\Dse.Components.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\Shared\Golden.cs" Link="Shared\Golden.cs" />
+  </ItemGroup>
+
 </Project>
