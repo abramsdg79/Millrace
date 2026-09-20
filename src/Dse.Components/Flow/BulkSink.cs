@@ -1,8 +1,10 @@
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Io;
 using Dse.Core.Telemetry;
+using Dse.Io;
 
 namespace Dse.Components.Flow;
 
@@ -13,6 +15,24 @@ namespace Dse.Components.Flow;
 /// </summary>
 public sealed class BulkSink : FlowComponentBase, IBulkConsumer, ITagProvider
 {
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "bulk-sink",
+        ComponentCategory.Flow,
+        "Accepts bulk material and destroys it, up to an optional capacity.",
+        (id, p) => new BulkSink(id, p.DoubleOr("capacityKg", double.PositiveInfinity)))
+    {
+        Parameters = [Param.Double("capacityKg", "How much it will take. Omit for unlimited.", "kg", min: 0.0, optional: true)],
+        Ports = [PortSpec.Out<double>("Received", "kg"), PortSpec.Out<double>("Rate", "kg/s"), PortSpec.Out<bool>("Full")],
+        FlowPorts = [PortSpec.Inlet("In", PayloadKind.Bulk)],
+        Tags =
+        [
+            new TagEntry("Received", TagKind.Double, TagAccess.ReadOnly, "kg"),
+            new TagEntry("Rate", TagKind.Double, TagAccess.ReadOnly, "kg/s"),
+            new TagEntry("Full", TagKind.Bool, TagAccess.ReadOnly),
+        ],
+        Telemetry = [new TelemetryKey("Received", "kg")],
+    };
+
     private double _received;
     private double _sinceEvaluate;
     private bool _full;

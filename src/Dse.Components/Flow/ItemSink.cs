@@ -1,8 +1,10 @@
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Io;
 using Dse.Core.Telemetry;
+using Dse.Io;
 
 namespace Dse.Components.Flow;
 
@@ -13,6 +15,19 @@ namespace Dse.Components.Flow;
 /// </summary>
 public sealed class ItemSink : FlowComponentBase, IItemConsumer, ITagProvider
 {
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "item-sink",
+        ComponentCategory.Flow,
+        "Accepts discrete items and destroys them, up to an optional capacity.",
+        (id, p) => new ItemSink(id, p.IntOr("capacity", int.MaxValue)))
+    {
+        Parameters = [Param.Int("capacity", "How many items it will take. Omit for unlimited.", "count", min: 0, optional: true)],
+        Ports = [PortSpec.Out<long>("Count", "count"), PortSpec.Out<bool>("Full")],
+        FlowPorts = [PortSpec.Inlet("In", PayloadKind.Discrete)],
+        Tags = [new TagEntry("Count", TagKind.Int64, TagAccess.ReadOnly, "count"), new TagEntry("Full", TagKind.Bool, TagAccess.ReadOnly)],
+        Telemetry = [new TelemetryKey("Received", "count")],
+    };
+
     private long _count;
     private double _mass;
     private bool _full;

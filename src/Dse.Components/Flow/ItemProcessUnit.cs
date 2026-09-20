@@ -1,11 +1,13 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Io;
 using Dse.Core.Telemetry;
+using Dse.Io;
 
 namespace Dse.Components.Flow;
 
@@ -25,6 +27,45 @@ public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemPro
     [
         new(DischargeJam, "The discharge fails to open; the batch stays in the unit until the fault is cleared."),
     ];
+
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "item-process-unit",
+        ComponentCategory.Flow,
+        "A batch unit for discrete items — a furnace, a press: takes a batch, holds it while applying transforms, discharges, optionally as a new material.",
+        (id, p) => new ItemProcessUnit(
+            id,
+            p.Int("batchSize"),
+            p.Object<IHoldCondition>("hold"),
+            p.MaterialOrNull("output"),
+            p.Double("yield"),
+            p.Objects<IMaterialTransform>("transforms")))
+    {
+        Parameters =
+        [
+            Param.Int("batchSize", "Items per batch.", "count", min: 1),
+            Param.Object("hold", "When the batch is done.", ObjectSlots.Hold),
+            Param.Material("output", "What each item becomes. Omit to keep the material.", PayloadKind.Discrete, optional: true),
+            Param.Double("yield", "Fraction of each item's mass that comes out.", @default: 1.0, min: 0.0, max: 1.0, exclusiveMin: true),
+            Param.ObjectList("transforms", "Applied, in order, every tick while holding.", ObjectSlots.Transform),
+        ],
+        Ports =
+        [
+            PortSpec.In<double>("AmbientTemperature", "°C", "Defaults to 20."),
+            PortSpec.Out<ProcessPhase>("Phase"),
+            PortSpec.Out<int>("ItemCount", "count"),
+            PortSpec.Out<double>("Progress", "fraction"),
+        ],
+        FlowPorts = [PortSpec.Inlet("In", PayloadKind.Discrete), PortSpec.Outlet("Out", PayloadKind.Discrete)],
+        Faults = Faults,
+        Tags =
+        [
+            new TagEntry("Phase", TagKind.Int64, TagAccess.ReadOnly),
+            new TagEntry("ItemCount", TagKind.Int64, TagAccess.ReadOnly, "count"),
+            new TagEntry("Progress", TagKind.Double, TagAccess.ReadOnly, "fraction"),
+        ],
+        Telemetry = [new TelemetryKey("Items", "count"), new TelemetryKey("Lost", "kg"), new TelemetryKey("Cycles", "count")],
+        Provides = [typeof(IMaterialObservable)],
+    };
 
     private readonly List<ItemInstance> _items = [];
     private readonly IHoldCondition _hold;

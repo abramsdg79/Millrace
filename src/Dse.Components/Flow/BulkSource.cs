@@ -1,9 +1,11 @@
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Io;
 using Dse.Core.Telemetry;
+using Dse.Io;
 
 namespace Dse.Components.Flow;
 
@@ -22,6 +24,37 @@ public sealed class BulkSource : FlowComponentBase, IBulkProducer, IFaultTarget,
     [
         new(Starve, "The supply runs out; the feeder creates nothing until the fault is cleared."),
     ];
+
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "bulk-source",
+        ComponentCategory.Flow,
+        "Creates bulk material at a commanded rate, from an optional finite hopper.",
+        (id, p) => new BulkSource(
+            id, p.Material("material"), p.Double("rateKgPerS"), p.MaterialProperties("material"),
+            p.DoubleOr("hopperCapacityKg", double.PositiveInfinity)))
+    {
+        Parameters =
+        [
+            Param.Material("material", "What it feeds; new material takes this material's defined properties.", PayloadKind.Bulk),
+            Param.Double("rateKgPerS", "Feed rate when nothing drives the Rate input.", "kg/s", min: 0.0),
+            Param.Double("hopperCapacityKg", "Hopper size. Omit for unlimited.", "kg", min: 0.0, exclusiveMin: true, optional: true),
+        ],
+        Ports =
+        [
+            PortSpec.In<double>("Rate", "kg/s", "Defaults to rateKgPerS."),
+            PortSpec.In<bool>("Enabled", description: "Defaults to true."),
+            PortSpec.Out<double>("HopperMass", "kg"),
+        ],
+        FlowPorts = [PortSpec.Outlet("Out", PayloadKind.Bulk)],
+        Faults = Faults,
+        Tags =
+        [
+            new TagEntry("Enabled", TagKind.Bool, TagAccess.ReadWrite),
+            new TagEntry("Rate", TagKind.Double, TagAccess.ReadWrite, "kg/s"),
+            new TagEntry("HopperMass", TagKind.Double, TagAccess.ReadOnly, "kg"),
+        ],
+        Telemetry = [new TelemetryKey("Hopper", "kg"), new TelemetryKey("Sourced", "kg")],
+    };
 
     private readonly MaterialType _type;
     private readonly MaterialProperties _properties;

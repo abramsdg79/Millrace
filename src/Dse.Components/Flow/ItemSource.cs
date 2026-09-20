@@ -1,10 +1,12 @@
 using System.Diagnostics.CodeAnalysis;
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Io;
 using Dse.Core.Telemetry;
+using Dse.Io;
 
 namespace Dse.Components.Flow;
 
@@ -22,6 +24,28 @@ public sealed class ItemSource : FlowComponentBase, IItemProducer, IFaultTarget,
     [
         new(Starve, "The supply runs out; nothing is minted until the fault is cleared."),
     ];
+
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "item-source",
+        ComponentCategory.Flow,
+        "Mints one discrete item at a fixed interval and queues it at the outlet.",
+        (id, p) => new ItemSource(
+            id, p.Material("material"), p.Double("itemMassKg"), p.Double("intervalSeconds"), p.MaterialProperties("material"),
+            p.IntOr("queueCapacity", int.MaxValue)))
+    {
+        Parameters =
+        [
+            Param.Material("material", "What each item is; new items take this material's defined properties.", PayloadKind.Discrete),
+            Param.Double("itemMassKg", "Mass of one item.", "kg", min: 0.0, exclusiveMin: true),
+            Param.Double("intervalSeconds", "Time between items.", "s", min: 0.0, exclusiveMin: true),
+            Param.Int("queueCapacity", "Items that may wait at the outlet. Omit for unlimited.", "count", min: 1, optional: true),
+        ],
+        Ports = [PortSpec.In<bool>("Enabled", description: "Defaults to true."), PortSpec.Out<int>("Queued", "count")],
+        FlowPorts = [PortSpec.Outlet("Out", PayloadKind.Discrete)],
+        Faults = Faults,
+        Tags = [new TagEntry("Enabled", TagKind.Bool, TagAccess.ReadWrite), new TagEntry("Queued", TagKind.Int64, TagAccess.ReadOnly, "count")],
+        Telemetry = [new TelemetryKey("Sourced", "count")],
+    };
 
     private readonly Queue<ItemInstance> _ready = new();
     private readonly MaterialType _type;

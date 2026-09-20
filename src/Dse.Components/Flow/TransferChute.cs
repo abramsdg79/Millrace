@@ -1,9 +1,11 @@
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Io;
 using Dse.Core.Telemetry;
+using Dse.Io;
 
 namespace Dse.Components.Flow;
 
@@ -21,6 +23,21 @@ public sealed class TransferChute : FlowComponentBase, IBulkConsumer, IBulkProdu
     [
         new(Blockage, "Material bridges in the chute; nothing discharges until the fault is cleared."),
     ];
+
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "transfer-chute",
+        ComponentCategory.Flow,
+        "A small buffer between two belts; backs material up when it is full or blocked.",
+        (id, p) => new TransferChute(id, p.Double("capacityKg")))
+    {
+        Parameters = [Param.Double("capacityKg", "Mass the chute can hold.", "kg", min: 0.0, exclusiveMin: true)],
+        Ports = [PortSpec.Out<double>("Level", "fraction"), PortSpec.Out<bool>("Full")],
+        FlowPorts = [PortSpec.Inlet("In", PayloadKind.Bulk), PortSpec.Outlet("Out", PayloadKind.Bulk)],
+        Faults = Faults,
+        Tags = [new TagEntry("Level", TagKind.Double, TagAccess.ReadOnly, "fraction"), new TagEntry("Full", TagKind.Bool, TagAccess.ReadOnly)],
+        Telemetry = [new TelemetryKey("Held", "kg")],
+        Provides = [typeof(IMaterialObservable)],
+    };
 
     private BulkLot _held;
     private bool _blocked;

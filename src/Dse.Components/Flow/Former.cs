@@ -1,10 +1,12 @@
 using System.Diagnostics.CodeAnalysis;
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Io;
 using Dse.Core.Telemetry;
+using Dse.Io;
 
 namespace Dse.Components.Flow;
 
@@ -23,6 +25,36 @@ public sealed class Former : FlowComponentBase, IBulkConsumer, IItemProducer, IM
     [
         new(Jam, "The cutter jams; no pieces are formed until the fault is cleared."),
     ];
+
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "former",
+        ComponentCategory.Flow,
+        "Turns bulk material into discrete pieces of a fixed mass, one per cycle. The only place material changes kind.",
+        (id, p) => new Former(
+            id, p.Material("input"), p.Material("output"), p.Double("pieceMassKg"), p.Double("cycleSeconds"), p.Double("hopperCapacityKg"),
+            p.IntOr("outputQueueCapacity", int.MaxValue)))
+    {
+        Parameters =
+        [
+            Param.Material("input", "The bulk material consumed.", PayloadKind.Bulk),
+            Param.Material("output", "The discrete material produced.", PayloadKind.Discrete),
+            Param.Double("pieceMassKg", "Mass of one piece.", "kg", min: 0.0, exclusiveMin: true),
+            Param.Double("cycleSeconds", "Time to form one piece.", "s", min: 0.0, exclusiveMin: true),
+            Param.Double("hopperCapacityKg", "Bulk material the former can hold.", "kg", min: 0.0, exclusiveMin: true),
+            Param.Int("outputQueueCapacity", "Pieces that may wait at the outlet. Omit for unlimited.", "count", min: 1, optional: true),
+        ],
+        Ports = [PortSpec.Out<long>("PiecesFormed", "count"), PortSpec.Out<double>("HopperLevel", "fraction"), PortSpec.Out<int>("Queued", "count")],
+        FlowPorts = [PortSpec.Inlet("In", PayloadKind.Bulk), PortSpec.Outlet("Out", PayloadKind.Discrete)],
+        Faults = Faults,
+        Tags =
+        [
+            new TagEntry("PiecesFormed", TagKind.Int64, TagAccess.ReadOnly, "count"),
+            new TagEntry("HopperLevel", TagKind.Double, TagAccess.ReadOnly, "fraction"),
+            new TagEntry("Queued", TagKind.Int64, TagAccess.ReadOnly, "count"),
+        ],
+        Telemetry = [new TelemetryKey("Hopper", "kg"), new TelemetryKey("Formed", "count")],
+        Provides = [typeof(IMaterialObservable)],
+    };
 
     private readonly Queue<ItemInstance> _ready = new();
     private readonly MaterialType _output;

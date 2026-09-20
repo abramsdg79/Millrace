@@ -1,7 +1,6 @@
 using System.Reflection;
 using Dse.Components.Conveyors;
 using Dse.Components.Flow;
-using Dse.Components.Transforms;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Testing;
@@ -16,16 +15,9 @@ public class ComponentsCatalogueTests
     /// </summary>
     private static readonly Type[] Pending =
     [
-        // Task 7 — flow, transforms, holds
-        typeof(BulkBelt), typeof(DiscreteBelt), typeof(BulkSource), typeof(BulkSink), typeof(ItemSource), typeof(ItemSink),
-        typeof(TransferChute), typeof(Former), typeof(BulkProcessUnit), typeof(ItemProcessUnit),
-        typeof(ThermalTransfer), typeof(MoistureLoss), typeof(ResidenceAccumulator),
         // Task 8 — conveyor
         typeof(Conveyor),
     ];
-
-    /// <summary>The hold conditions are private classes behind <see cref="Hold"/>; Task 7 empties this.</summary>
-    private const int PendingHolds = 5;
 
     private static readonly ConformanceReport Report =
         CatalogueConformance.Check(ComponentsFixtures.Catalogue, ComponentsFixtures.Create());
@@ -55,11 +47,9 @@ public class ComponentsCatalogueTests
             .Order(StringComparer.Ordinal)
             .ToList();
         List<string> stale = Pending.Where(t => built.Contains(Definition(t))).Select(t => t.Name).ToList();
-        int holdsMissing = missing.Count(name => name.StartsWith(typeof(Hold).FullName + "+", StringComparison.Ordinal));
 
         Assert.Empty(stale);
-        Assert.Equal(PendingHolds, holdsMissing);
-        Assert.DoesNotContain(missing, name => !name.StartsWith(typeof(Hold).FullName + "+", StringComparison.Ordinal));
+        Assert.Empty(missing);
     }
 
     private static Type Definition(Type type) => type.IsGenericType ? type.GetGenericTypeDefinition() : type;

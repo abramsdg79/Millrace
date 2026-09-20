@@ -1,10 +1,12 @@
 using System.Globalization;
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Io;
 using Dse.Core.Telemetry;
+using Dse.Io;
 
 namespace Dse.Components.Flow;
 
@@ -30,6 +32,55 @@ public sealed class BulkProcessUnit : FlowComponentBase, IBulkConsumer, IBulkPro
         new(YieldLoss, "Extra loss on every batch released while active.",
             new FaultParameter("fraction", "", 0.05, "Fraction of the batch lost, on top of the configured yield.")),
     ];
+
+    private static readonly GroupDefinition RecipeLineGroup = new(
+        "RecipeLine",
+        Param.String("inlet", "Name of the inlet this ingredient arrives at; the unit gets one inlet per line."),
+        Param.Material("material", "The ingredient.", PayloadKind.Bulk),
+        Param.Double("massKg", "Mass of it per batch.", "kg", min: 0.0, exclusiveMin: true));
+
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "bulk-process-unit",
+        ComponentCategory.Flow,
+        "A batch unit for bulk material: fills to a recipe, holds until a condition is met while applying transforms, then discharges.",
+        (id, p) => new BulkProcessUnit(
+            id,
+            p.Groups("recipe").Select(line => new RecipeLine(line.String("inlet"), line.Material("material"), line.Double("massKg"))).ToList(),
+            p.Object<IHoldCondition>("hold"),
+            p.Material("output"),
+            p.Double("yield"),
+            p.Objects<IMaterialTransform>("transforms")))
+    {
+        Parameters =
+        [
+            Param.GroupList("recipe", "What one batch is made of.", RecipeLineGroup, minCount: 1),
+            Param.Object("hold", "When the batch is done.", ObjectSlots.Hold),
+            Param.Material("output", "What the batch becomes.", PayloadKind.Bulk),
+            Param.Double("yield", "Fraction of the batch mass that comes out.", @default: 1.0, min: 0.0, max: 1.0, exclusiveMin: true),
+            Param.ObjectList("transforms", "Applied, in order, every tick while holding.", ObjectSlots.Transform),
+        ],
+        Ports =
+        [
+            PortSpec.In<double>("AmbientTemperature", "°C", "Defaults to 20."),
+            PortSpec.Out<ProcessPhase>("Phase"),
+            PortSpec.Out<double>("BatchMass", "kg"),
+            PortSpec.Out<double>("Progress", "fraction"),
+        ],
+        FlowPorts =
+        [
+            PortSpec.Inlet("{n}", PayloadKind.Bulk, "One per recipe line, named by the line's inlet.", new PortRepeat("recipe", "inlet")),
+            PortSpec.Outlet("Out", PayloadKind.Bulk),
+        ],
+        Faults = Faults,
+        Tags =
+        [
+            new TagEntry("Phase", TagKind.Int64, TagAccess.ReadOnly),
+            new TagEntry("BatchMass", TagKind.Double, TagAccess.ReadOnly, "kg"),
+            new TagEntry("Progress", TagKind.Double, TagAccess.ReadOnly, "fraction"),
+        ],
+        Telemetry = [new TelemetryKey("Batch", "kg"), new TelemetryKey("Lost", "kg"), new TelemetryKey("Cycles", "count")],
+        Provides = [typeof(IMaterialObservable)],
+    };
 
     private readonly RecipeLine[] _recipe;
     private readonly FlowInlet[] _inlets;
