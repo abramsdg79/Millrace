@@ -22,6 +22,9 @@ internal sealed class ComponentEntry(int index, string id, ComponentDescriptor d
     public string ParametersPath => $"{Path}.parameters";
 
     public ISimNode? Node { get; set; }
+
+    /// <summary>Ids this component's reference parameters name. Filled by the reference stage.</summary>
+    public List<string> ReferencedIds { get; } = [];
 }
 
 internal sealed record LinkEntry(string From, string To, string Path);

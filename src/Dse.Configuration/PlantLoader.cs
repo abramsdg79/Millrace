@@ -14,6 +14,8 @@ public static class PlantLoader
     private static readonly Action<LoadState>[] Stages =
     [
         StructureStage.Run,
+        ReferenceStage.Run,
+        InstantiateStage.Run,
     ];
 
     public static LoadResult Load(string json, ComponentCatalogue catalogue, LoadOptions? options = null)
