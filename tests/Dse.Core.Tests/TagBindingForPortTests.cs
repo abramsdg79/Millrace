@@ -71,4 +71,27 @@ public class TagBindingForPortTests
         Assert.Contains("Single", ex.Message, StringComparison.Ordinal);
         Assert.Contains("bool, double, int, long", ex.Message, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void BindsAnIntInputReadOnly()
+    {
+        var delay = new UnitDelay<int>("I");
+
+        TagBinding tag = TagBinding.ForPort("I.VAL", delay.In, TagAccess.ReadOnly);
+
+        Assert.Equal(TagKind.Int64, tag.Kind);
+        Assert.Equal(TagAccess.ReadOnly, tag.Access);
+        Assert.Same(delay.In, tag.Port);
+    }
+
+    [Fact]
+    public void RefusesToWriteAnIntInput()
+    {
+        var delay = new UnitDelay<int>("I");
+
+        var ex = Assert.Throws<ArgumentException>(
+            () => TagBinding.ForPort("I.VAL", delay.In, TagAccess.ReadWrite));
+
+        Assert.Contains("is an int input", ex.Message, StringComparison.Ordinal);
+    }
 }

@@ -243,6 +243,15 @@ public sealed class TagBinding
                 return writable
                     ? Write(name, i, unit.Length == 0 ? "count" : unit, description)
                     : Write(name, i, unit.Length == 0 ? "count" : unit, description).AsReadOnly();
+            case InputPort<int> i when writable:
+                throw new ArgumentException(
+                    $"Port '{port.QualifiedName}' is an int input; a tag can observe it but not write it, " +
+                    $"because tags carry 64-bit integers. Bind it read-only, or declare the input as long.",
+                    nameof(access));
+            case InputPort<int> i:
+                return new TagBinding(
+                    i, ValidName(name), TagKind.Int64, TagAccess.ReadOnly, unit.Length == 0 ? "count" : unit,
+                    double.NaN, double.NaN, description, () => TagValue.Int64(i.Value), null, null);
         }
 
         if (writable && IsOutput(port))
