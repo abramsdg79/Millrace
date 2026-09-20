@@ -16,6 +16,8 @@ public static class PlantLoader
         StructureStage.Run,
         ReferenceStage.Run,
         InstantiateStage.Run,
+        WireStage.Run,
+        BuildStage.Run,
     ];
 
     public static LoadResult Load(string json, ComponentCatalogue catalogue, LoadOptions? options = null)

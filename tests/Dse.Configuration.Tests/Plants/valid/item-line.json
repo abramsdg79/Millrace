@@ -1,0 +1,25 @@
+{
+  "defaults": { "timeStepMs": 10 },
+  "materials": [
+    { "name": "billet", "kind": "discrete", "states": [ "soak" ],
+      "properties": { "density": 7800, "moisture": 0, "temperature": 20 }, "description": "A steel billet." }
+  ],
+  "components": [
+    { "id": "SRC", "type": "item-source", "parameters": { "material": "billet", "itemMassKg": 12, "intervalSeconds": 5, "queueCapacity": 4 } },
+    { "id": "RB", "type": "discrete-belt", "parameters": { "lengthM": 6, "maxSpeedMps": 1, "minSpacingM": 0.5 } },
+    { "id": "FCE", "type": "item-process-unit", "parameters": {
+        "batchSize": 4,
+        "hold": { "type": "all", "conditions": [
+          { "type": "for-seconds", "seconds": 60 },
+          { "type": "state-at-least", "material": "billet", "state": "soak", "value": 30 } ] },
+        "transforms": [
+          { "type": "thermal-transfer", "timeConstantSeconds": 120 },
+          { "type": "residence-accumulator", "material": "billet", "state": "soak", "thresholdTemperature": 700 } ] } },
+    { "id": "BIN", "type": "item-sink" },
+    { "id": "PC", "type": "part-counter", "parameters": { "belt": "RB", "positionM": 3, "windowM": 0.2 } },
+    { "id": "PY", "type": "pyrometer",
+      "parameters": { "target": "FCE", "positionM": 0, "windowM": 1, "spec": { "unit": "°C", "rangeLow": 0, "rangeHigh": 1300 } } }
+  ],
+  "flows": [ { "from": "SRC.Out", "to": "RB.In" }, { "from": "RB.Out", "to": "FCE.In" }, { "from": "FCE.Out", "to": "BIN.In" } ],
+  "tags": [ { "name": "RB.SPEED_SP", "port": "RB.Speed", "access": "write", "unit": "m/s", "rangeLow": 0, "rangeHigh": 1 } ]
+}

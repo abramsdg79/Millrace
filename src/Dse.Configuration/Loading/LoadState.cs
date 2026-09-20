@@ -2,6 +2,7 @@ using System.Text.Json;
 using Dse.Core;
 using Dse.Core.Catalogue;
 using Dse.Core.Graph;
+using Dse.Core.Io;
 using Dse.Core.Time;
 
 namespace Dse.Configuration.Loading;
@@ -59,6 +60,9 @@ internal sealed class LoadState(ComponentCatalogue catalogue, LoadOptions option
     public List<LinkEntry> Flows { get; } = [];
 
     public List<TagRequest> Tags { get; } = [];
+
+    /// <summary>Explicit tags from the file, resolved to bindings by the wire stage.</summary>
+    public List<(string Name, TagBinding Binding)> Bindings { get; } = [];
 
     public SimulationBuilder? Builder { get; set; }
 

@@ -1,0 +1,21 @@
+{
+  "defaults": { "seed": 1, "timeStepMs": 10, "startTime": "2026-01-01T06:00:00Z" },
+  "materials": [
+    { "name": "Ore", "kind": "bulk", "properties": { "density": 2000, "moisture": 0.03, "temperature": 15 } }
+  ],
+  "components": [
+    { "id": "Pile", "type": "bulk-sink" },
+    { "id": "Chute", "type": "transfer-chute", "parameters": { "capacityKg": 200 } },
+    { "id": "CV001", "type": "conveyor", "parameters": {
+        "lengthM": 10, "cellSizeM": 0.5, "beltWidthM": 0.8, "angleOfReposeDeg": 20, "materialDensityKgM3": 2000,
+        "emptyBeltMassKg": 250, "frictionCoefficient": 0.04, "pulleyDiameterM": 0.5, "gearRatio": 20,
+        "motor": { "ratedPowerW": 750, "ratedSpeedRadPerS": 150, "ratedCurrentA": 2 },
+        "tailDragN": 80 } },
+    { "id": "Feed", "type": "bulk-source", "parameters": { "material": "Ore", "rateKgPerS": 20 } }
+  ],
+  "flows": [
+    { "from": "Feed.Out", "to": "CV001.In" },
+    { "from": "CV001.Out", "to": "Chute.In" },
+    { "from": "Chute.Out", "to": "Pile.In" }
+  ]
+}

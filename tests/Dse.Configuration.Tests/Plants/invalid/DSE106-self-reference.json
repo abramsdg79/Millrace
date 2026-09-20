@@ -1,0 +1,18 @@
+{
+  "defaults": { "timeStepMs": 10 },
+  "materials": [ { "name": "ore", "kind": "bulk", "properties": { "density": 1800, "moisture": 0.05, "temperature": 12 } } ],
+  "components": [
+    { "id": "WT", "type": "belt-scale",
+      "parameters": { "belt": "WT", "positionM": 5, "spec": { "unit": "kg/m", "rangeLow": 0, "rangeHigh": 100, "noiseSigma": 0.1 } } },
+    { "id": "FEED", "type": "bulk-source", "parameters": { "material": "ore", "rateKgPerS": 20, "hopperCapacityKg": 5000 } },
+    { "id": "BELT", "type": "bulk-belt",
+      "parameters": { "lengthM": 10, "cellSizeM": 0.5, "maxSpeedMps": 2, "maxLinearDensityKgPerM": 100,
+                      "transforms": [ { "type": "thermal-transfer", "timeConstantSeconds": 600 } ] } },
+    { "id": "PILE", "type": "bulk-sink", "parameters": { "capacityKg": 100000 } }
+  ],
+  "flows": [ { "from": "FEED.Out", "to": "BELT.In" }, { "from": "BELT.Out", "to": "PILE.In" } ],
+  "tags": [
+    { "name": "BELT.SPEED_SP", "port": "BELT.Speed", "access": "write", "unit": "m/s", "rangeLow": 0, "rangeHigh": 2,
+      "description": "Belt speed setpoint" }
+  ]
+}

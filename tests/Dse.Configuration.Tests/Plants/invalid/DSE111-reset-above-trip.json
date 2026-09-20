@@ -1,0 +1,1 @@
+{ "components": [ { "id": "MS", "type": "motor-starter", "parameters": { "tripLevel": 1.1, "resetLevel": 1.5 } } ] }
