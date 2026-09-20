@@ -50,5 +50,11 @@ internal static class ComponentsFixtures
         .ObjectParameters(ObjectSlots.Hold, "temperature-at-least", """{ "celsius": 180 }""")
         .ObjectParameters(ObjectSlots.Hold, "temperature-at-most", """{ "celsius": 40 }""")
         .ObjectParameters(ObjectSlots.Hold, "state-at-least", """{ "material": "test-item", "state": "soak", "value": 600 }""")
-        .ObjectParameters(ObjectSlots.Hold, "all", """{ "conditions": [ { "type": "for-seconds", "seconds": 10 }, { "type": "temperature-at-least", "celsius": 180 } ] }""");
+        .ObjectParameters(ObjectSlots.Hold, "all", """{ "conditions": [ { "type": "for-seconds", "seconds": 10 }, { "type": "temperature-at-least", "celsius": 180 } ] }""")
+        // Task 8 — conveyor
+        .Parameters("conveyor", """
+            { "lengthM": 10, "cellSizeM": 0.5, "beltWidthM": 0.8, "angleOfReposeDeg": 20, "materialDensityKgM3": 2000,
+              "emptyBeltMassKg": 250, "frictionCoefficient": 0.04, "pulleyDiameterM": 0.5, "gearRatio": 20,
+              "motor": { "ratedPowerW": 750, "ratedSpeedRadPerS": 150, "ratedCurrentA": 2 }, "pullKeys": 3 }
+            """);
 }

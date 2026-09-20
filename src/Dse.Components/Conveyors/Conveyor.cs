@@ -2,8 +2,10 @@ using System.Globalization;
 using Dse.Components.Instruments;
 using Dse.Components.Mechanical;
 using Dse.Components.Safety;
+using Dse.Core.Catalogue;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
+using Dse.Io;
 
 namespace Dse.Components.Conveyors;
 
@@ -19,6 +21,93 @@ namespace Dse.Components.Conveyors;
 public sealed class Conveyor : CompositeComponent, ICapabilityProvider
 {
     private const double KgPerSecondToTonnesPerHour = 3.6;
+
+    private static readonly PortRepeat PerPullKey = new("pullKeys");
+
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "conveyor",
+        ComponentCategory.Conveyor,
+        "A complete belt conveyor: motor, gearbox, drive and tail pulleys, belt friction, belt, speed sensor, belt scale, " +
+        "current sensor, zero-speed switch, e-stop, pull-keys, safety relay and starter, wired and ready. Faults are injected " +
+        "on the leaves inside it, addressed as <id>.Motor, <id>.Drive, <id>.Scale and so on.",
+        (id, p) => new Conveyor(id, new ConveyorOptions(
+            LengthM: p.Double("lengthM"),
+            CellSizeM: p.Double("cellSizeM"),
+            BeltWidthM: p.Double("beltWidthM"),
+            AngleOfReposeDeg: p.Double("angleOfReposeDeg"),
+            MaterialDensityKgM3: p.Double("materialDensityKgM3"),
+            EmptyBeltMassKg: p.Double("emptyBeltMassKg"),
+            FrictionCoefficient: p.Double("frictionCoefficient"),
+            PulleyDiameterM: p.Double("pulleyDiameterM"),
+            GearRatio: p.Double("gearRatio"),
+            Motor: MotorRatingGroup.Read(p.Group("motor")),
+            TailDragN: p.Double("tailDragN"),
+            PullKeys: p.Int("pullKeys"),
+            SpeedMarginFraction: p.Double("speedMarginFraction"))))
+    {
+        Parameters =
+        [
+            Param.Double("lengthM", "Belt length; must be a whole number of cells.", "m", min: 0.0, exclusiveMin: true),
+            Param.Double("cellSizeM", "Length of one belt cell. The belt may not advance more than one cell per tick (DSE006).", "m", min: 0.0, exclusiveMin: true),
+            Param.Double("beltWidthM", "Belt width; with the angle of repose and density it sets how much a metre of belt can carry.", "m", min: 0.0, exclusiveMin: true),
+            Param.Double("angleOfReposeDeg", "Surcharge angle of the material on the belt.", "°", min: 0.0),
+            Param.Double("materialDensityKgM3", "Bulk density used to size the belt's capacity.", "kg/m³", min: 0.0, exclusiveMin: true),
+            Param.Double("emptyBeltMassKg", "Mass of the moving belt and idlers with no load.", "kg", min: 0.0),
+            Param.Double("frictionCoefficient", "Rolling resistance coefficient.", min: 0.0),
+            Param.Double("pulleyDiameterM", "Drive pulley diameter.", "m", min: 0.0, exclusiveMin: true),
+            Param.Double("gearRatio", "Motor speed over pulley speed.", min: 0.0, exclusiveMin: true),
+            Param.Group("motor", "The drive motor's rating.", MotorRatingGroup.Definition),
+            Param.Double("tailDragN", "Tail pulley bearing drag.", "N", @default: 50.0, min: 0.0),
+            Param.Int("pullKeys", "Number of pull-wire switches along the belt.", "count", @default: 2, min: 0),
+            Param.Double("speedMarginFraction", "How far the belt's declared maximum speed exceeds the no-load speed.", @default: 0.1, min: 0.0),
+        ],
+        Ports =
+        [
+            PortSpec.In<bool>("Start", description: "Run command to the starter."),
+            PortSpec.In<bool>("Reset", description: "Overload reset, rising edge."),
+            PortSpec.In<bool>("SafetyReset", description: "Safety relay reset, rising edge."),
+            PortSpec.In<bool>("EStop", description: "The e-stop is pressed."),
+            PortSpec.In<bool>("PullKey{n}", description: "A pull-key is pulled.", repeat: PerPullKey),
+            PortSpec.Out<double>("Speed", "m/s", "Measured belt speed."),
+            PortSpec.Out<double>("TonnesPerHour", "t/h", "Measured mass flow at the scale."),
+            PortSpec.Out<double>("Current", "A", "Measured motor current."),
+            PortSpec.Out<bool>("Stopped", description: "Zero-speed switch."),
+            PortSpec.Out<bool>("Contactor"),
+            PortSpec.Out<bool>("Tripped"),
+            PortSpec.Out<bool>("SafetyOk"),
+        ],
+        FlowPorts = [PortSpec.Inlet("In", PayloadKind.Bulk, "The tail."), PortSpec.Outlet("Out", PayloadKind.Bulk, "The head.")],
+        Tags =
+        [
+            new TagEntry("Start", TagKind.Bool, TagAccess.ReadWrite),
+            new TagEntry("Reset", TagKind.Bool, TagAccess.ReadWrite),
+            new TagEntry("SafetyReset", TagKind.Bool, TagAccess.ReadWrite),
+            new TagEntry("EStop", TagKind.Bool, TagAccess.ReadWrite),
+            new TagEntry("PullKey{n}", TagKind.Bool, TagAccess.ReadWrite, Repeat: PerPullKey),
+            new TagEntry("Speed", TagKind.Double, TagAccess.ReadOnly, "m/s"),
+            new TagEntry("TonnesPerHour", TagKind.Double, TagAccess.ReadOnly, "t/h"),
+            new TagEntry("Current", TagKind.Double, TagAccess.ReadOnly, "A"),
+            new TagEntry("Stopped", TagKind.Bool, TagAccess.ReadOnly),
+            new TagEntry("Contactor", TagKind.Bool, TagAccess.ReadOnly),
+            new TagEntry("Tripped", TagKind.Bool, TagAccess.ReadOnly),
+            new TagEntry("SafetyOk", TagKind.Bool, TagAccess.ReadOnly),
+            new TagEntry("ZeroSpeed.Value", TagKind.Double, TagAccess.ReadOnly, "m/s"),
+            new TagEntry("EStop.Ok", TagKind.Bool, TagAccess.ReadOnly),
+            new TagEntry("PullKey{n}.Ok", TagKind.Bool, TagAccess.ReadOnly, Repeat: PerPullKey),
+        ],
+        Telemetry =
+        [
+            new TelemetryKey("Motor.Speed", "rad/s"),
+            new TelemetryKey("Motor.Current", "A"),
+            new TelemetryKey("Motor.ThermalState"),
+            new TelemetryKey("Belt.Load", "kg"),
+            new TelemetryKey("SpeedSensor.Truth"),
+            new TelemetryKey("Scale.Truth"),
+            new TelemetryKey("CurrentSensor.Truth"),
+            new TelemetryKey("ZeroSpeed.Truth"),
+        ],
+        Provides = [typeof(IMaterialObservable)],
+    };
 
     public Conveyor(string id, ConveyorOptions options)
         : base(id)

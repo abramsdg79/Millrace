@@ -1,3 +1,4 @@
+using Dse.Components.Conveyors;
 using Dse.Components.Flow;
 using Dse.Components.Instruments;
 using Dse.Components.Mechanical;
@@ -56,6 +57,9 @@ public sealed class ComponentsModule : ICatalogueModule
         builder.Add(Former.Descriptor);
         builder.Add(BulkProcessUnit.Descriptor);
         builder.Add(ItemProcessUnit.Descriptor);
+
+        // Conveyor
+        builder.Add(Conveyor.Descriptor);
 
         // Transforms
         builder.Add(TransformDescriptors.Thermal);
