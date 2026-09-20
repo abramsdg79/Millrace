@@ -146,6 +146,45 @@ public class CatalogueConformanceTests
     }
 
     [Fact]
+    public void AnHonestCompositeDescriptorHasNoMismatches()
+    {
+        ConformanceReport report = Check(HonestStation());
+
+        Assert.Empty(report.Mismatches);
+        Assert.Contains(typeof(Station), report.BuiltTypes);
+    }
+
+    [Fact]
+    public void ACompositeReportsAliasNotLeafNames()
+    {
+        ComponentDescriptor honest = HonestStation();
+        var wrong = new ComponentDescriptor(honest.Type, honest.Category, honest.Description, honest.Factory)
+        {
+            Ports = [PortSpec.Out<double>("Level", "fraction")],
+            FlowPorts = honest.FlowPorts,
+            Tags =
+            [
+                new TagEntry("A.Enable", TagKind.Bool, TagAccess.ReadWrite),
+                new TagEntry("Output", TagKind.Double, TagAccess.ReadOnly, "fraction"),
+                new TagEntry("B.Enable", TagKind.Bool, TagAccess.ReadWrite),
+                new TagEntry("B.Level", TagKind.Double, TagAccess.ReadOnly, "fraction"),
+            ],
+            Telemetry = honest.Telemetry,
+        };
+
+        List<string> mismatches = Check(wrong).Mismatches.Order(StringComparer.Ordinal).ToList();
+
+        Assert.Equal(
+            [
+                "station: signal port 'Level' (Out double) is in the descriptor but not on the instance.",
+                "station: signal port 'Output' (Out double) is on the instance but not in the descriptor.",
+                "station: tag 'B.Enable' (Bool ReadOnly) is on the instance but not in the descriptor.",
+                "station: tag 'B.Enable' (Bool ReadWrite) is in the descriptor but not on the instance.",
+            ],
+            mismatches);
+    }
+
+    [Fact]
     public void AFixtureChangesTheProbeAndTheExpansion()
     {
         ComponentCatalogue catalogue = new CatalogueBuilder().Add(Honest()).Build();
