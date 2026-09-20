@@ -79,6 +79,60 @@ public class CatalogueConformanceTests
             Telemetry = [new TelemetryKey("Held", "kg")],
         };
 
+    /// <summary>A leaf with nothing but a bool output, used to drive a sibling's writable tag from inside a composite.</summary>
+    private sealed class Flag : ComponentBase
+    {
+        public Flag(string id)
+            : base(id)
+        {
+            Set = AddOutput<bool>("Set");
+        }
+
+        public OutputPort<bool> Set { get; }
+
+        public override void Evaluate(in TickContext ctx) => Set.Value = true;
+    }
+
+    /// <summary>
+    /// The one composite conformance's tests exercise: an alias exposed under a
+    /// name that differs from the leaf port, a leaf tag left unexposed, and a
+    /// writable leaf tag wired from a sibling's output inside the composite.
+    /// </summary>
+    private sealed class Station : CompositeComponent
+    {
+        public Station(string id)
+            : base(id)
+        {
+            Flag source = AddChild(new Flag("Source"));
+            A = AddChild(new Widget("A", 1));
+            B = AddChild(new Widget("B", 1));
+
+            source.Set.ConnectTo(B.Enable);
+
+            Expose("Output", A.Level);
+            Expose("Intake", A.In);
+        }
+
+        public Widget A { get; }
+
+        public Widget B { get; }
+    }
+
+    private static ComponentDescriptor HonestStation() =>
+        new("station", ComponentCategory.Flow, "A test composite.", (id, p) => new Station(id))
+        {
+            Ports = [PortSpec.Out<double>("Output", "fraction")],
+            FlowPorts = [PortSpec.Inlet("Intake", PayloadKind.Bulk)],
+            Tags =
+            [
+                new TagEntry("A.Enable", TagKind.Bool, TagAccess.ReadWrite),
+                new TagEntry("Output", TagKind.Double, TagAccess.ReadOnly, "fraction"),
+                new TagEntry("B.Enable", TagKind.Bool, TagAccess.ReadOnly),
+                new TagEntry("B.Level", TagKind.Double, TagAccess.ReadOnly, "fraction"),
+            ],
+            Telemetry = [new TelemetryKey("A.Held", "kg"), new TelemetryKey("B.Held", "kg")],
+        };
+
     private static ConformanceReport Check(ComponentDescriptor descriptor) =>
         CatalogueConformance.Check(new CatalogueBuilder().Add(descriptor).Build(), new ConformanceFixtures());
 
