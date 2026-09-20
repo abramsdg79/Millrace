@@ -1,8 +1,10 @@
 using System.Globalization;
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Graph;
 using Dse.Core.Io;
+using Dse.Io;
 
 namespace Dse.Components.Safety;
 
@@ -25,6 +27,23 @@ public sealed class SafetyRelay : ComponentBase, IFaultTarget, ITagProvider
         new(StuckEnergised, "The relay contacts are welded; it stays energised whatever the channels say."),
         new(CoilFailure, "The coil is open; the relay cannot energise until the fault is cleared."),
     ];
+
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "safety-relay",
+        ComponentCategory.Safety,
+        "Energises only while every channel is healthy; once dropped, stays dropped until a reset edge.",
+        (id, p) => new SafetyRelay(id, p.Int("channels")))
+    {
+        Parameters = [Param.Int("channels", "Number of monitored channels.", min: 1)],
+        Ports =
+        [
+            PortSpec.In<bool>("Channel{n}", description: "One monitored loop; healthy when unwired.", repeat: new PortRepeat("channels")),
+            PortSpec.In<bool>("Reset", description: "Safety reset, rising edge."),
+            PortSpec.Out<bool>("Ok"),
+        ],
+        Faults = Faults,
+        Tags = [new TagEntry("Reset", TagKind.Bool, TagAccess.ReadWrite), new TagEntry("Ok", TagKind.Bool, TagAccess.ReadOnly)],
+    };
 
     private readonly InputPort<bool>[] _channels;
     private bool _energised;

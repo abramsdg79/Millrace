@@ -1,9 +1,11 @@
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Io;
 using Dse.Core.Telemetry;
+using Dse.Io;
 
 namespace Dse.Components.Instruments;
 
@@ -22,6 +24,24 @@ public sealed class PartCounter : ComponentBase, IFaultTarget, ITagProvider
     [
         new(Blinded, "The photo-eye is obscured and sees nothing until the fault is cleared."),
     ];
+
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "part-counter",
+        ComponentCategory.Instrumentation,
+        "Counts items entering a window on a belt and reports whether one is in it now.",
+        (id, p) => new PartCounter(id, p.Reference<IMaterialObservable>("belt"), p.Double("positionM"), p.Double("windowM")))
+    {
+        Parameters =
+        [
+            Param.Reference<IMaterialObservable>("belt", "The belt watched: a discrete belt, or a composite that has one."),
+            Param.Double("positionM", "Centre of the window, from the tail.", "m", min: 0.0),
+            Param.Double("windowM", "Length of the window.", "m", min: 0.0),
+        ],
+        Ports = [PortSpec.Out<long>("Count", "count"), PortSpec.Out<bool>("Present")],
+        Faults = Faults,
+        Tags = [new TagEntry("Count", TagKind.Int64, TagAccess.ReadOnly, "count"), new TagEntry("Present", TagKind.Bool, TagAccess.ReadOnly)],
+        Telemetry = [new TelemetryKey("Count", "count")],
+    };
 
     private readonly IMaterialObservable _belt;
     private long _count;

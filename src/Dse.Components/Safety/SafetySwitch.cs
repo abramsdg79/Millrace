@@ -1,7 +1,9 @@
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Faults;
 using Dse.Core.Graph;
 using Dse.Core.Io;
+using Dse.Io;
 
 namespace Dse.Components.Safety;
 
@@ -23,6 +25,23 @@ public abstract class SafetySwitch : ComponentBase, IFaultTarget, ITagProvider
         new(WiringOpen, "The safety loop is open; the switch reads not-OK regardless of actuation (fail-safe)."),
         new(ContactWelded, "The contact is welded closed; the switch reads OK even when actuated."),
     ];
+
+    /// <summary>The descriptor of a concrete switch; all of them share ports, faults and tags.</summary>
+    protected static ComponentDescriptor Describe(string type, string description, Func<string, ISimNode> create) =>
+        new(type, ComponentCategory.Safety, description, (id, p) => create(id))
+        {
+            Ports =
+            [
+                PortSpec.In<bool>("Actuated", description: "The operator has pressed or pulled it."),
+                PortSpec.Out<bool>("Ok", description: "The safety loop through this switch is healthy."),
+            ],
+            Faults = Faults,
+            Tags =
+            [
+                new TagEntry("Actuated", TagKind.Bool, TagAccess.ReadWrite),
+                new TagEntry("Ok", TagKind.Bool, TagAccess.ReadOnly),
+            ],
+        };
 
     private bool _open;
     private bool _welded;

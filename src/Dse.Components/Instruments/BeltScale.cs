@@ -1,3 +1,4 @@
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
@@ -13,6 +14,24 @@ namespace Dse.Components.Instruments;
 public sealed class BeltScale : InstrumentBase
 {
     private const double KgPerSecondToTonnesPerHour = 3.6;
+
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "belt-scale",
+        ComponentCategory.Instrumentation,
+        "Weighs the material passing one point of a belt and reports a mass flow from the load there and the belt speed.",
+        (id, p) => new BeltScale(id, p.Reference<IMaterialObservable>("belt"), p.Double("positionM"), InstrumentCatalogue.ReadSpec(p.Group("spec"))))
+    {
+        Parameters =
+        [
+            Param.Reference<IMaterialObservable>("belt", "The belt weighed: a belt, or a conveyor that has one."),
+            Param.Double("positionM", "Distance of the weigh frame from the tail.", "m", min: 0.0),
+            Param.Group("spec", "Unit, range, noise and lag.", InstrumentCatalogue.Spec),
+        ],
+        Ports = [PortSpec.In<double>("Speed", "m/s", "Belt speed."), .. InstrumentCatalogue.Outputs],
+        Faults = InstrumentFaults.All,
+        Tags = [InstrumentCatalogue.ValueTag],
+        Telemetry = [InstrumentCatalogue.Truth],
+    };
 
     private readonly IMaterialObservable _belt;
 

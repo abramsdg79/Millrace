@@ -1,7 +1,9 @@
 using System.Globalization;
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Graph;
 using Dse.Core.Io;
+using Dse.Io;
 
 namespace Dse.Components.Instruments;
 
@@ -12,6 +14,24 @@ namespace Dse.Components.Instruments;
 /// </summary>
 public sealed class ZeroSpeedSwitch : InstrumentBase
 {
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "zero-speed-switch",
+        ComponentCategory.Instrumentation,
+        "Asserts Stopped when the measured speed has stayed below a threshold for a delay.",
+        (id, p) => new ZeroSpeedSwitch(id, InstrumentCatalogue.ReadSpec(p.Group("spec")), p.Double("thresholdSpeed"), p.Double("delaySeconds")))
+    {
+        Parameters =
+        [
+            Param.Group("spec", "Unit, range, noise and lag.", InstrumentCatalogue.Spec),
+            Param.Double("thresholdSpeed", "Speed below which the belt counts as stopped, in the spec's unit.", min: 0.0),
+            Param.Double("delaySeconds", "How long the speed must stay below the threshold.", "s", min: 0.0),
+        ],
+        Ports = [PortSpec.In<double>("Speed", description: "The true speed."), .. InstrumentCatalogue.Outputs, PortSpec.Out<bool>("Stopped")],
+        Faults = InstrumentFaults.All,
+        Tags = [InstrumentCatalogue.ValueTag, new TagEntry("Stopped", TagKind.Bool, TagAccess.ReadOnly)],
+        Telemetry = [InstrumentCatalogue.Truth],
+    };
+
     private double _belowFor;
     private bool _stopped;
 

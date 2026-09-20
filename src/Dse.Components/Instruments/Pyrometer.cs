@@ -1,3 +1,4 @@
+using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
@@ -11,6 +12,26 @@ namespace Dse.Components.Instruments;
 /// </summary>
 public sealed class Pyrometer : InstrumentBase
 {
+    public static ComponentDescriptor Descriptor { get; } = new(
+        "pyrometer",
+        ComponentCategory.Instrumentation,
+        "Reads the temperature of whatever is in its window; reads the background when nothing is.",
+        (id, p) => new Pyrometer(
+            id, p.Reference<IMaterialObservable>("target"), p.Double("positionM"), p.Double("windowM"), InstrumentCatalogue.ReadSpec(p.Group("spec"))))
+    {
+        Parameters =
+        [
+            Param.Reference<IMaterialObservable>("target", "What it looks at: a belt, a conveyor, a chute or a process unit."),
+            Param.Double("positionM", "Centre of the window, from the tail.", "m", min: 0.0),
+            Param.Double("windowM", "Length of the window.", "m", min: 0.0),
+            Param.Group("spec", "Unit, range, noise and lag.", InstrumentCatalogue.Spec),
+        ],
+        Ports = [PortSpec.In<double>("Background", "°C", "Read when the window is empty; defaults to 20."), .. InstrumentCatalogue.Outputs],
+        Faults = InstrumentFaults.All,
+        Tags = [InstrumentCatalogue.ValueTag],
+        Telemetry = [InstrumentCatalogue.Truth],
+    };
+
     private readonly IMaterialObservable _target;
 
     public Pyrometer(string id, IMaterialObservable target, double positionM, double windowM, InstrumentSpec spec)

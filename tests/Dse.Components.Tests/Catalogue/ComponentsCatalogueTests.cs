@@ -1,8 +1,6 @@
 using System.Reflection;
 using Dse.Components.Conveyors;
 using Dse.Components.Flow;
-using Dse.Components.Instruments;
-using Dse.Components.Safety;
 using Dse.Components.Transforms;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
@@ -18,9 +16,6 @@ public class ComponentsCatalogueTests
     /// </summary>
     private static readonly Type[] Pending =
     [
-        // Task 6 — instruments and safety
-        typeof(SpeedSensor), typeof(CurrentSensor), typeof(TemperatureSensor), typeof(BeltScale), typeof(Pyrometer),
-        typeof(ZeroSpeedSwitch), typeof(PartCounter), typeof(EStop), typeof(PullKey), typeof(SafetyRelay),
         // Task 7 — flow, transforms, holds
         typeof(BulkBelt), typeof(DiscreteBelt), typeof(BulkSource), typeof(BulkSink), typeof(ItemSource), typeof(ItemSink),
         typeof(TransferChute), typeof(Former), typeof(BulkProcessUnit), typeof(ItemProcessUnit),

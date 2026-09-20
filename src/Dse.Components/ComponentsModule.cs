@@ -1,4 +1,6 @@
+using Dse.Components.Instruments;
 using Dse.Components.Mechanical;
+using Dse.Components.Safety;
 using Dse.Core.Catalogue;
 
 namespace Dse.Components;
@@ -26,5 +28,19 @@ public sealed class ComponentsModule : ICatalogueModule
         builder.Add(TailPulley.Descriptor);
         builder.Add(BeltFriction.Descriptor);
         builder.Add(MotorStarter.Descriptor);
+
+        // Instrumentation
+        builder.Add(SpeedSensor.Descriptor);
+        builder.Add(CurrentSensor.Descriptor);
+        builder.Add(TemperatureSensor.Descriptor);
+        builder.Add(BeltScale.Descriptor);
+        builder.Add(Pyrometer.Descriptor);
+        builder.Add(ZeroSpeedSwitch.Descriptor);
+        builder.Add(PartCounter.Descriptor);
+
+        // Safety
+        builder.Add(EStop.Descriptor);
+        builder.Add(PullKey.Descriptor);
+        builder.Add(SafetyRelay.Descriptor);
     }
 }
