@@ -1,0 +1,12 @@
+{
+  "plant": "../../Plants/instrumented-belt.json",
+  "seed": 7,
+  "startTime": "2026-03-01T08:00:00+02:00",
+  "timeStepMs": 10,
+  "duration": 40,
+  "timeline": [
+    { "at": 2,  "write": "BELT.SPEED_SP", "value": 1.5 },
+    { "at": 10, "fault": "WT", "id": "drift", "args": { "rate": 0.05 } },
+    { "at": 25, "clear": "WT", "id": "drift" }
+  ]
+}

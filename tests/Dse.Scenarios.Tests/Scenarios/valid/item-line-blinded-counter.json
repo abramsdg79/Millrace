@@ -1,0 +1,9 @@
+{
+  "plant": "../../Plants/item-line.json",
+  "duration": 60,
+  "timeline": [
+    { "at": 1,  "write": "RB.SPEED_SP", "value": 0.8 },
+    { "at": 20, "fault": "PC", "id": "blinded" },
+    { "at": 40, "clear": "PC", "id": "blinded" }
+  ]
+}

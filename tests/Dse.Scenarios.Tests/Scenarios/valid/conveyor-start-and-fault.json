@@ -1,0 +1,10 @@
+{
+  "plant": "../../Plants/conveyor-line.json",
+  "seed": 42,
+  "duration": 120,
+  "timeline": [
+    { "at": 5,    "write": "CV001.Start", "value": true },
+    { "at": 30,   "fault": "CV001.Motor", "id": "thermal-bias", "args": { "amount": 0.8 } },
+    { "at": 60.5, "clear": "CV001.Motor", "id": "thermal-bias" }
+  ]
+}

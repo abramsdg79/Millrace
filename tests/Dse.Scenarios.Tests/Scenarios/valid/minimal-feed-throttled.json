@@ -1,0 +1,8 @@
+{
+  "plant": "../../Plants/minimal.json",
+  "duration": 30,
+  "timeline": [
+    { "at": 10, "write": "FEED.Rate", "value": 5 },
+    { "at": 20, "write": "FEED.Enabled", "value": false }
+  ]
+}
