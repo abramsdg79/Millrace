@@ -5,9 +5,12 @@
 `Simulation.Tick()` runs five phases in a fixed order, and that order is the
 determinism guarantee:
 
-1. **Drain events** due at or before this tick, ordered by `(dueTick, sequence)`.
-   The sequence number is monotonic, so events due on the same tick always fire
-   in the order they were scheduled.
+1. **Apply queued writes, then drain events** due at or before this tick.
+   Writes queued from outside land first, in enqueue order; then scheduled
+   events, ordered by `(dueTick, sequence)`. The sequence number is monotonic,
+   so events due on the same tick always fire in the order they were scheduled.
+   This is what lets `Simulation.WriteAt` and `InjectFaultAt` share one rule:
+   the time you name is the tick at which the plant sees it.
 2. **Evaluate the signal graph**, in two passes over the resolved topological
    order: first every component evaluates, then every component latches. The
    latch pass is where a component with no direct feedthrough (a `UnitDelay`)
@@ -17,10 +20,13 @@ determinism guarantee:
    node discharges through its outgoing links into consumers that have already
    advanced and made room, then advances its own contents. The conservation
    audit runs after the sweep.
-4. **Publish the I/O image** — the snapshot external readers see. Not yet
-   implemented.
-5. **Emit the tick frame.** Not yet implemented; the event log is already
-   appended during evaluation.
+4. **Publish the I/O image.** Every binding is captured into a fresh array,
+   diffed against the previous snapshot into a `DirtyMask`, and published with
+   a volatile swap, so a reader on any thread sees a whole tick's values or
+   none of them.
+5. **Emit the tick frame.** The published array, its dirty mask and this tick's
+   event-log records are wrapped in an immutable `TickFrame` and handed to the
+   attached `ITickFrameSink`, if there is one, in a single non-blocking call.
 
 The clock advances after phase 5, so a component evaluating on tick N sees tick
 N's simulation time.
@@ -216,6 +222,14 @@ name, so the write timeline is in the event stream. Every tag value carries a
 `TagQuality`: instruments report `Uncertain:OutOfRange` when the unclamped
 reading leaves their range and `Bad:SensorFailure` under fail-high or fail-low.
 
+`Simulation.WriteAt(fromStart, tag, value)` is the other way in: it resolves
+and checks the tag when the write is *scheduled* — unknown tag, read-only tag,
+kind mismatch, all at the call site — and applies it during the phase-1 event
+drain, so the value lands on exactly the tick named rather than the one after.
+Whichever way a write arrives, it is reported to the simulation's one
+`IActionRecorder` with the tick it landed on, as fault injections and
+clearances are.
+
 Phase 5 wraps the published array, its dirty mask and the tick's event-log
 records in an immutable `TickFrame` and hands it to the attached
 `ITickFrameSink` in one non-blocking call. Nothing downstream of that call can
@@ -284,3 +298,40 @@ schema to reject every structural fixture and to *accept* every semantic one.
 Determinism is unaffected: the loader adds components in file order, the
 catalogue and every export are sorted, and the round-trip test holds a JSON plant
 and its hand-built twin to byte-identical event logs.
+
+## Scenarios and replay
+
+A scenario is a JSON file: a plant to run, the three engine overrides, a
+duration, and a timeline of writes, fault injections and clearances. `Dse.Scenarios`
+sees `Dse.Core` and `Dse.Configuration` and nothing else.
+
+    ScenarioLoader.Parse   structural: shape, types, ranges — no plant, no file system
+    ScenarioRunner.Run     load the plant, bind every action, then and only then tick
+    ScenarioJson.Write     a Scenario back to deterministic JSON
+    GoldenLog.Compare      where this run's log left the committed one
+    ScenarioRecorder       a live run, as a scenario
+
+The two passes are the point. Everything that can be known without a plant is
+`DSE200`–`DSE204`; everything that needs one is `DSE205` (the plant has its own
+errors, which follow unchanged) and `DSE206` (this action names something the
+plant does not have). Both run to completion and collect every problem, and
+`RunFor` is not called if there is a single one — **a bad scenario never
+produces a partial log**.
+
+The event log is the regression artifact, and `EventLog.ToText()` is its format
+by contract. `dse run --expect golden.log` exits 4, not 1, when the two differ:
+"the configuration is broken" and "the behaviour changed" are different
+questions, and a script should not have to guess which it got.
+
+Replay works because a scheduled write lands on the tick it names.
+`TagImage.Write` queues for phase 1 of the *next* tick, which is right for a
+live command arriving from outside; a replayed write must land where the
+original landed, so `Simulation.WriteAt` applies through `TagImage.ApplyNow`
+during the event drain, logging the identical `WRITE` record. `IActionRecorder`
+watches all three landing sites — the queued-write drain, `ApplyNow` and
+`FaultEvent.Apply` — so a recording captures actions by where they took effect,
+not by where they came from. `Dse.Realtime`'s `ICommandRecorder` is a different
+thing and stays: it also sees commands the bus *rejected*, which is an audit
+trail, not a replay.
+
+See [scenarios](scenarios.md) for the file format and the golden workflow.

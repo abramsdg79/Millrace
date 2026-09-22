@@ -2,40 +2,76 @@ using System.Text;
 
 namespace Dse.Configuration;
 
-/// <summary>Renders docs/configuration-diagnostics.md from the code table, so the page cannot drift from the codes.</summary>
+/// <summary>
+/// Renders a diagnostics reference page from a code table, so a page cannot
+/// drift from the codes. <see cref="Render()"/> is
+/// docs/configuration-diagnostics.md; the parametric overload is how another
+/// family of codes — scenarios, say — renders its own page without this
+/// assembly having to know about it.
+/// </summary>
 public static class DiagnosticsReference
 {
-    public static string Render()
+    private const string ConfigurationIntroduction =
+        "<!-- Generated from ConfigDiagnostics.All by DiagnosticsReference.Render(). Do not edit by hand:\n" +
+        "     run the Dse.Configuration tests with DSE_UPDATE_GOLDEN=1, read the result, commit it. -->\n\n" +
+        "`dse validate` and `PlantLoader.Load` report every problem in a plant file as a diagnostic with four\n" +
+        "parts: a **code**, a **JSON path** into the file (`$.components[3].parameters.motor.ratedPowerW`), a\n" +
+        "**message** saying what is wrong, and a **fix** saying what to do. A diagnostic without a fix cannot be\n" +
+        "constructed.\n\n" +
+        "The loader works in stages — parse, structure, references, instantiate, wire, build — and stops at the\n" +
+        "end of the first stage that found an error, having reported *every* error that stage could find. Fixing\n" +
+        "what is reported may therefore reveal errors from a later stage.\n\n";
+
+    private const string ConfigurationTrailer =
+        "## DSE001–DSE011 — plant validation\n\n" +
+        "Codes below DSE100 come from `SimulationBuilder.Validate()` and mean the same for a plant built in code:\n" +
+        "duplicate ids, unconnected required inputs, algebraic loops, belts too fast for their cells, incompatible\n" +
+        "flow links, tag conflicts. The loader passes them through with the path of the first component involved;\n" +
+        "their message is split at its first sentence into message and fix. See `docs/architecture.md`.\n";
+
+    /// <summary>docs/configuration-diagnostics.md, unchanged.</summary>
+    public static string Render() =>
+        Render("Configuration diagnostics", ConfigDiagnostics.All, ConfigurationIntroduction, ConfigurationTrailer);
+
+    /// <summary>
+    /// A title, an optional introduction, the table of codes, a section per
+    /// code, and an optional trailer. Every part ends in a blank line, so the
+    /// page is valid Markdown whichever parts are given.
+    /// </summary>
+    public static string Render(
+        string title,
+        IReadOnlyList<DiagnosticInfo> codes,
+        string? introduction = null,
+        string? trailer = null)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(title);
+        ArgumentNullException.ThrowIfNull(codes);
+
         var page = new StringBuilder();
-        page.Append("# Configuration diagnostics\n\n");
-        page.Append("<!-- Generated from ConfigDiagnostics.All by DiagnosticsReference.Render(). Do not edit by hand:\n");
-        page.Append("     run the Dse.Configuration tests with DSE_UPDATE_GOLDEN=1, read the result, commit it. -->\n\n");
-        page.Append("`dse validate` and `PlantLoader.Load` report every problem in a plant file as a diagnostic with four\n");
-        page.Append("parts: a **code**, a **JSON path** into the file (`$.components[3].parameters.motor.ratedPowerW`), a\n");
-        page.Append("**message** saying what is wrong, and a **fix** saying what to do. A diagnostic without a fix cannot be\n");
-        page.Append("constructed.\n\n");
-        page.Append("The loader works in stages — parse, structure, references, instantiate, wire, build — and stops at the\n");
-        page.Append("end of the first stage that found an error, having reported *every* error that stage could find. Fixing\n");
-        page.Append("what is reported may therefore reveal errors from a later stage.\n\n");
+        page.Append("# ").Append(title).Append("\n\n");
+        if (!string.IsNullOrEmpty(introduction))
+        {
+            page.Append(introduction);
+        }
+
         page.Append("| Code | Meaning |\n|---|---|\n");
-        foreach (DiagnosticInfo info in ConfigDiagnostics.All)
+        foreach (DiagnosticInfo info in codes)
         {
             page.Append("| ").Append(info.Code).Append(" | ").Append(info.Title).Append(" |\n");
         }
 
         page.Append('\n');
-        foreach (DiagnosticInfo info in ConfigDiagnostics.All)
+        foreach (DiagnosticInfo info in codes)
         {
             page.Append("## ").Append(info.Code).Append(" — ").Append(info.Title).Append("\n\n");
             page.Append(info.Explanation).Append("\n\n");
         }
 
-        page.Append("## DSE001–DSE011 — plant validation\n\n");
-        page.Append("Codes below DSE100 come from `SimulationBuilder.Validate()` and mean the same for a plant built in code:\n");
-        page.Append("duplicate ids, unconnected required inputs, algebraic loops, belts too fast for their cells, incompatible\n");
-        page.Append("flow links, tag conflicts. The loader passes them through with the path of the first component involved;\n");
-        page.Append("their message is split at its first sentence into message and fix. See `docs/architecture.md`.\n");
+        if (!string.IsNullOrEmpty(trailer))
+        {
+            page.Append(trailer);
+        }
+
         return page.ToString();
     }
 }

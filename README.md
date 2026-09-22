@@ -34,8 +34,10 @@ ring-buffered hub, a live state engine for late joiners, subscriptions with
 prefix filters, deadbands, decimation and declared backpressure, and a
 validated command bus), which references the I/O contract only.
 
-Scenarios and replay, the control blocks, and the reference samples are
-planned.
+Scenarios are files too: a plant, the engine overrides, a duration and a
+timeline of writes and fault injections, replayed by `dse run` against a
+committed golden event log, and recordable from a live run. The control blocks
+and the reference samples are planned.
 
 See `docs/superpowers/specs/` for the design, `docs/superpowers/plans/` for the
 implementation plans, and `docs/architecture.md` for how the engine works.
@@ -47,6 +49,7 @@ dotnet run --project src/Dse.Cli -- catalog export            # every component,
 dotnet run --project src/Dse.Cli -- schema export --out dse-plant.schema.json
 dotnet run --project src/Dse.Cli -- validate plant.json       # every error, each with its fix; exit 1 if any
 dotnet run --project src/Dse.Cli -- tags plant.json           # the tag directory a SCADA would see
+dotnet run --project src/Dse.Cli -- run scenario.json --expect golden.log  # replay a scenario; exit 4 if the log changed
 ```
 
 Add `--assembly path/to/YourModule.dll` to any command to include your own
@@ -68,8 +71,25 @@ output. A plant file looks like this:
 }
 ```
 
-See [authoring a component](docs/authoring-a-component.md) and the
-[configuration diagnostics](docs/configuration-diagnostics.md).
+A scenario over that plant looks like this:
+
+```json
+{
+  "plant": "plant.json",
+  "seed": 42,
+  "duration": 120,
+  "timeline": [
+    { "at": 1,  "write": "CV001.SafetyReset", "value": true },
+    { "at": 2,  "write": "CV001.SafetyReset", "value": false },
+    { "at": 5,  "write": "CV001.Start", "value": true },
+    { "at": 30, "fault": "CV001.Motor", "id": "thermal-bias", "args": { "amount": 0.8 } }
+  ]
+}
+```
+
+See [scenarios](docs/scenarios.md), [authoring a component](docs/authoring-a-component.md),
+the [configuration diagnostics](docs/configuration-diagnostics.md) and the
+[scenario diagnostics](docs/scenario-diagnostics.md).
 
 ## Build and test
 

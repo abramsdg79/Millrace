@@ -21,4 +21,18 @@ public class DiagnosticsReferenceTests
         Assert.EndsWith("\n", page, StringComparison.Ordinal);
         Assert.DoesNotContain('\r', page);
     }
+
+    [Fact]
+    public void APageMayBeRenderedFromNothingButATitleAndCodes()
+    {
+        string page = DiagnosticsReference.Render(
+            "Example diagnostics",
+            [new DiagnosticInfo("DSE900", "Something is wrong", "It went wrong.")]);
+
+        Assert.Equal(
+            "# Example diagnostics\n\n"
+            + "| Code | Meaning |\n|---|---|\n| DSE900 | Something is wrong |\n\n"
+            + "## DSE900 — Something is wrong\n\nIt went wrong.\n\n",
+            page);
+    }
 }

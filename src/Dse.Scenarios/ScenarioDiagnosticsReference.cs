@@ -1,0 +1,30 @@
+using Dse.Configuration;
+
+namespace Dse.Scenarios;
+
+/// <summary>Renders docs/scenario-diagnostics.md from <see cref="ScenarioDiagnostics.All"/>, so the page cannot drift from the codes.</summary>
+public static class ScenarioDiagnosticsReference
+{
+    private const string Introduction =
+        "<!-- Generated from ScenarioDiagnostics.All by ScenarioDiagnosticsReference.Render(). Do not edit by hand:\n" +
+        "     run the Dse.Scenarios tests with DSE_UPDATE_GOLDEN=1, read the result, commit it. -->\n\n" +
+        "`dse run`, `ScenarioLoader.Parse` and `ScenarioRunner.Run` report every problem in a scenario file as a\n" +
+        "diagnostic with four parts: a **code**, a **JSON path** into the file (`$.timeline[1].args.amount`), a\n" +
+        "**message** saying what is wrong, and a **fix** saying what to do. It is the same `ConfigDiagnostic` a\n" +
+        "plant file's problems arrive as, and a diagnostic without a fix cannot be constructed.\n\n" +
+        "Checking happens in two passes. `ScenarioLoader.Parse` is structural and needs no plant: DSE200 to\n" +
+        "DSE204, and DSE203 for a time that is not on the step the scenario itself declared. `ScenarioRunner`\n" +
+        "then loads the plant and binds every action against the built simulation: DSE205, DSE206, and DSE203\n" +
+        "against the step the plant actually runs at. **Every check happens before tick 0**, so a scenario that\n" +
+        "is wrong never produces a partial event log.\n\n";
+
+    private const string Trailer =
+        "## DSE100–DSE112 — the plant's own diagnostics\n\n" +
+        "A scenario names a plant, and that plant is loaded by the same loader `dse validate` uses. When the\n" +
+        "plant has errors of its own they follow the DSE205 line unchanged, with their codes, their paths and\n" +
+        "their fixes. See [configuration diagnostics](configuration-diagnostics.md).\n";
+
+    /// <summary>The page, ending in a newline.</summary>
+    public static string Render() =>
+        DiagnosticsReference.Render("Scenario diagnostics", ScenarioDiagnostics.All, Introduction, Trailer);
+}
