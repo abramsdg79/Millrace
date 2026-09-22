@@ -1,4 +1,5 @@
 using Dse.Configuration;
+using Dse.Tests.Shared;
 
 namespace Dse.Scenarios.Tests;
 
@@ -77,5 +78,52 @@ public class CorpusTests
             Assert.StartsWith("$", d.Path, StringComparison.Ordinal);
             Assert.Equal(DiagnosticSeverity.Error, d.Severity);
         });
+    }
+
+    [Theory]
+    [MemberData(nameof(Corpus.Valid), MemberType = typeof(Corpus))]
+    public void EveryValidScenarioRunsCleanAndMatchesItsGolden(string name)
+    {
+        (_, ScenarioRunResult? result) = Corpus.RunFile("valid", name);
+
+        Assert.True(result!.IsValid, result.ToText());
+        Assert.NotNull(result.Summary);
+        Golden.Assert($"Golden/{Path.GetFileNameWithoutExtension(name)}.log", result.Events!.ToText());
+    }
+
+    [Theory]
+    [MemberData(nameof(Corpus.Valid), MemberType = typeof(Corpus))]
+    public void EveryValidScenarioIsByteIdenticalOnASecondRun(string name)
+    {
+        (_, ScenarioRunResult? first) = Corpus.RunFile("valid", name);
+        (_, ScenarioRunResult? second) = Corpus.RunFile("valid", name);
+
+        Assert.Equal(first!.Events!.ToText(), second!.Events!.ToText());
+        Assert.Equal(first.Summary, second.Summary);
+    }
+
+    [Theory]
+    [MemberData(nameof(Corpus.Unrunnable), MemberType = typeof(Corpus))]
+    public void EveryUnrunnableScenarioLeadsWithTheCodeInItsName(string name)
+    {
+        string expected = name[..name.IndexOf('-', StringComparison.Ordinal)];
+
+        (ScenarioParseResult parsed, ScenarioRunResult? result) = Corpus.RunFile("unrunnable", name);
+
+        Assert.Empty(parsed.Diagnostics);
+        Assert.False(result!.IsValid);
+        Assert.Equal(expected, result.Diagnostics[0].Code);
+        Assert.Null(result.Events);
+    }
+
+    [Fact]
+    public void EveryScenarioCodeHasAFixture()
+    {
+        var covered = Corpus.Invalid()
+            .Concat(Corpus.Unrunnable())
+            .Select(row => ((string)row[0])[..6])
+            .ToHashSet(StringComparer.Ordinal);
+
+        Assert.All(ScenarioDiagnostics.All, d => Assert.Contains(d.Code, covered));
     }
 }

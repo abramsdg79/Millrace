@@ -23,6 +23,33 @@ public static class Corpus
 
     public static IEnumerable<object[]> Invalid() => Names("invalid");
 
+    public static IEnumerable<object[]> Unrunnable() => Names("unrunnable");
+
+    /// <summary>Parses scenario text and runs it against a plant of the linked corpus. The text must parse.</summary>
+    public static ScenarioRunResult Run(string scenarioJson, string plantFile)
+    {
+        ScenarioParseResult parsed = ScenarioLoader.Parse(scenarioJson);
+        if (parsed.Scenario is null)
+        {
+            throw new InvalidOperationException("The scenario under test does not parse:\n" + parsed.ToText());
+        }
+
+        return ScenarioRunner.Run(parsed.Scenario, File.ReadAllText(PlantPath(plantFile)), Catalogue);
+    }
+
+    /// <summary>Parses a corpus file and, if it parses, runs it against the plant it names.</summary>
+    public static (ScenarioParseResult Parsed, ScenarioRunResult? Result) RunFile(string kind, string name)
+    {
+        ScenarioParseResult parsed = ScenarioLoader.Parse(Text(kind, name));
+        if (parsed.Scenario is null)
+        {
+            return (parsed, null);
+        }
+
+        string plantJson = File.ReadAllText(parsed.Scenario.ResolvePlantPath(PathOf(kind, name)));
+        return (parsed, ScenarioRunner.Run(parsed.Scenario, plantJson, Catalogue));
+    }
+
     private static IEnumerable<object[]> Names(string kind) =>
         Directory.EnumerateFiles(Path.Combine(Root, kind), "*.json")
             .Select(Path.GetFileName)

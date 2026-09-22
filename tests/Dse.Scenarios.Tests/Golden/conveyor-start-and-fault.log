@@ -1,0 +1,4 @@
+06:00:00.990  CV001.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.
+06:00:05.000  CV001.Start  WRITE  Set to true.
+06:00:30.000  CV001.Motor  FAULT  thermal-bias injected: amount=0.8.
+06:01:00.500  CV001.Motor  FAULT_CLEARED  thermal-bias cleared.

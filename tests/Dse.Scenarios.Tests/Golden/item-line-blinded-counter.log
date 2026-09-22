@@ -1,0 +1,5 @@
+00:00:01.000  RB.SPEED_SP  WRITE  Set to 0.8.
+00:00:12.520  FCE  FILLING  First item received; filling.
+00:00:20.000  PC  FAULT  blinded injected.
+00:00:27.520  FCE  PROCESSING  Batch complete; processing.
+00:00:40.000  PC  FAULT_CLEARED  blinded cleared.
