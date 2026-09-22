@@ -12,8 +12,7 @@ internal static class ModuleLoader
     {
         foreach (string given in paths)
         {
-            string path = Path.GetFullPath(given);
-            if (!File.Exists(path))
+            if (string.IsNullOrWhiteSpace(given) || !TryFullPath(given, out string path) || !File.Exists(path))
             {
                 problem = $"Cannot load assembly '{given}': the file does not exist.";
                 return false;
@@ -46,14 +45,16 @@ internal static class ModuleLoader
 
             foreach (Type type in modules)
             {
-                var module = (ICatalogueModule)Activator.CreateInstance(type)!;
+                ICatalogueModule? module = null;
                 try
                 {
+                    module = (ICatalogueModule)Activator.CreateInstance(type)!;
                     builder.Add(module);
                 }
-                catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+                catch (Exception ex)
                 {
-                    problem = $"Module '{module.Name}' from '{given}' could not be registered: {ex.Message}";
+                    Exception real = ex is TargetInvocationException { InnerException: { } inner } ? inner : ex;
+                    problem = $"Module '{module?.Name ?? type.Name}' from '{given}' could not be registered: {real.Message}";
                     return false;
                 }
             }
@@ -61,6 +62,21 @@ internal static class ModuleLoader
 
         problem = string.Empty;
         return true;
+    }
+
+    /// <summary>False, with an empty path, when the value cannot be resolved to a full path (empty, invalid characters, too long).</summary>
+    private static bool TryFullPath(string given, out string path)
+    {
+        try
+        {
+            path = Path.GetFullPath(given);
+            return true;
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            path = string.Empty;
+            return false;
+        }
     }
 
     /// <summary>

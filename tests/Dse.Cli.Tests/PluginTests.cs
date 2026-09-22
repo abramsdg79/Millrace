@@ -92,6 +92,15 @@ public class PluginTests
     }
 
     [Fact]
+    public void AnEmptyAssemblyValueIsExitThreeNotACrash()
+    {
+        CliRun run = Cli.Run("catalog", "export", "--assembly=");
+
+        Assert.Equal(ExitCodes.Unreadable, run.ExitCode);
+        Assert.StartsWith("Cannot load assembly '': ", run.Err, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AFileThatIsNotAnAssemblyIsExitThree()
     {
         CliRun run = Cli.Run("catalog", "export", "--assembly", Cli.Plant("minimal.json"));
