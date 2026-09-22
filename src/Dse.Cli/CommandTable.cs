@@ -20,13 +20,15 @@ internal static class CommandTable
     public static readonly OptionSpec Out = new("--out", "file", "Write the output to this file instead of standard output.");
     public static readonly OptionSpec Format = new("--format", "text|json", "How to print results. Default: text.");
     public static readonly OptionSpec TimeStep = new("--time-step", "ms", "Simulation step in milliseconds, overriding the plant's defaults.");
+    public static readonly OptionSpec Assembly = new(
+        "--assembly", "path", "Load catalogue modules from this assembly, in addition to the shipped components.", Repeatable: true);
 
     public static IReadOnlyList<CommandSpec> All { get; } =
     [
-        new(["catalog", "export"], null, "Print every component, transform, hold and material type as JSON.", [Out], Commands.CatalogExport.Run),
-        new(["schema", "export"], null, "Print the JSON Schema for plant files, generated from the catalogue.", [Out], Commands.SchemaExport.Run),
-        new(["validate"], "plant.json", "Load a plant and report every error, each with its fix.", [Format, TimeStep], Commands.Validate.Run),
-        new(["tags"], "plant.json", "Load and build a plant, then list its tags: name, kind, access, unit, range.", [Format, TimeStep], Commands.Tags.Run),
+        new(["catalog", "export"], null, "Print every component, transform, hold and material type as JSON.", [Out, Assembly], Commands.CatalogExport.Run),
+        new(["schema", "export"], null, "Print the JSON Schema for plant files, generated from the catalogue.", [Out, Assembly], Commands.SchemaExport.Run),
+        new(["validate"], "plant.json", "Load a plant and report every error, each with its fix.", [Format, TimeStep, Assembly], Commands.Validate.Run),
+        new(["tags"], "plant.json", "Load and build a plant, then list its tags: name, kind, access, unit, range.", [Format, TimeStep, Assembly], Commands.Tags.Run),
     ];
 
     public static string GeneralHelp()

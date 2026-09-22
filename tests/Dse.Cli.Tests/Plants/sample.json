@@ -1,0 +1,8 @@
+{
+  "components": [
+    { "id": "HS", "type": "hysteresis-switch", "parameters": { "onAbove": 80, "offBelow": 60 } },
+    { "id": "SRC", "type": "bulk-source", "parameters": { "material": "sample-ore", "rateKgPerS": 1 } },
+    { "id": "PILE", "type": "bulk-sink" }
+  ],
+  "flows": [ { "from": "SRC.Out", "to": "PILE.In" } ]
+}

@@ -26,4 +26,9 @@
     <ProjectReference Include="..\..\src\Dse.Cli\Dse.Cli.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Dse.Cli.Tests.SampleModule\Dse.Cli.Tests.SampleModule.csproj" ReferenceOutputAssembly="false" Private="false" />
+    <ProjectReference Include="..\Dse.Cli.Tests.ClashModule\Dse.Cli.Tests.ClashModule.csproj" ReferenceOutputAssembly="false" Private="false" />
+  </ItemGroup>
+
 </Project>

@@ -32,8 +32,14 @@ public static class CliApp
             return ExitCodes.Usage;
         }
 
-        ComponentCatalogue catalogue = new CatalogueBuilder().Add<ComponentsModule>().Build();
-        return parsed.Command!.Run(new CliContext(parsed, catalogue, stdout, stderr));
+        CatalogueBuilder builder = new CatalogueBuilder().Add<ComponentsModule>();
+        if (!ModuleLoader.TryLoad(parsed.All(CommandTable.Assembly), builder, out string loadProblem))
+        {
+            stderr.Write(loadProblem + "\n");
+            return ExitCodes.Unreadable;
+        }
+
+        return parsed.Command!.Run(new CliContext(parsed, builder.Build(), stdout, stderr));
     }
 
     private static string? OptionValueProblem(ParsedCommandLine parsed)
