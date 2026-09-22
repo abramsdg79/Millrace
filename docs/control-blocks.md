@@ -234,10 +234,11 @@ sees.
 
 The step clock is an accumulated `double`, and a transition or a timeout fires
 once it is `>=` the target, not when it exactly reaches it: it can fire a scan
-late. Measured on the worked example's 100 ms scan: an `After(60)` elapsed in
-exactly 60.000 s, but an `After(2)` took 2.200 s — one scan later than the naive
-2.000 s, because ten accumulations of 0.1 sum to 1.999… s, just under the
-target, so an eleventh scan is needed.
+late. Measured on the worked example's 200 ms scan: an `After(60)` elapsed in
+exactly 60.000 s (300 accumulations of 0.2 sum to 60.00000000000031, at or past
+the target on the 300th scan), but an `After(2)` took 2.200 s — one scan later
+than the naive 2.000 s, because ten accumulations of 0.2 sum to
+1.9999999999999998, just under the target, so an eleventh scan is needed.
 
 Outputs are `Step` (Int64, 0 when idle), `Running`, `Held`, `Complete`,
 `Faulted` and `StepTime` (Double, `s`). Commands are `Start`, `Hold`, `Resume`,
