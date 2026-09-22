@@ -32,6 +32,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dse.Scenarios\Dse.Scenarios.csproj" />
     <ProjectReference Include="..\..\src\Dse.Components\Dse.Components.csproj" />
+    <ProjectReference Include="..\..\src\Dse.Realtime\Dse.Realtime.csproj" />
   </ItemGroup>
 
 </Project>
