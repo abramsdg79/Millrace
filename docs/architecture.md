@@ -247,3 +247,40 @@ Inbound writes take their own channel: `CommandBus` validates a command against
 the directory — unknown tag, read-only, wrong kind, outside the declared range —
 forwards accepted ones to `ITagWriter`, and reports every command to an
 optional `ICommandRecorder`, which is where a scenario recorder attaches.
+
+## Catalogue, schema and loader
+
+Three things are generated from one source, the descriptors, and therefore agree:
+
+    ComponentDescriptor ──► CatalogueJson.Export   what exists, for a person or an agent
+           │            ──► PlantSchema.Generate   what a plant file may say, for an editor or a validator
+           └── Factory  ──► PlantLoader.Load       a SimulationBuilder, or diagnostics
+
+A **descriptor** is hand-written beside the constructor it describes and carries
+the factory that builds the component from parsed parameters. It cannot drift:
+`CatalogueConformance` builds one instance of every type and compares the
+descriptor with it, and a sweep fails the build if any concrete node, transform
+or hold condition has no descriptor.
+
+A **catalogue** is an immutable value composed from modules
+(`new CatalogueBuilder().Add<ComponentsModule>()…`). There is no static registry
+and no assembly scanning; the CLI's `--assembly` is the only place a module is
+discovered rather than named.
+
+The **loader** runs six stages — parse, structure, references, instantiate,
+wire, build — and stops at the end of the first stage that reported an error,
+having collected every error of that stage. It resolves ports against the live
+instances, not against descriptors, so what it wires is what exists. The last
+stage is `SimulationBuilder.Validate()`: a plant loaded from JSON passes exactly
+the checks a plant built in code passes, and `DSE001`–`DSE011` mean the same in
+both. The loader returns the builder unbuilt, so a caller can still set a frame
+sink or decide not to build.
+
+The **schema** checks structure; the loader checks meaning. That a reference
+names a component, a material a material, an address a port — no schema can
+know. The boundary is asserted by `SchemaAgreementTests`, which requires the
+schema to reject every structural fixture and to *accept* every semantic one.
+
+Determinism is unaffected: the loader adds components in file order, the
+catalogue and every export are sorted, and the round-trip test holds a JSON plant
+and its hand-built twin to byte-identical event logs.
