@@ -176,4 +176,34 @@ public class ScenarioJsonTests
     {
         Assert.Equal(ScenarioJson.Write(Example()), ScenarioJson.Write(Example()));
     }
+
+    [Fact]
+    public void AFaultWithNoArgumentsOmitsArgs()
+    {
+        var scenario = new Scenario("p.json", null, null, null, TimeSpan.FromSeconds(10),
+            [new FaultAction(TimeSpan.FromSeconds(1), "CV001.Motor", "thermal-bias", [])]);
+
+        string json = ScenarioJson.Write(scenario);
+
+        Assert.Contains("\"id\": \"thermal-bias\"", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"args\"", json, StringComparison.Ordinal);
+
+        var fault = Assert.IsType<FaultAction>(ScenarioLoader.Parse(json).Scenario!.Timeline[0]);
+        Assert.Empty(fault.Arguments);
+        Assert.Equal(json, ScenarioJson.Write(ScenarioLoader.Parse(json).Scenario!));
+    }
+
+    [Theory]
+    [MemberData(nameof(Corpus.Valid), MemberType = typeof(Corpus))]
+    public void EveryValidCorpusFileRoundTripsThroughWrite(string name)
+    {
+        Scenario first = ScenarioLoader.Parse(Corpus.Text("valid", name)).Scenario!;
+        string writtenOnce = ScenarioJson.Write(first);
+
+        ScenarioParseResult reparsed = ScenarioLoader.Parse(writtenOnce);
+        Assert.True(reparsed.IsValid, reparsed.ToText());
+        string writtenTwice = ScenarioJson.Write(reparsed.Scenario!);
+
+        Assert.Equal(writtenOnce, writtenTwice);
+    }
 }
