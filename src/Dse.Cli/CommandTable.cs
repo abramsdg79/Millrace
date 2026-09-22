@@ -23,12 +23,16 @@ internal static class CommandTable
     public static readonly OptionSpec Assembly = new(
         "--assembly", "path", "Load catalogue modules from this assembly, in addition to the shipped components.", Repeatable: true);
 
+    public static readonly OptionSpec Expect = new(
+        "--expect", "golden.log", "Compare the event log with this file; exit 4 if they differ.");
+
     public static IReadOnlyList<CommandSpec> All { get; } =
     [
         new(["catalog", "export"], null, "Print every component, transform, hold and material type as JSON.", [Out, Assembly], Commands.CatalogExport.Run),
         new(["schema", "export"], null, "Print the JSON Schema for plant files, generated from the catalogue.", [Out, Assembly], Commands.SchemaExport.Run),
         new(["validate"], "plant.json", "Load a plant and report every error, each with its fix.", [Format, TimeStep, Assembly], Commands.Validate.Run),
         new(["tags"], "plant.json", "Load and build a plant, then list its tags: name, kind, access, unit, range.", [Format, TimeStep, Assembly], Commands.Tags.Run),
+        new(["run"], "scenario.json", "Run a scenario against its plant and print the event log.", [Expect, Out, Format, Assembly], Commands.RunScenario.Run),
     ];
 
     public static string GeneralHelp()
@@ -43,7 +47,8 @@ internal static class CommandTable
         lines.Add(string.Empty);
         lines.Add("Run `dse <command> --help` for a command's options.");
         lines.Add(string.Empty);
-        lines.Add("Exit codes: 0 success; 1 the plant has errors; 2 usage error; 3 a file or assembly could not be read.");
+        lines.Add("Exit codes: 0 success; 1 the plant or scenario has errors; 2 usage error; " +
+                  "3 a file or assembly could not be read; 4 the event log differs from --expect.");
         return string.Join('\n', lines) + "\n";
     }
 

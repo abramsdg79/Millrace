@@ -7,6 +7,18 @@ internal static class Cli
 {
     public static string Plant(string name) => Path.Combine(AppContext.BaseDirectory, "Plants", name);
 
+    public static string Scenario(string name) => Path.Combine(AppContext.BaseDirectory, "Scenarios", name);
+
+    /// <summary>tests/&lt;project&gt;/bin/&lt;configuration&gt;/&lt;tfm&gt;/&lt;project&gt;.dll, found from this assembly's own output directory.</summary>
+    public static string Built(string project)
+    {
+        var output = new DirectoryInfo(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        string tfm = output.Name;
+        string configuration = output.Parent!.Name;
+        string tests = output.Parent.Parent!.Parent!.Parent!.FullName;
+        return Path.Combine(tests, project, "bin", configuration, tfm, project + ".dll");
+    }
+
     public static CliRun Run(params string[] args)
     {
         using var stdout = new StringWriter { NewLine = "\n" };

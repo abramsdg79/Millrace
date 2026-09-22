@@ -15,14 +15,8 @@ internal static class PlantFile
         result = null;
         simulation = null;
         string path = context.CommandLine.Argument!;
-        string json;
-        try
+        if (!TryRead(context, path, out string json))
         {
-            json = File.ReadAllText(path);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or ArgumentException)
-        {
-            context.Err.Write($"Cannot read '{path}': {ex.Message}\n");
             return ExitCodes.Unreadable;
         }
 
@@ -37,6 +31,30 @@ internal static class PlantFile
         return ExitCodes.Ok;
     }
 
+    /// <summary>Reads a file, reporting <c>Cannot read '…'</c> on standard error and returning false.</summary>
+    public static bool TryRead(CliContext context, string path, out string text)
+    {
+        try
+        {
+            text = File.ReadAllText(path);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or ArgumentException)
+        {
+            context.Err.Write($"Cannot read '{path}': {ex.Message}\n");
+            text = string.Empty;
+            return false;
+        }
+    }
+
+    /// <summary>Writes rendered diagnostics and a count line to standard error. Text output only.</summary>
+    public static void ReportDiagnostics(CliContext context, string path, string diagnostics, int errors)
+    {
+        context.Err.Write(diagnostics);
+        context.Err.Write(string.Create(
+            CultureInfo.InvariantCulture, $"\n{errors} error{(errors == 1 ? string.Empty : "s")} in {Path.GetFileName(path)}\n"));
+    }
+
     private static void ReportInvalid(CliContext context, string path, LoadResult result)
     {
         if (context.Json)
@@ -45,10 +63,7 @@ internal static class PlantFile
             return;
         }
 
-        int errors = result.Diagnostics.Count(d => d.Severity == DiagnosticSeverity.Error);
-        context.Err.Write(result.ToText());
-        context.Err.Write(string.Create(
-            CultureInfo.InvariantCulture, $"\n{errors} error{(errors == 1 ? string.Empty : "s")} in {Path.GetFileName(path)}\n"));
+        ReportDiagnostics(context, path, result.ToText(), result.Diagnostics.Count(d => d.Severity == DiagnosticSeverity.Error));
     }
 
     /// <summary>The <c>validate --format json</c> document. <paramref name="summary"/> writes the summary object's members, or is null.</summary>

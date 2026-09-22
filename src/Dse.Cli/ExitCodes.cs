@@ -12,4 +12,7 @@ public static class ExitCodes
 
     /// <summary>A file or an assembly could not be read, written or loaded.</summary>
     public const int Unreadable = 3;
+
+    /// <summary>The scenario ran, and its event log differs from the one <c>--expect</c> named.</summary>
+    public const int LogMismatch = 4;
 }

@@ -7,18 +7,8 @@ namespace Dse.Cli.Tests;
 
 public class PluginTests
 {
-    /// <summary>tests/&lt;project&gt;/bin/&lt;configuration&gt;/&lt;tfm&gt;/&lt;project&gt;.dll, found from this assembly's own output directory.</summary>
-    private static string Built(string project)
-    {
-        var output = new DirectoryInfo(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-        string tfm = output.Name;
-        string configuration = output.Parent!.Name;
-        string tests = output.Parent.Parent!.Parent!.Parent!.FullName;
-        return Path.Combine(tests, project, "bin", configuration, tfm, project + ".dll");
-    }
-
-    private static readonly string Sample = Built("Dse.Cli.Tests.SampleModule");
-    private static readonly string Clash = Built("Dse.Cli.Tests.ClashModule");
+    private static readonly string Sample = Cli.Built("Dse.Cli.Tests.SampleModule");
+    private static readonly string Clash = Cli.Built("Dse.Cli.Tests.ClashModule");
 
     [Fact]
     public void TheFixturesWereBuilt()

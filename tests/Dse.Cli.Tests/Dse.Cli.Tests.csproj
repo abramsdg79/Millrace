@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <None Include="Plants\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Scenarios\**\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
