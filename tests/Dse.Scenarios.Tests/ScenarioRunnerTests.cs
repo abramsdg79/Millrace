@@ -67,7 +67,7 @@ public class ScenarioRunnerTests
     }
 
     [Fact]
-    public void ASubTickStepFromThePlantsDefaultsIsDse202BeforeBuilding()
+    public void ASubTickStepFromThePlantsDefaultsIsDse205ThenDse103BeforeBuilding()
     {
         string plantJson = File.ReadAllText(Corpus.PlantPath("minimal.json"))
             .Replace("\"timeStepMs\": 10", "\"timeStepMs\": 1e-9", StringComparison.Ordinal);
@@ -78,8 +78,11 @@ public class ScenarioRunnerTests
         Assert.False(result.IsValid);
         Assert.Null(result.Events);
         Assert.Null(result.Summary);
-        ConfigDiagnostic diagnostic = Assert.Single(result.Diagnostics);
-        Assert.Equal(("DSE202", "$.timeStepMs"), (diagnostic.Code, diagnostic.Path));
+        ConfigDiagnostic first = result.Diagnostics[0];
+        Assert.Equal(("DSE205", "$.plant"), (first.Code, first.Path));
+        Assert.Equal("The plant 'minimal.json' has 1 error of its own; they follow.", first.Message);
+        Assert.Equal(new[] { "DSE103" }, result.Diagnostics.Skip(1).Select(d => d.Code));
+        Assert.Equal("$.defaults.timeStepMs", result.Diagnostics[1].Path);
     }
 
     [Fact]

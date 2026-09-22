@@ -17,6 +17,9 @@ public static class ScenarioLoader
     /// <summary>The largest time a scenario may name, in seconds: about 31 years, and far inside <see cref="TimeSpan"/>.</summary>
     internal const double MaxSeconds = 1.0e9;
 
+    /// <summary>A time step longer than a day is a mistake, and 1e30 ms overflows <see cref="TimeSpan"/>.</summary>
+    private const double MaxTimeStepMs = 86_400_000.0;
+
     private static readonly JsonDocumentOptions DocumentOptions = new()
     {
         CommentHandling = JsonCommentHandling.Skip,
@@ -192,6 +195,16 @@ public static class ScenarioLoader
 
         if (element.ValueKind == JsonValueKind.Number && element.TryGetDouble(out double ms) && double.IsFinite(ms) && ms > 0.0)
         {
+            if (ms > MaxTimeStepMs)
+            {
+                diagnostics.Add(ScenarioDiagnostics.Error(
+                    ScenarioDiagnostics.BadValue,
+                    "$.timeStepMs",
+                    string.Create(CultureInfo.InvariantCulture, $"\"timeStepMs\" is {ms} ms, which is longer than a day."),
+                    "Use the simulation step in milliseconds, such as 10."));
+                return null;
+            }
+
             TimeSpan step = TimeSpan.FromMilliseconds(ms);
             if (step.Ticks > 0)
             {

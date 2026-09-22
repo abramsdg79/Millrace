@@ -1,0 +1,5 @@
+{
+  "plant": "../Plants/minimal.json",
+  "timeStepMs": 1e30,
+  "duration": 5
+}

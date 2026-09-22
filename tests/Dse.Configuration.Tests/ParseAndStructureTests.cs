@@ -84,6 +84,8 @@ public class ParseAndStructureTests
     [InlineData("\"seed\": 1", "\"seed\": 1.5", "$.defaults.seed")]
     [InlineData("\"timeStepMs\": 10", "\"timeStepMs\": 0", "$.defaults.timeStepMs")]
     [InlineData("\"timeStepMs\": 10", "\"timeStepMs\": \"10\"", "$.defaults.timeStepMs")]
+    [InlineData("\"timeStepMs\": 10", "\"timeStepMs\": 1e30", "$.defaults.timeStepMs")]
+    [InlineData("\"timeStepMs\": 10", "\"timeStepMs\": 0.00001", "$.defaults.timeStepMs")]
     [InlineData("\"startTime\": \"2026-01-01T06:00:00Z\"", "\"startTime\": \"yesterday\"", "$.defaults.startTime")]
     [InlineData("\"startTime\": \"2026-01-01T06:00:00Z\"", "\"startTime\": \"2026-01-01T06:00:00\"", "$.defaults.startTime")]
     public void BadDefaultsAreParameterErrors(string from, string to, string path)
@@ -92,6 +94,30 @@ public class ParseAndStructureTests
 
         Assert.Equal("DSE103", d.Code);
         Assert.Equal(path, d.Path);
+    }
+
+    [Fact]
+    public void ASubTickTimeStepIsReportedNotCrashed()
+    {
+        ConfigDiagnostic d = Plants.Only(
+            Plants.Minimal.Replace("\"timeStepMs\": 10", "\"timeStepMs\": 0.00001", StringComparison.Ordinal));
+
+        Assert.Equal("DSE103", d.Code);
+        Assert.Equal("$.defaults.timeStepMs", d.Path);
+        Assert.Equal("\"timeStepMs\" must be at least one tick (0.0001 ms).", d.Message);
+        Assert.Equal("Use the simulation step in milliseconds, such as 10.", d.Fix);
+    }
+
+    [Fact]
+    public void ATimeStepLongerThanADayIsReportedNotCrashed()
+    {
+        ConfigDiagnostic d = Plants.Only(
+            Plants.Minimal.Replace("\"timeStepMs\": 10", "\"timeStepMs\": 1e30", StringComparison.Ordinal));
+
+        Assert.Equal("DSE103", d.Code);
+        Assert.Equal("$.defaults.timeStepMs", d.Path);
+        Assert.Equal("\"timeStepMs\" is 1E+30 ms, which is longer than a day.", d.Message);
+        Assert.Equal("Use the simulation step in milliseconds, such as 10.", d.Fix);
     }
 
     [Fact]

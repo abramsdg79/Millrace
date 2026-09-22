@@ -8,6 +8,9 @@ namespace Dse.Configuration.Loading;
 /// <summary>Stage 2: everything that can be checked without building anything.</summary>
 internal static class StructureStage
 {
+    /// <summary>A time step longer than a day is a mistake, and 1e30 ms overflows <see cref="TimeSpan"/>.</summary>
+    private const double MaxTimeStepMs = 86_400_000.0;
+
     /// <summary>Round-trip ISO 8601, offset given as a literal <c>Z</c> (parsed as UTC).</summary>
     private static readonly string[] StartTimeUtcFormats =
     [
@@ -93,7 +96,30 @@ internal static class StructureStage
         {
             if (stepElement.ValueKind == JsonValueKind.Number && stepElement.TryGetDouble(out double ms) && double.IsFinite(ms) && ms > 0.0)
             {
-                step = TimeSpan.FromMilliseconds(ms);
+                if (ms > MaxTimeStepMs)
+                {
+                    state.Error(
+                        ConfigDiagnostics.BadParameter,
+                        "$.defaults.timeStepMs",
+                        string.Create(CultureInfo.InvariantCulture, $"\"timeStepMs\" is {ms} ms, which is longer than a day."),
+                        "Use the simulation step in milliseconds, such as 10.");
+                }
+                else
+                {
+                    TimeSpan candidate = TimeSpan.FromMilliseconds(ms);
+                    if (candidate.Ticks > 0)
+                    {
+                        step = candidate;
+                    }
+                    else
+                    {
+                        state.Error(
+                            ConfigDiagnostics.BadParameter,
+                            "$.defaults.timeStepMs",
+                            "\"timeStepMs\" must be at least one tick (0.0001 ms).",
+                            "Use the simulation step in milliseconds, such as 10.");
+                    }
+                }
             }
             else
             {

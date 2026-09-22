@@ -271,4 +271,15 @@ public class RunCommandTests
         Assert.Empty(run.Out);
         Assert.NotEmpty(run.Err);
     }
+
+    [Fact]
+    public void AnEnormousTimeStepExitsOneInsteadOfCrashing()
+    {
+        CliRun run = Cli.Run("run", Cli.Scenario("huge-step.json"));
+
+        Assert.Equal(ExitCodes.PlantInvalid, run.ExitCode);
+        Assert.Empty(run.Out);
+        Assert.Contains("DSE202 $.timeStepMs", run.Err, StringComparison.Ordinal);
+        Assert.Contains("longer than a day", run.Err, StringComparison.Ordinal);
+    }
 }
