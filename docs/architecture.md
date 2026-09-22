@@ -335,3 +335,36 @@ thing and stays: it also sees commands the bus *rejected*, which is an audit
 trail, not a replay.
 
 See [scenarios](scenarios.md) for the file format and the golden workflow.
+
+## The control layer
+
+A control block is a PLC rung: `Dse.Control` holds five of them — a timer, a
+permissive, an interlock, an alarm and a sequencer — and sees
+`Dse.Io.Abstractions` and nothing else. A block is a pure `IScanBlock`: values
+and two elapsed times in, values, writes and events out. It never sees a
+`Simulation`, a directory, a binding, a clock or a log, which is why its unit
+tests need none of them.
+
+`SimulationBuilder.AddScanBlock` checks each block at `Build()` — `DSE013` for
+the period, `DSE014` for the pins, `DSE015` for the names — and turns its
+declared outputs and commands into ordinary tags over ordinary ports: an output
+is an `OutputPort<T>` behind a read-only binding, a command an `InputPort<T>`
+behind a writable one. Nothing in `TagImage`, `Dse.Realtime` or the scenario
+recorder had to learn what a block is. `Simulation` then schedules one
+self-rescheduling `ScanEvent` per block, first due at tick 0, drained in phase 1
+in schedule order.
+
+The timing rule is one sentence: **a scan at tick N sees the image published at
+the end of tick N−1, publishes its own outputs at the end of tick N, and its
+writes land at phase 1 of tick N+1.** At a 100 ms period on a 10 ms step a block
+reacts between 10 and 110 ms late — the asymmetry a real PLC has — and it is
+what makes scan order among blocks due on the same tick irrelevant: they all
+read the same previous publish. A plant with no blocks schedules nothing and
+adds nothing to the directory, which is why the four scenario goldens of plan 5b
+are byte-identical across this change.
+
+Blocks are attached in code. Describing them in the plant file is a later plan;
+the API gets a shakedown before it is frozen into a format.
+
+See [control blocks](control-blocks.md) for each block's pins, parameters and
+events.

@@ -35,4 +35,19 @@ public class DiagnosticsReferenceTests
             + "## DSE900 — Something is wrong\n\nIt went wrong.\n\n",
             page);
     }
+
+    [Fact]
+    public void ThePlantValidationTrailerCoversTheBlockCodes()
+    {
+        string page = DiagnosticsReference.Render();
+
+        Assert.Contains("## DSE001–DSE015 — plant validation\n", page, StringComparison.Ordinal);
+        Assert.Contains("DSE013", page, StringComparison.Ordinal);
+        Assert.Contains("DSE014", page, StringComparison.Ordinal);
+        Assert.Contains("DSE015", page, StringComparison.Ordinal);
+
+        // Plan 5a ruled there is no DSE012, and the page must never print it as
+        // though it were a code. The trailer says "The numbering skips 012."
+        Assert.DoesNotContain("DSE012", page, StringComparison.Ordinal);
+    }
 }

@@ -36,11 +36,18 @@ validated command bus), which references the I/O contract only.
 
 Scenarios are files too: a plant, the engine overrides, a duration and a
 timeline of writes and fault injections, replayed by `dse run` against a
-committed golden event log, and recordable from a live run. The control blocks
-and the reference samples are planned.
+committed golden event log, and recordable from a live run.
+
+On top of that sits the control layer: a scan-block contract in
+`Dse.Io.Abstractions`, a host in `Dse.Core` that scans each block at its own
+period through the event queue and publishes its outputs as ordinary tags, and
+`Dse.Control` — a timer, a permissive, an interlock, an alarm and a sequencer,
+which reference the I/O contract alone. Blocks are attached in code for now;
+describing them in the plant file, and the reference samples, are planned.
 
 See `docs/superpowers/specs/` for the design, `docs/superpowers/plans/` for the
-implementation plans, and `docs/architecture.md` for how the engine works.
+implementation plans, `docs/architecture.md` for how the engine works, and
+`docs/control-blocks.md` for the control layer.
 
 ## Command line
 
@@ -87,8 +94,9 @@ A scenario over that plant looks like this:
 }
 ```
 
-See [scenarios](docs/scenarios.md), [authoring a component](docs/authoring-a-component.md),
-the [configuration diagnostics](docs/configuration-diagnostics.md) and the
+See [scenarios](docs/scenarios.md), [control blocks](docs/control-blocks.md),
+[authoring a component](docs/authoring-a-component.md), the
+[configuration diagnostics](docs/configuration-diagnostics.md) and the
 [scenario diagnostics](docs/scenario-diagnostics.md).
 
 ## Build and test

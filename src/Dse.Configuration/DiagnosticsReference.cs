@@ -23,11 +23,15 @@ public static class DiagnosticsReference
         "what is reported may therefore reveal errors from a later stage.\n\n";
 
     private const string ConfigurationTrailer =
-        "## DSE001–DSE011 — plant validation\n\n" +
+        "## DSE001–DSE015 — plant validation\n\n" +
         "Codes below DSE100 come from `SimulationBuilder.Validate()` and mean the same for a plant built in code:\n" +
         "duplicate ids, unconnected required inputs, algebraic loops, belts too fast for their cells, incompatible\n" +
-        "flow links, tag conflicts. The loader passes them through with the path of the first component involved;\n" +
-        "their message is split at its first sentence into message and fix. See `docs/architecture.md`.\n";
+        "flow links, tag conflicts — and, for a control block attached with `AddScanBlock`, a scan period that is\n" +
+        "not a positive whole number of time steps (DSE013), a pin naming a tag the plant does not have, publishes\n" +
+        "with another kind or will not accept a command (DSE014), and a block id or owned tag name that collides\n" +
+        "with something the plant already has (DSE015). The numbering skips 012. The loader passes them through\n" +
+        "with the path of the first component involved; their message is split at its first sentence into message\n" +
+        "and fix. See `docs/architecture.md` and `docs/control-blocks.md`.\n";
 
     /// <summary>docs/configuration-diagnostics.md, unchanged.</summary>
     public static string Render() =>

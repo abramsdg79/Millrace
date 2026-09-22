@@ -80,9 +80,13 @@ Every parameter was individually valid but the component or object refused the c
 
 A tag names a port that has no tag kind (a flow port, an enum output), or asks to write an output.
 
-## DSE001–DSE011 — plant validation
+## DSE001–DSE015 — plant validation
 
 Codes below DSE100 come from `SimulationBuilder.Validate()` and mean the same for a plant built in code:
 duplicate ids, unconnected required inputs, algebraic loops, belts too fast for their cells, incompatible
-flow links, tag conflicts. The loader passes them through with the path of the first component involved;
-their message is split at its first sentence into message and fix. See `docs/architecture.md`.
+flow links, tag conflicts — and, for a control block attached with `AddScanBlock`, a scan period that is
+not a positive whole number of time steps (DSE013), a pin naming a tag the plant does not have, publishes
+with another kind or will not accept a command (DSE014), and a block id or owned tag name that collides
+with something the plant already has (DSE015). The numbering skips 012. The loader passes them through
+with the path of the first component involved; their message is split at its first sentence into message
+and fix. See `docs/architecture.md` and `docs/control-blocks.md`.
