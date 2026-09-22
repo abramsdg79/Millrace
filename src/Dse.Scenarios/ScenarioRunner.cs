@@ -30,8 +30,20 @@ public static class ScenarioRunner
             return new ScenarioRunResult(PlantDiagnostics(scenario, load), null, null);
         }
 
-        Simulation simulation = load.Builder!.Build();
         TimeSpan step = load.Options!.TimeStep;
+        if (step.Ticks <= 0)
+        {
+            return new ScenarioRunResult(
+                [ScenarioDiagnostics.Error(
+                    ScenarioDiagnostics.BadValue,
+                    "$.timeStepMs",
+                    "\"timeStepMs\" must be at least one tick (0.0001 ms).",
+                    "Use the simulation step in milliseconds, such as 10.")],
+                null,
+                null);
+        }
+
+        Simulation simulation = load.Builder!.Build();
         var diagnostics = new List<ConfigDiagnostic>();
 
         if (scenario.Duration.Ticks % step.Ticks != 0L)
@@ -192,6 +204,7 @@ public static class ScenarioRunner
                 {
                     "faultId" => $"{path}.id",
                     "given" => $"{path}.args",
+                    "arguments" => $"{path}.args",
                     _ => $"{path}.{key}",
                 }
                 : $"{path}.{key}";

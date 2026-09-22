@@ -91,9 +91,13 @@ public class ActionRecorderTests
         sim.Tick();
 
         Assert.Equal(
-            new[] { "wrote", "wrote", "faulted" },
-            spy.Calls.Select(c => c.Kind));
-        Assert.Equal(new[] { "T.Enable", "T.Setpoint", "F" }, spy.Calls.Select(c => c.Target));
+            new[]
+            {
+                ("wrote", 1L, "T.Enable"),
+                ("wrote", 1L, "T.Setpoint"),
+                ("faulted", 1L, "F"),
+            },
+            spy.Calls.Select(c => (c.Kind, c.Tick, c.Target)));
         Assert.Equal("blow(resistance=2)", spy.Calls[2].Detail);
     }
 

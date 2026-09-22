@@ -67,6 +67,22 @@ public class ScenarioRunnerTests
     }
 
     [Fact]
+    public void ASubTickStepFromThePlantsDefaultsIsDse202BeforeBuilding()
+    {
+        string plantJson = File.ReadAllText(Corpus.PlantPath("minimal.json"))
+            .Replace("\"timeStepMs\": 10", "\"timeStepMs\": 1e-9", StringComparison.Ordinal);
+        var scenario = new Scenario("minimal.json", null, null, null, TimeSpan.FromSeconds(1), []);
+
+        ScenarioRunResult result = ScenarioRunner.Run(scenario, plantJson, Corpus.Catalogue);
+
+        Assert.False(result.IsValid);
+        Assert.Null(result.Events);
+        Assert.Null(result.Summary);
+        ConfigDiagnostic diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal(("DSE202", "$.timeStepMs"), (diagnostic.Code, diagnostic.Path));
+    }
+
+    [Fact]
     public void AnInvalidPlantIsDse205ThenThePlantsOwnDiagnostics()
     {
         ScenarioRunResult result = Corpus.Run("""{ "plant": "broken.json", "duration": 1 }""", "broken.json");
@@ -88,19 +104,22 @@ public class ScenarioRunnerTests
         [
             new WriteAction(TimeSpan.FromSeconds(10), "FEED.Enabled", ScenarioValue.OfBool(false)),
             new WriteAction(TimeSpan.FromMilliseconds(1005), "FEED.Enabled", ScenarioValue.OfBool(false)),
+            new WriteAction(TimeSpan.FromSeconds(-1), "FEED.Enabled", ScenarioValue.OfBool(false)),
         ]);
 
         ScenarioRunResult result = ScenarioRunner.Run(
             scenario, File.ReadAllText(Corpus.PlantPath("minimal.json")), Corpus.Catalogue);
 
-        Assert.Equal(new[] { "DSE203", "DSE203" }, result.Diagnostics.Select(d => d.Code));
+        Assert.Equal(new[] { "DSE203", "DSE203", "DSE202" }, result.Diagnostics.Select(d => d.Code));
         Assert.Equal(
             new[]
             {
                 "An action at 10 s is not before the end of the run at 10 s.",
                 "The action time 1.005 s is not a whole number of 10 ms steps.",
+                "An action at -1 s is before the start of the run.",
             },
             result.Diagnostics.Select(d => d.Message));
+        Assert.Equal("$.timeline[2].at", result.Diagnostics[2].Path);
     }
 
     [Fact]
@@ -223,6 +242,18 @@ public class ScenarioRunnerTests
 
         Assert.Equal(("DSE206", "$.timeline[0].args"), (diagnostic.Code, diagnostic.Path));
         Assert.Equal("Fault 'blockage' has no parameter 'amount'. Declared: none.", diagnostic.Message);
+    }
+
+    [Fact]
+    public void ADuplicateFaultArgumentIsDse206AtTheArgsPath()
+    {
+        ConfigDiagnostic diagnostic = Only("conveyor-line.json", """
+            "duration": 10,
+            "timeline": [ { "at": 1, "fault": "CV001.Motor", "id": "thermal-bias", "args": { "amount": 0.8, "amount": 0.9 } } ]
+            """);
+
+        Assert.Equal(("DSE206", "$.timeline[0].args"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal("Argument 'amount' is given twice.", diagnostic.Message);
     }
 
     [Fact]

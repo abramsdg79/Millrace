@@ -97,9 +97,9 @@ public sealed class TagImage : ITagReader, ITagWriter
     }
 
     /// <summary>
-    /// Applies a value to a binding immediately and logs it as <c>WRITE</c>,
-    /// exactly as <see cref="ApplyPendingWrites"/> does. Phase 1 only: called
-    /// from the event drain, where a scheduled write lands on the tick it named.
+    /// The one place a write lands: applies the value to a binding, logs it as
+    /// <c>WRITE</c>, and reports it to the action recorder. Phase 1 only, called
+    /// both from the queued-write drain and from a scheduled <c>WriteEvent</c>.
     /// </summary>
     internal void ApplyNow(int index, TagValue value, in TickContext ctx)
     {
@@ -109,7 +109,7 @@ public sealed class TagImage : ITagReader, ITagWriter
         _recorder?.Wrote(ctx.Tick, binding.Name, value);
     }
 
-    private TagBinding Check(int index, TagValue value)
+    private void Check(int index, TagValue value)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(index);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, _bindings.Length);
@@ -125,8 +125,6 @@ public sealed class TagImage : ITagReader, ITagWriter
             throw new InvalidOperationException(
                 $"Tag '{binding.Name}' is a {binding.Kind} tag; cannot write a {value.Kind}.");
         }
-
-        return binding;
     }
 
     /// <summary>The recorder the simulation attached, or none. Set once, through <c>Simulation.AttachActionRecorder</c>.</summary>

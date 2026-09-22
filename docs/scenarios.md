@@ -34,7 +34,7 @@ dse run scenario.json --format json                # the same run, as records
 | `plant` | yes | The plant file's path, relative to the directory holding the scenario. A scenario is a sibling of its plant, so moving the pair keeps them working. |
 | `seed` | no | A whole number, zero or greater. Overrides the plant's `defaults.seed`. |
 | `startTime` | no | ISO 8601 **with an offset** — `2026-01-01T06:00:00Z` or `2026-03-01T08:00:00+02:00`. Overrides `defaults.startTime`. |
-| `timeStepMs` | no | A number greater than zero; fractions are allowed. Overrides `defaults.timeStepMs`. |
+| `timeStepMs` | no | A number greater than zero; fractions are allowed, down to one tick (0.0001 ms). Overrides `defaults.timeStepMs`. |
 | `duration` | yes | Seconds from the start, greater than zero and a whole number of ticks. This is what drives the run; there is no plant counterpart. |
 | `timeline` | no | Actions, in order. Defaults to none. |
 

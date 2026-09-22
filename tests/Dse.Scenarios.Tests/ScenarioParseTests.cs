@@ -109,6 +109,8 @@ public class ScenarioParseTests
     [InlineData("""{ "plant": "p.json", "duration": -1 }""", "$.duration", "\"duration\" must be a number of seconds greater than zero and at most 1000000000.")]
     [InlineData("""{ "plant": "p.json", "duration": 10, "seed": -1 }""", "$.seed", "\"seed\" must be a whole number, zero or greater.")]
     [InlineData("""{ "plant": "p.json", "duration": 10, "timeStepMs": 0 }""", "$.timeStepMs", "\"timeStepMs\" must be a number greater than zero.")]
+    [InlineData("""{ "plant": "p.json", "duration": 10, "timeStepMs": 1e-9 }""", "$.timeStepMs", "\"timeStepMs\" must be at least one tick (0.0001 ms).")]
+    [InlineData("""{ "plant": "p.json", "duration": 10, "timeStepMs": 0.00001 }""", "$.timeStepMs", "\"timeStepMs\" must be at least one tick (0.0001 ms).")]
     [InlineData("""{ "plant": "p.json", "duration": 10, "startTime": "2026-01-01T06:00:00" }""", "$.startTime", "\"startTime\" must be an ISO 8601 date and time with an offset.")]
     [InlineData("""{ "plant": "p.json", "duration": 10, "timeline": 3 }""", "$.timeline", "\"timeline\" must be an array of actions.")]
     public void ABadTopLevelValueIsDse202(string json, string path, string message)

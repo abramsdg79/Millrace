@@ -12,6 +12,7 @@ namespace Dse.Core;
 /// <remarks>
 /// Not to be confused with <c>Dse.Realtime.ICommandRecorder</c>, which also sees
 /// commands the bus <em>rejected</em>. That is an audit trail; this is a replay.
+/// Called on the tick thread only, during phase 1: not safe to call from another thread.
 /// </remarks>
 public interface IActionRecorder
 {

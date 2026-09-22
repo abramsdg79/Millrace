@@ -83,8 +83,9 @@ public sealed class Simulation
 
     /// <summary>
     /// Attaches the one action recorder (spec 5b §6.2). May be called at any
-    /// time before or during a run — a late-attached recorder sees actions from
-    /// then on — but only once, as <see cref="AttachFrameSink"/> is.
+    /// time before or during a run, from the thread that ticks — a late-attached
+    /// recorder sees actions from then on — but only once, as
+    /// <see cref="AttachFrameSink"/> is.
     /// </summary>
     public void AttachActionRecorder(IActionRecorder recorder)
     {

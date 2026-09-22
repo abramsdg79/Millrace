@@ -192,7 +192,18 @@ public static class ScenarioLoader
 
         if (element.ValueKind == JsonValueKind.Number && element.TryGetDouble(out double ms) && double.IsFinite(ms) && ms > 0.0)
         {
-            return TimeSpan.FromMilliseconds(ms);
+            TimeSpan step = TimeSpan.FromMilliseconds(ms);
+            if (step.Ticks > 0)
+            {
+                return step;
+            }
+
+            diagnostics.Add(ScenarioDiagnostics.Error(
+                ScenarioDiagnostics.BadValue,
+                "$.timeStepMs",
+                "\"timeStepMs\" must be at least one tick (0.0001 ms).",
+                "Use the simulation step in milliseconds, such as 10."));
+            return null;
         }
 
         diagnostics.Add(ScenarioDiagnostics.Error(

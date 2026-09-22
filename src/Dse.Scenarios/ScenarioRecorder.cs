@@ -11,6 +11,9 @@ namespace Dse.Scenarios;
 /// <c>Simulation.AttachActionRecorder</c> and a live run — a command bus, an
 /// operator, a test — becomes a file that replays to the same event log.
 /// </summary>
+/// <remarks>
+/// Called on the tick thread only, during phase 1: not safe to call from another thread.
+/// </remarks>
 public sealed class ScenarioRecorder : IActionRecorder
 {
     private readonly List<Recorded> _actions = [];
