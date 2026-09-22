@@ -10,7 +10,8 @@ namespace Dse.Control;
 /// clock, <c>Resume</c> continues, <c>Abort</c> returns to idle with the abort
 /// writes, and <c>Reset</c> returns to idle from <c>Faulted</c> or
 /// <c>Complete</c>. Every command is rising-edge sensitive, so a tag left high
-/// does not retrigger.
+/// does not retrigger. A timeout fault drives the abort writes, so the plant
+/// reaches the same safe state as an operator abort.
 /// </summary>
 public sealed class Sequencer : IScanBlock
 {
@@ -147,11 +148,7 @@ public sealed class Sequencer : IScanBlock
         {
             outputs.Raise("SEQUENCE_ABORTED",
                 string.Create(CultureInfo.InvariantCulture, $"Aborted at step {_step}."));
-            for (int w = 0; w < _abortWrites.Length; w++)
-            {
-                outputs.Write(_abortWriteIndex[w], _abortWrites[w].Value);
-            }
-
+            Abort(ref outputs);
             GoIdle();
         }
         else if (edges[ResetCommand] && (_faulted || _complete))
@@ -181,8 +178,9 @@ public sealed class Sequencer : IScanBlock
             {
                 if (_step == _steps.Length)
                 {
-                    outputs.Raise("SEQUENCE_COMPLETE",
-                        string.Create(CultureInfo.InvariantCulture, $"Finished after {_steps.Length} steps."));
+                    outputs.Raise("SEQUENCE_COMPLETE", string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"Finished after {_steps.Length} step{(_steps.Length == 1 ? "" : "s")}."));
                     _complete = true;
                     GoIdle();
                 }
@@ -195,6 +193,7 @@ public sealed class Sequencer : IScanBlock
             {
                 outputs.Raise("SEQUENCE_FAULTED", string.Create(CultureInfo.InvariantCulture,
                     $"Step {_step} timed out after {limit.TotalSeconds} s."));
+                Abort(ref outputs);
                 _faulted = true;
                 _running = false;
                 _held = false;
@@ -261,6 +260,18 @@ public sealed class Sequencer : IScanBlock
             PredicateOperator.Greater => left > right,
             _ => left >= right,
         };
+    }
+
+    /// <summary>
+    /// Commands every abort write. Both the <c>Abort</c> command and a step
+    /// timeout drive them, so a fault leaves the plant where an abort would.
+    /// </summary>
+    private void Abort(ref ScanOutputs outputs)
+    {
+        for (int w = 0; w < _abortWrites.Length; w++)
+        {
+            outputs.Write(_abortWriteIndex[w], _abortWrites[w].Value);
+        }
     }
 
     private void Enter(int step, ref ScanOutputs outputs)

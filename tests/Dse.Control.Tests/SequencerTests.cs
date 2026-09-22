@@ -8,6 +8,9 @@ public class SequencerTests
 
     private static BlockWrite Start(bool value) => new("CV001.Start", TagValue.Bool(value));
 
+    /// <summary>An abort write on a tag no step writes, so the abort writes reach <c>Writes</c> on their own.</summary>
+    private static BlockWrite Feed(bool value) => new("FD001.Enabled", TagValue.Bool(value));
+
     /// <summary>Start the belt, wait for speed, then stop it and wait for the belt to rest.</summary>
     private static Sequencer Make(TimeSpan? firstTimeout = null) => new(
         "SEQ01",
@@ -24,7 +27,7 @@ public class SequencerTests
                 StepTransition.When("CV001.Stopped", PredicateOperator.Equal, TagValue.Bool(true))),
         ],
         Period,
-        [Start(false)]);
+        [Start(false), Feed(false)]);
 
     private static Scan Idle(TimeSpan? firstTimeout = null)
     {
@@ -101,7 +104,9 @@ public class SequencerTests
         Assert.Equal(new[] { "CV001.Speed", "CV001.Stopped" }, sequencer.Inputs.Select(p => p.Name).ToArray());
         Assert.Equal(TagKind.Double, sequencer.Inputs[0].Kind);
         Assert.Equal(TagKind.Bool, sequencer.Inputs[1].Kind);
-        Assert.Equal("CV001.Start", Assert.Single(sequencer.Writes).Name);
+        Assert.Equal(
+            new[] { "CV001.Start", "FD001.Enabled" },
+            sequencer.Writes.Select(p => p.Name).ToArray());
         Assert.Equal(
             new[] { "Start", "Hold", "Resume", "Abort", "Reset" },
             sequencer.Commands.Select(p => p.Name).ToArray());
@@ -240,6 +245,8 @@ public class SequencerTests
         Assert.False(scan.Bool("Running"));
         Assert.True(scan.TryWrite("CV001.Start", out TagValue value));
         Assert.False(value.AsBool);
+        Assert.True(scan.TryWrite("FD001.Enabled", out TagValue feed));
+        Assert.False(feed.AsBool);
         BlockEvent aborted = Assert.Single(scan.LastEvents);
         Assert.Equal("SEQUENCE_ABORTED", aborted.Code);
         Assert.Equal("Aborted at step 2.", aborted.Message);
@@ -259,6 +266,24 @@ public class SequencerTests
         BlockEvent faulted = Assert.Single(scan.LastEvents);
         Assert.Equal("SEQUENCE_FAULTED", faulted.Code);
         Assert.Equal("Step 1 timed out after 0.2 s.", faulted.Message);
+    }
+
+    [Fact]
+    public void ATimeoutIssuesTheAbortWritesOnTheFaultScanAndNoOther()
+    {
+        Scan scan = Idle(firstTimeout: TimeSpan.FromSeconds(0.2)).Once();
+        Pulse(scan, "Start");
+
+        scan.Times(2);                                 // 0.1 s, then 0.2 s: step 1 times out
+
+        Assert.True(scan.Bool("Faulted"));
+        Assert.True(scan.TryWrite("CV001.Start", out TagValue start));
+        Assert.False(start.AsBool);                    // the belt is stopped, not left running
+        Assert.True(scan.TryWrite("FD001.Enabled", out TagValue feed));
+        Assert.False(feed.AsBool);
+
+        scan.Once();
+        Assert.Empty(scan.LastWrites);
     }
 
     [Fact]
@@ -306,6 +331,24 @@ public class SequencerTests
         BlockEvent complete = Assert.Single(scan.LastEvents);
         Assert.Equal("SEQUENCE_COMPLETE", complete.Code);
         Assert.Equal("Finished after 3 steps.", complete.Message);
+    }
+
+    [Fact]
+    public void AOneStepSequenceCompletesWithASingularMessage()
+    {
+        var scan = new Scan(new Sequencer(
+            "SEQ01",
+            [new SequenceStep("Run", [], StepTransition.After(TimeSpan.FromSeconds(0.1)))],
+            Period));
+        scan.Once();
+        Pulse(scan, "Start");
+
+        scan.Once();                                   // 0.1 s: the only step ends
+
+        Assert.True(scan.Bool("Complete"));
+        BlockEvent complete = Assert.Single(scan.LastEvents);
+        Assert.Equal("SEQUENCE_COMPLETE", complete.Code);
+        Assert.Equal("Finished after 1 step.", complete.Message);
     }
 
     [Fact]
