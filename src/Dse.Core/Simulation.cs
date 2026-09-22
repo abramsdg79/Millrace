@@ -119,6 +119,20 @@ public sealed class Simulation
     public long ClearFaultIn(TimeSpan delay, string componentId, string faultId) =>
         ScheduleIn(delay, FaultEvent.Clear(this, componentId, faultId));
 
+    /// <summary>
+    /// Schedules a write for phase 1 of the tick at <paramref name="fromStart"/>.
+    /// The tag is resolved and checked now — unknown tag, read-only tag, kind
+    /// mismatch — so a mistake fails here rather than mid-run, and the value
+    /// lands on exactly the tick named: queued writes first, then scheduled
+    /// events in sequence order.
+    /// </summary>
+    public long WriteAt(TimeSpan fromStart, string tag, TagValue value) =>
+        ScheduleAt(fromStart, WriteEvent.Create(this, tag, value));
+
+    /// <summary>Schedules a write relative to the current simulation time.</summary>
+    public long WriteIn(TimeSpan delay, string tag, TagValue value) =>
+        ScheduleIn(delay, WriteEvent.Create(this, tag, value));
+
     private IFaultTarget FaultTarget(string componentId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(componentId);
@@ -269,6 +283,34 @@ public sealed class Simulation
         }
 
         FrameSink.Publish(new TickFrame(context.Tick, context.SimTime, values, dirty, events));
+    }
+
+    /// <summary>A resolved write, applied and logged when it lands.</summary>
+    private sealed class WriteEvent : ISimEvent
+    {
+        private readonly Simulation _simulation;
+        private readonly int _index;
+        private readonly TagValue _value;
+
+        private WriteEvent(Simulation simulation, int index, TagValue value)
+        {
+            _simulation = simulation;
+            _index = index;
+            _value = value;
+        }
+
+        public static WriteEvent Create(Simulation simulation, string tag, TagValue value)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(tag);
+            return new WriteEvent(simulation, simulation.IO.CheckWritable(tag, value), value);
+        }
+
+        public void Apply()
+        {
+            SimulationClock clock = _simulation.Clock;
+            var context = new TickContext(clock.TickCount, clock.DeltaSeconds, clock.Now, _simulation.Events);
+            _simulation.IO.ApplyNow(_index, _value, in context);
+        }
     }
 
     /// <summary>A resolved fault injection or clearance, logged when it lands.</summary>

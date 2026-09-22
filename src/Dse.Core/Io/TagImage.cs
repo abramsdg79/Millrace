@@ -76,6 +76,39 @@ public sealed class TagImage : ITagReader, ITagWriter
     /// <inheritdoc/>
     public void Write(int index, TagValue value)
     {
+        Check(index, value);
+        _writes.Enqueue(new PendingWrite(index, value));
+    }
+
+    /// <inheritdoc/>
+    public void Write(string name, TagValue value) => Write(Directory.Find(name).Index, value);
+
+    /// <summary>
+    /// Resolves a name and runs exactly the checks <see cref="Write(int, TagValue)"/>
+    /// runs, without queueing anything. This is what lets
+    /// <c>Simulation.WriteAt</c> fail at the call site rather than mid-run.
+    /// </summary>
+    internal int CheckWritable(string name, TagValue value)
+    {
+        int index = Directory.Find(name).Index;
+        Check(index, value);
+        return index;
+    }
+
+    /// <summary>
+    /// Applies a value to a binding immediately and logs it as <c>WRITE</c>,
+    /// exactly as <see cref="ApplyPendingWrites"/> does. Phase 1 only: called
+    /// from the event drain, where a scheduled write lands on the tick it named.
+    /// </summary>
+    internal void ApplyNow(int index, TagValue value, in TickContext ctx)
+    {
+        TagBinding binding = _bindings[index];
+        binding.Apply(value);
+        ctx.Log(binding.Name, "WRITE", $"Set to {value}.");
+    }
+
+    private TagBinding Check(int index, TagValue value)
+    {
         ArgumentOutOfRangeException.ThrowIfNegative(index);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, _bindings.Length);
 
@@ -91,11 +124,8 @@ public sealed class TagImage : ITagReader, ITagWriter
                 $"Tag '{binding.Name}' is a {binding.Kind} tag; cannot write a {value.Kind}.");
         }
 
-        _writes.Enqueue(new PendingWrite(index, value));
+        return binding;
     }
-
-    /// <inheritdoc/>
-    public void Write(string name, TagValue value) => Write(Directory.Find(name).Index, value);
 
     /// <summary>Captures the initial values before the first tick. Called from <c>Simulation.Initialize</c>.</summary>
     internal void Prime()
