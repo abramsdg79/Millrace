@@ -144,9 +144,12 @@ sentence, an optional second, every sentence ending in a full stop).
 | DSE206 | Action does not bind to the plant | Unknown tag, read-only tag, value kind does not match the tag, unknown component, unknown fault id, undeclared fault argument. The message says which; the fix points at `dse tags` or the catalogue. |
 
 `ScenarioDiagnostics.All` lists them. `DiagnosticsReference.Render` becomes
-`Render(string title, IReadOnlyList<DiagnosticInfo> codes)`; the existing
-configuration page keeps its content, and `docs/scenario-diagnostics.md` is
-generated beside it and pinned by a golden test. `Dse.Configuration` cannot
+`Render(string title, IReadOnlyList<DiagnosticInfo> codes, string? introduction
+= null, string? trailer = null)` — the configuration page's plant-specific
+introduction and its `DSE001–DSE011` trailer become arguments, so that page
+stays byte-identical (its golden test is the check), and
+`docs/scenario-diagnostics.md` is generated beside it and pinned by a golden
+test. `Dse.Configuration` cannot
 see `Dse.Scenarios`, so two pages are cleaner than one page that knows both.
 
 ## 4. Running
@@ -262,7 +265,9 @@ step, and whose timeline is the recording with `at = tick × step`.
 `Utf8JsonWriter`, indented, properties in the order of section 2's example,
 timeline in order, `at` as seconds in invariant culture, values as JSON bool /
 number / integer by kind, `\n` line endings, one trailing newline. Parsing what
-it writes yields an equal `Scenario`.
+it writes yields a `Scenario` equal field by field (the action records hold
+lists, so record equality is not the test), and writing that again yields the
+same text.
 
 Recording has no CLI surface in 5b. Nothing external drives a run yet; the
 seam is proven by the round trip in section 8 and is ready for the first
@@ -320,7 +325,7 @@ adapter.
 | `src/Dse.Core` | unchanged | gains `WriteAt`/`WriteIn`, `IActionRecorder`, `AttachActionRecorder`, `TagImage.ApplyNow` |
 | `src/Dse.Scenarios` | `Dse.Core`, `Dse.Configuration` | new; no `Dse.Components`, no packages. The main spec's layout table said `Dse.Core` only — it predates the loader. |
 | `src/Dse.Cli` | + `Dse.Scenarios` | `run` command, exit code 4 |
-| `tests/Dse.Scenarios.Tests` | `Dse.Scenarios`, `Dse.Components`, `tests/Shared` | corpus, goldens, round trip |
+| `tests/Dse.Scenarios.Tests` | `Dse.Scenarios`, `Dse.Components`, `Dse.Realtime`, `tests/Shared` | corpus, goldens, round trip (`Dse.Realtime` for the `CommandBus` that drives the recorded run) |
 
 Global constraints from 5a apply unchanged: net10.0, warnings as errors,
 `InvariantCulture`, no Dictionary/HashSet order reaching an output,
