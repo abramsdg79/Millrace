@@ -28,6 +28,7 @@ public sealed class Simulation
     private readonly double _conservationTolerance;
     private readonly Dictionary<string, IFaultTarget> _faultTargets;
     private readonly ScanBlockPlan[] _blockPlans;
+    private readonly ScanBlockRuntime[] _blocks;
     private bool _initialized;
 
     internal Simulation(
@@ -53,6 +54,15 @@ public sealed class Simulation
             {
                 _faultTargets[component.Id] = target;
             }
+        }
+
+        // R70: scheduled here, so every block holds a lower sequence number than
+        // anything a caller schedules later and scans first at tick 0.
+        _blocks = new ScanBlockRuntime[blocks.Length];
+        for (int i = 0; i < blocks.Length; i++)
+        {
+            _blocks[i] = new ScanBlockRuntime(blocks[i], io, Events);
+            _queue.Schedule(0L, new ScanEvent(this, _blocks[i]));
         }
     }
 
@@ -340,6 +350,26 @@ public sealed class Simulation
             SimulationClock clock = _simulation.Clock;
             var context = new TickContext(clock.TickCount, clock.DeltaSeconds, clock.Now, _simulation.Events);
             _simulation.IO.ApplyNow(_index, _value, in context);
+        }
+    }
+
+    /// <summary>One block's scan, which reschedules itself one period later.</summary>
+    private sealed class ScanEvent : ISimEvent
+    {
+        private readonly Simulation _simulation;
+        private readonly ScanBlockRuntime _runtime;
+
+        internal ScanEvent(Simulation simulation, ScanBlockRuntime runtime)
+        {
+            _simulation = simulation;
+            _runtime = runtime;
+        }
+
+        public void Apply()
+        {
+            SimulationClock clock = _simulation.Clock;
+            _runtime.Scan(clock.TickCount, clock.Now, clock.DeltaSeconds);
+            _simulation._queue.Schedule(clock.TickCount + _runtime.PeriodTicks, this);
         }
     }
 

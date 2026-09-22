@@ -56,6 +56,9 @@ public sealed class EchoBlock : IScanBlock
     /// <summary>Raise one event on every scan.</summary>
     public bool RaiseEveryScan { get; set; }
 
+    /// <summary>Set output 0 to a Double whatever kind it was declared with, to exercise the host's kind check.</summary>
+    public bool WrongKind { get; set; }
+
     public EchoBlock Reads(string tag, TagKind kind = TagKind.Bool)
     {
         _inputs.Add(new TagRef(tag, kind));
@@ -91,7 +94,7 @@ public sealed class EchoBlock : IScanBlock
 
         if (!Silent && outputs.OutputCount > 0)
         {
-            outputs.Set(0, TagValue.Bool(value));
+            outputs.Set(0, WrongKind ? TagValue.Double(1.0) : TagValue.Bool(value));
         }
 
         if (WriteOnce && outputs.WriteCount > 0)
