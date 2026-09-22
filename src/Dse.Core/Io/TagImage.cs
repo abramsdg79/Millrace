@@ -17,6 +17,7 @@ public sealed class TagImage : ITagReader, ITagWriter
     private TagValue[] _front;
     private long _snapshotTick = -1;
     private bool _published;
+    private IActionRecorder? _recorder;
 
     internal TagImage(TagDirectory directory)
     {
@@ -105,6 +106,7 @@ public sealed class TagImage : ITagReader, ITagWriter
         TagBinding binding = _bindings[index];
         binding.Apply(value);
         ctx.Log(binding.Name, "WRITE", $"Set to {value}.");
+        _recorder?.Wrote(ctx.Tick, binding.Name, value);
     }
 
     private TagBinding Check(int index, TagValue value)
@@ -126,6 +128,9 @@ public sealed class TagImage : ITagReader, ITagWriter
 
         return binding;
     }
+
+    /// <summary>The recorder the simulation attached, or none. Set once, through <c>Simulation.AttachActionRecorder</c>.</summary>
+    internal void SetActionRecorder(IActionRecorder recorder) => _recorder = recorder;
 
     /// <summary>Captures the initial values before the first tick. Called from <c>Simulation.Initialize</c>.</summary>
     internal void Prime()
@@ -178,9 +183,7 @@ public sealed class TagImage : ITagReader, ITagWriter
         int applied = 0;
         while (applied < budget && _writes.TryDequeue(out PendingWrite write))
         {
-            TagBinding binding = _bindings[write.Index];
-            binding.Apply(write.Value);
-            ctx.Log(binding.Name, "WRITE", $"Set to {write.Value}.");
+            ApplyNow(write.Index, write.Value, in ctx);
             applied++;
         }
 

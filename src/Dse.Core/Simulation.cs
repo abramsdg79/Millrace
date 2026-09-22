@@ -78,6 +78,28 @@ public sealed class Simulation
         FrameSink = sink;
     }
 
+    /// <summary>Where every action that takes effect is reported, or null when nothing is attached.</summary>
+    public IActionRecorder? ActionRecorder { get; private set; }
+
+    /// <summary>
+    /// Attaches the one action recorder (spec 5b §6.2). May be called at any
+    /// time before or during a run — a late-attached recorder sees actions from
+    /// then on — but only once, as <see cref="AttachFrameSink"/> is.
+    /// </summary>
+    public void AttachActionRecorder(IActionRecorder recorder)
+    {
+        ArgumentNullException.ThrowIfNull(recorder);
+        if (ActionRecorder is not null)
+        {
+            throw new InvalidOperationException(
+                "An action recorder is already attached. The simulation records to exactly one recorder; " +
+                "fan-out is the recorder's own job.");
+        }
+
+        ActionRecorder = recorder;
+        IO.SetActionRecorder(recorder);
+    }
+
     public TelemetryRegistry Telemetry { get; } = new();
 
     public EventLog Events { get; } = new();
@@ -350,12 +372,14 @@ public sealed class Simulation
             {
                 _target.ClearFault(_faultId);
                 _simulation.Events.Record(clock.TickCount, clock.Now, _target.Id, "FAULT_CLEARED", $"{_faultId} cleared.");
+                _simulation.ActionRecorder?.Cleared(clock.TickCount, _target.Id, _faultId);
                 return;
             }
 
             _target.ApplyFault(_faultId, _arguments);
             string detail = _arguments.Count == 0 ? string.Empty : $": {_arguments}";
             _simulation.Events.Record(clock.TickCount, clock.Now, _target.Id, "FAULT", $"{_faultId} injected{detail}.");
+            _simulation.ActionRecorder?.Faulted(clock.TickCount, _target.Id, _faultId, _arguments);
         }
     }
 }
