@@ -276,14 +276,22 @@ public class ScanBlockValidationTests
     {
         // Reviewer note (Task 2, carried into Task 3's dispatch): a block id
         // prefixes every owned tag name, so it must satisfy the same rules a
-        // tag name does; otherwise a malformed id crashes deep inside Validate
-        // (TagBinding.ValidName) instead of failing where the block was added.
-        Assert.Throws<ArgumentException>(
+        // tag name does. AddScanBlock calls Dse.Io.TagNameRules.Check(block.Id,
+        // nameof(block)) directly; otherwise a malformed id would crash deep
+        // inside Validate (TagBinding.ValidName) instead of failing where the
+        // block was added, and the exception should name the public
+        // parameter ('block'), not a private local.
+        ArgumentException whitespace = Assert.Throws<ArgumentException>(
             () => Plant().AddScanBlock(new EchoBlock("A B", TimeSpan.FromMilliseconds(20))));
-        Assert.Throws<ArgumentException>(
+        Assert.Equal("block", whitespace.ParamName);
+
+        ArgumentException leadingDot = Assert.Throws<ArgumentException>(
             () => Plant().AddScanBlock(new EchoBlock(".A", TimeSpan.FromMilliseconds(20))));
-        Assert.Throws<ArgumentException>(
+        Assert.Equal("block", leadingDot.ParamName);
+
+        ArgumentException trailingDot = Assert.Throws<ArgumentException>(
             () => Plant().AddScanBlock(new EchoBlock("A.", TimeSpan.FromMilliseconds(20))));
+        Assert.Equal("block", trailingDot.ParamName);
     }
 
     [Fact]

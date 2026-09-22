@@ -5,10 +5,10 @@ namespace Dse.Io;
 /// <c>TagBinding.ValidName</c> in <c>Dse.Core</c>, which cannot be referenced
 /// from here; if one changes, both change.
 /// </summary>
-internal static class TagNameRules
+public static class TagNameRules
 {
     /// <summary>Returns the name, or throws <see cref="ArgumentException"/> naming <paramref name="parameter"/>.</summary>
-    internal static string Check(string name, string parameter)
+    public static string Check(string name, string parameter)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name, parameter);
 

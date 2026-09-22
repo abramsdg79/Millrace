@@ -74,8 +74,7 @@ public sealed class SimulationBuilder
     {
         ThrowIfBuilt();
         ArgumentNullException.ThrowIfNull(block);
-        ArgumentException.ThrowIfNullOrWhiteSpace(block.Id, nameof(block));
-        ValidateBlockId(block.Id);
+        TagNameRules.Check(block.Id, nameof(block));
         _blocks.Add(block);
         return this;
     }
@@ -508,31 +507,6 @@ public sealed class SimulationBuilder
             throw new InvalidOperationException(
                 "This builder has already produced a simulation; the plant is immutable after Build(). " +
                 "Create a new builder for a different plant.");
-        }
-    }
-
-    /// <summary>
-    /// A block id prefixes every owned tag name (<c>&lt;id&gt;.&lt;pin&gt;</c>),
-    /// so it must satisfy the same rules a tag name does — the same rules
-    /// <c>TagBinding.ValidName</c> enforces and <c>Dse.Io.TagNameRules</c>
-    /// mirrors for a pin name, in an assembly this one cannot reference.
-    /// Checked here, before the id is ever combined with a pin name, so a
-    /// malformed id fails where the block was added rather than deep inside
-    /// <see cref="Validate()"/>.
-    /// </summary>
-    private static void ValidateBlockId(string id)
-    {
-        if (id.StartsWith('.') || id.EndsWith('.') || id.Contains("..", StringComparison.Ordinal))
-        {
-            throw new ArgumentException($"Block id '{id}' has an empty segment.", nameof(id));
-        }
-
-        foreach (char c in id)
-        {
-            if (char.IsWhiteSpace(c))
-            {
-                throw new ArgumentException($"Block id '{id}' contains whitespace.", nameof(id));
-            }
         }
     }
 }
