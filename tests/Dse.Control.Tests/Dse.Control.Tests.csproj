@@ -19,6 +19,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Shared\Golden.cs" Link="Shared\Golden.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Dse.Configuration.Tests\Plants\valid\*.json"
+          Link="Plants\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Dse.Control\Dse.Control.csproj" />
     <ProjectReference Include="..\..\src\Dse.Core\Dse.Core.csproj" />
     <ProjectReference Include="..\..\src\Dse.Components\Dse.Components.csproj" />
