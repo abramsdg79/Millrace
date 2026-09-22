@@ -37,7 +37,7 @@ public class PluginTests
         Assert.Equal(["Dse.Components", "Sample"], document.RootElement.GetProperty("modules").EnumerateArray().Select(m => m.GetString()));
         JsonElement sw = document.RootElement.GetProperty("components").EnumerateArray().Single(c => c.GetProperty("type").GetString() == "hysteresis-switch");
         Assert.Equal("Sample", sw.GetProperty("module").GetString());
-        Assert.Equal("sample-ore", document.RootElement.GetProperty("materials")[0].GetProperty("name").GetString());
+        Assert.Single(document.RootElement.GetProperty("materials").EnumerateArray(), m => m.GetProperty("name").GetString() == "sample-ore");
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Dse.Configuration.Loading;
 using Dse.Tests.Shared;
 
 namespace Dse.Configuration.Tests;
@@ -21,6 +22,18 @@ public class PlantSchemaTests
         Assert.Equal(
             ["$schema", "defaults", "materials", "components", "signals", "flows", "tags"],
             root.GetProperty("properties").EnumerateObject().Select(p => p.Name));
+    }
+
+    [Fact]
+    public void TheRootAndDefaultsKeySetsMatchTheirSchemas()
+    {
+        using JsonDocument document = JsonDocument.Parse(Text);
+        JsonElement root = document.RootElement;
+
+        Assert.Equal(PlantSchemas.TopLevelKeys, root.GetProperty("properties").EnumerateObject().Select(p => p.Name));
+        Assert.Equal(
+            PlantSchemas.DefaultsKeys,
+            root.GetProperty("properties").GetProperty("defaults").GetProperty("properties").EnumerateObject().Select(p => p.Name));
     }
 
     [Fact]

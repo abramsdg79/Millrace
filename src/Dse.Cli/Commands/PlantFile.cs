@@ -20,7 +20,7 @@ internal static class PlantFile
         {
             json = File.ReadAllText(path);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or ArgumentException)
         {
             context.Err.Write($"Cannot read '{path}': {ex.Message}\n");
             return ExitCodes.Unreadable;

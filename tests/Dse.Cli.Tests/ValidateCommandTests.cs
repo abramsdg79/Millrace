@@ -85,4 +85,15 @@ public class ValidateCommandTests
         Assert.Contains("Cannot read", run.Err, StringComparison.Ordinal);
         Assert.Contains("nope.json", run.Err, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void AnEmptyPathIsExitThreeNotACrash()
+    {
+        CliRun run = Cli.Run("validate", "");
+
+        Assert.Equal(ExitCodes.Unreadable, run.ExitCode);
+        Assert.Empty(run.Out);
+        Assert.StartsWith("Cannot read '': ", run.Err, StringComparison.Ordinal);
+        Assert.DoesNotContain("   at ", run.Err, StringComparison.Ordinal);
+    }
 }

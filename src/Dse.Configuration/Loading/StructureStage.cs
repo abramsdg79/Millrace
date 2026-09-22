@@ -8,6 +8,20 @@ namespace Dse.Configuration.Loading;
 /// <summary>Stage 2: everything that can be checked without building anything.</summary>
 internal static class StructureStage
 {
+    /// <summary>Round-trip ISO 8601, offset given as a literal <c>Z</c> (parsed as UTC).</summary>
+    private static readonly string[] StartTimeUtcFormats =
+    [
+        "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'FFFFFFF'Z'",
+        "yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'",
+    ];
+
+    /// <summary>Round-trip ISO 8601, offset given as <c>±hh:mm</c>. Unlike the <c>K</c> specifier, <c>zzz</c> is not optional.</summary>
+    private static readonly string[] StartTimeOffsetFormats =
+    [
+        "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'FFFFFFFzzz",
+        "yyyy'-'MM'-'dd'T'HH':'mm':'sszzz",
+    ];
+
     public static void Run(LoadState state)
     {
         JsonElement root = state.Root;
@@ -90,8 +104,7 @@ internal static class StructureStage
         DateTimeOffset? start = null;
         if (defaults.TryGetProperty("startTime", out JsonElement startElement))
         {
-            if (startElement.ValueKind == JsonValueKind.String
-                && DateTimeOffset.TryParse(startElement.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTimeOffset parsed))
+            if (startElement.ValueKind == JsonValueKind.String && TryParseStartTime(startElement.GetString(), out DateTimeOffset parsed))
             {
                 start = parsed;
             }
@@ -103,6 +116,12 @@ internal static class StructureStage
 
         state.Defaults = new PlantDefaults(seed, step, start);
     }
+
+    /// <summary>An ISO 8601 date-time WITH an offset: <c>Z</c> parses as UTC; <c>±hh:mm</c> carries its own offset.
+    /// An offset-less string (which would otherwise adopt the host's time zone) is rejected.</summary>
+    private static bool TryParseStartTime(string? text, out DateTimeOffset parsed) =>
+        DateTimeOffset.TryParseExact(text, StartTimeUtcFormats, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out parsed)
+        || DateTimeOffset.TryParseExact(text, StartTimeOffsetFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsed);
 
     private static void ReadMaterials(LoadState state, JsonElement root)
     {

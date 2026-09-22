@@ -13,6 +13,13 @@ public class SchemaAgreementTests
     /// <summary>What an off-the-shelf validator can see: unknown keys, unknown component types, bad parameters.</summary>
     private static readonly string[] Structural = ["DSE101", "DSE102", "DSE103"];
 
+    /// <summary>
+    /// DSE103 fixtures the schema cannot catch even though DSE103 is otherwise structural: the schema declares
+    /// <c>"format": "date-time"</c> for <c>startTime</c>, but format is not enforced with format validation off, so an
+    /// offset-less string (which the loader rejects) still satisfies the schema's <c>"type": "string"</c>.
+    /// </summary>
+    private static readonly string[] SemanticDespiteTheirCode = ["DSE103-start-time-without-offset.json"];
+
     private static readonly JsonSchema Schema = JsonSchema.FromText(PlantSchema.Generate(Plants.Catalogue));
 
     // JsonSchema.Net 8.x's Evaluate takes a JsonElement rather than a JsonNode; adapted per the brief's fallback.
@@ -45,7 +52,7 @@ public class SchemaAgreementTests
 
         bool accepted = Accepts(Corpus.Read("invalid", name));
 
-        if (Structural.Contains(code))
+        if (Structural.Contains(code) && !SemanticDespiteTheirCode.Contains(name))
         {
             Assert.False(accepted, $"'{name}' has a structural error the schema should catch, but the schema accepted it.");
         }

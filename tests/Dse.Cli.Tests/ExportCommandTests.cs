@@ -55,4 +55,14 @@ public class ExportCommandTests
         Assert.Equal(ExitCodes.Unreadable, run.ExitCode);
         Assert.Contains("Cannot write", run.Err, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void AnEmptyOutPathIsExitThreeNotACrash()
+    {
+        CliRun run = Cli.Run("catalog", "export", "--out", "");
+
+        Assert.Equal(ExitCodes.Unreadable, run.ExitCode);
+        Assert.StartsWith("Cannot write '': ", run.Err, StringComparison.Ordinal);
+        Assert.DoesNotContain("   at ", run.Err, StringComparison.Ordinal);
+    }
 }

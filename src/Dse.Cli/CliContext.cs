@@ -36,7 +36,7 @@ internal sealed class CliContext(ParsedCommandLine commandLine, ComponentCatalog
             File.WriteAllText(path, payload);
             return ExitCodes.Ok;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or ArgumentException)
         {
             Err.Write($"Cannot write '{path}': {ex.Message}\n");
             return ExitCodes.Unreadable;

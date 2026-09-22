@@ -11,6 +11,17 @@ public class ParseAndStructureTests
         Assert.True(result.IsValid);
     }
 
+    [Theory]
+    [InlineData("2026-01-01T06:00:00Z")]
+    [InlineData("2026-01-01T06:00:00+09:00")]
+    [InlineData("2026-01-01T06:00:00.1234567Z")]
+    public void StartTimeWithAnOffsetLoads(string startTime)
+    {
+        string json = Plants.Minimal.Replace("\"2026-01-01T06:00:00Z\"", $"\"{startTime}\"", StringComparison.Ordinal);
+
+        Assert.Empty(Plants.Load(json).Diagnostics);
+    }
+
     [Fact]
     public void CommentsAndTrailingCommasAreAllowed()
     {
@@ -74,6 +85,7 @@ public class ParseAndStructureTests
     [InlineData("\"timeStepMs\": 10", "\"timeStepMs\": 0", "$.defaults.timeStepMs")]
     [InlineData("\"timeStepMs\": 10", "\"timeStepMs\": \"10\"", "$.defaults.timeStepMs")]
     [InlineData("\"startTime\": \"2026-01-01T06:00:00Z\"", "\"startTime\": \"yesterday\"", "$.defaults.startTime")]
+    [InlineData("\"startTime\": \"2026-01-01T06:00:00Z\"", "\"startTime\": \"2026-01-01T06:00:00\"", "$.defaults.startTime")]
     public void BadDefaultsAreParameterErrors(string from, string to, string path)
     {
         ConfigDiagnostic d = Plants.Only(Plants.Minimal.Replace(from, to, StringComparison.Ordinal));

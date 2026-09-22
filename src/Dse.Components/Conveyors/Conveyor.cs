@@ -10,9 +10,9 @@ using Dse.Io;
 namespace Dse.Components.Conveyors;
 
 /// <summary>
-/// A bulk conveyor: motor, gearbox, drive and tail pulleys, belt, speed
-/// sensor, belt scale, current sensor, zero-speed switch, pull-keys, e-stop,
-/// safety relay and starter, wired the way a real one is. Nothing here is
+/// A bulk conveyor: motor, gearbox, drive and tail pulleys, belt friction,
+/// belt, speed sensor, belt scale, current sensor, zero-speed switch,
+/// pull-keys, e-stop, safety relay and starter, wired the way a real one is. Nothing here is
 /// special to the engine; it is a composition, and it flattens to leaves at
 /// build time. The causal chain — a blocked discharge loads the belt, raises
 /// torque, raises current, heats the motor, trips the overload — is a

@@ -10,10 +10,12 @@ namespace Dse.Configuration;
 /// </summary>
 public static class PlantSchema
 {
+    /// <summary>The JSON Schema draft the generated document declares itself against.</summary>
     public const string Dialect = "https://json-schema.org/draft/2020-12/schema";
 
     private const string LoaderChecks = " The schema cannot check that it exists; the loader does.";
 
+    /// <summary>Generates the plant schema document for <paramref name="catalogue"/>.</summary>
     public static string Generate(ComponentCatalogue catalogue)
     {
         ArgumentNullException.ThrowIfNull(catalogue);
@@ -41,6 +43,8 @@ public static class PlantSchema
         defs["envelope.link"] = w => WriteParameterObject(w, PlantSchemas.Link, "A connection from one port to another.", typeConst: null);
         defs["envelope.tag"] = w => WriteParameterObject(w, PlantSchemas.Tag, "A tag bound to a port, in addition to the tags components declare.", typeConst: null);
         CollectGroups(PlantSchemas.Material, defs);
+        CollectGroups(PlantSchemas.Link, defs);
+        CollectGroups(PlantSchemas.Tag, defs);
 
         using var stream = new MemoryStream();
         using (var writer = new Utf8JsonWriter(stream, CatalogueJson.WriterOptions))
