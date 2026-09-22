@@ -35,9 +35,9 @@ telemetry; `--speed`; scenario JSON Schema.
    no `Simulation`, plus a host-level test over a real plant.
 3. The worked example — the conveyor plant with a permissive, an interlock, an
    alarm and a sequencer — runs to a committed golden event log that shows the
-   sequence stepping, the alarm raising, the interlock tripping and holding the
-   run command low, and the sequencer faulting; produced and read, never
-   invented.
+   sequence stepping, the alarm raising on the start inrush, the interlock
+   tripping on the overload and holding the run command low, and the sequencer
+   faulting or completing; produced and read, never invented.
 4. A plant with no blocks behaves exactly as before: the 947 existing tests and
    the four 5b goldens are unchanged.
 5. Zero external package references anywhere under `src/`; `Dse.Control`
@@ -72,11 +72,14 @@ order; `TagValue Command(int index)` over `Commands` order; `long Tick`;
 `double Elapsed` — simulation seconds since this block's previous scan (zero on
 the first).
 
-`ScanOutputs` (mutable struct owned and reused by the host): `Set(int index,
-TagValue)` over `Outputs` order; `Write(int index, TagValue)` over `Writes`
-order; `Raise(string code, string message)`. An output not set in a scan holds
-its previous value, as a PLC output does. Nothing on the scan path allocates
-once the host is initialised.
+`ScanOutputs` (mutable struct, reference-backed so copies alias, owned and
+reused by the host): `Set(int index, TagValue)` over `Outputs` order;
+`Write(int index, TagValue)` over `Writes` order; `Raise(string code, string
+message)`; `Reset()`, `TryOutput`/`TryWrite`/`Events` for tests. Both structs
+are publicly constructible so a block's pure tests can build them. An output
+not set in a scan holds its previous value, as a PLC output does. Nothing on
+the scan path allocates once the host is initialised except a raised event's
+message string.
 
 ## 3. The scan host (`Dse.Core`)
 
@@ -125,13 +128,13 @@ plant naming rules; every event message is a sentence ending in a full stop.
 | **Timer** (`TimerMode.OnDelay` / `OffDelay` / `Pulse` — IEC 61131-3 TON / TOF / TP) | `In` (Bool) | — | `Q` Bool, `ET` Double s | TON: `Q` true once `In` has held true for `Preset`; TOF: `Q` stays true for `Preset` after `In` falls; TP: a `Preset`-long pulse on a rising edge. `ET` accumulates `Elapsed`, so it is quantised to the scan period. | none |
 | **Permissive** | N Bool conditions, each with a normal polarity | — | `Ok` Bool, `FirstOut` Int64 | `Ok` = every condition normal, re-evaluated each scan, never latched. `FirstOut` = index of the first condition to leave normal while `Ok` was true, −1 when none; cleared when `Ok` returns. Conditions required to *start*. | `PERMISSIVE_LOST` "CV001.SafetyOk dropped." / `PERMISSIVE_OK` "All conditions normal." |
 | **Interlock** | N Bool conditions with polarity | `Reset` Bool | `Ok`, `Tripped` Bool, `FirstOut` Int64 | Any condition abnormal → `Tripped` latches, `Ok` false, `FirstOut` captured, and the block's `Writes` (typically a run command set false) go out on the trip scan. Clears only on a `Reset` rising edge while every condition is normal. Conditions that *stop* a running thing. | `INTERLOCK_TRIP` "CV001.Tripped abnormal." / `INTERLOCK_RESET` "Reset with all conditions normal." |
-| **Alarm** | one Double | `Ack` Bool | per configured limit `HiHi`, `Hi`, `Lo`, `LoLo`: `<Limit>.Active`, `<Limit>.Acked` Bool | A limit raises when the value crosses it and stays across for `OnDelay` seconds (0 allowed); clears when it recrosses by `Deadband`. An `Ack` rising edge sets `Acked` on every active limit. Return to normal while unacknowledged leaves `Active=false, Acked=false`: the ISA-18.2 "cleared, unacknowledged" state is readable from the pair. Limits must be ordered `LoLo < Lo < Hi < HiHi` among those configured. | `ALARM_RAISED` "Hi: 82.3 above 80." / `ALARM_CLEARED` "Hi: 71.5 back within limits." / `ALARM_ACKED` "Hi acknowledged." |
+| **Alarm** | one Double | `Ack` Bool | per configured limit `HiHi`, `Hi`, `Lo`, `LoLo`: `<Limit>.Active`, `<Limit>.Acked` Bool | A limit raises when the value crosses it and stays across for `OnDelay` seconds (0 allowed); clears when it recrosses by `Deadband`. `Acked` starts true and survives a clear; a raise sets it false; an `Ack` rising edge sets `Acked` on every unacknowledged limit, active or already returned to normal. Return to normal while unacknowledged leaves `Active=false, Acked=false` — the ISA-18.2 "cleared, unacknowledged" state — until acknowledged. Limits must be ordered `LoLo < Lo < Hi < HiHi` among those configured. | `ALARM_RAISED` "Hi: 82.3 above 80." / `ALARM_CLEARED` "Hi: 71.5 back within limits." / `ALARM_ACKED` "Hi acknowledged." |
 | **Sequencer** (linear) | the union of every predicate's tags | `Start`, `Hold`, `Resume`, `Abort`, `Reset` Bool | `Step` Int64 (0 = idle), `Running`, `Held`, `Complete`, `Faulted` Bool, `StepTime` Double s | Ordered `Step(name, entryWrites[], transition, timeout?)`; transition is `Predicate(tag, op, value)` with `op` in `==, !=, <, <=, >, >=` or `After(seconds)`; a step's `timeout` elapsing → `Faulted`. `Start` rising edge from idle enters step 1; `Hold` freezes the step clock; `Resume` continues; `Abort` → idle with the optional abort write set; `Reset` from `Faulted` or `Complete` → idle. Entry writes go out on the scan that enters the step. Commands are rising-edge sensitive so a held-true tag does not retrigger. | `STEP_ENTERED` "2: Start the belt." / `SEQUENCE_COMPLETE` "Finished after 6 steps." / `SEQUENCE_FAULTED` "Step 2 timed out after 30 s." / `SEQUENCE_ABORTED` "Aborted at step 3." |
 
 ## 5. Composition
 
 Blocks compose through tags only. An interlock may list `PERM01.Ok` or
-`CV001.Current.Hi.Active` as an input and sees it one scan late by the timing
+`CUR01.Hi.Active` as an input and sees it one scan late by the timing
 rule — like two rungs in different scan groups. There is no block-to-block
 wiring API and no ordering declaration.
 
@@ -148,19 +151,25 @@ in code:
   (normal false).
 - **INT01** — interlock on `CV001.Tripped` (normal false) and `PERM01.Ok`
   (normal true), writing `CV001.Start = false` on trip.
-- **CUR01** — alarm on `CV001.Current` with `Hi` and `HiHi` limits chosen from
-  the plant's measured running and overload currents (the plan reads them from
-  a run before fixing the numbers), `Deadband` and a short `OnDelay`.
-- **SEQ01** — sequencer: pulse `CV001.SafetyReset` → set `CV001.Start` true,
-  wait `CV001.Speed >= 1.0` (timeout 15 s) → set `Feed.Enabled` true → `After(60)`
-  → set `Feed.Enabled` false → set `CV001.Start` false, wait
-  `CV001.Stopped == true` (timeout 60 s) → complete.
+- **CUR01** — alarm on `CV001.Current`. Measured (plan 5c, scratch run of the
+  conveyor plant): running current 1.38–1.56 A; start inrush peak 11.88 A, above
+  8 A for 0.40 s and above 3 A for 1.37 s; during `thermal-bias` the overload
+  trips on the injection tick and the current falls to zero — it does not climb.
+  Limits: `Hi` 3.0 A (deadband 0.2, on-delay 0.5 s), `HiHi` 8.0 A (deadband
+  0.5, on-delay 0.1 s) — so the alarm raises on the start inrush, which is the
+  plant's only real current excursion.
+- **SEQ01** — sequencer: pulse `CV001.SafetyReset` → pulse `INT01.Reset`
+  (at tick 0 the safety relay is de-energised and `PERM01.Ok` reads false, so
+  `INT01` trips at once and must be reset once the relay is healthy) → set
+  `CV001.Start` true, wait `CV001.Speed >= 1.0` (timeout 15 s) → set
+  `Feed.Enabled` true → `After(60)` → set `Feed.Enabled` false → set
+  `CV001.Start` false, wait `CV001.Stopped == true` (timeout 60 s) → complete.
 
 A scenario writes `SEQ01.Start` at 1 s and injects `CV001.Motor` `thermal-bias`
-at 40 s. The golden must show the steps entered, the alarm raising as the
-current climbs, `INT01` tripping on `CV001.Tripped` and holding `Start` low,
-and `SEQ01` faulting on the stopped-belt step's timeout or completing — whichever
-the run produces, read and reported, never invented.
+at 40 s. The golden must show the steps entered, the alarm raising on the
+start inrush, `INT01` tripping on `CV001.Tripped` when the overload trips and
+holding `Start` low, and `SEQ01` faulting on a step's timeout or completing —
+whichever the run produces, read and reported, never invented.
 
 ## 6. Testing
 
@@ -202,9 +211,10 @@ the run produces, read and reported, never invented.
   (`1e30`) throws `OverflowException` → exit 134. Bound it: `DSE202`.
 - `StructureStage.ReadDefaults`: a plant `defaults.timeStepMs` that is positive
   but rounds to zero ticks passes the loader and aborts in `SimulationClock`
-  at `Build()` — a live crash in `dse validate` and `dse tags` on master.
-  Guard it in the loader: `DSE103`, with the "at least one tick (0.0001 ms)"
-  wording plan 5b used for scenarios.
+  at `Build()`; and `1e30` throws `OverflowException` out of the loader itself —
+  both live crashes in `dse validate` and `dse tags` on master. Guard both in
+  the loader: `DSE103`, with the "at least one tick (0.0001 ms)" wording plan
+  5b used for scenarios, and an upper bound.
 
 Both with tests that reproduce the crash from the shipped binary first.
 
@@ -215,7 +225,7 @@ Both with tests that reproduce the crash from the shipped binary first.
 | `src/Dse.Io.Abstractions` | unchanged | gains the contract of section 2 |
 | `src/Dse.Core` | unchanged | gains `AddScanBlock`, the scan host, `DSE013`–`DSE015` |
 | `src/Dse.Control` | `Dse.Io.Abstractions` only | new; five blocks; no packages |
-| `tests/Dse.Control.Tests` | `Dse.Control`, `Dse.Core`, `Dse.Components`, `Dse.Scenarios`, `tests/Shared` | pure suites, host tests, the worked-example golden |
+| `tests/Dse.Control.Tests` | `Dse.Control`, `Dse.Core`, `Dse.Components`, `Dse.Configuration`, `tests/Shared` | pure suites, host tests, the worked-example golden (`Dse.Scenarios` is not referenced: the runner cannot attach a block in 5c) |
 | `Dse.Configuration`, `Dse.Scenarios`, `Dse.Cli`, `Dse.Realtime` | untouched apart from the section 8 fixes | |
 
 Global constraints from 5a and 5b apply unchanged.
