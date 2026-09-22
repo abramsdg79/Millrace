@@ -1,3 +1,5 @@
+using System.Globalization;
+using Dse.Core.Control;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Io;
@@ -13,6 +15,7 @@ public sealed class SimulationBuilder
     private readonly List<ISimComponent> _components = [];
     private readonly List<CompositeComponent> _composites = [];
     private readonly List<(string Name, TagBinding Binding)> _explicitTags = [];
+    private readonly List<IScanBlock> _blocks = [];
     private readonly SimulationOptions _options;
     private bool _built;
 
@@ -60,15 +63,32 @@ public sealed class SimulationBuilder
         return this;
     }
 
+    /// <summary>
+    /// Attaches a control block (spec 5c §3). The block is checked at
+    /// <see cref="Build"/>: its period against the time step (DSE013), its
+    /// inputs and writes against the tag directory (DSE014), and its id and
+    /// owned tag names against everything else in the plant (DSE015). Its
+    /// outputs and commands become ordinary tags.
+    /// </summary>
+    public SimulationBuilder AddScanBlock(IScanBlock block)
+    {
+        ThrowIfBuilt();
+        ArgumentNullException.ThrowIfNull(block);
+        ArgumentException.ThrowIfNullOrWhiteSpace(block.Id, nameof(block));
+        ValidateBlockId(block.Id);
+        _blocks.Add(block);
+        return this;
+    }
+
     /// <summary>Checks the plant without building it. Used by tooling and by Build.</summary>
-    public ValidationResult Validate() => Validate(out _);
+    public ValidationResult Validate() => Validate(out _, out _);
 
     /// <summary>Validates and constructs the simulation. Throws if the plant is invalid.</summary>
     public Simulation Build()
     {
         ThrowIfBuilt();
 
-        ValidationResult result = Validate(out List<TagBinding> tags);
+        ValidationResult result = Validate(out List<TagBinding> tags, out List<ScanBlockPlan> blocks);
         if (!result.IsValid)
         {
             throw new SimulationValidationException(result);
@@ -86,10 +106,10 @@ public sealed class SimulationBuilder
         _built = true;
 
         var image = new TagImage(new TagDirectory(tags));
-        return new Simulation(ordered, flow, _options, image);
+        return new Simulation(ordered, flow, _options, image, [.. blocks]);
     }
 
-    private ValidationResult Validate(out List<TagBinding> tags)
+    private ValidationResult Validate(out List<TagBinding> tags, out List<ScanBlockPlan> blocks)
     {
         var errors = new List<ValidationError>();
 
@@ -107,6 +127,7 @@ public sealed class SimulationBuilder
         }
 
         tags = CollectTags(seen, errors);
+        blocks = CollectBlocks(seen, tags, errors);
 
         var writablePorts = new HashSet<Port>(ReferenceEqualityComparer.Instance);
         foreach (TagBinding tag in tags)
@@ -286,6 +307,186 @@ public sealed class SimulationBuilder
         return result;
     }
 
+    /// <summary>
+    /// R69: two passes. The first checks each block's period and identity and
+    /// creates its owned tags; the second checks every block's inputs and
+    /// writes against the plant's tags *and* every block's owned tags, so a
+    /// block may read another block's output whichever order they were added.
+    /// </summary>
+    private List<ScanBlockPlan> CollectBlocks(
+        HashSet<string> componentIds,
+        List<TagBinding> tags,
+        List<ValidationError> errors)
+    {
+        var plans = new List<ScanBlockPlan>(_blocks.Count);
+        if (_blocks.Count == 0)
+        {
+            return plans;
+        }
+
+        var byName = new Dictionary<string, TagBinding>(StringComparer.Ordinal);
+        foreach (TagBinding binding in tags)
+        {
+            byName[binding.Name] = binding;
+        }
+
+        var blockIds = new HashSet<string>(StringComparer.Ordinal);
+        long stepTicks = _options.TimeStep.Ticks;
+        double stepMs = _options.TimeStep.TotalMilliseconds;
+
+        foreach (IScanBlock block in _blocks)
+        {
+            if (block.ScanPeriod <= TimeSpan.Zero)
+            {
+                errors.Add(new ValidationError(
+                    "DSE013",
+                    string.Create(CultureInfo.InvariantCulture,
+                        $"Block '{block.Id}' has a scan period of {block.ScanPeriod.TotalMilliseconds} ms. " +
+                        $"A scan period must be positive and a whole number of {stepMs} ms steps."),
+                    [block.Id]));
+            }
+            else if (block.ScanPeriod.Ticks % stepTicks != 0L)
+            {
+                errors.Add(new ValidationError(
+                    "DSE013",
+                    string.Create(CultureInfo.InvariantCulture,
+                        $"Block '{block.Id}' scans every {block.ScanPeriod.TotalMilliseconds} ms, which is not a " +
+                        $"whole number of {stepMs} ms steps. Use a period that is a multiple of the time step."),
+                    [block.Id]));
+            }
+
+            if (componentIds.Contains(block.Id))
+            {
+                errors.Add(new ValidationError(
+                    "DSE015",
+                    $"Block id '{block.Id}' is already a component id. Ids must be unique across components and " +
+                    $"blocks; rename one of them.",
+                    [block.Id]));
+            }
+            else if (!blockIds.Add(block.Id))
+            {
+                errors.Add(new ValidationError(
+                    "DSE015",
+                    $"Duplicate block id '{block.Id}'. Ids must be unique across components and blocks; rename " +
+                    $"one of them.",
+                    [block.Id]));
+            }
+
+            var ownNames = new HashSet<string>(StringComparer.Ordinal);
+            var outputs = new List<OwnedTag>(block.Outputs.Count);
+            var commands = new List<OwnedTag>(block.Commands.Count);
+
+            foreach (TagSpec spec in block.Outputs)
+            {
+                AddOwned(block, spec, command: false, ownNames, byName, tags, outputs, errors);
+            }
+
+            foreach (TagSpec spec in block.Commands)
+            {
+                AddOwned(block, spec, command: true, ownNames, byName, tags, commands, errors);
+            }
+
+            long periodTicks = block.ScanPeriod.Ticks > 0L ? block.ScanPeriod.Ticks / stepTicks : 0L;
+            plans.Add(new ScanBlockPlan(block, Math.Max(1L, periodTicks), [.. outputs], [.. commands]));
+        }
+
+        foreach (IScanBlock block in _blocks)
+        {
+            foreach (TagRef pin in block.Inputs)
+            {
+                CheckPin(block, pin, commanded: false, byName, errors);
+            }
+
+            foreach (TagRef pin in block.Writes)
+            {
+                CheckPin(block, pin, commanded: true, byName, errors);
+            }
+        }
+
+        return plans;
+    }
+
+    /// <summary>Creates one owned tag, or reports DSE015 and creates nothing.</summary>
+    private static void AddOwned(
+        IScanBlock block,
+        TagSpec spec,
+        bool command,
+        HashSet<string> ownNames,
+        Dictionary<string, TagBinding> byName,
+        List<TagBinding> tags,
+        List<OwnedTag> owned,
+        List<ValidationError> errors)
+    {
+        string name = $"{block.Id}.{spec.Name}";
+
+        if (!ownNames.Add(name))
+        {
+            errors.Add(new ValidationError(
+                "DSE015",
+                $"Block '{block.Id}' declares tag '{name}' twice. Give each output and command its own name.",
+                [block.Id]));
+            return;
+        }
+
+        if (byName.ContainsKey(name))
+        {
+            errors.Add(new ValidationError(
+                "DSE015",
+                $"Block '{block.Id}' owns tag '{name}', which the plant already has. Rename the block or the " +
+                $"pin; a block's tag is its id followed by the pin name.",
+                [block.Id]));
+            return;
+        }
+
+        OwnedTag tag = command
+            ? OwnedTag.Command(block.Id, name, spec)
+            : OwnedTag.Output(block.Id, name, spec);
+
+        byName[name] = tag.Binding;
+        tags.Add(tag.Binding);
+        owned.Add(tag);
+    }
+
+    /// <summary>Checks one input or write pin against the tag it names (DSE014).</summary>
+    private static void CheckPin(
+        IScanBlock block,
+        TagRef pin,
+        bool commanded,
+        Dictionary<string, TagBinding> byName,
+        List<ValidationError> errors)
+    {
+        string verb = commanded ? "commands" : "reads";
+
+        if (!byName.TryGetValue(pin.Name, out TagBinding? binding))
+        {
+            errors.Add(new ValidationError(
+                "DSE014",
+                $"Block '{block.Id}' {verb} tag '{pin.Name}', which the plant does not have. Check the name " +
+                $"against 'dse tags', or bind the port it should {(commanded ? "command" : "read")}.",
+                [block.Id]));
+            return;
+        }
+
+        if (binding.Kind != pin.Kind)
+        {
+            errors.Add(new ValidationError(
+                "DSE014",
+                $"Block '{block.Id}' {verb} tag '{pin.Name}' as a {pin.Kind}, but the plant publishes a " +
+                $"{binding.Kind}. Declare the pin with the kind the tag has.",
+                [block.Id]));
+            return;
+        }
+
+        if (commanded && binding.Access != TagAccess.ReadWrite)
+        {
+            errors.Add(new ValidationError(
+                "DSE014",
+                $"Block '{block.Id}' commands tag '{pin.Name}', which is read-only. Command a read-write tag, " +
+                $"or bind that port as a writable tag.",
+                [block.Id]));
+        }
+    }
+
     /// <summary>The flow nodes among the added leaves, in registration order.</summary>
     private List<IFlowNode> FlowNodes() => _components.OfType<IFlowNode>().ToList();
 
@@ -307,6 +508,31 @@ public sealed class SimulationBuilder
             throw new InvalidOperationException(
                 "This builder has already produced a simulation; the plant is immutable after Build(). " +
                 "Create a new builder for a different plant.");
+        }
+    }
+
+    /// <summary>
+    /// A block id prefixes every owned tag name (<c>&lt;id&gt;.&lt;pin&gt;</c>),
+    /// so it must satisfy the same rules a tag name does — the same rules
+    /// <c>TagBinding.ValidName</c> enforces and <c>Dse.Io.TagNameRules</c>
+    /// mirrors for a pin name, in an assembly this one cannot reference.
+    /// Checked here, before the id is ever combined with a pin name, so a
+    /// malformed id fails where the block was added rather than deep inside
+    /// <see cref="Validate()"/>.
+    /// </summary>
+    private static void ValidateBlockId(string id)
+    {
+        if (id.StartsWith('.') || id.EndsWith('.') || id.Contains("..", StringComparison.Ordinal))
+        {
+            throw new ArgumentException($"Block id '{id}' has an empty segment.", nameof(id));
+        }
+
+        foreach (char c in id)
+        {
+            if (char.IsWhiteSpace(c))
+            {
+                throw new ArgumentException($"Block id '{id}' contains whitespace.", nameof(id));
+            }
         }
     }
 }

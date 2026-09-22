@@ -1,4 +1,5 @@
 using Dse.Core.Contexts;
+using Dse.Core.Control;
 using Dse.Core.Events;
 using Dse.Core.Faults;
 using Dse.Core.Flow;
@@ -26,19 +27,22 @@ public sealed class Simulation
     private readonly bool _checkConservation;
     private readonly double _conservationTolerance;
     private readonly Dictionary<string, IFaultTarget> _faultTargets;
+    private readonly ScanBlockPlan[] _blockPlans;
     private bool _initialized;
 
     internal Simulation(
         ISimComponent[] components,
         FlowGraph flow,
         SimulationOptions options,
-        TagImage io)
+        TagImage io,
+        ScanBlockPlan[] blocks)
     {
         _components = components;
         _flow = flow;
         _seed = options.Seed;
         _checkConservation = options.CheckConservation;
         _conservationTolerance = options.ConservationTolerance;
+        _blockPlans = blocks;
         Clock = new SimulationClock(options.StartTime, options.TimeStep);
         IO = io;
 
@@ -109,6 +113,9 @@ public sealed class Simulation
     public ItemIdSequence Items { get; } = new();
 
     public IReadOnlyList<ISimComponent> Components => _components;
+
+    /// <summary>How many control blocks are attached (spec 5c §3). Zero for a plant with none.</summary>
+    public int ScanBlockCount => _blockPlans.Length;
 
     /// <summary>The plant-wide mass ledger: sourced, sunk, held and their drift.</summary>
     public MassBalance MassBalance => _flow.Balance();
