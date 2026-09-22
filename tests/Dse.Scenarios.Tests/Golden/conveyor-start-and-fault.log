@@ -1,4 +1,16 @@
 06:00:00.990  CV001.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.
+06:00:01.000  CV001.SafetyReset  WRITE  Set to true.
+06:00:01.000  CV001.Safety  SAFETY_RESET  All channels healthy; relay energised.
+06:00:02.000  CV001.SafetyReset  WRITE  Set to false.
 06:00:05.000  CV001.Start  WRITE  Set to true.
+06:00:05.000  CV001.Starter  CONTACTOR_CLOSED  Motor energised.
+06:00:05.010  CV001.Motor  ENERGISED  Contactor closed.
+06:00:05.020  CV001.ZeroSpeed  MOTION  Motion detected.
+06:00:07.970  CV001.Motor  AT_SPEED  Reached 139.81136237898272 rad/s.
 06:00:30.000  CV001.Motor  FAULT  thermal-bias injected: amount=0.8.
+06:00:30.000  CV001.Starter  OVERLOAD_TRIP  Thermal state 1.1558222267049405 reached the trip level 1.1.
+06:00:30.000  CV001.Starter  CONTACTOR_OPENED  Motor de-energised.
+06:00:30.010  CV001.Motor  DE_ENERGISED  Contactor open; coasting.
+06:00:44.540  CV001.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.
+06:00:45.820  CV001.Motor  STOPPED  Shaft at rest.
 06:01:00.500  CV001.Motor  FAULT_CLEARED  thermal-bias cleared.
