@@ -7,6 +7,12 @@ namespace Dse.Control;
 /// period, so it is quantised to it: a 100 ms timer on a 10 ms plant measures
 /// in tenths of a second, exactly as a PLC does.
 /// </summary>
+/// <remarks>
+/// A spec gap in <see cref="TimerMode.Pulse"/> (TP): once the pulse ends,
+/// <c>ET</c> holds at <c>Preset</c> rather than resetting to 0 when
+/// <c>IN</c> falls, as IEC 61131-3 specifies. No behaviour otherwise depends
+/// on this and it is not planned to change.
+/// </remarks>
 public sealed class Timer : IScanBlock
 {
     private readonly double _preset;

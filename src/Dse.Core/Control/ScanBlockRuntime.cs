@@ -75,7 +75,8 @@ internal sealed class ScanBlockRuntime
         var inputs = new ScanInputs(_inputValues, _commandValues, tick, now, deltaSeconds, elapsed);
 
         _outputs.Reset();
-        _plan.Block.Scan(in inputs, ref _outputs);
+        ScanOutputs outputs = _outputs;
+        _plan.Block.Scan(in inputs, ref outputs);
         _lastScanTick = tick;
 
         for (int i = 0; i < _plan.Outputs.Length; i++)

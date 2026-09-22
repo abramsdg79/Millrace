@@ -88,6 +88,16 @@ public class SequencerTests
     }
 
     [Fact]
+    public void TheConstructorRejectsDuplicateTagsWithinOneStepsEntryWrites()
+    {
+        ArgumentException error = Assert.Throws<ArgumentException>(() => new SequenceStep(
+            "One",
+            [Start(true), Start(false)],
+            StepTransition.After(TimeSpan.FromSeconds(1))));
+        Assert.Contains("CV001.Start", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TheConstructorRejectsANonPositiveTimeout()
     {
         Assert.Throws<ArgumentException>(() => new Sequencer(

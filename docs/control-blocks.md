@@ -43,6 +43,9 @@ output not set in a scan holds its previous value**, as a PLC output does. The
 host checks a stored output's kind against the kind its `TagSpec` declared: a
 mismatch throws `InvalidOperationException` naming the block, the pin and both
 kinds, so a block cannot silently publish a different kind than it advertised.
+A scan that throws — including that kind-check `InvalidOperationException` —
+aborts the tick before the clock advances and the block is not rescheduled; a
+`Simulation` that has thrown out of `Tick()` must be rebuilt.
 
 A scan that neither raises an event nor queues a write allocates nothing: the
 host allocates every buffer once and clears rather than reallocates them. An
@@ -122,6 +125,27 @@ the order they were added, so the block added later wins — deterministic, and
 exactly what a PLC does with a double coil, but, as on a PLC, it is usually a
 mistake worth checking for.
 
+### The worked example
+
+`tests/Dse.Control.Tests/Golden/conveyor-control.log` is a permissive, an
+interlock, a current alarm and a start-up sequencer running the conveyor plant
+for two simulated minutes, with a thermal-overload fault injected at 40 s. Its
+tick at 40.000-40.110 s is the clearest illustration of the timing rule end to
+end — a plant-driven trip, a block that reacts one scan later, and a write
+that lands the tick after that:
+
+```
+06:00:40.000  CV001.Starter  OVERLOAD_TRIP  Thermal state 1.1796472378913028 reached the trip level 1.1.
+06:00:40.100  INT01  INTERLOCK_TRIP  CV001.Tripped abnormal.
+06:00:40.110  CV001.Start  WRITE  Set to false.
+```
+
+The example deliberately has no interlock between the feed and the belt: once
+`INT01` trips the belt, `Feed.Enabled` stays true for a further 24 s onto a
+stopped belt, and the sequence runs to `SEQUENCE_COMPLETE` while the plant is
+still tripped. Plan 6's mine-conveyor sample interlocks the feed on the belt
+instead, so this gap is not carried forward as a pattern to copy.
+
 ## `Timer`
 
 ```csharp
@@ -139,6 +163,10 @@ new Timer("TMR01", TimerMode.OnDelay, "CV001.Running", TimeSpan.FromSeconds(5), 
 gives one `Preset`-long pulse on a rising edge and is not retriggerable while it
 runs. A preset of zero acts immediately. `ET` accumulates the scan period, so it
 is quantised to it: a 100 ms timer measures in tenths of a second. No events.
+
+Spec gap: on `Pulse`, once the pulse ends `ET` holds at `Preset` rather than
+resetting to 0 when the input falls, as IEC 61131-3 specifies. This has stood
+unchanged through review; no test or caller depends on the IEC-exact behaviour.
 
 ## `Permissive`
 
@@ -187,7 +215,9 @@ new Alarm("CUR01", "CV001.Current",
 
 One Double tag and up to four limits, which must ascend
 `LoLo < Lo < Hi < HiHi` among those configured. Each limit publishes
-`<Kind>.Active` and `<Kind>.Acked`, and the pair is the ISA-18.2 state:
+`<Kind>.Active` and `<Kind>.Acked`, and the pair is the ISA-18.2 state.
+`Acked` starts true on power-up: with nothing yet outstanding, a limit powers
+up normal, not as an unacknowledged alarm.
 
 | `Active` | `Acked` | state |
 |---|---|---|
@@ -201,7 +231,7 @@ allowed), and clears when it recrosses by `Deadband`. A raise clears `Acked`; a
 clear leaves `Acked` alone. A rising edge of the `Ack` command acknowledges
 every limit with anything outstanding, still active or not.
 
-Events: `ALARM_RAISED` — `Hi: 82.3 above 80.` — `ALARM_CLEARED` —
+Events: `ALARM_RAISED` — `Hi: 82.5 above 80.` — `ALARM_CLEARED` —
 `Hi: 71.5 back within limits.` — and `ALARM_ACKED` — `Hi acknowledged.`
 
 ## `Sequencer`

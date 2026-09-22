@@ -106,5 +106,6 @@ public class ValidateCommandTests
         Assert.Empty(run.Out);
         Assert.Contains("DSE103 $.defaults.timeStepMs", run.Err, StringComparison.Ordinal);
         Assert.Contains("at least one tick", run.Err, StringComparison.Ordinal);
+        Assert.DoesNotContain("   at ", run.Err, StringComparison.Ordinal);
     }
 }

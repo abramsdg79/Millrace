@@ -113,6 +113,27 @@ public class ScanBlockValidationTests
     }
 
     [Fact]
+    public void AZeroTimeStepWithABlockAttachedDoesNotThrow()
+    {
+        var options = new SimulationOptions
+        {
+            Seed = 1UL,
+            StartTime = new DateTimeOffset(2026, 1, 1, 6, 0, 0, TimeSpan.Zero),
+            TimeStep = TimeSpan.Zero,
+        };
+        SimulationBuilder builder = new SimulationBuilder(options)
+            .Add(new Thermostat("T"))
+            .AddScanBlock(new EchoBlock("B", TimeSpan.FromMilliseconds(20)).Reads("T.Enable"));
+
+        // The guard just stops the crash; nothing else in this minimal plant
+        // (no flow nodes, so FlowGraph.Validate never sees dt) flags a zero
+        // time step as invalid, so Validate() returns cleanly, valid.
+        ValidationResult result = builder.Validate();
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
     public void AnUnknownInputTagIsDse014()
     {
         SimulationBuilder builder = Plant().AddScanBlock(

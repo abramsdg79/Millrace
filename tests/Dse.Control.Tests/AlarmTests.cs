@@ -165,6 +165,54 @@ public class AlarmTests
     }
 
     [Fact]
+    public void AValueExactlyAtTheHiLimitDoesNotRaise()
+    {
+        Scan scan = Running().Once();
+
+        scan.Set("CV001.Current", 80.0).Once();        // exactly the Hi limit: > is strict
+
+        Assert.False(scan.Bool("Hi.Active"));
+        Assert.Empty(scan.Events);
+    }
+
+    [Fact]
+    public void AValueExactlyAtTheHiLimitMinusTheDeadbandClears()
+    {
+        Scan scan = Running().Once();
+        scan.Set("CV001.Current", 82.3).Once();
+
+        scan.Set("CV001.Current", 75.0).Once();         // exactly 80 - 5: <= is inclusive
+
+        Assert.False(scan.Bool("Hi.Active"));
+        Assert.Equal("ALARM_CLEARED", Assert.Single(scan.LastEvents).Code);
+    }
+
+    [Fact]
+    public void ALoLimitAtExactlyItsValueDoesNotRaise()
+    {
+        var scan = new Scan(Make(Limit(AlarmLimitKind.Lo, 20.0, deadband: 2.0)));
+        scan.Set("CV001.Current", 40.0).Once();
+
+        scan.Set("CV001.Current", 20.0).Once();          // exactly the Lo limit: < is strict
+
+        Assert.False(scan.Bool("Lo.Active"));
+        Assert.Empty(scan.Events);
+    }
+
+    [Fact]
+    public void ALoLimitAtExactlyTheLimitPlusTheDeadbandClears()
+    {
+        var scan = new Scan(Make(Limit(AlarmLimitKind.Lo, 20.0, deadband: 2.0)));
+        scan.Set("CV001.Current", 40.0).Once();
+        scan.Set("CV001.Current", 18.5).Once();
+
+        scan.Set("CV001.Current", 22.0).Once();          // exactly 20 + 2: >= is inclusive
+
+        Assert.False(scan.Bool("Lo.Active"));
+        Assert.Equal("ALARM_CLEARED", Assert.Single(scan.LastEvents).Code);
+    }
+
+    [Fact]
     public void ALoLimitRaisesBelowAndClearsAbove()
     {
         var scan = new Scan(Make(Limit(AlarmLimitKind.Lo, 20.0, deadband: 2.0)));

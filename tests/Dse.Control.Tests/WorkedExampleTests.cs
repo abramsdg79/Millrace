@@ -47,6 +47,10 @@ public class WorkedExampleTests
             "CV001.Current",
             [
                 new AlarmLimit(AlarmLimitKind.Hi, 3.0, 0.2, TimeSpan.FromSeconds(0.5)),
+                // HiHi 8.0: measured start inrush peaks 11.88 A at +0.01 s, above 8 A for
+                // 0.40 s and above 3 A for 1.37 s; running current is 1.38-1.56 A. The
+                // thermal-bias overload at +40 s de-energises the motor, so the current
+                // falls and both limits clear rather than re-raising.
                 new AlarmLimit(AlarmLimitKind.HiHi, 8.0, 0.5, TimeSpan.FromSeconds(0.1)),
             ],
             Fast));
@@ -126,6 +130,13 @@ public class WorkedExampleTests
         Simulation sim = Build();
 
         sim.RunFor(TimeSpan.FromSeconds(120));
+
+        Assert.Contains(sim.Events.Records, r =>
+            r.Source == "CUR01" && r.Code == "ALARM_RAISED" && r.Message.StartsWith("HiHi:", StringComparison.Ordinal));
+        Assert.Contains(sim.Events.Records, r =>
+            r.Source == "INT01" && r.Code == "INTERLOCK_TRIP" && r.Message == "CV001.Tripped abnormal.");
+        Assert.Contains(sim.Events.Records, r =>
+            r.Source == "SEQ01" && r.Code == "SEQUENCE_COMPLETE");
 
         Golden.Assert("Golden/conveyor-control.log", sim.Events.ToText());
     }

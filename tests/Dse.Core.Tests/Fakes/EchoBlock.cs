@@ -59,6 +59,9 @@ public sealed class EchoBlock : IScanBlock
     /// <summary>Set output 0 to a Double whatever kind it was declared with, to exercise the host's kind check.</summary>
     public bool WrongKind { get; set; }
 
+    /// <summary>Throw on every scan, to exercise a block that faults mid-tick.</summary>
+    public bool ThrowOnScan { get; set; }
+
     public EchoBlock Reads(string tag, TagKind kind = TagKind.Bool)
     {
         _inputs.Add(new TagRef(tag, kind));
@@ -85,6 +88,11 @@ public sealed class EchoBlock : IScanBlock
 
     public void Scan(in ScanInputs inputs, ref ScanOutputs outputs)
     {
+        if (ThrowOnScan)
+        {
+            throw new InvalidOperationException("The stub always throws.");
+        }
+
         ScanTicks.Add(inputs.Tick);
         ElapsedSeconds.Add(inputs.Elapsed);
 

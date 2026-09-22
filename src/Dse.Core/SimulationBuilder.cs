@@ -333,6 +333,11 @@ public sealed class SimulationBuilder
         long stepTicks = _options.TimeStep.Ticks;
         double stepMs = _options.TimeStep.TotalMilliseconds;
 
+        if (stepTicks <= 0L)
+        {
+            return plans;
+        }
+
         foreach (IScanBlock block in _blocks)
         {
             if (block.ScanPeriod <= TimeSpan.Zero)
@@ -386,6 +391,9 @@ public sealed class SimulationBuilder
             }
 
             long periodTicks = block.ScanPeriod.Ticks > 0L ? block.ScanPeriod.Ticks / stepTicks : 0L;
+            // Math.Max(1L, ...) exists only so a DSE013-failed block's plan is still
+            // constructible here; Build() throws SimulationValidationException before
+            // this period value is ever used to schedule a scan.
             plans.Add(new ScanBlockPlan(block, Math.Max(1L, periodTicks), [.. outputs], [.. commands]));
         }
 

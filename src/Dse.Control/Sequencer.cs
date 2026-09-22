@@ -96,8 +96,8 @@ public sealed class Sequencer : IScanBlock
 
         Id = id;
         ScanPeriod = scanPeriod;
-        Inputs = inputs;
-        Writes = writes;
+        Inputs = [.. inputs];
+        Writes = [.. writes];
     }
 
     /// <inheritdoc/>

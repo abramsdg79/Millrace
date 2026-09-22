@@ -28,7 +28,6 @@ public sealed class Simulation
     private readonly double _conservationTolerance;
     private readonly Dictionary<string, IFaultTarget> _faultTargets;
     private readonly ScanBlockPlan[] _blockPlans;
-    private readonly ScanBlockRuntime[] _blocks;
     private bool _initialized;
 
     internal Simulation(
@@ -58,11 +57,10 @@ public sealed class Simulation
 
         // R70: scheduled here, so every block holds a lower sequence number than
         // anything a caller schedules later and scans first at tick 0.
-        _blocks = new ScanBlockRuntime[blocks.Length];
         for (int i = 0; i < blocks.Length; i++)
         {
-            _blocks[i] = new ScanBlockRuntime(blocks[i], io, Events);
-            _queue.Schedule(0L, new ScanEvent(this, _blocks[i]));
+            var runtime = new ScanBlockRuntime(blocks[i], io, Events);
+            _queue.Schedule(0L, new ScanEvent(this, runtime));
         }
     }
 
@@ -354,6 +352,11 @@ public sealed class Simulation
     }
 
     /// <summary>One block's scan, which reschedules itself one period later.</summary>
+    /// <remarks>
+    /// A scan that throws aborts the tick before the clock advances and the
+    /// block is not rescheduled; a Simulation that has thrown out of Tick()
+    /// must be rebuilt.
+    /// </remarks>
     private sealed class ScanEvent : ISimEvent
     {
         private readonly Simulation _simulation;

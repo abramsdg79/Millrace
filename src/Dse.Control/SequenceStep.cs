@@ -32,6 +32,19 @@ public sealed class SequenceStep
             throw new ArgumentException("A step timeout must be positive, or absent.", nameof(timeout));
         }
 
+        for (int i = 0; i < entryWrites.Count; i++)
+        {
+            for (int j = 0; j < i; j++)
+            {
+                if (string.Equals(entryWrites[i].Tag, entryWrites[j].Tag, StringComparison.Ordinal))
+                {
+                    throw new ArgumentException(
+                        $"Tag '{entryWrites[i].Tag}' is commanded twice by step '{name}'. Command each tag once.",
+                        nameof(entryWrites));
+                }
+            }
+        }
+
         Name = name;
         EntryWrites = [.. entryWrites];
         Transition = transition;

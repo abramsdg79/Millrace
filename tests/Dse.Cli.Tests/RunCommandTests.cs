@@ -281,5 +281,6 @@ public class RunCommandTests
         Assert.Empty(run.Out);
         Assert.Contains("DSE202 $.timeStepMs", run.Err, StringComparison.Ordinal);
         Assert.Contains("longer than a day", run.Err, StringComparison.Ordinal);
+        Assert.DoesNotContain("   at ", run.Err, StringComparison.Ordinal);
     }
 }

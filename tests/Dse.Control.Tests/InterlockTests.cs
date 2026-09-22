@@ -151,6 +151,20 @@ public class InterlockTests
     }
 
     [Fact]
+    public void AResetHeldThroughAnAbnormalConditionDoesNotClearWhenItReturnsNormal()
+    {
+        Scan scan = Healthy().Once();
+        scan.Set("CV001.Tripped", true).Once();               // trips
+
+        scan.Command("Reset", true).Once();                   // rising edge consumed while still abnormal
+        Assert.True(scan.Bool("Tripped"));
+
+        scan.Set("CV001.Tripped", false).Times(3);            // condition returns normal, Reset still held high
+
+        Assert.True(scan.Bool("Tripped"));                    // no fresh rising edge, so it stays tripped
+    }
+
+    [Fact]
     public void TheSecondConditionNamesItselfWhenItTripsFirst()
     {
         Scan scan = Healthy().Once();

@@ -33,5 +33,10 @@ public interface IScanBlock
     IReadOnlyList<TagSpec> Commands { get; }
 
     /// <summary>One scan. Must not throw, must not block, and must not keep either argument.</summary>
+    /// <remarks>
+    /// A scan that throws aborts the tick before the clock advances and the
+    /// block is not rescheduled; a Simulation that has thrown out of Tick()
+    /// must be rebuilt.
+    /// </remarks>
     void Scan(in ScanInputs inputs, ref ScanOutputs outputs);
 }

@@ -185,6 +185,19 @@ public class ScanBlockHostTests
     }
 
     [Fact]
+    public void AThrowingScanAbortsTheTickBeforeTheClockAdvancesAndTheBlockIsNotRescheduled()
+    {
+        EchoBlock block = Echo("B");
+        block.ThrowOnScan = true;
+        Simulation sim = Plant().AddScanBlock(block).Build();
+        long before = sim.Clock.TickCount;
+
+        Assert.Throws<InvalidOperationException>(() => sim.Tick());
+
+        Assert.Equal(before, sim.Clock.TickCount);
+    }
+
+    [Fact]
     public void ElapsedIsZeroOnTheFirstScanAndThePeriodAfterwards()
     {
         EchoBlock block = Echo("B");
