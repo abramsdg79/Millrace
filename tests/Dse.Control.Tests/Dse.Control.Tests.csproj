@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dse.Control\Dse.Control.csproj" />
+    <ProjectReference Include="..\..\src\Dse.Control.Catalogue\Dse.Control.Catalogue.csproj" />
     <ProjectReference Include="..\..\src\Dse.Core\Dse.Core.csproj" />
     <ProjectReference Include="..\..\src\Dse.Components\Dse.Components.csproj" />
     <ProjectReference Include="..\..\src\Dse.Configuration\Dse.Configuration.csproj" />

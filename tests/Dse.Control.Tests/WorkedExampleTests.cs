@@ -1,5 +1,6 @@
 using Dse.Components;
 using Dse.Configuration;
+using Dse.Control.Catalogue;
 using Dse.Core;
 using Dse.Core.Catalogue;
 using Dse.Core.Faults;
@@ -19,7 +20,8 @@ public class WorkedExampleTests
     private static readonly TimeSpan Fast = TimeSpan.FromMilliseconds(100);
     private static readonly TimeSpan Slow = TimeSpan.FromMilliseconds(200);
 
-    private static ComponentCatalogue Catalogue { get; } = new CatalogueBuilder().Add<ComponentsModule>().Build();
+    private static ComponentCatalogue Catalogue { get; } =
+        new CatalogueBuilder().Add<ComponentsModule>().Add<ControlModule>().Build();
 
     private static BlockWrite Start(bool value) => new("CV001.Start", TagValue.Bool(value));
 
@@ -92,6 +94,13 @@ public class WorkedExampleTests
             [Start(false)]));
 
         Simulation sim = builder.Build();
+        Drive(sim);
+        return sim;
+    }
+
+    /// <summary>The operator's part of the example: start the sequence, release Start, inject the overload.</summary>
+    private static void Drive(Simulation sim)
+    {
         sim.WriteAt(TimeSpan.FromSeconds(1), "SEQ01.Start", TagValue.Bool(true));
         sim.WriteAt(TimeSpan.FromSeconds(2), "SEQ01.Start", TagValue.Bool(false));
         sim.InjectFaultAt(
@@ -99,6 +108,17 @@ public class WorkedExampleTests
             "CV001.Motor",
             "thermal-bias",
             new FaultArguments(new FaultArgument("amount", 0.8)));
+    }
+
+    /// <summary>The same plant and blocks, declared in <c>conveyor-control.json</c>.</summary>
+    private static Simulation BuildFromJson()
+    {
+        string json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Plants", "conveyor-control.json"));
+        LoadResult result = PlantLoader.Load(json, Catalogue, new LoadOptions());
+        Assert.True(result.IsValid, result.ToText());
+
+        Simulation sim = result.Builder!.Build();
+        Drive(sim);
         return sim;
     }
 
@@ -152,5 +172,30 @@ public class WorkedExampleTests
 
         Assert.Equal(first.Events.ToText(), second.Events.ToText());
         Assert.Equal(first.IO.Snapshot().ToArray(), second.IO.Snapshot().ToArray());
+    }
+
+    [Fact]
+    public void TheJsonWorkedExampleHasTheSameBlocksAndDirectory()
+    {
+        Simulation fromJson = BuildFromJson();
+        Simulation inCode = Build();
+
+        Assert.Equal(4, fromJson.ScanBlockCount);
+        Assert.Equal(47, fromJson.IO.Directory.Count);
+        Assert.Equal(inCode.IO.Directory.ToText(), fromJson.IO.Directory.ToText());
+    }
+
+    [Fact]
+    public void TheJsonWorkedExampleWritesTheCodeBuiltEventLogByteForByte()
+    {
+        Simulation fromJson = BuildFromJson();
+        Simulation inCode = Build();
+
+        fromJson.RunFor(TimeSpan.FromSeconds(120));
+        inCode.RunFor(TimeSpan.FromSeconds(120));
+
+        Assert.Equal(inCode.Events.ToText(), fromJson.Events.ToText());
+        Assert.Equal(inCode.IO.Snapshot().ToArray(), fromJson.IO.Snapshot().ToArray());
+        Golden.Assert("Golden/conveyor-control.log", fromJson.Events.ToText());
     }
 }
