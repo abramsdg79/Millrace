@@ -1,0 +1,9 @@
+{
+  "plant": "../plant.json",
+  "duration": 100,
+  "timeline": [
+    { "at": 1,  "write": "SEQ_START.Start", "value": true },
+    { "at": 2,  "write": "SEQ_START.Start", "value": false },
+    { "at": 80, "fault": "CV002.ZeroSpeed", "id": "fail-low" }
+  ]
+}

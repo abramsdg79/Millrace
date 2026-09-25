@@ -24,6 +24,9 @@ public static class Sample
         "normal-start-stop",
         "pull-key",
         "e-stop",
+        "overload",
+        "chute-blockage",
+        "failed-zero-speed",
     ];
 
     public static TheoryData<string> Scenarios => new(Names);

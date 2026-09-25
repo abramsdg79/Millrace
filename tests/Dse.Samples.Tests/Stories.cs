@@ -83,6 +83,62 @@ public static class Stories
                 new(E("CV001.EStop", "ESTOP_PRESSED"), E("CV002.Starter", "CONTACTOR_OPENED")),
                 new(E("CV001.EStop", "ESTOP_PRESSED"), E("CV003.Starter", "CONTACTOR_OPENED")),
             ]),
+
+        ["overload"] = new(
+            [
+                StartComplete,
+                E("CV003.Motor", "FAULT", "thermal-bias injected"),
+                E("CV003.Starter", "OVERLOAD_TRIP"),
+                E("CV003.Starter", "CONTACTOR_OPENED"),
+                E("INT_CV003", "INTERLOCK_TRIP", "CV003.Tripped abnormal."),
+                E("CV003.ZeroSpeed", "ZERO_SPEED"),
+                E("INT_CV002", "INTERLOCK_TRIP", "CV003.Stopped abnormal."),
+                E("CV002.Start", "WRITE", "Set to false by INT_CV002."),
+                E("CV002.ZeroSpeed", "ZERO_SPEED"),
+                E("INT_CV001", "INTERLOCK_TRIP", "CV002.Stopped abnormal."),
+                E("CV001.Start", "WRITE", "Set to false by INT_CV001."),
+                E("CV001.ZeroSpeed", "ZERO_SPEED"),
+                E("INT_FEED", "INTERLOCK_TRIP", "CV001.Stopped abnormal."),
+            ],
+            [
+                new(E("CV003.Motor", "FAULT"), E("ALM_CV003", "ALARM_RAISED")),
+            ]),
+
+        ["chute-blockage"] = new(
+            [
+                StartComplete,
+                E("CH1", "FAULT", "blockage injected."),
+                E("CH1", "FULL"),
+                E("ALM_CV001", "ALARM_RAISED", "above 7.5."),
+                E("ALM_CV001", "ALARM_RAISED", "above 8.6."),
+                E("CV001.Starter", "OVERLOAD_TRIP"),
+                E("INT_CV001", "INTERLOCK_TRIP", "CV001.Tripped abnormal."),
+                E("CV001.Start", "WRITE", "Set to false by INT_CV001."),
+                E("CV001.ZeroSpeed", "ZERO_SPEED"),
+                E("INT_FEED", "INTERLOCK_TRIP", "CV001.Stopped abnormal."),
+            ],
+            [
+                new(E("CH1", "FAULT"), E(null, "INTERLOCK_TRIP"), E("CV001.Starter", "OVERLOAD_TRIP")),
+                new(E("CH1", "FAULT"), E("INT_CV002", "INTERLOCK_TRIP")),
+                new(E("CH1", "FAULT"), E("INT_CV003", "INTERLOCK_TRIP")),
+            ]),
+
+        ["failed-zero-speed"] = new(
+            [
+                StartComplete,
+                E("CV002.ZeroSpeed", "FAULT", "fail-low injected."),
+                E("CV002.ZeroSpeed", "ZERO_SPEED"),
+                E("INT_CV001", "INTERLOCK_TRIP", "CV002.Stopped abnormal."),
+                E("CV001.Start", "WRITE", "Set to false by INT_CV001."),
+                E("CV001.ZeroSpeed", "ZERO_SPEED"),
+                E("INT_FEED", "INTERLOCK_TRIP", "CV001.Stopped abnormal."),
+            ],
+            [
+                new(E("CV002.ZeroSpeed", "FAULT"), E("CV002.Starter", "CONTACTOR_OPENED")),
+                new(E("CV002.ZeroSpeed", "FAULT"), E("CV003.Starter", "CONTACTOR_OPENED")),
+                new(E("CV002.ZeroSpeed", "FAULT"), E("INT_CV002", "INTERLOCK_TRIP")),
+                new(E("CV002.ZeroSpeed", "FAULT"), E("INT_CV003", "INTERLOCK_TRIP")),
+            ]),
     };
 
     private static EventPattern E(string? source, string code, string fragment = "") => new(source, code, fragment);
