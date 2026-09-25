@@ -11,6 +11,7 @@ public sealed class ConformanceFixtures
 {
     private readonly Dictionary<string, string> _components = new(StringComparer.Ordinal);
     private readonly Dictionary<(string Slot, string Type), string> _objects = [];
+    private readonly Dictionary<string, List<string>> _blocks = new(StringComparer.Ordinal);
     private readonly List<MaterialDescriptor> _materials = [];
     private readonly List<ISimNode> _nodes = [];
 
@@ -30,6 +31,24 @@ public sealed class ConformanceFixtures
         ArgumentException.ThrowIfNullOrWhiteSpace(type);
         ArgumentException.ThrowIfNullOrWhiteSpace(json);
         _objects[(slot, type)] = json;
+        return this;
+    }
+
+    /// <summary>
+    /// A <c>parameters</c> object for a probe of a block type. Call it again for
+    /// the same type to check it with several — an alarm with one limit and with four.
+    /// </summary>
+    public ConformanceFixtures BlockParameters(string blockType, string json)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(blockType);
+        ArgumentException.ThrowIfNullOrWhiteSpace(json);
+        if (!_blocks.TryGetValue(blockType, out List<string>? list))
+        {
+            list = [];
+            _blocks[blockType] = list;
+        }
+
+        list.Add(json);
         return this;
     }
 
@@ -53,6 +72,9 @@ public sealed class ConformanceFixtures
 
     internal string ParametersFor(string slot, string type) =>
         _objects.TryGetValue((slot, type), out string? json) ? json : "{}";
+
+    internal IReadOnlyList<string> BlockParametersFor(string blockType) =>
+        _blocks.TryGetValue(blockType, out List<string>? list) ? list : ["{}"];
 
     internal BindingContext NewContext(ComponentCatalogue catalogue)
     {

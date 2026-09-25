@@ -5,6 +5,7 @@ using Dse.Core.Flow;
 using Dse.Core.Graph;
 using Dse.Core.Io;
 using Dse.Core.Testing;
+using Dse.Core.Tests.Fakes;
 using Dse.Io;
 
 namespace Dse.Core.Tests.Catalogue;
@@ -327,5 +328,149 @@ public class CatalogueConformanceTests
         Assert.StartsWith("hold 'for-seconds': the fixture does not bind — $.seconds:", Assert.Single(missing.Mismatches), StringComparison.Ordinal);
         Assert.Empty(given.Mismatches);
         Assert.Contains(typeof(Tuple<double>), given.BuiltTypes);
+    }
+
+    private static BlockDescriptor EchoDescriptor(Func<string, ParameterValues, IReadOnlyList<(TagSpec Spec, TagAccess Access)>> owned) =>
+        new("echo",
+            "Echoes a tag.",
+            owned,
+            (id, period, p) => new EchoBlock(id, period).Reads(p.Tag("input")).Publishes("Q").Accepts("Cmd"))
+        {
+            Parameters =
+            [
+                Param.Tag("input", "The tag echoed.", TagKind.Bool),
+                Param.Bool("extra", "Declare one more tag than the block has.", @default: false),
+            ],
+        };
+
+    private static IReadOnlyList<(TagSpec Spec, TagAccess Access)> HonestTags(string id, ParameterValues p)
+    {
+        var tags = new List<(TagSpec Spec, TagAccess Access)>
+        {
+            (new TagSpec($"{id}.Q", TagKind.Bool), TagAccess.ReadOnly),
+            (new TagSpec($"{id}.Cmd", TagKind.Bool), TagAccess.ReadWrite),
+        };
+        if (p.Bool("extra"))
+        {
+            tags.Add((new TagSpec($"{id}.Extra", TagKind.Bool), TagAccess.ReadOnly));
+        }
+
+        return tags;
+    }
+
+    private static ConformanceReport CheckBlock(BlockDescriptor descriptor, params string[] fixtures)
+    {
+        var f = new ConformanceFixtures();
+        foreach (string json in fixtures)
+        {
+            f.BlockParameters("echo", json);
+        }
+
+        return CatalogueConformance.Check(new CatalogueBuilder().AddBlock(descriptor).Build(), f);
+    }
+
+    [Fact]
+    public void AnHonestBlockDescriptorHasNoMismatches()
+    {
+        ConformanceReport report = CheckBlock(EchoDescriptor(HonestTags), """{ "input": "X.In" }""");
+
+        Assert.Empty(report.Mismatches);
+        Assert.Contains(typeof(EchoBlock), report.BuiltTypes);
+    }
+
+    [Fact]
+    public void ReportsAnOwnedTagTheInstanceLacks()
+    {
+        ConformanceReport report = CheckBlock(EchoDescriptor(HonestTags), """{ "input": "X.In", "extra": true }""");
+
+        Assert.Equal(
+            "echo: owned tag 'probe.Extra' (Bool ReadOnly) is in the descriptor but not on the instance.",
+            Assert.Single(report.Mismatches));
+    }
+
+    [Fact]
+    public void ReportsAnOwnedTagTheDescriptorForgot()
+    {
+        ConformanceReport report = CheckBlock(
+            EchoDescriptor((id, p) => [(new TagSpec($"{id}.Q", TagKind.Bool), TagAccess.ReadOnly)]),
+            """{ "input": "X.In" }""");
+
+        Assert.Equal(
+            "echo: owned tag 'probe.Cmd' (Bool ReadWrite) is on the instance but not in the descriptor.",
+            Assert.Single(report.Mismatches));
+    }
+
+    [Fact]
+    public void ReportsAKindOrAccessMismatch()
+    {
+        ConformanceReport report = CheckBlock(
+            EchoDescriptor((id, p) =>
+            [
+                (new TagSpec($"{id}.Q", TagKind.Double), TagAccess.ReadOnly),
+                (new TagSpec($"{id}.Cmd", TagKind.Bool), TagAccess.ReadOnly),
+            ]),
+            """{ "input": "X.In" }""");
+
+        Assert.Equal(
+            new[]
+            {
+                "echo: owned tag 'probe.Cmd' (Bool ReadOnly) is in the descriptor but not on the instance.",
+                "echo: owned tag 'probe.Q' (Double ReadOnly) is in the descriptor but not on the instance.",
+                "echo: owned tag 'probe.Cmd' (Bool ReadWrite) is on the instance but not in the descriptor.",
+                "echo: owned tag 'probe.Q' (Bool ReadOnly) is on the instance but not in the descriptor.",
+            },
+            report.Mismatches);
+    }
+
+    [Fact]
+    public void ReportsAUnitOrDescriptionMismatch()
+    {
+        ConformanceReport report = CheckBlock(
+            EchoDescriptor((id, p) =>
+            [
+                (new TagSpec($"{id}.Q", TagKind.Bool, "s"), TagAccess.ReadOnly),
+                (new TagSpec($"{id}.Cmd", TagKind.Bool, "", "A command"), TagAccess.ReadWrite),
+            ]),
+            """{ "input": "X.In" }""");
+
+        Assert.Equal(
+            new[]
+            {
+                "echo: owned tag 'probe.Q' has unit 's' in the descriptor but '' on the instance.",
+                "echo: owned tag 'probe.Cmd' is described 'A command' in the descriptor but '' on the instance.",
+            },
+            report.Mismatches);
+    }
+
+    [Fact]
+    public void ReportsAParameterTheFactoryReadsButTheDescriptorDoesNotDeclare()
+    {
+        var descriptor = new BlockDescriptor(
+            "echo",
+            "Echoes a tag.",
+            HonestTags,
+            (id, period, p) => new EchoBlock(id, TimeSpan.FromSeconds(p.Double("gain"))).Publishes("Q").Accepts("Cmd"))
+        {
+            Parameters = [Param.Bool("extra", "Declare one more tag than the block has.", @default: false)],
+        };
+
+        ConformanceReport report = CheckBlock(descriptor, "{}");
+
+        string mismatch = Assert.Single(report.Mismatches);
+        Assert.StartsWith("echo: the factory threw KeyNotFoundException:", mismatch, StringComparison.Ordinal);
+        Assert.Contains("'gain', which its descriptor does not declare", mismatch, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ChecksEveryFixtureOfABlockTypeAndLabelsEach()
+    {
+        ConformanceReport report = CheckBlock(
+            EchoDescriptor(HonestTags),
+            """{ "input": "X.In" }""",
+            """{ "input": "X.In", "extra": true }""");
+
+        Assert.Equal(
+            "echo (fixture 2): owned tag 'probe.Extra' (Bool ReadOnly) is in the descriptor but not on the instance.",
+            Assert.Single(report.Mismatches));
     }
 }

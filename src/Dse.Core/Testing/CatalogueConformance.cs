@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Dse.Core.Catalogue;
 using Dse.Core.Contexts;
@@ -20,6 +21,9 @@ public static class CatalogueConformance
 {
     /// <summary>The id every probe is built with.</summary>
     public const string ProbeId = "probe";
+
+    /// <summary>The scan period every block probe is built with.</summary>
+    public static TimeSpan ProbePeriod { get; } = TimeSpan.FromMilliseconds(100);
 
     public static ConformanceReport Check(ComponentCatalogue catalogue, ConformanceFixtures fixtures)
     {
@@ -59,6 +63,26 @@ public static class CatalogueConformance
             var node = (ISimNode)made;
             built.Add(node.GetType());
             Compare(descriptor, values, node, wanted, mismatches);
+        }
+
+        foreach (BlockDescriptor descriptor in catalogue.Blocks)
+        {
+            IReadOnlyList<string> jsons = fixtures.BlockParametersFor(descriptor.Type);
+            for (int i = 0; i < jsons.Count; i++)
+            {
+                string label = jsons.Count == 1
+                    ? descriptor.Type
+                    : string.Create(CultureInfo.InvariantCulture, $"{descriptor.Type} (fixture {i + 1})");
+                ParameterValues? values = BindFixture(descriptor.Parameters, jsons[i], fixtures.NewContext(catalogue), label, mismatches);
+                if (values is null || !TryBuild(() => descriptor.Factory(ProbeId, ProbePeriod, values), label, mismatches, out object? made))
+                {
+                    continue;
+                }
+
+                var block = (IScanBlock)made;
+                built.Add(block.GetType());
+                CompareBlock(descriptor, label, values, block, mismatches);
+            }
         }
 
         return new ConformanceReport(mismatches, built.Distinct().ToList());
@@ -157,6 +181,64 @@ public static class CatalogueConformance
                 mismatches.Add(
                     $"{descriptor.Type}: the instance can supply {capability.Name}, which a reference parameter in this catalogue needs, " +
                     $"but the descriptor does not list it under Provides.");
+            }
+        }
+    }
+
+    private static void CompareBlock(
+        BlockDescriptor descriptor, string label, ParameterValues values, IScanBlock block, List<string> mismatches)
+    {
+        if (!string.Equals(block.Id, ProbeId, StringComparison.Ordinal))
+        {
+            mismatches.Add($"{label}: the instance's id is '{block.Id}', not the id its factory was given ('{ProbeId}').");
+        }
+
+        if (block.ScanPeriod != ProbePeriod)
+        {
+            mismatches.Add(string.Create(
+                CultureInfo.InvariantCulture,
+                $"{label}: the instance scans every {block.ScanPeriod.TotalMilliseconds} ms, not at the period its factory was given ({ProbePeriod.TotalMilliseconds} ms)."));
+        }
+
+        IReadOnlyList<(TagSpec Spec, TagAccess Access)> declared;
+        try
+        {
+            declared = descriptor.OwnedTags(ProbeId, values);
+        }
+#pragma warning disable CA1031 // Reported, not rethrown: a broken OwnedTags is a finding like any other.
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            mismatches.Add($"{label}: OwnedTags threw {ex.GetType().Name}: {ex.Message}");
+            return;
+        }
+
+        var actual = block.Outputs.Select(s => (Spec: s, Access: TagAccess.ReadOnly))
+            .Concat(block.Commands.Select(s => (Spec: s, Access: TagAccess.ReadWrite)))
+            .Select(t => (Name: $"{block.Id}.{t.Spec.Name}", t.Spec.Kind, t.Access, t.Spec.Unit, t.Spec.Description))
+            .ToList();
+
+        Diff(
+            label, "owned tag",
+            declared.Select(t => $"'{t.Spec.Name}' ({t.Spec.Kind} {t.Access})"),
+            actual.Select(t => $"'{t.Name}' ({t.Kind} {t.Access})"),
+            mismatches);
+
+        // R102: a tag that matches by name, kind and access must also match by unit and description.
+        foreach ((TagSpec spec, TagAccess access) in declared)
+        {
+            foreach (var match in actual.Where(a =>
+                         string.Equals(a.Name, spec.Name, StringComparison.Ordinal) && a.Kind == spec.Kind && a.Access == access))
+            {
+                if (!string.Equals(match.Unit, spec.Unit, StringComparison.Ordinal))
+                {
+                    mismatches.Add($"{label}: owned tag '{spec.Name}' has unit '{spec.Unit}' in the descriptor but '{match.Unit}' on the instance.");
+                }
+
+                if (!string.Equals(match.Description, spec.Description, StringComparison.Ordinal))
+                {
+                    mismatches.Add($"{label}: owned tag '{spec.Name}' is described '{spec.Description}' in the descriptor but '{match.Description}' on the instance.");
+                }
             }
         }
     }
