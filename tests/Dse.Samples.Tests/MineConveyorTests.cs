@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Dse.Cli;
 using Dse.Configuration;
@@ -123,10 +124,16 @@ public class MineConveyorTests
     {
         IReadOnlyDictionary<string, IReadOnlyList<TagSample>> traces =
             Sample.Trace("welded-contactor", ["CV003.Speed"], TimeSpan.FromMilliseconds(100));
+        IReadOnlyList<TagSample> series = traces["CV003.Speed"].Where(s => s.Time >= TimeSpan.FromSeconds(80)).ToList();
+
+        // The trace's last sample lands at 00:04:00 (240.000 s, the scenario's full
+        // duration); guard against a filter or a shortened trace silently emptying
+        // this series and making Assert.All pass on nothing.
+        Assert.Contains(series, s => s.Time >= TimeSpan.FromSeconds(239));
 
         Assert.All(
-            traces["CV003.Speed"].Where(s => s.Time >= TimeSpan.FromSeconds(80)),
-            s => Assert.True(s.Value >= 1.7, $"CV003 slowed to {s.Value} m/s at {s.Time}."));
+            series,
+            s => Assert.True(s.Value >= 1.7, string.Create(CultureInfo.InvariantCulture, $"CV003 slowed to {s.Value} m/s at {s.Time}.")));
     }
 
     [Fact]

@@ -204,6 +204,9 @@ over three conveyors — a permissive per belt on its safety relay, cascade
 interlocks that read the downstream belt's zero-speed switch, current alarms,
 and a start and a stop sequencer — with eight scenarios and their goldens. Its
 README explains each design choice; its `plant.json` is the file to copy from.
+An interlock there trips once, on the trip scan, and does not hold its output
+off against a later write — read the README's "leaves out on purpose" section
+before wiring a new writer of a tag an interlock also writes.
 
 ## `Timer`
 

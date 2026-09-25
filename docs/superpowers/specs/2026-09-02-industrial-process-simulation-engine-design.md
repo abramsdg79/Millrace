@@ -66,7 +66,8 @@ Root namespace `Dse` is provisional and may be renamed before first release.
 
 ## 4. Solution layout
 
-Eight shipping projects, two samples, and a test project per shipping project.
+Eight shipping projects, two samples, and a test project per shipping project;
+`Dse.Samples.Tests` runs the samples themselves.
 
 | Project | Contains | Depends on |
 |---|---|---|

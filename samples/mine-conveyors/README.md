@@ -38,7 +38,10 @@ interlock reads the downstream belt's **zero-speed switch** (`CV002.Stopped`),
 the instrument, as a real PLC is wired — never the true speed. That is why a
 failed switch trips a healthy line (scenario 6). Each interlock also trips on
 its own belt's overload relay (`CVn.Tripped`) and on its permissive, and it is
-latched: `SEQ_START` resets it only once the belt downstream is proved.
+latched: `SEQ_START` resets it only once the belt downstream is proved. That
+latch gates `SEQ_START`'s own reset step, not the run command itself — see the
+first item under "What this demo line leaves out on purpose" below for what
+that means for a write that does not go through `SEQ_START`.
 
 **Safety is hardwired.** The pull-keys and the e-stop of each belt are wired
 through the belt's own safety relay to its starter, inside the conveyor. They
@@ -242,8 +245,10 @@ through a single contactor: it switches two in series, each able to break the
 motor current alone, and monitors them — a normally-closed auxiliary contact of
 each is fed back to the safety relay, which will not reset while either reports
 closed. A weld is then detected at the next stop and cannot defeat the e-stop.
-This sample's starter has one contactor and no feedback; a redundant,
-monitored safety-contactor starter is a later component.
+This sample's starter has one contactor and no feedback to the safety relay —
+the plant does expose `CVn.Contactor`, but nothing reads it back into a
+permissive or an interlock; a redundant, monitored safety-contactor starter is
+a later component.
 
 ```text expected/welded-contactor.log
 06:01:20.000  CV003.Starter  FAULT  contactor-welded injected.
@@ -282,6 +287,12 @@ dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/feed-st
 
 ## What this demo line leaves out on purpose
 
+- An interlock here trips once: it writes its trip values on the trip scan
+  only and does not hold the output off, unlike a PLC interlock ANDed into the
+  run rung. Anything that later writes `Start` or `Enabled` true bypasses it.
+  In this plant only `SEQ_START` writes those tags, and it resets each
+  interlock just before it writes them; treat any new writer — an HMI start
+  button, a second sequence — as unprotected until the interlock gates it too.
 - The cascade interlocks wait for the downstream belt's zero-speed switch, so
   upstream belts and the feed run on for several seconds while a tripped belt
   coasts down (the pull-key scenario above: the feed stops about 16 s after the
@@ -293,8 +304,26 @@ dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/feed-st
   current until its thermal relay trips; see that section for why a real
   transfer chute would stop the feeding belt within seconds instead.
 - No belt has underspeed (belt-slip) protection: on a real line, CV002 would
-  trip when its zero-speed switch disagrees with the drive still commanded to
-  run, which this model never checks.
+  trip when its speed sensor reads meaningfully below its running speed —
+  roughly 80–90 % of it — while the belt is energised. `Interlock` conditions
+  are binary, and the block set has no analog comparator, so underspeed
+  cannot be expressed with these blocks today.
+- No belt checks a switch-versus-command discrepancy either: a zero-speed
+  switch that disagrees with the run command it is meant to confirm would go
+  unnoticed here. Scenario 6 shows the opposite failure instead — a switch
+  that fails and trips a belt that was never in trouble.
+- No pre-start warning: a real belt line sounds a horn and waits before each
+  belt starts, so anyone near it has time to clear — a statutory requirement
+  in most mining jurisdictions. `SEQ_START` here starts every belt with no
+  warning at all.
+- `SEQ_START` and `SEQ_STOP` have no mutual exclusion between them, and
+  `SEQ_START` does not abort if a belt trips partway through it: it keeps
+  proving the next step regardless of what an interlock just did upstream.
+- No fail-to-stop (run-feedback discrepancy) alarm: in the welded-contactor
+  scenario above, `Start` goes false while `CV003.Contactor` stays true, and
+  only the stop sequence's own timeout ever reports it. `Alarm` here only
+  compares one analog value against a threshold, so it cannot watch two
+  binary tags for disagreement.
 - Each starter has a single contactor, which a weld defeats, as the
   welded-contactor scenario above shows. A real safety circuit uses two
   monitored contactors in series, so a weld in one is caught at the next stop
