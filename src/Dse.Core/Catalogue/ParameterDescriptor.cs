@@ -1,4 +1,5 @@
 using Dse.Core.Flow;
+using Dse.Io;
 
 namespace Dse.Core.Catalogue;
 
@@ -59,6 +60,15 @@ public sealed class ParameterDescriptor
     /// <summary>For <see cref="ParameterKind.MaterialState"/>: the sibling material parameter it indexes.</summary>
     public string MaterialParameter { get; init; } = string.Empty;
 
+    /// <summary>For <see cref="ParameterKind.Tag"/>: the kind the tag must have, or null for any.</summary>
+    public TagKind? RequiredKind { get; init; }
+
+    /// <summary>For <see cref="ParameterKind.Tag"/>: the block commands this tag, so it must be read-write.</summary>
+    public bool IsWriteTarget { get; init; }
+
+    /// <summary>For <see cref="ParameterKind.Value"/>: the sibling tag parameter whose kind it takes.</summary>
+    public string TagParameter { get; init; } = string.Empty;
+
     /// <summary>For <see cref="ParameterKind.Object"/> and <see cref="ParameterKind.ObjectList"/>.</summary>
     public string Slot { get; init; } = string.Empty;
 
@@ -70,7 +80,8 @@ public sealed class ParameterDescriptor
     {
         ParameterKind.Group => Children.Any(child => child.IsRequired),
         ParameterKind.GroupList or ParameterKind.ObjectList or ParameterKind.StringList => MinCount > 0,
-        ParameterKind.Reference or ParameterKind.Material or ParameterKind.MaterialState or ParameterKind.Object => !IsOptional,
+        ParameterKind.Reference or ParameterKind.Material or ParameterKind.MaterialState or ParameterKind.Object
+            or ParameterKind.Tag or ParameterKind.Value => !IsOptional,
         _ => Default is null && !IsOptional,
     };
 

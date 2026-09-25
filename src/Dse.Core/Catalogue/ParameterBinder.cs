@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Dse.Core.Graph;
+using Dse.Io;
 
 namespace Dse.Core.Catalogue;
 
@@ -68,8 +69,8 @@ public static class ParameterBinder
 
         var values = new Dictionary<string, object?>(StringComparer.Ordinal);
 
-        // Material states index a sibling material, so they bind last.
-        foreach (ParameterDescriptor parameter in schema.OrderBy(p => p.Kind == ParameterKind.MaterialState ? 1 : 0))
+        // Material states index a sibling material and values convert to a sibling tag's kind, so both bind last.
+        foreach (ParameterDescriptor parameter in schema.OrderBy(p => p.Kind is ParameterKind.MaterialState or ParameterKind.Value ? 1 : 0))
         {
             string childPath = $"{path}.{parameter.Name}";
             bool present = !absent && json.TryGetProperty(parameter.Name, out _);
@@ -253,6 +254,12 @@ public static class ParameterBinder
 
             case ParameterKind.MaterialState:
                 return TryBindState(parameter, element, path, issues, siblings, objectJson, out bound);
+
+            case ParameterKind.Tag:
+                return TryBindTag(parameter, element, path, context, construct, issues, out bound);
+
+            case ParameterKind.Value:
+                return TryBindTagValue(parameter, element, path, context, construct, issues, siblings, out bound);
 
             default:
                 throw new InvalidOperationException($"Parameter kind {parameter.Kind} has no binder.");
@@ -511,6 +518,144 @@ public static class ParameterBinder
         return true;
     }
 
+    private static bool TryBindTag(
+        ParameterDescriptor parameter,
+        JsonElement element,
+        string path,
+        BindingContext context,
+        bool construct,
+        List<BindingIssue> issues,
+        out object? bound)
+    {
+        bound = null;
+        if (element.ValueKind != JsonValueKind.String)
+        {
+            issues.Add(WrongType(path, parameter, "a tag name (a string)", element));
+            return false;
+        }
+
+        string name = element.GetString()!;
+        if (construct && context.ResolvesTags)
+        {
+            if (!context.TryGetTag(name, out TagKind kind, out TagAccess access))
+            {
+                string? closest = Suggest.Closest(name, context.TagNames);
+                issues.Add(new BindingIssue(
+                    BindingIssueKind.UnknownTag,
+                    path,
+                    $"'{name}' is not a tag in this plant.",
+                    closest is null
+                        ? "Use a tag the plant has; `dse tags` lists them."
+                        : $"Use a tag the plant has — '{closest}' is closest."));
+                return false;
+            }
+
+            if (parameter.RequiredKind is { } required && kind != required)
+            {
+                issues.Add(new BindingIssue(
+                    BindingIssueKind.WrongTagKind,
+                    path,
+                    $"'{name}' is {A(kind)} tag, but '{parameter.Name}' needs {A(required)} tag.",
+                    $"Name {A(required)} tag; `dse tags` lists every tag with its kind."));
+                return false;
+            }
+
+            if (parameter.IsWriteTarget && access != TagAccess.ReadWrite)
+            {
+                issues.Add(new BindingIssue(
+                    BindingIssueKind.ReadOnlyTag,
+                    path,
+                    $"'{name}' is read-only, so a block cannot command it.",
+                    "Command a read-write tag; `dse tags` shows each tag's access. An input a signal link drives is read-only."));
+                return false;
+            }
+        }
+
+        bound = name;
+        return true;
+    }
+
+    private static bool TryBindTagValue(
+        ParameterDescriptor parameter,
+        JsonElement element,
+        string path,
+        BindingContext context,
+        bool construct,
+        List<BindingIssue> issues,
+        Dictionary<string, object?> siblings,
+        out object? bound)
+    {
+        bound = null;
+        bool isBool = element.ValueKind is JsonValueKind.True or JsonValueKind.False;
+        double number = 0.0;
+        if (!isBool && (element.ValueKind != JsonValueKind.Number || !element.TryGetDouble(out number) || !double.IsFinite(number)))
+        {
+            issues.Add(WrongType(path, parameter, "true, false or a number", element));
+            return false;
+        }
+
+        if (!construct || !context.ResolvesTags)
+        {
+            // R84: nothing to convert against, so the value is provisional.
+            bound = isBool ? TagValue.Bool(element.GetBoolean()) : TagValue.Double(number);
+            return true;
+        }
+
+        if (!siblings.TryGetValue(parameter.TagParameter, out object? sibling)
+            || sibling is not string tag
+            || !context.TryGetTag(tag, out TagKind kind, out _))
+        {
+            // The tag did not resolve, and that is already reported: one mistake, one diagnostic.
+            return false;
+        }
+
+        TagValue? converted = kind switch
+        {
+            TagKind.Bool => isBool ? TagValue.Bool(element.GetBoolean()) : (TagValue?)null,
+            TagKind.Int64 => !isBool && TryWhole(element, number, out long whole) ? TagValue.Int64(whole) : (TagValue?)null,
+            _ => isBool ? (TagValue?)null : TagValue.Double(number),
+        };
+
+        if (converted is not { } value)
+        {
+            issues.Add(new BindingIssue(
+                BindingIssueKind.WrongTagKind,
+                path,
+                $"{element.GetRawText()} does not fit '{tag}', which is {A(kind)} tag.",
+                kind switch
+                {
+                    TagKind.Bool => "Write true or false.",
+                    TagKind.Int64 => "Write a whole number.",
+                    _ => "Write a number.",
+                }));
+            return false;
+        }
+
+        bound = value;
+        return true;
+    }
+
+    /// <summary>An integer-valued JSON number — <c>3</c>, <c>3.0</c>, <c>3e0</c> — that fits in 64 bits.</summary>
+    private static bool TryWhole(JsonElement element, double number, out long whole)
+    {
+        if (element.TryGetInt64(out whole))
+        {
+            return true;
+        }
+
+        // TryGetInt64 refuses "3.0" and "3e0" (measured); the double path accepts them.
+        if (Math.Floor(number) == number && number >= -9.2233720368547758E18 && number < 9.2233720368547758E18)
+        {
+            whole = (long)number;
+            return true;
+        }
+
+        whole = 0L;
+        return false;
+    }
+
+    private static string A(TagKind kind) => kind == TagKind.Int64 ? "an Int64" : $"a {kind}";
+
     private static bool InRange(ParameterDescriptor parameter, double value, string path, List<BindingIssue> issues)
     {
         bool below = parameter.Minimum is { } min && (parameter.ExclusiveMinimum ? value <= min : value < min);
@@ -570,6 +715,8 @@ public static class ParameterBinder
         ParameterKind.Material => "the name of a material",
         ParameterKind.MaterialState => "the name of one of the material's states",
         ParameterKind.Object => "{ \"type\": \"…\", … }",
+        ParameterKind.Tag => "the full name of a tag, such as CV001.Start",
+        ParameterKind.Value => "true, false or a number",
         _ => "a value",
     };
 }

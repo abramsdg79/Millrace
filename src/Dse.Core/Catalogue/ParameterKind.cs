@@ -24,4 +24,8 @@ public enum ParameterKind
     Object,
     /// <summary>An array of them — a transform chain.</summary>
     ObjectList,
+    /// <summary>The full name of a tag a block reads or commands; resolved by the loader.</summary>
+    Tag,
+    /// <summary>A boolean or a number for the tag a sibling <see cref="Tag"/> parameter names, converted to its kind.</summary>
+    Value,
 }

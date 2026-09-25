@@ -16,6 +16,12 @@ public enum BindingIssueKind
     MissingCapability,
     /// <summary>A factory threw <see cref="ArgumentException"/>. Construct mode only.</summary>
     Rejected,
+    /// <summary>A tag name the context's tag table does not hold. Construct mode with a tag table only.</summary>
+    UnknownTag,
+    /// <summary>A tag of the wrong kind, or a value that does not fit its tag's kind. Construct mode with a tag table only.</summary>
+    WrongTagKind,
+    /// <summary>A block commands a read-only tag. Construct mode with a tag table only.</summary>
+    ReadOnlyTag,
 }
 
 /// <summary>One thing wrong with a parameter, where it is, and what to do about it.</summary>

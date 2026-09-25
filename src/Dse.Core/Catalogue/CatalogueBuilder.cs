@@ -47,6 +47,7 @@ public sealed partial class CatalogueBuilder
         RequireKebabCase(descriptor.Type, "Component type");
         RequireUniqueParameters(descriptor.Parameters, $"component '{descriptor.Type}'");
         RequireMaterialStateNamesSibling(descriptor.Parameters, $"component '{descriptor.Type}'");
+        RequireNoTagParameters(descriptor.Parameters, $"component '{descriptor.Type}'");
         RequireUniquePortNames(descriptor);
         if (_blocks.TryGetValue(descriptor.Type, out var block))
         {
@@ -68,6 +69,7 @@ public sealed partial class CatalogueBuilder
         RequireKebabCase(descriptor.Type, "Block type");
         RequireUniqueParameters(descriptor.Parameters, $"block '{descriptor.Type}'");
         RequireMaterialStateNamesSibling(descriptor.Parameters, $"block '{descriptor.Type}'");
+        RequireValueNamesTagSibling(descriptor.Parameters, $"block '{descriptor.Type}'");
         if (_components.TryGetValue(descriptor.Type, out var component))
         {
             throw SharedName(descriptor.Type, component.Module, "a component", "a block");
@@ -88,6 +90,7 @@ public sealed partial class CatalogueBuilder
         RequireKebabCase(descriptor.Type, $"Object type in slot '{descriptor.Slot}'");
         RequireUniqueParameters(descriptor.Parameters, $"{descriptor.Slot} '{descriptor.Type}'");
         RequireMaterialStateNamesSibling(descriptor.Parameters, $"{descriptor.Slot} '{descriptor.Type}'");
+        RequireValueNamesTagSibling(descriptor.Parameters, $"{descriptor.Slot} '{descriptor.Type}'");
         if (descriptor.Parameters.Any(p => string.Equals(p.Name, "type", StringComparison.Ordinal)))
         {
             throw new ArgumentException(
@@ -186,6 +189,51 @@ public sealed partial class CatalogueBuilder
             if (parameter.Children.Count > 0)
             {
                 RequireMaterialStateNamesSibling(parameter.Children, $"{owner}, group '{parameter.Name}'");
+            }
+        }
+    }
+
+    private static void RequireValueNamesTagSibling(IReadOnlyList<ParameterDescriptor> parameters, string owner)
+    {
+        List<string> tags = parameters
+            .Where(p => p.Kind == ParameterKind.Tag)
+            .Select(p => p.Name)
+            .ToList();
+
+        foreach (ParameterDescriptor parameter in parameters)
+        {
+            if (parameter.Kind == ParameterKind.Value && !tags.Contains(parameter.TagParameter, StringComparer.Ordinal))
+            {
+                string declared = tags.Count == 0 ? "none" : string.Join(", ", tags.Order(StringComparer.Ordinal));
+                throw new ArgumentException(
+                    $"Parameter '{parameter.Name}' on {owner} is a value for the tag named by '{parameter.TagParameter}', " +
+                    $"but no tag parameter of that name is declared beside it. Declared tag parameters: {declared}.",
+                    nameof(parameters));
+            }
+
+            if (parameter.Children.Count > 0)
+            {
+                RequireValueNamesTagSibling(parameter.Children, $"{owner}, group '{parameter.Name}'");
+            }
+        }
+    }
+
+    /// <summary>R97: a component has no tag table to resolve against; it reads and drives signals through its ports.</summary>
+    private static void RequireNoTagParameters(IReadOnlyList<ParameterDescriptor> parameters, string owner)
+    {
+        foreach (ParameterDescriptor parameter in parameters)
+        {
+            if (parameter.Kind is ParameterKind.Tag or ParameterKind.Value)
+            {
+                throw new ArgumentException(
+                    $"Parameter '{parameter.Name}' on {owner} is a {CatalogueJson.Camel(parameter.Kind.ToString())} parameter, " +
+                    "which only a block or an object may declare. A component reads and drives signals through its ports.",
+                    nameof(parameters));
+            }
+
+            if (parameter.Children.Count > 0)
+            {
+                RequireNoTagParameters(parameter.Children, $"{owner}, group '{parameter.Name}'");
             }
         }
     }

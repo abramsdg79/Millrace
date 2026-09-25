@@ -1,4 +1,5 @@
 using Dse.Core.Flow;
+using Dse.Io;
 
 namespace Dse.Core.Catalogue;
 
@@ -128,6 +129,25 @@ public static class Param
         {
             MaterialParameter = materialParameter,
         };
+    }
+
+    /// <summary>
+    /// The full name of a tag: a plant tag or one a block owns. With
+    /// <paramref name="kind"/>, the tag must have that kind; with
+    /// <paramref name="writes"/>, the block commands it, so it must be read-write.
+    /// </summary>
+    public static ParameterDescriptor Tag(string name, string description, TagKind? kind = null, bool writes = false) =>
+        new(name, ParameterKind.Tag, description)
+        {
+            RequiredKind = kind,
+            IsWriteTarget = writes,
+        };
+
+    /// <summary>A boolean or a number for the tag the sibling <paramref name="tagParameter"/> names, converted to that tag's kind.</summary>
+    public static ParameterDescriptor Value(string name, string description, string tagParameter)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(tagParameter);
+        return new ParameterDescriptor(name, ParameterKind.Value, description) { TagParameter = tagParameter };
     }
 
     public static ParameterDescriptor Object(string name, string description, string slot)

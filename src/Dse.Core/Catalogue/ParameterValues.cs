@@ -1,4 +1,5 @@
 using Dse.Core.Flow;
+using Dse.Io;
 
 namespace Dse.Core.Catalogue;
 
@@ -57,6 +58,12 @@ public sealed class ParameterValues
 
     /// <summary>The index of a <see cref="ParameterKind.MaterialState"/> in its material's state schema.</summary>
     public int StateIndex(string name) => Get<int>(name);
+
+    /// <summary>A <see cref="ParameterKind.Tag"/>: the tag's full name.</summary>
+    public string Tag(string name) => Get<string>(name);
+
+    /// <summary>A <see cref="ParameterKind.Value"/>, of the kind of the tag its sibling names.</summary>
+    public TagValue Value(string name) => Get<TagValue>(name);
 
     public T Object<T>(string name)
         where T : class => Get<T>(name);
