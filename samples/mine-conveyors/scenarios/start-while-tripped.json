@@ -1,0 +1,22 @@
+{
+  "plant": "../plant.json",
+  "duration": 150,
+  "timeline": [
+    { "at": 1,   "write": "SEQ_START.Start",   "value": true },
+    { "at": 2,   "write": "SEQ_START.Start",   "value": false },
+    { "at": 80,  "write": "CV002.PullKey1",    "value": true },
+    { "at": 100, "write": "CV001.Start",       "value": true },
+    { "at": 100, "write": "Feed.Enabled",      "value": true },
+    { "at": 105, "write": "CV002.PullKey1",    "value": false },
+    { "at": 106, "write": "CV002.SafetyReset", "value": true },
+    { "at": 107, "write": "CV002.SafetyReset", "value": false },
+    { "at": 108, "write": "INT_CV002.Reset",   "value": true },
+    { "at": 109, "write": "INT_CV002.Reset",   "value": false },
+    { "at": 110, "write": "CV002.Start",       "value": true },
+    { "at": 115, "write": "INT_CV001.Reset",   "value": true },
+    { "at": 116, "write": "INT_CV001.Reset",   "value": false },
+    { "at": 125, "write": "CV001.Start",       "value": true },
+    { "at": 130, "write": "INT_FEED.Reset",    "value": true },
+    { "at": 131, "write": "INT_FEED.Reset",    "value": false }
+  ]
+}

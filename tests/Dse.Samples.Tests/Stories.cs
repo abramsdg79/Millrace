@@ -4,7 +4,7 @@ namespace Dse.Samples.Tests;
 public sealed record Story(IReadOnlyList<EventPattern> Chain, IReadOnlyList<Absence> Absences);
 
 /// <summary>
-/// The stories of the design (6a spec section 5, 6c spec section 4), as the measured event logs
+/// The nine stories of the design (6a spec section 5, 6c spec section 4), as the measured event logs
 /// tell them. Each chain is an ordered subsequence of the scenario's log; each
 /// absence is bounded by a start point that must itself occur. Feed-starve's
 /// fall in transport order is state, not events: see
@@ -13,6 +13,16 @@ public sealed record Story(IReadOnlyList<EventPattern> Chain, IReadOnlyList<Abse
 public static class Stories
 {
     private static readonly EventPattern StartComplete = E("SEQ_START", "SEQUENCE_COMPLETE");
+
+    /// <summary>
+    /// The operator's writes in start-while-tripped: no "by", so a block's write never matches.
+    /// <c>OperatorStart</c> occurs twice — at 100 s, refused, and at 125 s, the fresh start.
+    /// </summary>
+    private static readonly EventPattern OperatorStart = E("CV001.Start", "WRITE", "Set to true.");
+
+    private static readonly EventPattern OperatorEnable = E("Feed.Enabled", "WRITE", "Set to true.");
+
+    private static readonly EventPattern OperatorFeedReset = E("INT_FEED.Reset", "WRITE", "Set to true.");
 
     public static IReadOnlyDictionary<string, Story> All { get; } = new Dictionary<string, Story>(StringComparer.Ordinal)
     {
@@ -223,6 +233,43 @@ public static class Stories
                 new(StartComplete, E(null, "INTERLOCK_TRIP")),
                 new(StartComplete, E(null, "ALARM_RAISED")),
                 new(StartComplete, E(null, "CONTACTOR_OPENED")),
+            ]),
+
+        ["start-while-tripped"] = new(
+            [
+                StartComplete,
+                E("CV002.PullKey1", "PULLKEY_PULLED"),
+                E("CV002.Starter", "CONTACTOR_OPENED"),
+                E("INT_CV001", "INTERLOCK_TRIP", "CV002.Contactor abnormal."),
+                E("CV001.Start", "WRITE", "Set to false by INT_CV001."),
+                E("CV001.Permit", "WRITE", "Set to false by INT_CV001."),
+                E("CV001.Starter", "CONTACTOR_OPENED"),
+                E("INT_FEED", "INTERLOCK_TRIP", "CV001.Contactor abnormal."),
+                E("Feed.Enabled", "WRITE", "Set to false by INT_FEED."),
+                E("Feed.Permit", "WRITE", "Set to false by INT_FEED."),
+                E("CV001.ZeroSpeed", "ZERO_SPEED"),
+                OperatorStart,
+                OperatorEnable,
+                E("CV002.Safety", "SAFETY_RESET"),
+                E("INT_CV002", "INTERLOCK_RESET"),
+                E("CV002.Starter", "CONTACTOR_CLOSED"),
+                E("INT_CV001", "INTERLOCK_RESET"),
+                E("CV001.Start", "WRITE", "Set to false by INT_CV001."),
+                E("CV001.Permit", "WRITE", "Set to true by INT_CV001."),
+                OperatorStart,
+                E("CV001.Starter", "CONTACTOR_CLOSED"),
+                OperatorFeedReset,
+                E("INT_FEED", "INTERLOCK_RESET"),
+                E("Feed.Enabled", "WRITE", "Set to false by INT_FEED."),
+                E("Feed.Permit", "WRITE", "Set to true by INT_FEED."),
+            ],
+            [
+                // From the refused start to the fresh one: through the trip and through
+                // the reset, CV001 never closes (the second OperatorStart ends the window).
+                new(OperatorStart, E("CV001.Starter", "CONTACTOR_CLOSED"), OperatorStart),
+                new(OperatorStart, E("CV001.Motor", "ENERGISED"), OperatorStart),
+                new(OperatorEnable, E("Feed.Permit", "WRITE", "Set to true"), OperatorFeedReset),
+                new(OperatorFeedReset, E("Feed.Enabled", "WRITE", "Set to true")),
             ]),
     };
 

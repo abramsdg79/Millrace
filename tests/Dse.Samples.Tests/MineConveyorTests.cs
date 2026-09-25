@@ -50,7 +50,7 @@ public class MineConveyorTests
     }
 
     [Fact]
-    public void TheScenarioFolderHoldsExactlyTheEightScenariosEachWithAGoldenAndAStory()
+    public void TheScenarioFolderHoldsExactlyTheNamedScenariosEachWithAGoldenAndAStory()
     {
         string[] onDisk = Directory.GetFiles(Path.Combine(Sample.SourceRoot, "scenarios"), "*.json")
             .Select(f => Path.GetFileNameWithoutExtension(f))
@@ -134,6 +134,33 @@ public class MineConveyorTests
         Assert.All(
             series,
             s => Assert.True(s.Value >= 1.7, string.Create(CultureInfo.InvariantCulture, $"CV003 slowed to {s.Value} m/s at {s.Time}.")));
+    }
+
+    [Fact]
+    public void AStartWrittenWhileTrippedMovesNothingAndTheResetDoesNotReleaseIt()
+    {
+        IReadOnlyDictionary<string, IReadOnlyList<TagSample>> traces = Sample.Trace(
+            "start-while-tripped", ["CV001.Speed", "CV001.TonnesPerHour", "Feed.HopperMass"], TimeSpan.FromMilliseconds(100));
+        List<TagSample> Between(string tag, double from, double to) =>
+            traces[tag].Where(s => s.Time >= TimeSpan.FromSeconds(from) && s.Time < TimeSpan.FromSeconds(to)).ToList();
+
+        // The trace's last sample lands at 00:02:30 (150.000 s, the full duration);
+        // guard against an empty series making Assert.All pass on nothing.
+        Assert.Contains(traces["CV001.Speed"], s => s.Time >= TimeSpan.FromSeconds(149));
+
+        // (a) and (b): from the refused start at 100 s, through the interlock's reset at 115 s,
+        // to the operator's fresh start at 125 s, CV001 does not move.
+        Assert.All(Between("CV001.Speed", 100, 125), s => Assert.True(
+            s.Value <= 0.02, string.Create(CultureInfo.InvariantCulture, $"CV001 moved at {s.Value} m/s at {s.Time}.")));
+        Assert.All(Between("CV001.TonnesPerHour", 100, 125), s => Assert.True(
+            s.Value <= 5.0, string.Create(CultureInfo.InvariantCulture, $"CV001 carried {s.Value} t/h at {s.Time}.")));
+
+        // The feeder makes nothing from 100 s to the end: not while tripped, not after its reset at 130 s.
+        Assert.All(Between("Feed.HopperMass", 100, 151), s => Assert.True(
+            s.Value == 0.0, string.Create(CultureInfo.InvariantCulture, $"The feeder made {s.Value} kg by {s.Time}.")));
+
+        // (c): the fresh start at 125 s works.
+        Assert.True(traces["CV001.Speed"][^1].Value >= 1.74);
     }
 
     [Fact]

@@ -18,7 +18,7 @@ namespace Dse.Samples.Tests;
 /// </summary>
 public static class Sample
 {
-    /// <summary>The eight scenarios, in the order the README tells them.</summary>
+    /// <summary>The nine scenarios, in the order the README tells them.</summary>
     public static IReadOnlyList<string> Names { get; } =
     [
         "normal-start-stop",
@@ -29,6 +29,7 @@ public static class Sample
         "failed-zero-speed",
         "welded-contactor",
         "feed-starve",
+        "start-while-tripped",
     ];
 
     public static TheoryData<string> Scenarios => new(Names);

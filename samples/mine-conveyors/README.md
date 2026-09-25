@@ -3,7 +3,7 @@
 A reference sample: three belt conveyors in series carrying ore from a feeder to
 a stockpile, with the PLC logic a real line would have — a sequenced start, a
 sequenced stop, cascade interlocks, permissives and current alarms — declared in
-one plant file, and eight scenarios that break it in eight ways. There is no C#
+one plant file, and nine scenarios that break it in nine ways. There is no C#
 here. Everything is data the `dse` command line runs.
 
 ```
@@ -13,7 +13,7 @@ Feed ──▶ CV001 (60 m) ──▶ CH1 ──▶ CV002 (40 m) ──▶ CH2 �
 | file | what it is |
 |---|---|
 | `plant.json` | the line and its twelve controllers |
-| `scenarios/*.json` | the eight scenarios below |
+| `scenarios/*.json` | the nine scenarios below |
 | `expected/*.log` | the golden event log of each scenario |
 
 ## The control philosophy
@@ -316,6 +316,54 @@ the scales' values, and check that nothing trips, stops or alarms.
 
 ```bash
 dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/feed-starve.json --expect samples/mine-conveyors/expected/feed-starve.log
+```
+
+## 9. A start while the line is tripped
+
+An operator pulls CV002's pull-wire at 80 s, as in scenario 2, and the cascade
+stops CV001 and the feeder. At 100 s, with the pull-key still out and nothing
+reset, someone writes `CV001.Start` true and `Feed.Enabled` true, as a start
+button on an HMI would. Both writes land, and nothing moves: when each
+interlock tripped it wrote its device's `Permit` false as well as its command,
+and the starter and the feeder AND their command with that permit, the way an
+interlock contact sits in series in a real run circuit.
+
+Then the line is put right, by hand: the pull-key is restored at 105 s,
+CV002's safety relay reset at 106 s, `INT_CV002` reset at 108 s and CV002
+started at 110 s; `INT_CV001` is reset at 115 s. That reset gives CV001 its
+permit back — and, like a seal-in circuit broken by the interlock, drops the
+start written at 100 s, so CV001 stays stopped. It runs only when the operator
+starts it again, at 125 s. `INT_FEED`, reset at 130 s, likewise drops the
+enable written at 100 s: the feeder stays off to the end of the run.
+
+```text expected/start-while-tripped.log
+06:01:20.100  INT_CV001  INTERLOCK_TRIP  CV002.Contactor abnormal.
+06:01:20.110  CV001.Start  WRITE  Set to false by INT_CV001.
+06:01:20.110  CV001.Permit  WRITE  Set to false by INT_CV001.
+06:01:20.110  CV001.Starter  CONTACTOR_OPENED  Motor de-energised.
+06:01:20.200  INT_FEED  INTERLOCK_TRIP  CV001.Contactor abnormal.
+06:01:20.210  Feed.Enabled  WRITE  Set to false by INT_FEED.
+06:01:20.210  Feed.Permit  WRITE  Set to false by INT_FEED.
+06:01:40.000  CV001.Start  WRITE  Set to true.
+06:01:40.000  Feed.Enabled  WRITE  Set to true.
+06:01:55.100  INT_CV001  INTERLOCK_RESET  Reset with all conditions normal.
+06:01:55.110  CV001.Start  WRITE  Set to false by INT_CV001.
+06:01:55.110  CV001.Permit  WRITE  Set to true by INT_CV001.
+06:02:05.000  CV001.Start  WRITE  Set to true.
+06:02:05.000  CV001.Starter  CONTACTOR_CLOSED  Motor energised.
+06:02:10.100  INT_FEED  INTERLOCK_RESET  Reset with all conditions normal.
+06:02:10.110  Feed.Enabled  WRITE  Set to false by INT_FEED.
+06:02:10.110  Feed.Permit  WRITE  Set to true by INT_FEED.
+```
+
+Between 100 s and the fresh start at 125 s, sampled every 100 ms, CV001's
+speed stays under 0.01 m/s and its scale under 0.05 t/h; the feeder's hopper
+stays empty from 100 s to the end. Before the permit existed, the writes at
+100 s closed CV001's contactor at once and ran it at full speed onto the
+stopped CV002 — and, left alone, would have filled CH1 at 114.26 s.
+
+```bash
+dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/start-while-tripped.json --expect samples/mine-conveyors/expected/start-while-tripped.log
 ```
 
 ## What this demo line leaves out on purpose
