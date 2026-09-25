@@ -160,7 +160,8 @@ public class MineConveyorTests
             s.Value == 0.0, string.Create(CultureInfo.InvariantCulture, $"The feeder made {s.Value} kg by {s.Time}.")));
 
         // (c): the fresh start at 125 s works.
-        Assert.True(traces["CV001.Speed"][^1].Value >= 1.74);
+        Assert.True(traces["CV001.Speed"][^1].Value >= 1.74, string.Create(
+            CultureInfo.InvariantCulture, $"CV001 ended at {traces["CV001.Speed"][^1].Value} m/s, not running."));
     }
 
     [Fact]

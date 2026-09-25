@@ -314,9 +314,14 @@ is the seal-in: a command written during the trip is refused while the permit
 is false and forgotten when it comes back, so a device runs again only on a
 fresh command after the reset. A sequence that resets an interlock and starts
 its device must therefore do it in two steps — reset, wait for the interlock's
-`Ok`, then command — or the reset's `false` lands after its start. Each trip and
-each reset log their writes, `Set to false by INT01.` and `Set to true by INT01.`
-The mine-conveyor sample uses this pattern on every interlock.
+`Ok`, then command — or the reset's `false` lands after its start. In this
+pattern each trip logs two writes, `Set to false by INT01.` for the command and
+again for `Permit`; each reset also logs two, `Set to true by INT01.` for
+`Permit` and `Set to false by INT01.` for the command. The mine-conveyor sample
+uses this pattern on every interlock. The permit is an ordinary, writable tag
+like any other: nothing stops another block from writing it true while the
+interlock is still tripped, which defeats the inhibit until the interlock trips
+again.
 
 ## `Alarm`
 

@@ -53,11 +53,13 @@ once. It also writes the device's `Permit` false, and gives it back only on the
 scan that accepts a reset. A starter closes only while its `Start`, its safety
 relay and its `Permit` all allow it; the feeder makes ore only while `Enabled`
 and `Permit` are both true. So while an interlock is tripped, no write of
-`Start` or `Enabled`, from anywhere, starts its device. The reset that gives the
-permit back also writes the command false, as a seal-in circuit does when the
-interlock breaks it: a start written during the trip is forgotten, and a device
-runs again only on a fresh start (scenario 9). That is why `SEQ_START` resets
-each interlock one step before it starts the device — its own `Start` must land
+`Start` or `Enabled`, from anywhere, starts its device — `CVn.Permit` and
+`Feed.Permit` are themselves ordinary, writable tags, but only the interlock
+should ever write them. The reset that gives the permit back also writes the
+command false, as a seal-in circuit does when the interlock breaks it: a start
+written during the trip is forgotten, and a device runs again only on a fresh
+start (scenario 9). That is why `SEQ_START` resets each interlock one step
+before it starts the device — its own `Start` must land
 after the reset's `false` — and each reset step waits for the interlock's `Ok`,
 with a 5 s timeout.
 
@@ -369,7 +371,7 @@ enable written at 100 s: the feeder stays off to the end of the run.
 ```
 
 Between 100 s and the fresh start at 125 s, sampled every 100 ms, CV001's
-speed stays under 0.01 m/s and its scale under 0.05 t/h; the feeder's hopper
+speed stays under 0.01 m/s and its scale under 0.1 t/h; the feeder's hopper
 stays empty from 100 s to the end. Before the permit existed, the writes at
 100 s closed CV001's contactor at once and ran it at full speed onto the
 stopped CV002 — and, left alone, would have filled CH1 at 114.26 s.
@@ -424,6 +426,13 @@ dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/start-w
   welded-contactor scenario above shows. A real safety circuit uses two
   monitored contactors in series, so a weld in one is caught at the next stop
   instead of defeating the e-stop.
+- The permit is not protected from other writers: `CVn.Permit` and
+  `Feed.Permit` are ordinary tags, and nothing here stops another block or
+  scenario from writing one true while its interlock is still tripped. Doing
+  so defeats the inhibit, like forcing a permit bit in a PLC, and the
+  interlock will not take it away again until it trips again. On a real
+  system an HMI would have no write access to it; block-owned, write-protected
+  tags would be an engine change.
 
 ## Power-up
 
