@@ -46,7 +46,12 @@
         "conditions": [
           { "tag": "CV003.Tripped",  "normal": false },
           { "tag": "PERM_CV003.Ok",  "normal": true } ],
-        "trip": [ { "tag": "CV003.Start", "value": false } ] } },
+        "trip": [
+          { "tag": "CV003.Start",  "value": false },
+          { "tag": "CV003.Permit", "value": false } ],
+        "reset": [
+          { "tag": "CV003.Permit", "value": true },
+          { "tag": "CV003.Start",  "value": false } ] } },
     { "id": "INT_CV002", "type": "interlock", "scanPeriodMs": 100,
       "parameters": {
         "conditions": [
@@ -54,7 +59,12 @@
           { "tag": "PERM_CV002.Ok",  "normal": true },
           { "tag": "CV003.Contactor", "normal": true },
           { "tag": "CV003.Stopped",  "normal": false } ],
-        "trip": [ { "tag": "CV002.Start", "value": false } ] } },
+        "trip": [
+          { "tag": "CV002.Start",  "value": false },
+          { "tag": "CV002.Permit", "value": false } ],
+        "reset": [
+          { "tag": "CV002.Permit", "value": true },
+          { "tag": "CV002.Start",  "value": false } ] } },
     { "id": "INT_CV001", "type": "interlock", "scanPeriodMs": 100,
       "parameters": {
         "conditions": [
@@ -62,13 +72,23 @@
           { "tag": "PERM_CV001.Ok",  "normal": true },
           { "tag": "CV002.Contactor", "normal": true },
           { "tag": "CV002.Stopped",  "normal": false } ],
-        "trip": [ { "tag": "CV001.Start", "value": false } ] } },
+        "trip": [
+          { "tag": "CV001.Start",  "value": false },
+          { "tag": "CV001.Permit", "value": false } ],
+        "reset": [
+          { "tag": "CV001.Permit", "value": true },
+          { "tag": "CV001.Start",  "value": false } ] } },
     { "id": "INT_FEED", "type": "interlock", "scanPeriodMs": 100,
       "parameters": {
         "conditions": [
           { "tag": "CV001.Contactor", "normal": true },
           { "tag": "CV001.Stopped",   "normal": false } ],
-        "trip": [ { "tag": "Feed.Enabled", "value": false } ] } },
+        "trip": [
+          { "tag": "Feed.Enabled", "value": false },
+          { "tag": "Feed.Permit",  "value": false } ],
+        "reset": [
+          { "tag": "Feed.Permit",  "value": true },
+          { "tag": "Feed.Enabled", "value": false } ] } },
 
     { "id": "ALM_CV001", "type": "alarm", "scanPeriodMs": 100,
       "parameters": {
@@ -98,37 +118,48 @@
               { "tag": "CV002.SafetyReset", "value": true },
               { "tag": "CV003.SafetyReset", "value": true } ],
             "transition": { "type": "after", "delayS": 1 } },
-          { "name": "Start CV003",
+          { "name": "Reset CV003's interlock",
             "writes": [
               { "tag": "CV001.SafetyReset", "value": false },
               { "tag": "CV002.SafetyReset", "value": false },
               { "tag": "CV003.SafetyReset", "value": false },
-              { "tag": "INT_CV003.Reset",   "value": true },
-              { "tag": "CV003.Start",       "value": true } ],
-            "transition": { "type": "when", "tag": "CV003.Speed", "op": ">=", "value": 1.74 },
-            "timeoutS": 15 },
-          { "name": "Start CV002",
+              { "tag": "INT_CV003.Reset",   "value": true } ],
+            "transition": { "type": "when", "tag": "INT_CV003.Ok", "op": "==", "value": true },
+            "timeoutS": 5 },
+          { "name": "Start CV003",
             "writes": [
               { "tag": "INT_CV003.Reset", "value": false },
-              { "tag": "INT_CV002.Reset", "value": true },
+              { "tag": "CV003.Start",     "value": true } ],
+            "transition": { "type": "when", "tag": "CV003.Speed", "op": ">=", "value": 1.74 },
+            "timeoutS": 15 },
+          { "name": "Reset CV002's interlock",
+            "writes": [ { "tag": "INT_CV002.Reset", "value": true } ],
+            "transition": { "type": "when", "tag": "INT_CV002.Ok", "op": "==", "value": true },
+            "timeoutS": 5 },
+          { "name": "Start CV002",
+            "writes": [
+              { "tag": "INT_CV002.Reset", "value": false },
               { "tag": "CV002.Start",     "value": true } ],
             "transition": { "type": "when", "tag": "CV002.Speed", "op": ">=", "value": 1.74 },
             "timeoutS": 15 },
+          { "name": "Reset CV001's interlock",
+            "writes": [ { "tag": "INT_CV001.Reset", "value": true } ],
+            "transition": { "type": "when", "tag": "INT_CV001.Ok", "op": "==", "value": true },
+            "timeoutS": 5 },
           { "name": "Start CV001",
             "writes": [
-              { "tag": "INT_CV002.Reset", "value": false },
-              { "tag": "INT_CV001.Reset", "value": true },
+              { "tag": "INT_CV001.Reset", "value": false },
               { "tag": "CV001.Start",     "value": true } ],
             "transition": { "type": "when", "tag": "CV001.Speed", "op": ">=", "value": 1.74 },
             "timeoutS": 15 },
+          { "name": "Reset the feed's interlock",
+            "writes": [ { "tag": "INT_FEED.Reset", "value": true } ],
+            "transition": { "type": "when", "tag": "INT_FEED.Ok", "op": "==", "value": true },
+            "timeoutS": 5 },
           { "name": "Start the feed",
             "writes": [
-              { "tag": "INT_CV001.Reset", "value": false },
-              { "tag": "INT_FEED.Reset",  "value": true },
-              { "tag": "Feed.Enabled",    "value": true } ],
-            "transition": { "type": "after", "delayS": 1 } },
-          { "name": "Release the feed reset",
-            "writes": [ { "tag": "INT_FEED.Reset", "value": false } ],
+              { "tag": "INT_FEED.Reset", "value": false },
+              { "tag": "Feed.Enabled",   "value": true } ],
             "transition": { "type": "after", "delayS": 1 } } ],
         "abort": [
           { "tag": "Feed.Enabled", "value": false },

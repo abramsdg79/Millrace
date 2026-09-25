@@ -4,7 +4,7 @@ namespace Dse.Samples.Tests;
 public sealed record Story(IReadOnlyList<EventPattern> Chain, IReadOnlyList<Absence> Absences);
 
 /// <summary>
-/// The eight stories of the design (spec section 5), as the measured event logs
+/// The stories of the design (6a spec section 5, 6c spec section 4), as the measured event logs
 /// tell them. Each chain is an ordered subsequence of the scenario's log; each
 /// absence is bounded by a start point that must itself occur. Feed-starve's
 /// fall in transport order is state, not events: see
@@ -18,25 +18,47 @@ public static class Stories
     {
         ["normal-start-stop"] = new(
             [
-                E("SEQ_START", "STEP_ENTERED", "2: Start CV003."),
+                E("SEQ_START", "STEP_ENTERED", "2: Reset CV003's interlock."),
+                E("INT_CV003", "INTERLOCK_RESET"),
+                E("CV003.Start", "WRITE", "Set to false by INT_CV003."),
+                E("CV003.Permit", "WRITE", "Set to true by INT_CV003."),
+                E("SEQ_START", "STEP_ENTERED", "3: Start CV003."),
+                E("CV003.Start", "WRITE", "Set to true by SEQ_START."),
                 E("CV003.Starter", "CONTACTOR_CLOSED"),
-                E("SEQ_START", "STEP_ENTERED", "3: Start CV002."),
+                E("SEQ_START", "STEP_ENTERED", "4: Reset CV002's interlock."),
+                E("INT_CV002", "INTERLOCK_RESET"),
+                E("CV002.Start", "WRITE", "Set to false by INT_CV002."),
+                E("CV002.Permit", "WRITE", "Set to true by INT_CV002."),
+                E("SEQ_START", "STEP_ENTERED", "5: Start CV002."),
+                E("CV002.Start", "WRITE", "Set to true by SEQ_START."),
                 E("CV002.Starter", "CONTACTOR_CLOSED"),
-                E("SEQ_START", "STEP_ENTERED", "4: Start CV001."),
+                E("SEQ_START", "STEP_ENTERED", "6: Reset CV001's interlock."),
+                E("INT_CV001", "INTERLOCK_RESET"),
+                E("CV001.Start", "WRITE", "Set to false by INT_CV001."),
+                E("CV001.Permit", "WRITE", "Set to true by INT_CV001."),
+                E("SEQ_START", "STEP_ENTERED", "7: Start CV001."),
+                E("CV001.Start", "WRITE", "Set to true by SEQ_START."),
                 E("CV001.Starter", "CONTACTOR_CLOSED"),
-                E("SEQ_START", "STEP_ENTERED", "5: Start the feed."),
+                E("SEQ_START", "STEP_ENTERED", "8: Reset the feed's interlock."),
+                E("INT_FEED", "INTERLOCK_RESET"),
+                E("Feed.Enabled", "WRITE", "Set to false by INT_FEED."),
+                E("Feed.Permit", "WRITE", "Set to true by INT_FEED."),
+                E("SEQ_START", "STEP_ENTERED", "9: Start the feed."),
                 E("Feed.Enabled", "WRITE", "Set to true by SEQ_START."),
                 StartComplete,
                 E("SEQ_STOP", "STEP_ENTERED", "1: Stop the feed."),
                 E("Feed.Enabled", "WRITE", "Set to false by SEQ_STOP."),
                 E("CV001.Starter", "CONTACTOR_OPENED"),
                 E("INT_FEED", "INTERLOCK_TRIP", "CV001.Contactor abnormal."),
+                E("Feed.Permit", "WRITE", "Set to false by INT_FEED."),
                 E("CV001.ZeroSpeed", "ZERO_SPEED"),
                 E("CV002.Starter", "CONTACTOR_OPENED"),
                 E("INT_CV001", "INTERLOCK_TRIP", "CV002.Contactor abnormal."),
+                E("CV001.Permit", "WRITE", "Set to false by INT_CV001."),
                 E("CV002.ZeroSpeed", "ZERO_SPEED"),
                 E("CV003.Starter", "CONTACTOR_OPENED"),
                 E("INT_CV002", "INTERLOCK_TRIP", "CV003.Contactor abnormal."),
+                E("CV002.Permit", "WRITE", "Set to false by INT_CV002."),
                 E("CV003.ZeroSpeed", "ZERO_SPEED"),
                 E("SEQ_STOP", "SEQUENCE_COMPLETE"),
             ],
@@ -44,6 +66,12 @@ public static class Stories
                 new(StartComplete, E(null, "INTERLOCK_TRIP"), E("SEQ_STOP.Start", "WRITE", "Set to true.")),
                 new(null, E(null, "ALARM_RAISED")),
                 new(null, E(null, "SEQUENCE_FAULTED")),
+
+                // Each interlock's reset drops the command it releases, so SEQ_START resets it a
+                // step before it commands the device (6c R124); nothing closes before its start.
+                new(null, E("CV003.Starter", "CONTACTOR_CLOSED"), E("CV003.Start", "WRITE", "Set to true by SEQ_START.")),
+                new(null, E("CV002.Starter", "CONTACTOR_CLOSED"), E("CV002.Start", "WRITE", "Set to true by SEQ_START.")),
+                new(null, E("CV001.Starter", "CONTACTOR_CLOSED"), E("CV001.Start", "WRITE", "Set to true by SEQ_START.")),
             ]),
 
         ["pull-key"] = new(
@@ -55,10 +83,13 @@ public static class Stories
                 E("PERM_CV002", "PERMISSIVE_LOST", "CV002.SafetyOk dropped."),
                 E("INT_CV001", "INTERLOCK_TRIP", "CV002.Contactor abnormal."),
                 E("CV001.Start", "WRITE", "Set to false by INT_CV001."),
+                E("CV001.Permit", "WRITE", "Set to false by INT_CV001."),
                 E("CV001.Starter", "CONTACTOR_OPENED"),
                 E("INT_CV002", "INTERLOCK_TRIP", "PERM_CV002.Ok abnormal."),
                 E("INT_FEED", "INTERLOCK_TRIP", "CV001.Contactor abnormal."),
+                E("CV002.Permit", "WRITE", "Set to false by INT_CV002."),
                 E("Feed.Enabled", "WRITE", "Set to false by INT_FEED."),
+                E("Feed.Permit", "WRITE", "Set to false by INT_FEED."),
                 E("CV002.ZeroSpeed", "ZERO_SPEED"),
                 E("CV001.ZeroSpeed", "ZERO_SPEED"),
             ],
@@ -77,8 +108,10 @@ public static class Stories
                 E("PERM_CV001", "PERMISSIVE_LOST", "CV001.SafetyOk dropped."),
                 E("INT_FEED", "INTERLOCK_TRIP", "CV001.Contactor abnormal."),
                 E("Feed.Enabled", "WRITE", "Set to false by INT_FEED."),
+                E("Feed.Permit", "WRITE", "Set to false by INT_FEED."),
                 E("INT_CV001", "INTERLOCK_TRIP", "PERM_CV001.Ok abnormal."),
                 E("CV001.Start", "WRITE", "Set to false by INT_CV001."),
+                E("CV001.Permit", "WRITE", "Set to false by INT_CV001."),
                 E("CV001.ZeroSpeed", "ZERO_SPEED"),
             ],
             [
@@ -96,13 +129,17 @@ public static class Stories
                 E("CV003.Starter", "CONTACTOR_OPENED"),
                 E("INT_CV003", "INTERLOCK_TRIP", "CV003.Tripped abnormal."),
                 E("INT_CV002", "INTERLOCK_TRIP", "CV003.Contactor abnormal."),
+                E("CV003.Permit", "WRITE", "Set to false by INT_CV003."),
                 E("CV002.Start", "WRITE", "Set to false by INT_CV002."),
+                E("CV002.Permit", "WRITE", "Set to false by INT_CV002."),
                 E("CV002.Starter", "CONTACTOR_OPENED"),
                 E("INT_CV001", "INTERLOCK_TRIP", "CV002.Contactor abnormal."),
                 E("CV001.Start", "WRITE", "Set to false by INT_CV001."),
+                E("CV001.Permit", "WRITE", "Set to false by INT_CV001."),
                 E("CV001.Starter", "CONTACTOR_OPENED"),
                 E("INT_FEED", "INTERLOCK_TRIP", "CV001.Contactor abnormal."),
                 E("Feed.Enabled", "WRITE", "Set to false by INT_FEED."),
+                E("Feed.Permit", "WRITE", "Set to false by INT_FEED."),
                 E("CV003.ZeroSpeed", "ZERO_SPEED"),
                 E("CV002.ZeroSpeed", "ZERO_SPEED"),
                 E("CV001.ZeroSpeed", "ZERO_SPEED"),
@@ -123,7 +160,9 @@ public static class Stories
                 E("INT_CV001", "INTERLOCK_TRIP", "CV001.Tripped abnormal."),
                 E("INT_FEED", "INTERLOCK_TRIP", "CV001.Contactor abnormal."),
                 E("CV001.Start", "WRITE", "Set to false by INT_CV001."),
+                E("CV001.Permit", "WRITE", "Set to false by INT_CV001."),
                 E("Feed.Enabled", "WRITE", "Set to false by INT_FEED."),
+                E("Feed.Permit", "WRITE", "Set to false by INT_FEED."),
                 E("CV001.ZeroSpeed", "ZERO_SPEED"),
             ],
             [
@@ -139,9 +178,11 @@ public static class Stories
                 E("CV002.ZeroSpeed", "ZERO_SPEED"),
                 E("INT_CV001", "INTERLOCK_TRIP", "CV002.Stopped abnormal."),
                 E("CV001.Start", "WRITE", "Set to false by INT_CV001."),
+                E("CV001.Permit", "WRITE", "Set to false by INT_CV001."),
                 E("CV001.Starter", "CONTACTOR_OPENED"),
                 E("INT_FEED", "INTERLOCK_TRIP", "CV001.Contactor abnormal."),
                 E("Feed.Enabled", "WRITE", "Set to false by INT_FEED."),
+                E("Feed.Permit", "WRITE", "Set to false by INT_FEED."),
                 E("CV001.ZeroSpeed", "ZERO_SPEED"),
             ],
             [
@@ -162,6 +203,7 @@ public static class Stories
                 E("CV003.Safety", "SAFETY_TRIP", "Channel3 open"),
                 E("INT_CV003", "INTERLOCK_TRIP", "PERM_CV003.Ok abnormal."),
                 E("CV003.Start", "WRITE", "Set to false by INT_CV003."),
+                E("CV003.Permit", "WRITE", "Set to false by INT_CV003."),
             ],
             [
                 new(E("CV003.Starter", "FAULT"), E("CV003.Starter", "CONTACTOR_OPENED")),
@@ -173,6 +215,7 @@ public static class Stories
 
         ["feed-starve"] = new(
             [
+                E("Feed.Permit", "WRITE", "Set to true by INT_FEED."),
                 StartComplete,
                 E("Feed", "FAULT", "starve injected."),
             ],

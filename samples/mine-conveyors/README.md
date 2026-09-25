@@ -106,11 +106,14 @@ next one starts, and on the way down each belt stops only after the one above
 it has stopped and it has run out:
 
 ```text expected/normal-start-stop.log
-06:00:02.210  CV003.Start  WRITE  Set to true by SEQ_START.
-06:00:04.600  SEQ_START  STEP_ENTERED  3: Start CV002.
-06:00:07.000  SEQ_START  STEP_ENTERED  4: Start CV001.
-06:00:09.400  SEQ_START  STEP_ENTERED  5: Start the feed.
-06:00:11.400  SEQ_START  SEQUENCE_COMPLETE  Finished after 6 steps.
+06:00:02.200  SEQ_START  STEP_ENTERED  2: Reset CV003's interlock.
+06:00:02.310  CV003.Start  WRITE  Set to false by INT_CV003.
+06:00:02.310  CV003.Permit  WRITE  Set to true by INT_CV003.
+06:00:02.410  CV003.Start  WRITE  Set to true by SEQ_START.
+06:00:05.000  SEQ_START  STEP_ENTERED  5: Start CV002.
+06:00:07.600  SEQ_START  STEP_ENTERED  7: Start CV001.
+06:00:10.200  SEQ_START  STEP_ENTERED  9: Start the feed.
+06:00:11.200  SEQ_START  SEQUENCE_COMPLETE  Finished after 9 steps.
 06:01:30.210  Feed.Enabled  WRITE  Set to false by SEQ_STOP.
 06:02:10.210  CV001.Start  WRITE  Set to false by SEQ_STOP.
 06:02:38.410  CV002.Start  WRITE  Set to false by SEQ_STOP.
@@ -190,7 +193,7 @@ zero.
 
 ```text expected/overload.log
 06:01:20.000  CV003.Motor  FAULT  thermal-bias injected: amount=1.
-06:01:20.000  CV003.Starter  OVERLOAD_TRIP  Thermal state 1.2884784008371077 reached the trip level 1.1.
+06:01:20.000  CV003.Starter  OVERLOAD_TRIP  Thermal state 1.285658707267615 reached the trip level 1.1.
 06:01:20.100  INT_CV003  INTERLOCK_TRIP  CV003.Tripped abnormal.
 06:01:20.100  INT_CV002  INTERLOCK_TRIP  CV003.Contactor abnormal.
 06:01:20.110  CV002.Starter  CONTACTOR_OPENED  Motor de-energised.
@@ -221,9 +224,9 @@ auxiliary contact.
 ```text expected/chute-blockage.log
 06:01:20.000  CH1  FAULT  blockage injected.
 06:01:32.500  CH1  FULL  Chute is full.
-06:01:53.400  ALM_CV001  ALARM_RAISED  Hi: 7.705095441377381 above 7.5.
-06:02:09.300  ALM_CV001  ALARM_RAISED  HiHi: 8.806547735328072 above 8.6.
-06:03:09.700  CV001.Starter  OVERLOAD_TRIP  Thermal state 1.1000144443933113 reached the trip level 1.1.
+06:01:53.400  ALM_CV001  ALARM_RAISED  Hi: 7.705084760820622 above 7.5.
+06:02:09.300  ALM_CV001  ALARM_RAISED  HiHi: 8.806537054771315 above 8.6.
+06:03:09.770  CV001.Starter  OVERLOAD_TRIP  Thermal state 1.1000357303409216 reached the trip level 1.1.
 06:03:09.800  INT_CV001  INTERLOCK_TRIP  CV001.Tripped abnormal.
 06:03:09.800  INT_FEED  INTERLOCK_TRIP  CV001.Contactor abnormal.
 06:03:09.810  Feed.Enabled  WRITE  Set to false by INT_FEED.

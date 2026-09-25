@@ -6,9 +6,13 @@
 06:00:00.000  INT_CV001  INTERLOCK_TRIP  PERM_CV001.Ok abnormal.
 06:00:00.000  INT_FEED  INTERLOCK_TRIP  CV001.Contactor abnormal.
 06:00:00.010  CV003.Start  WRITE  Set to false by INT_CV003.
+06:00:00.010  CV003.Permit  WRITE  Set to false by INT_CV003.
 06:00:00.010  CV002.Start  WRITE  Set to false by INT_CV002.
+06:00:00.010  CV002.Permit  WRITE  Set to false by INT_CV002.
 06:00:00.010  CV001.Start  WRITE  Set to false by INT_CV001.
+06:00:00.010  CV001.Permit  WRITE  Set to false by INT_CV001.
 06:00:00.010  Feed.Enabled  WRITE  Set to false by INT_FEED.
+06:00:00.010  Feed.Permit  WRITE  Set to false by INT_FEED.
 06:00:00.990  CV001.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.
 06:00:00.990  CV002.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.
 06:00:00.990  CV003.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.
@@ -24,43 +28,54 @@
 06:00:01.300  PERM_CV002  PERMISSIVE_OK  All conditions normal.
 06:00:01.300  PERM_CV003  PERMISSIVE_OK  All conditions normal.
 06:00:02.000  SEQ_START.Start  WRITE  Set to false.
-06:00:02.200  SEQ_START  STEP_ENTERED  2: Start CV003.
+06:00:02.200  SEQ_START  STEP_ENTERED  2: Reset CV003's interlock.
 06:00:02.210  CV001.SafetyReset  WRITE  Set to false by SEQ_START.
 06:00:02.210  CV002.SafetyReset  WRITE  Set to false by SEQ_START.
 06:00:02.210  CV003.SafetyReset  WRITE  Set to false by SEQ_START.
 06:00:02.210  INT_CV003.Reset  WRITE  Set to true by SEQ_START.
-06:00:02.210  CV003.Start  WRITE  Set to true by SEQ_START.
-06:00:02.210  CV003.Starter  CONTACTOR_CLOSED  Motor energised.
-06:00:02.220  CV003.Motor  ENERGISED  Contactor closed.
-06:00:02.230  CV003.ZeroSpeed  MOTION  Motion detected.
 06:00:02.300  INT_CV003  INTERLOCK_RESET  Reset with all conditions normal.
-06:00:04.600  SEQ_START  STEP_ENTERED  3: Start CV002.
-06:00:04.610  INT_CV003.Reset  WRITE  Set to false by SEQ_START.
-06:00:04.610  INT_CV002.Reset  WRITE  Set to true by SEQ_START.
-06:00:04.610  CV002.Start  WRITE  Set to true by SEQ_START.
-06:00:04.610  CV002.Starter  CONTACTOR_CLOSED  Motor energised.
-06:00:04.620  CV002.Motor  ENERGISED  Contactor closed.
-06:00:04.630  CV002.ZeroSpeed  MOTION  Motion detected.
-06:00:04.700  INT_CV002  INTERLOCK_RESET  Reset with all conditions normal.
-06:00:05.200  CV003.Motor  AT_SPEED  Reached 146.17986855114356 rad/s.
-06:00:07.000  SEQ_START  STEP_ENTERED  4: Start CV001.
-06:00:07.010  INT_CV002.Reset  WRITE  Set to false by SEQ_START.
-06:00:07.010  INT_CV001.Reset  WRITE  Set to true by SEQ_START.
-06:00:07.010  CV001.Start  WRITE  Set to true by SEQ_START.
-06:00:07.010  CV001.Starter  CONTACTOR_CLOSED  Motor energised.
-06:00:07.020  CV001.Motor  ENERGISED  Contactor closed.
-06:00:07.030  CV001.ZeroSpeed  MOTION  Motion detected.
-06:00:07.100  INT_CV001  INTERLOCK_RESET  Reset with all conditions normal.
-06:00:07.600  CV002.Motor  AT_SPEED  Reached 146.1547694598214 rad/s.
-06:00:09.400  SEQ_START  STEP_ENTERED  5: Start the feed.
-06:00:09.410  INT_CV001.Reset  WRITE  Set to false by SEQ_START.
-06:00:09.410  INT_FEED.Reset  WRITE  Set to true by SEQ_START.
-06:00:09.410  Feed.Enabled  WRITE  Set to true by SEQ_START.
-06:00:09.500  INT_FEED  INTERLOCK_RESET  Reset with all conditions normal.
-06:00:09.990  CV001.Motor  AT_SPEED  Reached 145.98148219625233 rad/s.
-06:00:10.400  SEQ_START  STEP_ENTERED  6: Release the feed reset.
-06:00:10.410  INT_FEED.Reset  WRITE  Set to false by SEQ_START.
-06:00:11.400  SEQ_START  SEQUENCE_COMPLETE  Finished after 6 steps.
+06:00:02.310  CV003.Start  WRITE  Set to false by INT_CV003.
+06:00:02.310  CV003.Permit  WRITE  Set to true by INT_CV003.
+06:00:02.400  SEQ_START  STEP_ENTERED  3: Start CV003.
+06:00:02.410  INT_CV003.Reset  WRITE  Set to false by SEQ_START.
+06:00:02.410  CV003.Start  WRITE  Set to true by SEQ_START.
+06:00:02.410  CV003.Starter  CONTACTOR_CLOSED  Motor energised.
+06:00:02.420  CV003.Motor  ENERGISED  Contactor closed.
+06:00:02.430  CV003.ZeroSpeed  MOTION  Motion detected.
+06:00:04.800  SEQ_START  STEP_ENTERED  4: Reset CV002's interlock.
+06:00:04.810  INT_CV002.Reset  WRITE  Set to true by SEQ_START.
+06:00:04.900  INT_CV002  INTERLOCK_RESET  Reset with all conditions normal.
+06:00:04.910  CV002.Start  WRITE  Set to false by INT_CV002.
+06:00:04.910  CV002.Permit  WRITE  Set to true by INT_CV002.
+06:00:05.000  SEQ_START  STEP_ENTERED  5: Start CV002.
+06:00:05.010  INT_CV002.Reset  WRITE  Set to false by SEQ_START.
+06:00:05.010  CV002.Start  WRITE  Set to true by SEQ_START.
+06:00:05.010  CV002.Starter  CONTACTOR_CLOSED  Motor energised.
+06:00:05.020  CV002.Motor  ENERGISED  Contactor closed.
+06:00:05.030  CV002.ZeroSpeed  MOTION  Motion detected.
+06:00:05.400  CV003.Motor  AT_SPEED  Reached 146.17986855114356 rad/s.
+06:00:07.400  SEQ_START  STEP_ENTERED  6: Reset CV001's interlock.
+06:00:07.410  INT_CV001.Reset  WRITE  Set to true by SEQ_START.
+06:00:07.500  INT_CV001  INTERLOCK_RESET  Reset with all conditions normal.
+06:00:07.510  CV001.Start  WRITE  Set to false by INT_CV001.
+06:00:07.510  CV001.Permit  WRITE  Set to true by INT_CV001.
+06:00:07.600  SEQ_START  STEP_ENTERED  7: Start CV001.
+06:00:07.610  INT_CV001.Reset  WRITE  Set to false by SEQ_START.
+06:00:07.610  CV001.Start  WRITE  Set to true by SEQ_START.
+06:00:07.610  CV001.Starter  CONTACTOR_CLOSED  Motor energised.
+06:00:07.620  CV001.Motor  ENERGISED  Contactor closed.
+06:00:07.630  CV001.ZeroSpeed  MOTION  Motion detected.
+06:00:08.000  CV002.Motor  AT_SPEED  Reached 146.1547694598214 rad/s.
+06:00:10.000  SEQ_START  STEP_ENTERED  8: Reset the feed's interlock.
+06:00:10.010  INT_FEED.Reset  WRITE  Set to true by SEQ_START.
+06:00:10.100  INT_FEED  INTERLOCK_RESET  Reset with all conditions normal.
+06:00:10.110  Feed.Enabled  WRITE  Set to false by INT_FEED.
+06:00:10.110  Feed.Permit  WRITE  Set to true by INT_FEED.
+06:00:10.200  SEQ_START  STEP_ENTERED  9: Start the feed.
+06:00:10.210  INT_FEED.Reset  WRITE  Set to false by SEQ_START.
+06:00:10.210  Feed.Enabled  WRITE  Set to true by SEQ_START.
+06:00:10.590  CV001.Motor  AT_SPEED  Reached 145.98559884017868 rad/s.
+06:00:11.200  SEQ_START  SEQUENCE_COMPLETE  Finished after 9 steps.
 06:01:20.000  CV001.EStop  WRITE  Set to true.
 06:01:20.000  CV001.EStop  ESTOP_PRESSED  Actuated by the operator.
 06:01:20.000  CV001.Safety  SAFETY_TRIP  Channel3 open; relay de-energised.
@@ -69,7 +84,9 @@
 06:01:20.100  PERM_CV001  PERMISSIVE_LOST  CV001.SafetyOk dropped.
 06:01:20.100  INT_FEED  INTERLOCK_TRIP  CV001.Contactor abnormal.
 06:01:20.110  Feed.Enabled  WRITE  Set to false by INT_FEED.
+06:01:20.110  Feed.Permit  WRITE  Set to false by INT_FEED.
 06:01:20.200  INT_CV001  INTERLOCK_TRIP  PERM_CV001.Ok abnormal.
 06:01:20.210  CV001.Start  WRITE  Set to false by INT_CV001.
+06:01:20.210  CV001.Permit  WRITE  Set to false by INT_CV001.
 06:01:27.810  CV001.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.
 06:01:27.900  CV001.Motor  STOPPED  Shaft at rest.
