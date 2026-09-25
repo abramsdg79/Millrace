@@ -24,7 +24,7 @@ public class PluginTests
 
         Assert.Equal(ExitCodes.Ok, run.ExitCode);
         using JsonDocument document = JsonDocument.Parse(run.Out);
-        Assert.Equal(["Dse.Components", "Sample"], document.RootElement.GetProperty("modules").EnumerateArray().Select(m => m.GetString()));
+        Assert.Equal(["Dse.Components", "Dse.Control", "Sample"], document.RootElement.GetProperty("modules").EnumerateArray().Select(m => m.GetString()));
         JsonElement sw = document.RootElement.GetProperty("components").EnumerateArray().Single(c => c.GetProperty("type").GetString() == "hysteresis-switch");
         Assert.Equal("Sample", sw.GetProperty("module").GetString());
         Assert.Single(document.RootElement.GetProperty("materials").EnumerateArray(), m => m.GetProperty("name").GetString() == "sample-ore");
@@ -139,10 +139,52 @@ public class PluginTests
 
         ConformanceReport report = CatalogueConformance.Check(
             builder.Build(),
-            new ConformanceFixtures().Parameters("hysteresis-switch", """{ "onAbove": 80, "offBelow": 60 }"""));
+            new ConformanceFixtures()
+                .Parameters("hysteresis-switch", """{ "onAbove": 80, "offBelow": 60 }""")
+                .BlockParameters("latch", """{ "set": "X.Set", "reset": "X.Reset" }"""));
 
         // The shipped types have no fixtures here, so only the plugin's findings are of interest.
         Assert.DoesNotContain(report.Mismatches, m => m.StartsWith("hysteresis-switch:", StringComparison.Ordinal));
         Assert.Contains(report.BuiltTypes, t => t.Name == "HysteresisSwitch");
+        Assert.DoesNotContain(report.Mismatches, m => m.StartsWith("latch", StringComparison.Ordinal));
+        Assert.Contains(report.BuiltTypes, t => t.Name == "Latch");
+    }
+
+    [Fact]
+    public void APluginsBlockTypeAppearsInTheCatalogueExport()
+    {
+        CliRun run = Cli.Run("catalog", "export", "--assembly", Sample);
+
+        Assert.Equal(ExitCodes.Ok, run.ExitCode);
+        using JsonDocument document = JsonDocument.Parse(run.Out);
+        JsonElement latch = document.RootElement.GetProperty("blocks").EnumerateArray().Single(b => b.GetProperty("type").GetString() == "latch");
+        Assert.Equal("Sample", latch.GetProperty("module").GetString());
+        Assert.Equal(["set", "reset"], latch.GetProperty("parameters").EnumerateArray().Select(p => p.GetProperty("name").GetString()));
+    }
+
+    [Fact]
+    public void APluginsBlockTypeAppearsInTheSchema()
+    {
+        CliRun run = Cli.Run("schema", "export", "--assembly", Sample);
+
+        Assert.Equal(ExitCodes.Ok, run.ExitCode);
+        using JsonDocument document = JsonDocument.Parse(run.Out);
+        Assert.True(document.RootElement.GetProperty("$defs").TryGetProperty("block.latch", out _));
+        Assert.Contains(
+            document.RootElement.GetProperty("properties").GetProperty("controllers").GetProperty("items").GetProperty("oneOf").EnumerateArray(),
+            b => b.GetProperty("$ref").GetString() == "#/$defs/block.latch");
+    }
+
+    [Fact]
+    public void APlantUsingAPluginBlockValidatesWithItAndNotWithout()
+    {
+        CliRun with = Cli.Run("validate", Cli.Plant("sample-block.json"), "--assembly", Sample);
+        CliRun without = Cli.Run("validate", Cli.Plant("sample-block.json"));
+
+        Assert.Equal(ExitCodes.Ok, with.ExitCode);
+        Assert.Matches(@"controllers\s+1\n", with.Out);
+        Assert.Equal(ExitCodes.PlantInvalid, without.ExitCode);
+        Assert.Contains("DSE102 $.controllers[0].type", without.Err, StringComparison.Ordinal);
+        Assert.Contains("--assembly", without.Err, StringComparison.Ordinal);
     }
 }

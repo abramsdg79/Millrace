@@ -16,6 +16,7 @@ public class ValidateCommandTests
         Assert.Matches(@"components\s+3\n", run.Out);
         Assert.Matches(@"leaves\s+3\n", run.Out);
         Assert.Matches(@"flow links\s+2\n", run.Out);
+        Assert.Matches(@"controllers\s+0\n", run.Out);
         Assert.Matches(@"time step\s+10 ms\n", run.Out);
     }
 
@@ -70,6 +71,7 @@ public class ValidateCommandTests
         Assert.Equal(3, summary.GetProperty("components").GetInt32());
         Assert.Equal(3, summary.GetProperty("leaves").GetInt32());
         Assert.Equal(2, summary.GetProperty("flowLinks").GetInt32());
+        Assert.Equal(0, summary.GetProperty("controllers").GetInt32());
         Assert.Equal(10.0, summary.GetProperty("timeStepMs").GetDouble());
         Assert.True(summary.GetProperty("tags").GetInt32() > 0);
         Assert.Empty(document.RootElement.GetProperty("diagnostics").EnumerateArray());
@@ -107,5 +109,31 @@ public class ValidateCommandTests
         Assert.Contains("DSE103 $.defaults.timeStepMs", run.Err, StringComparison.Ordinal);
         Assert.Contains("at least one tick", run.Err, StringComparison.Ordinal);
         Assert.DoesNotContain("   at ", run.Err, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AControlledPlantCountsItsControllers()
+    {
+        CliRun run = Cli.Run("validate", Cli.Plant("conveyor-control.json"));
+
+        Assert.Equal(ExitCodes.Ok, run.ExitCode);
+        Assert.Empty(run.Err);
+        Assert.Matches(@"components\s+4\n", run.Out);
+        Assert.Matches(@"  tags          47 \(0 explicit\)\n  controllers   4\n  time step     10 ms\n", run.Out);
+    }
+
+    [Fact]
+    public void TheJsonSummaryCountsControllersAfterExplicitTags()
+    {
+        CliRun run = Cli.Run("validate", Cli.Plant("conveyor-control.json"), "--format", "json");
+
+        Assert.Equal(ExitCodes.Ok, run.ExitCode);
+        using JsonDocument document = JsonDocument.Parse(run.Out);
+        JsonElement summary = document.RootElement.GetProperty("summary");
+        Assert.Equal(
+            ["components", "leaves", "signalLinks", "flowLinks", "tags", "explicitTags", "controllers", "timeStepMs"],
+            summary.EnumerateObject().Select(p => p.Name));
+        Assert.Equal(4, summary.GetProperty("controllers").GetInt32());
+        Assert.Equal(47, summary.GetProperty("tags").GetInt32());
     }
 }

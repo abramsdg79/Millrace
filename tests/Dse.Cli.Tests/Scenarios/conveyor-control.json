@@ -1,0 +1,9 @@
+{
+  "plant": "../Plants/conveyor-control.json",
+  "duration": 120,
+  "timeline": [
+    { "at": 1,  "write": "SEQ01.Start", "value": true },
+    { "at": 2,  "write": "SEQ01.Start", "value": false },
+    { "at": 40, "fault": "CV001.Motor", "id": "thermal-bias", "args": { "amount": 0.8 } }
+  ]
+}

@@ -225,6 +225,18 @@ public class RunCommandTests
     }
 
     [Fact]
+    public void TheWorkedExampleRunsFromItsFilesAndMatchesTheControlGolden()
+    {
+        string golden = Cli.Golden("conveyor-control.log");
+
+        CliRun run = Cli.Run("run", Cli.Scenario("conveyor-control.json"), "--expect", golden);
+
+        Assert.Equal(ExitCodes.Ok, run.ExitCode);
+        Assert.Empty(run.Err);
+        Assert.Equal($"Matched {golden} (40 events).\n", run.Out);
+    }
+
+    [Fact]
     public void APlantThatNeedsAPluginRunsWithAssembly()
     {
         CliRun with = Cli.Run("run", Cli.Scenario("sample.json"), "--assembly", Sample);

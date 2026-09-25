@@ -16,6 +16,7 @@
     <ProjectReference Include="..\Dse.Components\Dse.Components.csproj" />
     <ProjectReference Include="..\Dse.Configuration\Dse.Configuration.csproj" />
     <ProjectReference Include="..\Dse.Scenarios\Dse.Scenarios.csproj" />
+    <ProjectReference Include="..\Dse.Control.Catalogue\Dse.Control.Catalogue.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Dse.Cli.Tests" />

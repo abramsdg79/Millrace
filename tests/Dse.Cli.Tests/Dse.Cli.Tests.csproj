@@ -21,6 +21,10 @@
   <ItemGroup>
     <None Include="Plants\**\*.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Scenarios\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Dse.Configuration.Tests\Plants\valid\conveyor-control.json"
+          Link="Plants\conveyor-control.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Dse.Control.Tests\Golden\conveyor-control.log"
+          Link="Golden\conveyor-control.log" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

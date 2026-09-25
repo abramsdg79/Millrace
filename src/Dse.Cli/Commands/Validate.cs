@@ -30,6 +30,7 @@ internal static class Validate
                 w.WriteNumber("flowLinks", summary.FlowLinks);
                 w.WriteNumber("tags", tags);
                 w.WriteNumber("explicitTags", summary.ExplicitTags);
+                w.WriteNumber("controllers", summary.Controllers);
                 w.WriteNumber("timeStepMs", stepMs);
             }));
             return ExitCodes.Ok;
@@ -42,6 +43,7 @@ internal static class Validate
               signal links  {summary.SignalLinks}
               flow links    {summary.FlowLinks}
               tags          {tags} ({summary.ExplicitTags} explicit)
+              controllers   {summary.Controllers}
               time step     {stepMs} ms
 
             """).ReplaceLineEndings("\n"));

@@ -9,6 +9,8 @@ internal static class Cli
 
     public static string Scenario(string name) => Path.Combine(AppContext.BaseDirectory, "Scenarios", name);
 
+    public static string Golden(string name) => Path.Combine(AppContext.BaseDirectory, "Golden", name);
+
     /// <summary>tests/&lt;project&gt;/bin/&lt;configuration&gt;/&lt;tfm&gt;/&lt;project&gt;.dll, found from this assembly's own output directory.</summary>
     public static string Built(string project)
     {

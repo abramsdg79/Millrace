@@ -44,6 +44,19 @@ public class TagsCommandTests
     }
 
     [Fact]
+    public void AControlledPlantListsItsBlocksTags()
+    {
+        CliRun run = Cli.Run("tags", Cli.Plant("conveyor-control.json"));
+
+        Assert.Equal(ExitCodes.Ok, run.ExitCode);
+        Assert.Empty(run.Err);
+        Assert.Contains("INT01.Reset  Bool  ReadWrite", run.Out, StringComparison.Ordinal);
+        Assert.Contains("CUR01.HiHi.Active  Bool  ReadOnly", run.Out, StringComparison.Ordinal);
+        Assert.Contains("SEQ01.StepTime  Double  ReadOnly  s", run.Out, StringComparison.Ordinal);
+        Assert.Equal(47, run.Out.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length);
+    }
+
+    [Fact]
     public void AnEmptyPathIsExitThreeNotACrash()
     {
         CliRun run = Cli.Run("tags", "");

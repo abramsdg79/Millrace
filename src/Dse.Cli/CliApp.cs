@@ -1,5 +1,6 @@
 using System.Globalization;
 using Dse.Components;
+using Dse.Control.Catalogue;
 using Dse.Core.Catalogue;
 
 namespace Dse.Cli;
@@ -32,7 +33,7 @@ public static class CliApp
             return ExitCodes.Usage;
         }
 
-        CatalogueBuilder builder = new CatalogueBuilder().Add<ComponentsModule>();
+        CatalogueBuilder builder = new CatalogueBuilder().Add<ComponentsModule>().Add<ControlModule>();
         if (!ModuleLoader.TryLoad(parsed.All(CommandTable.Assembly), builder, out string loadProblem))
         {
             stderr.Write(loadProblem + "\n");

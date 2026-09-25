@@ -1,13 +1,15 @@
 using System.Text.Json;
 using Dse.Components;
 using Dse.Configuration;
+using Dse.Control.Catalogue;
 using Dse.Core.Catalogue;
 
 namespace Dse.Cli.Tests;
 
 public class ExportCommandTests
 {
-    private static readonly ComponentCatalogue Shipped = new CatalogueBuilder().Add<ComponentsModule>().Build();
+    private static readonly ComponentCatalogue Shipped =
+        new CatalogueBuilder().Add<ComponentsModule>().Add<ControlModule>().Build();
 
     [Fact]
     public void CatalogExportPrintsExactlyTheLibrarysExport()

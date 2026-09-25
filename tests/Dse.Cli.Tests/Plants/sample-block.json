@@ -1,0 +1,13 @@
+{
+  "materials": [ { "name": "ore", "kind": "bulk" } ],
+  "components": [
+    { "id": "FEED", "type": "bulk-source", "parameters": { "material": "ore", "rateKgPerS": 20 } },
+    { "id": "CHUTE", "type": "transfer-chute", "parameters": { "capacityKg": 200 } },
+    { "id": "PILE", "type": "bulk-sink" }
+  ],
+  "flows": [ { "from": "FEED.Out", "to": "CHUTE.In" }, { "from": "CHUTE.Out", "to": "PILE.In" } ],
+  "controllers": [
+    { "id": "LATCH01", "type": "latch", "scanPeriodMs": 100,
+      "parameters": { "set": "CHUTE.Full", "reset": "FEED.Enabled" } }
+  ]
+}
