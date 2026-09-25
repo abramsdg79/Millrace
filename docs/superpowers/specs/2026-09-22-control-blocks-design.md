@@ -6,6 +6,13 @@ refining its sections 4, 11 and 17 for `Dse.Control` and the scan host in
 `Dse.Core`. Builds on plans 5a (catalogue, configuration, CLI) and 5b
 (scenarios, replay, `dse run`), both merged.
 
+**Amended 2026-09-25 (6c).** The interlock gained optional reset writes, sent
+once on the scan that accepts a reset. With a device's `Permit` written false on
+trip, and true together with the command false on reset, it is a true start
+inhibit with seal-in behaviour. R71's "trip writes on the trip scan only" is
+unchanged. See `2026-09-25-interlock-start-inhibit-design.md` and its plan
+(R122–R132).
+
 ## 1. Scope
 
 **Plan 5c — this document.** The five control blocks the main spec names —

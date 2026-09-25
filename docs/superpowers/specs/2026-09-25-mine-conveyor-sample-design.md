@@ -36,6 +36,15 @@ truth — holds. `INT_FEED` now powers up tripped at 0 s on CV001's open
 contactor; a welded contactor, reading closed, cascades nothing. Data and
 regenerated goldens only; no engine change.
 
+**Amended 2026-09-25 (6c).** The interlocks now hold their devices off:
+`motor-starter` (so `CVn.Permit`) and `bulk-source` gained a `Permit` input;
+each interlock writes it false on trip, and on its accepted reset writes it true
+and drops the command, so a device restarts only on a fresh start. `SEQ_START`
+resets each interlock one step before it starts the device (nine steps). A ninth
+scenario, `start-while-tripped`, shows a start written during a trip moving
+nothing, then or after the reset. See
+`2026-09-25-interlock-start-inhibit-design.md` and its plan (R122–R132).
+
 ## 1. Scope
 
 **Plan 6a — this document.** The mine-conveyor reference sample of main spec 15.1,

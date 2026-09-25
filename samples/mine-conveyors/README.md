@@ -19,8 +19,9 @@ Feed ──▶ CV001 (60 m) ──▶ CH1 ──▶ CV002 (40 m) ──▶ CH2 �
 ## The control philosophy
 
 **Start downstream first.** `SEQ_START` resets the three safety relays, then
-starts CV003, waits until its speed sensor reads 1.74 m/s (90 % of its running
-speed), then CV002, then CV001, then enables the feeder. The feeder is declared
+resets CV003's interlock, starts CV003 and waits until its speed sensor reads
+1.74 m/s (90 % of its running speed), then does the same for CV002, then CV001,
+then resets the feeder's interlock and enables the feeder. The feeder is declared
 `"enabled": false`: like a PLC output it is off at power-up, and only
 `SEQ_START` turns it on. A belt never starts
 onto a belt that is not already carrying material away. Each proving step has a
@@ -45,10 +46,20 @@ stalled belt, or, in this sample, a failed switch, which is why one trips a
 healthy line (scenario 6). A welded contactor, whose auxiliary contact stays
 closed, cascades nothing (scenario 7). Each interlock also trips on its own
 belt's overload relay (`CVn.Tripped`) and on its permissive, and it is latched:
-`SEQ_START` resets it only once the belt downstream is proved. That latch
-gates `SEQ_START`'s own reset step, not the run command itself — see the first
-item under "What this demo line leaves out on purpose" below for what
-that means for a write that does not go through `SEQ_START`.
+`SEQ_START` resets it only once the belt downstream is proved.
+
+**Run permits.** A tripped interlock does more than drop its device's command
+once. It also writes the device's `Permit` false, and gives it back only on the
+scan that accepts a reset. A starter closes only while its `Start`, its safety
+relay and its `Permit` all allow it; the feeder makes ore only while `Enabled`
+and `Permit` are both true. So while an interlock is tripped, no write of
+`Start` or `Enabled`, from anywhere, starts its device. The reset that gives the
+permit back also writes the command false, as a seal-in circuit does when the
+interlock breaks it: a start written during the trip is forgotten, and a device
+runs again only on a fresh start (scenario 9). That is why `SEQ_START` resets
+each interlock one step before it starts the device — its own `Start` must land
+after the reset's `false` — and each reset step waits for the interlock's `Ok`,
+with a 5 s timeout.
 
 **Safety is hardwired.** The pull-keys and the e-stop of each belt are wired
 through the belt's own safety relay to its starter, inside the conveyor. They
@@ -82,8 +93,8 @@ overload trips in a minute or two rather than in twenty.
 | `Hi` / `HiHi` | 7.5 / 8.6 A | 5.7 / 6.6 A | 4.3 / 4.9 A |
 
 Every scenario starts from a cold plant, writes `SEQ_START.Start` at 1 s, lets
-the line fill (the feeder starts at 9.4 s), and injects its event at 80 s, when
-CV003's scale is still rising (268 t/h); it reaches full rate at about 86 s.
+the line fill (ore starts moving at 10.21 s), and injects its event at 80 s, when
+CV003's scale is still rising (263 t/h); it reaches full rate at about 86 s.
 Each runs in well under a second.
 
 ## Running a scenario
@@ -124,8 +135,9 @@ it has stopped and it has run out:
 The cascade interlocks trip during the stop too — `INT_FEED` when CV001's
 contactor opens, `INT_CV001` when CV002's does, `INT_CV002` when CV003's does,
 each one scan later. That is harmless
-(each writes a `Start` that is already false) and expected: an interlock does not
-know a stop was planned. Between `SEQUENCE_COMPLETE` and `SEQ_STOP` nothing
+(each writes a `Start` that is already false, and takes the belt's permit away
+until the next `SEQ_START`) and expected: an interlock does not know a stop was
+planned. Between `SEQUENCE_COMPLETE` and `SEQ_STOP` nothing
 trips, and no alarm raises in the whole run.
 
 ```bash
@@ -368,12 +380,11 @@ dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/start-w
 
 ## What this demo line leaves out on purpose
 
-- An interlock here trips once: it writes its trip values on the trip scan
-  only and does not hold the output off, unlike a PLC interlock ANDed into the
-  run rung. Anything that later writes `Start` or `Enabled` true bypasses it.
-  In this plant only `SEQ_START` writes those tags, and it resets each
-  interlock just before it writes them; treat any new writer — an HMI start
-  button, a second sequence — as unprotected until the interlock gates it too.
+- `CVn.Start` and `Feed.Enabled` are held values, not momentary push-buttons:
+  the interlock's reset writes stand in for the seal-in contact a real run
+  circuit has. Anything that writes one of them true *after* the reset starts
+  the device, exactly as `SEQ_START` does; that is the fresh start a real
+  operator gives, but nothing here asks who gave it.
 - The cascade reads the downstream contactor's auxiliary contact and the
   downstream zero-speed switch, not underspeed: a downstream belt that slows —
   slipping, say — with its contactor still closed does not stop the belts
@@ -419,6 +430,7 @@ dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/start-w
 The first second of every run is the same. Every interlock trips at 0.000 s:
 each belt's because it reads its permissive, whose `Ok` starts false until
 `SEQ_START` resets the safety relays, and `INT_FEED` because CV001's contactor
-starts open. `INT_FEED` writes `Feed.Enabled` false — which it already is: the
-feeder is declared disabled, so no ore moves until `SEQ_START` enables it at
-9.41 s.
+starts open. Each writes its device's command false and its `Permit` false at
+0.010 s. `Feed.Enabled` is false already: the feeder is declared disabled, so
+no ore moves until `SEQ_START`, a step after resetting `INT_FEED`, enables it at
+10.21 s.

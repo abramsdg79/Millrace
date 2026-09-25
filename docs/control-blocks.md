@@ -203,11 +203,11 @@ instead, so this gap is not carried forward as a pattern to copy.
 over three conveyors — a permissive per belt on its safety relay, cascade
 interlocks that read the downstream belt's contactor auxiliary contact and
 zero-speed switch, current alarms, and a start and a stop sequencer — with
-eight scenarios and their goldens. Its
+nine scenarios and their goldens. Its
 README explains each design choice; its `plant.json` is the file to copy from.
-An interlock there trips once, on the trip scan, and does not hold its output
-off against a later write — read the README's "leaves out on purpose" section
-before wiring a new writer of a tag an interlock also writes.
+Its interlocks hold their devices off with the run permit described under
+`Interlock` below; its scenario 9, `start-while-tripped`, writes a start while
+the cascade is tripped, and nothing moves — not then, and not after the reset.
 
 ## `Timer`
 
@@ -268,27 +268,55 @@ Events: `PERMISSIVE_LOST` — `CV001.SafetyOk dropped.` — and `PERMISSIVE_OK` 
 ```csharp
 new Interlock("INT01",
     [new Condition("CV001.Tripped", false), new Condition("PERM01.Ok", true)],
-    [new BlockWrite("CV001.Start", TagValue.Bool(false))],
-    TimeSpan.FromMilliseconds(100))
+    [new BlockWrite("CV001.Start", TagValue.Bool(false)), new BlockWrite("CV001.Permit", TagValue.Bool(false))],
+    TimeSpan.FromMilliseconds(100),
+    [new BlockWrite("CV001.Permit", TagValue.Bool(true)), new BlockWrite("CV001.Start", TagValue.Bool(false))])
 ```
 
-In a plant file (`trip` may be left out):
+The last argument, the reset writes, may be left out: the four-argument
+constructor is an interlock with none.
+
+In a plant file (`trip` and `reset` may be left out):
 
 ```json
 { "id": "INT01", "type": "interlock", "scanPeriodMs": 100,
   "parameters": {
     "conditions": [ { "tag": "CV001.Tripped", "normal": false }, { "tag": "PERM01.Ok", "normal": true } ],
-    "trip": [ { "tag": "CV001.Start", "value": false } ] } }
+    "trip": [ { "tag": "CV001.Start", "value": false }, { "tag": "CV001.Permit", "value": false } ],
+    "reset": [ { "tag": "CV001.Permit", "value": true }, { "tag": "CV001.Start", "value": false } ] } }
 ```
 
 The conditions that **stop** a running thing. Any abnormal condition latches
 `Tripped`, drops `Ok`, captures `FirstOut` and sends the trip writes — **on the
 trip scan only**, so the event log carries one `WRITE` record, not one every
 scan. The latch clears on a rising edge of the `Reset` command while every
-condition is normal, and on nothing else.
+condition is normal, and on nothing else. The scan that clears it sends the
+reset writes, once; a refused reset sends nothing. Within each list a tag may
+appear once. A tag may be in both lists, with the same kind; the block then has
+one write pin for it. `Writes` lists the trip tags first, in order, then any tag
+only the reset writes — and the host sends one scan's writes in that pin order,
+so the reset above logs `CV001.Start` before `CV001.Permit`.
 
 Events: `INTERLOCK_TRIP` — `CV001.Tripped abnormal.` — and `INTERLOCK_RESET` —
 `Reset with all conditions normal.`
+
+### Holding a device off: the run permit
+
+A trip write is sent once. On its own it drops a run command, but anything that
+writes the command true again while the interlock is still tripped starts the
+device. To make an interlock a true start inhibit — an interlock contact in
+series in the run circuit — give the device a run permit and drive it from both
+lists: on trip, the command false and `Permit` false; on reset, `Permit` true
+and the command false again. `motor-starter` (and so `conveyor`, as
+`CVn.Permit`) and `bulk-source` have a `Permit` input, true when unwired, ANDed
+into their run logic; a welded contactor still defeats it. The reset's `false`
+is the seal-in: a command written during the trip is refused while the permit
+is false and forgotten when it comes back, so a device runs again only on a
+fresh command after the reset. A sequence that resets an interlock and starts
+its device must therefore do it in two steps — reset, wait for the interlock's
+`Ok`, then command — or the reset's `false` lands after its start. Each trip and
+each reset log their writes, `Set to false by INT01.` and `Set to true by INT01.`
+The mine-conveyor sample uses this pattern on every interlock.
 
 ## `Alarm`
 

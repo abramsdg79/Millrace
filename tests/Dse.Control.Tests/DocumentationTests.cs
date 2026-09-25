@@ -44,6 +44,22 @@ public class DocumentationTests
         Assert.DoesNotContain("cannot attach blocks", page, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void TheControlBlocksPageDescribesTheResetWritesAndTheRunPermit()
+    {
+        string page = Page();
+
+        foreach (string token in new[]
+                 {
+                     "\"reset\"", "CV001.Permit", "run permit", "seal-in", "Set to true by INT01.", "start-while-tripped",
+                 })
+        {
+            Assert.Contains(token, page, StringComparison.Ordinal);
+        }
+
+        Assert.DoesNotContain("does not hold its output", page, StringComparison.Ordinal);
+    }
+
     /// <summary>Two levels up from this file is the repository root.</summary>
     private static string Page([CallerFilePath] string callerFile = "") =>
         File.ReadAllText(Path.Combine(Path.GetDirectoryName(callerFile)!, "..", "..", "docs", "control-blocks.md"));
