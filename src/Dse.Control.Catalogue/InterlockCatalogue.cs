@@ -17,12 +17,13 @@ public static class InterlockCatalogue
             ControlCatalogue.Command(id, "Reset", "Clears the latch on a rising edge when every condition is normal"),
         ],
         (id, period, p) => new Interlock(
-            id, ControlCatalogue.Conditions(p, "conditions"), ControlCatalogue.Writes(p, "trip"), period))
+            id, ControlCatalogue.Conditions(p, "conditions"), ControlCatalogue.Writes(p, "trip"), period, ControlCatalogue.Writes(p, "reset")))
     {
         Parameters =
         [
             Param.GroupList("conditions", "The Bool tags whose abnormal value trips the interlock, in report order.", ControlCatalogue.ConditionGroup, minCount: 1),
             Param.GroupList("trip", "What to command when the interlock trips, once, on the trip scan.", ControlCatalogue.WriteGroup),
+            Param.GroupList("reset", "What to command when a reset is accepted, once, on the reset scan.", ControlCatalogue.WriteGroup),
         ],
     };
 }

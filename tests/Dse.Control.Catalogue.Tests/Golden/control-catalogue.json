@@ -115,6 +115,29 @@
               "tagParameter": "tag"
             }
           ]
+        },
+        {
+          "name": "reset",
+          "kind": "groupList",
+          "required": false,
+          "description": "What to command when a reset is accepted, once, on the reset scan.",
+          "group": "BlockWrite",
+          "parameters": [
+            {
+              "name": "tag",
+              "kind": "tag",
+              "required": true,
+              "description": "The tag commanded.",
+              "writes": true
+            },
+            {
+              "name": "value",
+              "kind": "value",
+              "required": true,
+              "description": "The value commanded.",
+              "tagParameter": "tag"
+            }
+          ]
         }
       ]
     },

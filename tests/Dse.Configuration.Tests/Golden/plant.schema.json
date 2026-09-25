@@ -271,6 +271,13 @@
               "items": {
                 "$ref": "#/$defs/group.BlockWrite"
               }
+            },
+            "reset": {
+              "description": "What to command when a reset is accepted, once, on the reset scan.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/group.BlockWrite"
+              }
             }
           }
         }

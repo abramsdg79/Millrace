@@ -20,6 +20,21 @@ public class InterlockTests
         return scan;
     }
 
+    /// <summary>The run-permit pattern: drop Start and Permit on trip, give Permit back on reset.</summary>
+    private static Interlock MakeWithPermit() => new(
+        "INT01",
+        [new Condition("CV001.Tripped", false), new Condition("PERM01.Ok", true)],
+        [new BlockWrite("CV001.Start", TagValue.Bool(false)), new BlockWrite("CV001.Permit", TagValue.Bool(false))],
+        Period,
+        [new BlockWrite("CV001.Permit", TagValue.Bool(true))]);
+
+    private static Scan HealthyWithPermit()
+    {
+        var scan = new Scan(MakeWithPermit());
+        scan.Set("CV001.Tripped", false).Set("PERM01.Ok", true);
+        return scan;
+    }
+
     [Fact]
     public void TheConstructorRejectsNoConditions()
     {
@@ -173,5 +188,138 @@ public class InterlockTests
 
         Assert.Equal(1L, scan.Int64("FirstOut"));
         Assert.Equal("PERM01.Ok abnormal.", Assert.Single(scan.LastEvents).Message);
+    }
+
+    [Fact]
+    public void ATagInBothListsIsOneWritePinAfterTheTripPins()
+    {
+        Interlock interlock = MakeWithPermit();
+
+        Assert.Equal(
+            new[] { new TagRef("CV001.Start", TagKind.Bool), new TagRef("CV001.Permit", TagKind.Bool) },
+            interlock.Writes);
+    }
+
+    [Fact]
+    public void AResetOnlyTagGetsItsOwnPinAfterTheTripPins()
+    {
+        var interlock = new Interlock(
+            "INT01",
+            [new Condition("CV001.Tripped", false)],
+            [new BlockWrite("CV001.Start", TagValue.Bool(false))],
+            Period,
+            [new BlockWrite("HORN.Silence", TagValue.Bool(true))]);
+
+        Assert.Equal(["CV001.Start", "HORN.Silence"], interlock.Writes.Select(w => w.Name));
+    }
+
+    [Fact]
+    public void WithoutResetWritesThePinsAreExactlyTheTripWrites()
+    {
+        var four = new Interlock("INT01", [new Condition("CV001.Tripped", false)], [new BlockWrite("CV001.Start", TagValue.Bool(false))], Period);
+        var five = new Interlock("INT01", [new Condition("CV001.Tripped", false)], [new BlockWrite("CV001.Start", TagValue.Bool(false))], Period, []);
+
+        Assert.Equal(four.Writes, five.Writes);
+        Assert.Equal(new TagRef("CV001.Start", TagKind.Bool), Assert.Single(five.Writes));
+    }
+
+    [Fact]
+    public void TheTripScanSendsTheTripWritesAndNoResetWrite()
+    {
+        Scan scan = HealthyWithPermit().Once();
+        Assert.Empty(scan.LastWrites);
+
+        scan.Set("CV001.Tripped", true).Once();
+
+        Assert.Equal(
+            new[] { ("CV001.Start", false), ("CV001.Permit", false) },
+            scan.LastWrites.Select(w => (w.Key, w.Value.AsBool)));
+    }
+
+    [Fact]
+    public void TheResetWritesGoOutOnTheAcceptedResetScanOnly()
+    {
+        Scan scan = HealthyWithPermit().Once();
+        scan.Set("CV001.Tripped", true).Once();
+        scan.Set("CV001.Tripped", false).Once();
+        Assert.Empty(scan.LastWrites);
+
+        scan.Command("Reset", true).Once();
+        Assert.Equal("INTERLOCK_RESET", Assert.Single(scan.LastEvents).Code);
+        Assert.Equal(new[] { ("CV001.Permit", true) }, scan.LastWrites.Select(w => (w.Key, w.Value.AsBool)));
+
+        scan.Times(3);                                   // Reset held high: no second reset, no second write
+        Assert.Empty(scan.LastWrites);
+        Assert.Equal("INTERLOCK_TRIP,INTERLOCK_RESET", scan.Codes());
+    }
+
+    [Fact]
+    public void ARefusedResetSendsNoResetWrite()
+    {
+        Scan scan = HealthyWithPermit().Once();
+        scan.Set("PERM01.Ok", false).Once();
+
+        scan.Command("Reset", true).Once();              // refused: PERM01.Ok still abnormal
+        Assert.Empty(scan.LastWrites);
+        scan.Command("Reset", false).Once();
+        scan.Command("Reset", true).Once();              // a second edge, still refused
+        Assert.Empty(scan.LastWrites);
+
+        Assert.True(scan.Bool("Tripped"));
+        Assert.Equal("INTERLOCK_TRIP", scan.Codes());
+    }
+
+    [Fact]
+    public void TheConstructorRejectsTwoResetWritesToOneTag()
+    {
+        ArgumentException error = Assert.Throws<ArgumentException>(() => new Interlock(
+            "INT01",
+            [new Condition("CV001.Tripped", false)],
+            [],
+            Period,
+            [new BlockWrite("CV001.Permit", TagValue.Bool(true)), new BlockWrite("CV001.Permit", TagValue.Bool(false))]));
+
+        Assert.Equal("resetWrites", error.ParamName);
+        Assert.Contains("'CV001.Permit' is commanded twice on reset.", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheConstructorRejectsNullResetWrites()
+    {
+        ArgumentNullException error = Assert.Throws<ArgumentNullException>(() => new Interlock(
+            "INT01",
+            [new Condition("CV001.Tripped", false)],
+            [],
+            Period,
+            null!));
+
+        Assert.Equal("resetWrites", error.ParamName);
+    }
+
+    [Fact]
+    public void TheConstructorRejectsAResetWriteToABlankTag()
+    {
+        ArgumentException error = Assert.Throws<ArgumentException>(() => new Interlock(
+            "INT01",
+            [new Condition("CV001.Tripped", false)],
+            [],
+            Period,
+            [new BlockWrite(" ", TagValue.Bool(true))]));
+
+        Assert.Equal("resetWrites", error.ParamName);
+    }
+
+    [Fact]
+    public void TheConstructorRejectsATagCommandedAsTwoKinds()
+    {
+        ArgumentException error = Assert.Throws<ArgumentException>(() => new Interlock(
+            "INT01",
+            [new Condition("CV001.Tripped", false)],
+            [new BlockWrite("V1.Setpoint", TagValue.Double(0.0))],
+            Period,
+            [new BlockWrite("V1.Setpoint", TagValue.Bool(true))]));
+
+        Assert.Equal("resetWrites", error.ParamName);
+        Assert.Contains("as a Double on trip and as a Bool on reset", error.Message, StringComparison.Ordinal);
     }
 }

@@ -231,6 +231,41 @@ public class HostTests
     }
 
     [Fact]
+    public void AResetWriteLandsTheTickAfterTheResetScanAndIsNotRecorded()
+    {
+        Simulation sim = Plant()
+            .AddScanBlock(new Interlock(
+                "INT01",
+                [new Condition("V1.Tripped", false)],
+                [new BlockWrite("V1.Fill", TagValue.Bool(false))],
+                Period,
+                [new BlockWrite("V1.Fill", TagValue.Bool(true))]))
+            .Build();
+        var spy = new Spy();
+        sim.AttachActionRecorder(spy);
+        sim.WriteAt(TimeSpan.FromMilliseconds(100), "V1.Fill", TagValue.Bool(true));
+        sim.WriteAt(TimeSpan.FromMilliseconds(500), "V1.Trip", TagValue.Bool(true));
+        sim.WriteAt(TimeSpan.FromMilliseconds(700), "V1.Trip", TagValue.Bool(false));
+        sim.WriteAt(TimeSpan.FromMilliseconds(900), "INT01.Reset", TagValue.Bool(true));
+
+        sim.RunFor(TimeSpan.FromSeconds(1.5));
+
+        // The reset lands at phase 1 of tick 90 and is published at its end; the
+        // scan at tick 100 is the first to see it, accepts it and queues the reset
+        // write, which lands at phase 1 of tick 101 — one pin, V1.Fill, carries
+        // both the trip write and the reset write.
+        Assert.Equal(
+            new[] { (61L, "Set to false by INT01."), (101L, "Set to true by INT01.") },
+            sim.Events.Records
+                .Where(r => string.Equals(r.Source, "V1.Fill", StringComparison.Ordinal) && r.Message.EndsWith("by INT01.", StringComparison.Ordinal))
+                .Select(r => (r.Tick, r.Message))
+                .ToArray());
+        Assert.Equal(100L, Assert.Single(sim.Events.Records, r => string.Equals(r.Code, "INTERLOCK_RESET", StringComparison.Ordinal)).Tick);
+        Assert.True(sim.IO.ReadBool("V1.Fill"));
+        Assert.Equal(4, spy.Writes.Count);
+    }
+
+    [Fact]
     public void TwoRunsOfThePlantWithEveryBlockAreByteIdentical()
     {
         static Simulation Build()

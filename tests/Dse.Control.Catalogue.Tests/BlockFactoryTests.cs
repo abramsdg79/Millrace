@@ -60,6 +60,22 @@ public class BlockFactoryTests
     }
 
     [Fact]
+    public void AnInterlocksResetWritesBindAndShareAPinWithItsTripWrites()
+    {
+        ParameterValues values = Bind.Values(
+            InterlockCatalogue.Descriptor.Parameters,
+            """
+            { "conditions": [ { "tag": "V1.Tripped", "normal": false } ],
+              "trip": [ { "tag": "V1.Fill", "value": false } ],
+              "reset": [ { "tag": "V1.Fill", "value": true } ] }
+            """);
+
+        IScanBlock block = InterlockCatalogue.Descriptor.Factory("INT01", Bind.Period, values);
+
+        Assert.Equal(new TagRef("V1.Fill", TagKind.Bool), Assert.Single(block.Writes));
+    }
+
+    [Fact]
     public void AnAlarmOwnsAPairPerConfiguredLimitInLimitOrder()
     {
         ParameterValues values = Bind.Values(
