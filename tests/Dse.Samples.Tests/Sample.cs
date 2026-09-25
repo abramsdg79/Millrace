@@ -19,7 +19,12 @@ namespace Dse.Samples.Tests;
 public static class Sample
 {
     /// <summary>The eight scenarios, in the order the README tells them.</summary>
-    public static IReadOnlyList<string> Names { get; } = [];
+    public static IReadOnlyList<string> Names { get; } =
+    [
+        "normal-start-stop",
+        "pull-key",
+        "e-stop",
+    ];
 
     public static TheoryData<string> Scenarios => new(Names);
 

@@ -1,0 +1,10 @@
+{
+  "plant": "../plant.json",
+  "duration": 200,
+  "timeline": [
+    { "at": 1,  "write": "SEQ_START.Start", "value": true },
+    { "at": 2,  "write": "SEQ_START.Start", "value": false },
+    { "at": 90, "write": "SEQ_STOP.Start",  "value": true },
+    { "at": 91, "write": "SEQ_STOP.Start",  "value": false }
+  ]
+}
