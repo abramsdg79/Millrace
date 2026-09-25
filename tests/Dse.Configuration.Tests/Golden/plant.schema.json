@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "DSE plant",
-  "description": "Generated from the catalogue of modules: Dse.Components. Do not edit; run `dse schema export`.",
+  "description": "Generated from the catalogue of modules: Dse.Components, Dse.Control. Do not edit; run `dse schema export`.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -150,9 +150,283 @@
       "items": {
         "$ref": "#/$defs/envelope.tag"
       }
+    },
+    "controllers": {
+      "description": "Control blocks, scanned in the order listed: when two write one tag on one tick, the later wins.",
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/block.alarm"
+          },
+          {
+            "$ref": "#/$defs/block.interlock"
+          },
+          {
+            "$ref": "#/$defs/block.permissive"
+          },
+          {
+            "$ref": "#/$defs/block.sequencer"
+          },
+          {
+            "$ref": "#/$defs/block.timer"
+          }
+        ]
+      }
     }
   },
   "$defs": {
+    "block.alarm": {
+      "description": "An ISA-18.2 analog alarm over one Double tag: one to four limits, each with a deadband and an on-delay, acknowledged by Ack.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "scanPeriodMs",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique across the plant's components and controllers. No dot and no whitespace: it prefixes every tag the block owns, as in INT01.Ok.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "alarm"
+        },
+        "scanPeriodMs": {
+          "description": "How often the block scans, in milliseconds: a whole number of time steps, at most a day.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 86400000
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "input",
+            "limits"
+          ],
+          "properties": {
+            "input": {
+              "description": "The Double tag watched. The full name of a Double tag. The schema cannot check that it exists; the loader does.",
+              "type": "string"
+            },
+            "limits": {
+              "description": "One to four limits, each kind at most once.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/group.AlarmLimit"
+              }
+            }
+          }
+        }
+      }
+    },
+    "block.interlock": {
+      "description": "The conditions that stop a running thing: any abnormal condition latches Tripped and sends the trip writes once, until Reset.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "scanPeriodMs",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique across the plant's components and controllers. No dot and no whitespace: it prefixes every tag the block owns, as in INT01.Ok.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "interlock"
+        },
+        "scanPeriodMs": {
+          "description": "How often the block scans, in milliseconds: a whole number of time steps, at most a day.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 86400000
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "conditions"
+          ],
+          "properties": {
+            "conditions": {
+              "description": "The Bool tags whose abnormal value trips the interlock, in report order.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/group.Condition"
+              }
+            },
+            "trip": {
+              "description": "What to command when the interlock trips, once, on the trip scan.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/group.BlockWrite"
+              }
+            }
+          }
+        }
+      }
+    },
+    "block.permissive": {
+      "description": "The conditions something needs before it may start: Ok while every condition is normal, never latched.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "scanPeriodMs",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique across the plant's components and controllers. No dot and no whitespace: it prefixes every tag the block owns, as in INT01.Ok.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "permissive"
+        },
+        "scanPeriodMs": {
+          "description": "How often the block scans, in milliseconds: a whole number of time steps, at most a day.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 86400000
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "conditions"
+          ],
+          "properties": {
+            "conditions": {
+              "description": "The Bool tags that must be normal, in report order.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/group.Condition"
+              }
+            }
+          }
+        }
+      }
+    },
+    "block.sequencer": {
+      "description": "A linear sequence of steps, each with entry writes, a transition and an optional timeout, run by Start, Hold, Resume, Abort and Reset.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "scanPeriodMs",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique across the plant's components and controllers. No dot and no whitespace: it prefixes every tag the block owns, as in INT01.Ok.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "sequencer"
+        },
+        "scanPeriodMs": {
+          "description": "How often the block scans, in milliseconds: a whole number of time steps, at most a day.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 86400000
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "steps"
+          ],
+          "properties": {
+            "steps": {
+              "description": "The steps, in order. There is no branching and no parallel step.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/group.SequenceStep"
+              }
+            },
+            "abort": {
+              "description": "What to command on an Abort or a step timeout.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/group.BlockWrite"
+              }
+            }
+          }
+        }
+      }
+    },
+    "block.timer": {
+      "description": "An IEC 61131-3 timer over one Bool tag: on-delay (TON), off-delay (TOF) or pulse (TP).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "scanPeriodMs",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique across the plant's components and controllers. No dot and no whitespace: it prefixes every tag the block owns, as in INT01.Ok.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "timer"
+        },
+        "scanPeriodMs": {
+          "description": "How often the block scans, in milliseconds: a whole number of time steps, at most a day.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 86400000
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "input",
+            "presetS"
+          ],
+          "properties": {
+            "mode": {
+              "description": "on-delay raises Q once the input has held true for the preset; off-delay holds Q for the preset after the input falls; pulse gives one preset-long pulse on a rising edge.",
+              "enum": [
+                "on-delay",
+                "off-delay",
+                "pulse"
+              ]
+            },
+            "input": {
+              "description": "The Bool tag timed. The full name of a Bool tag. The schema cannot check that it exists; the loader does.",
+              "type": "string"
+            },
+            "presetS": {
+              "description": "The delay or pulse length. Zero acts immediately. Unit: s.",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 31536000
+            }
+          }
+        }
+      }
+    },
     "component.belt-friction": {
       "description": "Rolling resistance of a loaded belt: force from carried mass, belt mass and added drag.",
       "type": "object",
@@ -1495,6 +1769,81 @@
         }
       }
     },
+    "group.AlarmLimit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "value"
+      ],
+      "properties": {
+        "kind": {
+          "description": "Which limit. Configured limits must ascend lo-lo < lo < hi < hi-hi, each at most once.",
+          "enum": [
+            "lo-lo",
+            "lo",
+            "hi",
+            "hi-hi"
+          ]
+        },
+        "value": {
+          "description": "The limit, in the tag's engineering unit.",
+          "type": "number"
+        },
+        "deadband": {
+          "description": "How far back inside the limit the value must come before the alarm clears.",
+          "type": "number",
+          "minimum": 0,
+          "default": 0
+        },
+        "onDelayS": {
+          "description": "How long the value must stay across before the alarm raises. Unit: s.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 31536000,
+          "default": 0
+        }
+      }
+    },
+    "group.BlockWrite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tag",
+        "value"
+      ],
+      "properties": {
+        "tag": {
+          "description": "The tag commanded. The full name of a tag the block commands, so it must be read-write. The schema cannot check that it exists; the loader does.",
+          "type": "string"
+        },
+        "value": {
+          "description": "The value commanded. Converted to the kind of the tag named by 'tag'. The schema cannot check that it fits; the loader does.",
+          "type": [
+            "boolean",
+            "number"
+          ]
+        }
+      }
+    },
+    "group.Condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tag",
+        "normal"
+      ],
+      "properties": {
+        "tag": {
+          "description": "The Bool tag watched. The full name of a Bool tag. The schema cannot check that it exists; the loader does.",
+          "type": "string"
+        },
+        "normal": {
+          "description": "The value that means the condition is satisfied.",
+          "type": "boolean"
+        }
+      }
+    },
     "group.InstrumentSpec": {
       "type": "object",
       "additionalProperties": false,
@@ -1644,6 +1993,37 @@
           "description": "Mass of it per batch. Unit: kg.",
           "type": "number",
           "exclusiveMinimum": 0
+        }
+      }
+    },
+    "group.SequenceStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "transition"
+      ],
+      "properties": {
+        "name": {
+          "description": "A short phrase for the step's event message, without a full stop.",
+          "type": "string"
+        },
+        "writes": {
+          "description": "What to command on the scan that enters the step.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/group.BlockWrite"
+          }
+        },
+        "transition": {
+          "description": "What ends the step: when a tag compares as asked, or after a delay.",
+          "$ref": "#/$defs/object.transition"
+        },
+        "timeoutS": {
+          "description": "How long the step may run before the sequence faults and sends the abort writes. Omit for no limit. Unit: s.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 31536000
         }
       }
     },
@@ -1852,6 +2232,74 @@
           "description": "Time to close 63% of the gap to ambient. Zero snaps to ambient. Unit: s.",
           "type": "number",
           "minimum": 0
+        }
+      }
+    },
+    "object.transition": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/object.transition.after"
+        },
+        {
+          "$ref": "#/$defs/object.transition.when"
+        }
+      ]
+    },
+    "object.transition.after": {
+      "description": "Ends the step when its clock reaches a delay.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "delayS"
+      ],
+      "properties": {
+        "type": {
+          "const": "after"
+        },
+        "delayS": {
+          "description": "How long the step runs. Unit: s.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 31536000
+        }
+      }
+    },
+    "object.transition.when": {
+      "description": "Ends the step when a tag compares with a value as asked.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "tag",
+        "op",
+        "value"
+      ],
+      "properties": {
+        "type": {
+          "const": "when"
+        },
+        "tag": {
+          "description": "The tag compared. The full name of a tag. The schema cannot check that it exists; the loader does.",
+          "type": "string"
+        },
+        "op": {
+          "description": "How the tag is compared. A Bool tag allows only == and !=.",
+          "enum": [
+            "==",
+            "!=",
+            "<",
+            "<=",
+            ">",
+            ">="
+          ]
+        },
+        "value": {
+          "description": "What the tag is compared with. Converted to the kind of the tag named by 'tag'. The schema cannot check that it fits; the loader does.",
+          "type": [
+            "boolean",
+            "number"
+          ]
         }
       }
     }

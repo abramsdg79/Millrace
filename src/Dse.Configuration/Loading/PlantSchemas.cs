@@ -5,7 +5,7 @@ namespace Dse.Configuration.Loading;
 /// <summary>Parameter schemas for the parts of a plant file that are not component parameters.</summary>
 internal static class PlantSchemas
 {
-    public static readonly string[] TopLevelKeys = ["$schema", "defaults", "materials", "components", "signals", "flows", "tags"];
+    public static readonly string[] TopLevelKeys = ["$schema", "defaults", "materials", "components", "signals", "flows", "tags", "controllers"];
 
     public static readonly string[] DefaultsKeys = ["seed", "timeStepMs", "startTime"];
 

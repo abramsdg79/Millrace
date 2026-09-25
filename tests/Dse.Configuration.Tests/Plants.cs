@@ -1,4 +1,5 @@
 using Dse.Components;
+using Dse.Control.Catalogue;
 using Dse.Core.Catalogue;
 
 namespace Dse.Configuration.Tests;
@@ -6,7 +7,8 @@ namespace Dse.Configuration.Tests;
 /// <summary>The catalogue and a smallest-useful plant that loader tests mutate with <c>Replace</c>.</summary>
 internal static class Plants
 {
-    public static ComponentCatalogue Catalogue { get; } = new CatalogueBuilder().Add<ComponentsModule>().Build();
+    public static ComponentCatalogue Catalogue { get; } =
+        new CatalogueBuilder().Add<ComponentsModule>().Add<ControlModule>().Build();
 
     /// <summary>Feed → chute → pile. Valid.</summary>
     public const string Minimal = """

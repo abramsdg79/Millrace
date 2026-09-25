@@ -1,5 +1,7 @@
 using System.Text.Json;
+using Dse.Components;
 using Dse.Configuration.Loading;
+using Dse.Core.Catalogue;
 using Dse.Tests.Shared;
 
 namespace Dse.Configuration.Tests;
@@ -20,7 +22,7 @@ public class PlantSchemaTests
         Assert.False(root.GetProperty("additionalProperties").GetBoolean());
         Assert.Equal("components", Assert.Single(root.GetProperty("required").EnumerateArray()).GetString());
         Assert.Equal(
-            ["$schema", "defaults", "materials", "components", "signals", "flows", "tags"],
+            ["$schema", "defaults", "materials", "components", "signals", "flows", "tags", "controllers"],
             root.GetProperty("properties").EnumerateObject().Select(p => p.Name));
     }
 
@@ -138,5 +140,73 @@ public class PlantSchemaTests
     public void MatchesTheGoldenFile()
     {
         Golden.Assert("Golden/plant.schema.json", Text);
+    }
+
+    [Fact]
+    public void HasOneBranchPerBlockType()
+    {
+        using JsonDocument document = JsonDocument.Parse(Text);
+        string[] branches = document.RootElement
+            .GetProperty("properties").GetProperty("controllers").GetProperty("items").GetProperty("oneOf")
+            .EnumerateArray().Select(b => b.GetProperty("$ref").GetString()!).ToArray();
+
+        Assert.Equal(Plants.Catalogue.Blocks.Select(b => $"#/$defs/block.{b.Type}"), branches);
+        Assert.Equal(5, branches.Length);
+    }
+
+    [Fact]
+    public void ABlockBranchRequiresItsScanPeriodAndClosesItsParameters()
+    {
+        using JsonDocument document = JsonDocument.Parse(Text);
+        JsonElement timer = Defs(document).GetProperty("block.timer");
+        JsonElement properties = timer.GetProperty("properties");
+        JsonElement period = properties.GetProperty("scanPeriodMs");
+
+        Assert.Equal("timer", properties.GetProperty("type").GetProperty("const").GetString());
+        Assert.Equal(["id", "type", "scanPeriodMs", "parameters"], timer.GetProperty("required").EnumerateArray().Select(r => r.GetString()));
+        Assert.False(timer.GetProperty("additionalProperties").GetBoolean());
+        Assert.Equal("number", period.GetProperty("type").GetString());
+        Assert.Equal(0.0, period.GetProperty("exclusiveMinimum").GetDouble());
+        Assert.Equal(86_400_000.0, period.GetProperty("maximum").GetDouble());
+        Assert.Equal("^[^.\\s]+$", properties.GetProperty("id").GetProperty("pattern").GetString());
+        Assert.False(properties.GetProperty("parameters").GetProperty("additionalProperties").GetBoolean());
+    }
+
+    [Fact]
+    public void ATagIsAStringAndAValueIsABooleanOrANumber()
+    {
+        using JsonDocument document = JsonDocument.Parse(Text);
+        JsonElement write = Defs(document).GetProperty("group.BlockWrite").GetProperty("properties");
+
+        Assert.Equal("string", write.GetProperty("tag").GetProperty("type").GetString());
+        Assert.Contains("loader", write.GetProperty("tag").GetProperty("description").GetString(), StringComparison.Ordinal);
+        Assert.Equal(["boolean", "number"], write.GetProperty("value").GetProperty("type").EnumerateArray().Select(t => t.GetString()));
+    }
+
+    [Fact]
+    public void TheTransitionSlotIsAOneOfOverWhenAndAfter()
+    {
+        using JsonDocument document = JsonDocument.Parse(Text);
+        JsonElement defs = Defs(document);
+        JsonElement when = defs.GetProperty("object.transition.when");
+
+        Assert.Equal(
+            ["#/$defs/object.transition.after", "#/$defs/object.transition.when"],
+            defs.GetProperty("object.transition").GetProperty("oneOf").EnumerateArray().Select(b => b.GetProperty("$ref").GetString()));
+        Assert.Equal(["type", "tag", "op", "value"], when.GetProperty("required").EnumerateArray().Select(r => r.GetString()));
+        Assert.Equal(
+            ["==", "!=", "<", "<=", ">", ">="],
+            when.GetProperty("properties").GetProperty("op").GetProperty("enum").EnumerateArray().Select(o => o.GetString()));
+    }
+
+    [Fact]
+    public void ACatalogueWithoutBlocksAcceptsNoControllers()
+    {
+        ComponentCatalogue components = new CatalogueBuilder().Add<ComponentsModule>().Build();
+        using JsonDocument document = JsonDocument.Parse(PlantSchema.Generate(components));
+        JsonElement controllers = document.RootElement.GetProperty("properties").GetProperty("controllers");
+
+        Assert.Equal(0, controllers.GetProperty("maxItems").GetInt32());
+        Assert.False(controllers.TryGetProperty("items", out _));
     }
 }

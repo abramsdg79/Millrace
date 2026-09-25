@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Dse.Configuration.Loading;
 using Dse.Core.Catalogue;
+using Dse.Io;
 
 namespace Dse.Configuration;
 
@@ -39,6 +40,12 @@ public static class PlantSchema
             }
         }
 
+        foreach (BlockDescriptor block in catalogue.Blocks)
+        {
+            defs[$"block.{block.Type}"] = w => WriteBlock(w, block);
+            CollectGroups(block.Parameters, defs);
+        }
+
         defs["envelope.material"] = w => WriteParameterObject(w, PlantSchemas.Material, "A material the plant's components can name.", typeConst: null);
         defs["envelope.link"] = w => WriteParameterObject(w, PlantSchemas.Link, "A connection from one port to another.", typeConst: null);
         defs["envelope.tag"] = w => WriteParameterObject(w, PlantSchemas.Tag, "A tag bound to a port, in addition to the tags components declare.", typeConst: null);
@@ -73,6 +80,7 @@ public static class PlantSchema
             WriteArrayOf(writer, "signals", "envelope.link");
             WriteArrayOf(writer, "flows", "envelope.link");
             WriteArrayOf(writer, "tags", "envelope.tag");
+            WriteControllers(writer, catalogue);
             writer.WriteEndObject();
 
             writer.WriteStartObject("$defs");
@@ -181,11 +189,7 @@ public static class PlantSchema
         writer.WriteEndArray();
         writer.WriteStartObject("properties");
 
-        writer.WriteStartObject("id");
-        writer.WriteString("description", "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.");
-        writer.WriteString("type", "string");
-        writer.WriteString("pattern", "^[^.\\s]+$");
-        writer.WriteEndObject();
+        WriteId(writer, "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.");
 
         writer.WriteStartObject("type");
         writer.WriteString("const", component.Type);
@@ -193,6 +197,72 @@ public static class PlantSchema
 
         writer.WritePropertyName("parameters");
         WriteParameterObject(writer, component.Parameters, description: null, typeConst: null);
+
+        writer.WriteEndObject();
+        writer.WriteEndObject();
+    }
+
+    private static void WriteId(Utf8JsonWriter writer, string description)
+    {
+        writer.WriteStartObject("id");
+        writer.WriteString("description", description);
+        writer.WriteString("type", "string");
+        writer.WriteString("pattern", "^[^.\\s]+$");
+        writer.WriteEndObject();
+    }
+
+    private static void WriteControllers(Utf8JsonWriter writer, ComponentCatalogue catalogue)
+    {
+        writer.WriteStartObject("controllers");
+        writer.WriteString("description", "Control blocks, scanned in the order listed: when two write one tag on one tick, the later wins.");
+        writer.WriteString("type", "array");
+        if (catalogue.Blocks.Count == 0)
+        {
+            // An empty oneOf is not valid JSON Schema; with no block types there is nothing to declare (R94).
+            writer.WriteNumber("maxItems", 0);
+        }
+        else
+        {
+            writer.WritePropertyName("items");
+            WriteOneOf(writer, catalogue.Blocks.Select(b => $"block.{b.Type}"));
+        }
+
+        writer.WriteEndObject();
+    }
+
+    private static void WriteBlock(Utf8JsonWriter writer, BlockDescriptor block)
+    {
+        writer.WriteStartObject();
+        writer.WriteString("description", block.Description);
+        writer.WriteString("type", "object");
+        writer.WriteBoolean("additionalProperties", false);
+        writer.WriteStartArray("required");
+        writer.WriteStringValue("id");
+        writer.WriteStringValue("type");
+        writer.WriteStringValue("scanPeriodMs");
+        if (block.Parameters.Any(p => p.IsRequired))
+        {
+            writer.WriteStringValue("parameters");
+        }
+
+        writer.WriteEndArray();
+        writer.WriteStartObject("properties");
+
+        WriteId(writer, "Unique across the plant's components and controllers. No dot and no whitespace: it prefixes every tag the block owns, as in INT01.Ok.");
+
+        writer.WriteStartObject("type");
+        writer.WriteString("const", block.Type);
+        writer.WriteEndObject();
+
+        writer.WriteStartObject("scanPeriodMs");
+        writer.WriteString("description", "How often the block scans, in milliseconds: a whole number of time steps, at most a day.");
+        writer.WriteString("type", "number");
+        writer.WriteNumber("exclusiveMinimum", 0);
+        writer.WriteNumber("maximum", 86_400_000);
+        writer.WriteEndObject();
+
+        writer.WritePropertyName("parameters");
+        WriteParameterObject(writer, block.Parameters, description: null, typeConst: null);
 
         writer.WriteEndObject();
         writer.WriteEndObject();
@@ -314,6 +384,21 @@ public static class PlantSchema
                 writer.WriteString("type", "string");
                 break;
 
+            case ParameterKind.Tag:
+                writer.WriteString("description", $"{parameter.Description} The full name of {TagNoun(parameter)}.{LoaderChecks}");
+                writer.WriteString("type", "string");
+                break;
+
+            case ParameterKind.Value:
+                writer.WriteString(
+                    "description",
+                    $"{parameter.Description} Converted to the kind of the tag named by '{parameter.TagParameter}'. The schema cannot check that it fits; the loader does.");
+                writer.WriteStartArray("type");
+                writer.WriteStringValue("boolean");
+                writer.WriteStringValue("number");
+                writer.WriteEndArray();
+                break;
+
             default:
                 throw new InvalidOperationException($"Parameter kind {parameter.Kind} has no schema.");
         }
@@ -366,4 +451,16 @@ public static class PlantSchema
 
     private static string Describe(ParameterDescriptor parameter) =>
         parameter.Unit.Length == 0 ? parameter.Description : $"{parameter.Description} Unit: {parameter.Unit}.";
+
+    private static string TagNoun(ParameterDescriptor parameter)
+    {
+        string noun = parameter.RequiredKind switch
+        {
+            null => "a tag",
+            TagKind.Int64 => "an Int64 tag",
+            { } kind => $"a {kind} tag",
+        };
+
+        return parameter.IsWriteTarget ? $"{noun} the block commands, so it must be read-write" : noun;
+    }
 }
