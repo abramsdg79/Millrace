@@ -184,8 +184,9 @@ A step of 1.0 in CV003's motor thermal state at 80 s — a blocked fan, a hot
 restart — takes it past the overload relay's trip level at once. The whole line
 stops behind it, one belt a scan, each on the auxiliary contact of the belt
 below it: CV002 0.11 s after the trip, CV001 0.21 s, the feeder 0.31 s. The
-three belts then coast to rest within 0.2 s of one another. The current does
-not rise: an overload trip opens the contactor, and the current falls to zero.
+three belts then coast to rest within about 0.2 s of one another. The current
+does not rise: an overload trip opens the contactor, and the current falls to
+zero.
 
 ```text expected/overload.log
 06:01:20.000  CV003.Motor  FAULT  thermal-bias injected: amount=1.
@@ -326,8 +327,12 @@ dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/feed-st
   downstream zero-speed switch, not underspeed: a downstream belt that slows —
   slipping, say — with its contactor still closed does not stop the belts
   feeding it until its switch reports it stopped (see the underspeed item
-  below). The auxiliary contact here always agrees with the main contacts:
-  unlike the zero-speed switch in scenario 6, it has no fault of its own.
+  below). `CVn.Contactor` models an ideal auxiliary contact that always
+  follows the main contacts: unlike the zero-speed switch in scenario 6, it
+  has no fault of its own. On a real plant a mechanically linked auxiliary
+  contact can disagree with them — a broken linkage, a wiring fault — and if
+  it fails closed the cascade silently falls back to the zero-speed switch
+  alone, which is why the zero-speed condition stays in each interlock.
 - CV001 has no plugged-chute switch and no HiHi-current interlock of its own,
   so in the chute-blockage scenario above it runs about a minute at HiHi
   current until its thermal relay trips; see that section for why a real
