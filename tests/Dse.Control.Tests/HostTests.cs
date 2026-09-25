@@ -105,7 +105,7 @@ public class HostTests
         Assert.True(Has(sim, "INT01", "INTERLOCK_TRIP"));
         Assert.Single(sim.Events.Records, r =>
             string.Equals(r.Source, "V1.Fill", StringComparison.Ordinal) &&
-            string.Equals(r.Message, "Set to false.", StringComparison.Ordinal));
+            string.Equals(r.Message, "Set to false by INT01.", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -201,7 +201,7 @@ public class HostTests
     }
 
     [Fact]
-    public void ABlockWriteIsRecordedOnTheTickItLands()
+    public void ABlockWriteIsNotRecorded()
     {
         Simulation sim = Plant()
             .AddScanBlock(new Interlock(
@@ -217,11 +217,17 @@ public class HostTests
 
         sim.RunFor(TimeSpan.FromSeconds(1));
 
-        // Trip lands at tick 50 and is published at the end of it; the scan at
-        // tick 60 trips and queues its write, which lands at phase 1 of tick 61.
+        // Timing rule: the trip lands at phase 1 of tick 50 and is published at the
+        // end of it; the 100 ms scan at tick 60 is the first to see it, trips, and
+        // queues its write, which lands at phase 1 of tick 61. That write is the
+        // block's own: it is logged "by INT01" and never reaches the recorder (R77).
         Assert.Equal(
-            new[] { ("V1.Fill", 10L, "true"), ("V1.Trip", 50L, "true"), ("V1.Fill", 61L, "false") },
+            new[] { ("V1.Fill", 10L, "true"), ("V1.Trip", 50L, "true") },
             spy.Writes.ToArray());
+        SimEventRecord write = Assert.Single(sim.Events.Records, r =>
+            r.Tick == 61L && string.Equals(r.Source, "V1.Fill", StringComparison.Ordinal));
+        Assert.Equal("WRITE", write.Code);
+        Assert.Equal("Set to false by INT01.", write.Message);
     }
 
     [Fact]

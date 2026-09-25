@@ -78,7 +78,19 @@ public sealed class TagImage : ITagReader, ITagWriter
     public void Write(int index, TagValue value)
     {
         Check(index, value);
-        _writes.Enqueue(new PendingWrite(index, value));
+        _writes.Enqueue(new PendingWrite(index, value, null));
+    }
+
+    /// <summary>
+    /// Queues a write a control block issued. It lands exactly as an external
+    /// write does — at phase 1 of the next tick, in enqueue order, so the last
+    /// writer still wins — but it is logged <c>Set to … by &lt;origin&gt;.</c>
+    /// and never reaches the action recorder.
+    /// </summary>
+    internal void Write(int index, TagValue value, string origin)
+    {
+        Check(index, value);
+        _writes.Enqueue(new PendingWrite(index, value, origin));
     }
 
     /// <inheritdoc/>
@@ -97,16 +109,26 @@ public sealed class TagImage : ITagReader, ITagWriter
     }
 
     /// <summary>
-    /// The one place a write lands: applies the value to a binding, logs it as
-    /// <c>WRITE</c>, and reports it to the action recorder. Phase 1 only, called
-    /// both from the queued-write drain and from a scheduled <c>WriteEvent</c>.
+    /// The one place a write lands: applies the value to a binding and logs it
+    /// as <c>WRITE</c>. An external write (no origin) is reported to the action
+    /// recorder; a block's write is attributed in the log and is not, because
+    /// replaying the external actions re-runs the block, which issues it again.
+    /// Phase 1 only, called both from the queued-write drain and from a
+    /// scheduled <c>WriteEvent</c>.
     /// </summary>
-    internal void ApplyNow(int index, TagValue value, in TickContext ctx)
+    internal void ApplyNow(int index, TagValue value, string? origin, in TickContext ctx)
     {
         TagBinding binding = _bindings[index];
         binding.Apply(value);
-        ctx.Log(binding.Name, "WRITE", $"Set to {value}.");
-        _recorder?.Wrote(ctx.Tick, binding.Name, value);
+        if (origin is null)
+        {
+            ctx.Log(binding.Name, "WRITE", $"Set to {value}.");
+            _recorder?.Wrote(ctx.Tick, binding.Name, value);
+        }
+        else
+        {
+            ctx.Log(binding.Name, "WRITE", $"Set to {value} by {origin}.");
+        }
     }
 
     private void Check(int index, TagValue value)
@@ -181,12 +203,12 @@ public sealed class TagImage : ITagReader, ITagWriter
         int applied = 0;
         while (applied < budget && _writes.TryDequeue(out PendingWrite write))
         {
-            ApplyNow(write.Index, write.Value, in ctx);
+            ApplyNow(write.Index, write.Value, write.Origin, in ctx);
             applied++;
         }
 
         return applied;
     }
 
-    private readonly record struct PendingWrite(int Index, TagValue Value);
+    private readonly record struct PendingWrite(int Index, TagValue Value, string? Origin);
 }

@@ -1,4 +1,5 @@
 using Dse.Core.Faults;
+using Dse.Core.Logging;
 using Dse.Core.Tests.Fakes;
 using Dse.Core.Time;
 using Dse.Io;
@@ -127,5 +128,46 @@ public class ActionRecorderTests
         }
 
         Assert.Equal(Run(record: false), Run(record: true));
+    }
+
+    [Fact]
+    public void ABlockWriteIsLoggedByItsBlockAndNotRecorded()
+    {
+        EchoBlock block = new EchoBlock("B", TimeSpan.FromMilliseconds(20)).MayWrite("T.Enable");
+        block.WriteOnce = true;
+        Simulation sim = new SimulationBuilder(Options).Add(new Thermostat("T")).AddScanBlock(block).Build();
+        var spy = new Spy();
+        sim.AttachActionRecorder(spy);
+
+        sim.Tick();                                   // tick 0: the scan queues the write
+        sim.Tick();                                   // tick 1: phase 1 lands it
+
+        SimEventRecord record = Assert.Single(sim.Events.Records);
+        Assert.Equal(1L, record.Tick);
+        Assert.Equal("T.Enable", record.Source);
+        Assert.Equal("WRITE", record.Code);
+        Assert.Equal("Set to true by B.", record.Message);
+        Assert.True(sim.IO.ReadBool("T.Enable"));
+        Assert.Empty(spy.Calls);
+    }
+
+    [Fact]
+    public void ABlockWriteAndAnExternalWriteOnOneTickLandInEnqueueOrder()
+    {
+        EchoBlock block = new EchoBlock("B", TimeSpan.FromMilliseconds(20)).MayWrite("T.Enable");
+        block.WriteOnce = true;
+        Simulation sim = new SimulationBuilder(Options).Add(new Thermostat("T")).AddScanBlock(block).Build();
+        var spy = new Spy();
+        sim.AttachActionRecorder(spy);
+
+        sim.Tick();                                   // tick 0: the scan queues true
+        sim.IO.WriteBool("T.Enable", false);          // queued behind it
+        sim.Tick();                                   // tick 1: both land, in enqueue order
+
+        Assert.Equal(
+            new[] { (1L, "T.Enable", "Set to true by B."), (1L, "T.Enable", "Set to false.") },
+            sim.Events.Records.Select(r => (r.Tick, r.Source, r.Message)));
+        Assert.False(sim.IO.ReadBool("T.Enable"));
+        Assert.Equal(("wrote", 1L, "T.Enable", "false"), Assert.Single(spy.Calls));
     }
 }

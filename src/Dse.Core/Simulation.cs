@@ -347,7 +347,7 @@ public sealed class Simulation
         {
             SimulationClock clock = _simulation.Clock;
             var context = new TickContext(clock.TickCount, clock.DeltaSeconds, clock.Now, _simulation.Events);
-            _simulation.IO.ApplyNow(_index, _value, in context);
+            _simulation.IO.ApplyNow(_index, _value, origin: null, in context);
         }
     }
 

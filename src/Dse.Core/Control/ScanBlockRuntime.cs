@@ -20,7 +20,9 @@ namespace Dse.Core.Control;
 /// Both writes are queued and applied at phase 1 of the next tick in enqueue
 /// order, and blocks scan in the order they were added, so the block added
 /// later wins. That is deterministic and it is exactly what a PLC does with a
-/// double coil — but, as on a PLC, it is usually a mistake.
+/// double coil — but, as on a PLC, it is usually a mistake. Every block write
+/// is logged <c>Set to … by &lt;block id&gt;.</c> and none reaches the action
+/// recorder.
 /// </para>
 /// </remarks>
 internal sealed class ScanBlockRuntime
@@ -99,7 +101,7 @@ internal sealed class ScanBlockRuntime
         {
             if (_outputs.TryWrite(i, out TagValue value))
             {
-                _io.Write(_writeIndices[i], value);
+                _io.Write(_writeIndices[i], value, _plan.Block.Id);
             }
         }
 

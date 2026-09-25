@@ -1,20 +1,20 @@
 06:00:00.000  PERM01  PERMISSIVE_LOST  CV001.SafetyOk dropped.
 06:00:00.000  INT01  INTERLOCK_TRIP  PERM01.Ok abnormal.
-06:00:00.010  CV001.Start  WRITE  Set to false.
+06:00:00.010  CV001.Start  WRITE  Set to false by INT01.
 06:00:00.990  CV001.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.
 06:00:01.000  SEQ01.Start  WRITE  Set to true.
 06:00:01.200  SEQ01  STEP_ENTERED  1: Reset the safety relay.
-06:00:01.210  CV001.SafetyReset  WRITE  Set to true.
+06:00:01.210  CV001.SafetyReset  WRITE  Set to true by SEQ01.
 06:00:01.210  CV001.Safety  SAFETY_RESET  All channels healthy; relay energised.
 06:00:01.300  PERM01  PERMISSIVE_OK  All conditions normal.
 06:00:02.000  SEQ01.Start  WRITE  Set to false.
 06:00:02.200  SEQ01  STEP_ENTERED  2: Reset the interlock.
-06:00:02.210  CV001.SafetyReset  WRITE  Set to false.
-06:00:02.210  INT01.Reset  WRITE  Set to true.
+06:00:02.210  CV001.SafetyReset  WRITE  Set to false by SEQ01.
+06:00:02.210  INT01.Reset  WRITE  Set to true by SEQ01.
 06:00:02.300  INT01  INTERLOCK_RESET  Reset with all conditions normal.
 06:00:03.200  SEQ01  STEP_ENTERED  3: Start the belt.
-06:00:03.210  INT01.Reset  WRITE  Set to false.
-06:00:03.210  CV001.Start  WRITE  Set to true.
+06:00:03.210  INT01.Reset  WRITE  Set to false by SEQ01.
+06:00:03.210  CV001.Start  WRITE  Set to true by SEQ01.
 06:00:03.210  CV001.Starter  CONTACTOR_CLOSED  Motor energised.
 06:00:03.220  CV001.Motor  ENERGISED  Contactor closed.
 06:00:03.230  CV001.ZeroSpeed  MOTION  Motion detected.
@@ -22,7 +22,7 @@
 06:00:03.700  CUR01  ALARM_CLEARED  HiHi: 7.40937291733113 back within limits.
 06:00:03.800  CUR01  ALARM_RAISED  Hi: 6.701381615037194 above 3.
 06:00:04.000  SEQ01  STEP_ENTERED  4: Run the feed.
-06:00:04.010  Feed.Enabled  WRITE  Set to true.
+06:00:04.010  Feed.Enabled  WRITE  Set to true by SEQ01.
 06:00:04.700  CUR01  ALARM_CLEARED  Hi: 2.707919679974949 back within limits.
 06:00:06.190  CV001.Motor  AT_SPEED  Reached 140.02609575456847 rad/s.
 06:00:40.000  CV001.Motor  FAULT  thermal-bias injected: amount=0.8.
@@ -30,11 +30,11 @@
 06:00:40.000  CV001.Starter  CONTACTOR_OPENED  Motor de-energised.
 06:00:40.010  CV001.Motor  DE_ENERGISED  Contactor open; coasting.
 06:00:40.100  INT01  INTERLOCK_TRIP  CV001.Tripped abnormal.
-06:00:40.110  CV001.Start  WRITE  Set to false.
+06:00:40.110  CV001.Start  WRITE  Set to false by INT01.
 06:00:54.540  CV001.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.
 06:00:55.820  CV001.Motor  STOPPED  Shaft at rest.
 06:01:04.000  SEQ01  STEP_ENTERED  5: Stop the feed.
-06:01:04.010  Feed.Enabled  WRITE  Set to false.
+06:01:04.010  Feed.Enabled  WRITE  Set to false by SEQ01.
 06:01:06.200  SEQ01  STEP_ENTERED  6: Stop the belt.
-06:01:06.210  CV001.Start  WRITE  Set to false.
+06:01:06.210  CV001.Start  WRITE  Set to false by SEQ01.
 06:01:06.400  SEQ01  SEQUENCE_COMPLETE  Finished after 6 steps.

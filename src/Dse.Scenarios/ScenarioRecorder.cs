@@ -6,8 +6,9 @@ using Dse.Io;
 namespace Dse.Scenarios;
 
 /// <summary>
-/// Accumulates every action that took effect, in landing order, and turns the
-/// lot into a <see cref="Scenario"/>. Attach it with
+/// Accumulates every external action that took effect, in landing order, and
+/// turns the lot into a <see cref="Scenario"/>. A control block's own writes are
+/// not recorded: the replay re-runs the block. Attach it with
 /// <c>Simulation.AttachActionRecorder</c> and a live run — a command bus, an
 /// operator, a test — becomes a file that replays to the same event log.
 /// </summary>

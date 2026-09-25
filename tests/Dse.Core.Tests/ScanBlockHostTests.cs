@@ -105,7 +105,7 @@ public class ScanBlockHostTests
         Assert.Equal(1L, record.Tick);
         Assert.Equal("U.Enable", record.Source);
         Assert.Equal("WRITE", record.Code);
-        Assert.Equal("Set to true.", record.Message);
+        Assert.Equal("Set to true by B.", record.Message);
         Assert.True(sim.IO.ReadBool("U.Enable"));
     }
 
