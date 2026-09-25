@@ -9,6 +9,10 @@ namespace Dse.Core.Io;
 /// </summary>
 public interface ITagProvider
 {
-    /// <summary>The component's bindings. Called once, at <c>Build()</c>.</summary>
+    /// <summary>
+    /// The component's bindings. Called by <c>Validate()</c>, <c>Build()</c> and
+    /// <c>PlantTags()</c>, so possibly more than once: return fresh bindings over
+    /// the same ports and change nothing.
+    /// </summary>
     IEnumerable<TagBinding> DescribeTags();
 }

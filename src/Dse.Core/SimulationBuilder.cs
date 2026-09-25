@@ -82,6 +82,26 @@ public sealed class SimulationBuilder
     /// <summary>Checks the plant without building it. Used by tooling and by Build.</summary>
     public ValidationResult Validate() => Validate(out _, out _);
 
+    /// <summary>
+    /// The tags the plant added so far would publish, exactly as <see cref="Build"/>
+    /// would put them in the directory — component tags, composite exposures and
+    /// explicit binds, sorted by name and indexed, with the access Build gives them
+    /// (a writable tag on an input a link drives is read-only, R23) — without
+    /// building anything. A block's owned tags are not included, and neither is a
+    /// tag <see cref="Validate()"/> would reject (DSE009–DSE011). The plant loader
+    /// resolves a plant file's controllers against this list.
+    /// </summary>
+    public IReadOnlyList<TagDescriptor> PlantTags()
+    {
+        var componentIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (ISimComponent component in _components)
+        {
+            componentIds.Add(component.Id);
+        }
+
+        return new TagDirectory(CollectTags(componentIds, [])).Tags;
+    }
+
     /// <summary>Validates and constructs the simulation. Throws if the plant is invalid.</summary>
     public Simulation Build()
     {
