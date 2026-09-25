@@ -26,6 +26,16 @@ current alarm raises on the start inrush (R111); `bulk-source` gains an optional
 8.0.5 itself (R114); an absence may carry an end point (R115). The sections
 below read as amended.
 
+**Amended 2026-09-25 (6a.1).** Each cascade interlock also reads the downstream
+contactor's auxiliary contact (`CVn.Contactor`, normal true), ORed with the
+downstream zero-speed switch, so upstream belts and the feed drop within a scan
+of a downstream stop instead of after its coast-down (pull-key: the feed stops
+0.21 s after the pull, not about 16 s). The auxiliary contact is a wired field
+instrument, so R103's principle — interlocks read instruments, never model
+truth — holds. `INT_FEED` now powers up tripped at 0 s on CV001's open
+contactor; a welded contactor, reading closed, cascades nothing. Data and
+regenerated goldens only; no engine change.
+
 ## 1. Scope
 
 **Plan 6a — this document.** The mine-conveyor reference sample of main spec 15.1,
@@ -49,8 +59,8 @@ reunification stays parked); a C# sample project; the deferred minors of plan 5d
 | One plan or two | **Split:** 6a mine conveyors now; 6b wheel line, physics first. |
 | "Speed change" (15.1) with an on/off motor | **DOL only.** Speed change is the start, stop and trip transients and speed sag under load. Main spec 15.1 is amended to say so. A VSD is its own plan. |
 | What the sample is | **A data folder plus a test project.** No C# under `samples/`; the sample proves that a real plant needs none. |
-| Control philosophy | Downstream-first sequenced start with speed proving; upstream-first stop; cascade interlocks on the downstream zero-speed switch; the feed interlocked on CV001; pull-keys and e-stops hardwired through each conveyor's safety relay, seen by the PLC only as a permissive; current alarms per motor. |
-| Which signal a cascade interlock reads | **The instrument** — the downstream conveyor's zero-speed switch — as a real PLC is wired, never the true speed. |
+| Control philosophy | Downstream-first sequenced start with speed proving; upstream-first stop; cascade interlocks on the downstream contactor's auxiliary contact ORed with its zero-speed switch (6a.1); the feed interlocked on CV001; pull-keys and e-stops hardwired through each conveyor's safety relay, seen by the PLC only as a permissive; current alarms per motor. |
+| Which signal a cascade interlock reads | **The instruments** — the downstream conveyor's contactor auxiliary contact (added in 6a.1) and its zero-speed switch, either one abnormal tripping — as a real PLC is wired, never the true speed. |
 | Scenarios | Eight: normal start/stop, pull-key, e-stop, overload, chute blockage, failed zero-speed switch, welded contactor, feed starve. |
 | The welded contactor (owner, after the plan's first draft) | **Show the hazard honestly.** A single welded contactor defeats both the PLC's `Start` false and the e-stop; nothing clears it, and CV003 runs to the end of the scenario. The README explains two monitored contactors in series (Category 3 / PL d); a redundant safety-contactor starter is a later component. |
 | The feeder at power-up (owner) | **Off, as a PLC output is.** `bulk-source` gains an optional `enabled` parameter, default true (every existing plant unchanged); the sample declares it false and `SEQ_START` enables the feeder. No ore moves before that. |
@@ -133,7 +143,7 @@ speed before the next starts, 15 s timeout per proving step:
 
 Every belt interlock powers up tripped, because it reads its permissive, whose
 `Ok` primes false (5c: a block's first scan reads the primed image); `INT_FEED`
-trips at 1 s, when CV001's zero-speed switch first reports stopped. So each is
+trips at 0 s, because CV001's contactor starts open (6a.1). So each is
 reset only once its downstream conveyor is proved. A pulse is a write set in one
 step and cleared in the next, and a step's writes land one tick after it is
 entered; the abort writes are every `Start` false and `Feed.Enabled` false. The
@@ -153,12 +163,16 @@ stop was planned, and its trip writes a command that is already off.
 | block | conditions (abnormal when) | trip writes |
 |---|---|---|
 | `INT_CV003` | `CV003.Tripped` true; `PERM_CV003.Ok` false | `CV003.Start` false |
-| `INT_CV002` | `CV002.Tripped` true; `PERM_CV002.Ok` false; `CV003.Stopped` true | `CV002.Start` false |
-| `INT_CV001` | `CV001.Tripped` true; `PERM_CV001.Ok` false; `CV002.Stopped` true | `CV001.Start` false |
-| `INT_FEED` | `CV001.Stopped` true | `Feed.Enabled` false |
+| `INT_CV002` | `CV002.Tripped` true; `PERM_CV002.Ok` false; `CV003.Contactor` false; `CV003.Stopped` true | `CV002.Start` false |
+| `INT_CV001` | `CV001.Tripped` true; `PERM_CV001.Ok` false; `CV002.Contactor` false; `CV002.Stopped` true | `CV001.Start` false |
+| `INT_FEED` | `CV001.Contactor` false; `CV001.Stopped` true | `Feed.Enabled` false |
 
-A cascade interlock reads the downstream **zero-speed switch tag** — the
-instrument — never the true speed or a value computed from it. That tag is
+A cascade interlock reads the downstream contactor's **auxiliary contact**
+(`CVn.Contactor`, the run feedback; 6a.1) and the downstream **zero-speed switch
+tag** — instruments both — never the true speed or a value computed from it.
+The auxiliary contact trips the cascade within a scan of any stop that opens the
+contactor; the switch catches a belt that reports stopped with its contactor
+still closed, such as a failed switch. That tag is
 `CVn.Stopped`, which the switch derives from its own reading, so a failed switch
 changes it; `CVn.ZeroSpeed.Value` is the reading itself, a Double. A belt
 interlock also reads its own permissive, so that when a relay drops the PLC drops
@@ -186,12 +200,12 @@ adjusted — or the discrepancy is ruled on — never invented.
 | scenario | injected | chain (in order) | absences |
 |---|---|---|---|
 | `normal-start-stop` | `SEQ_START.Start`; after steady running, `SEQ_STOP.Start` | CV003, CV002, CV001 prove speed in that order; the feed enables; `SEQ_START` complete; then the feed disables, CV001, CV002, CV003 stop in that order, each stop tripping the interlock above it (`INT_FEED`, `INT_CV001`, `INT_CV002`); `SEQ_STOP` complete | no `INTERLOCK_TRIP` between `SEQ_START` completing and `SEQ_STOP` starting; no `ALARM_RAISED` in the run |
-| `pull-key` | `CV002.PullKey1` pulled | CV002's relay de-energises; CV002 stops; `INT_CV001` trips; `CV001.Start` false by `INT_CV001`; `INT_FEED` trips | `INT_CV003` does not trip; CV003 stays at speed |
-| `e-stop` | `CV001.EStop` operated | CV001's relay de-energises; CV001 stops; `INT_FEED` trips | `INT_CV002`, `INT_CV003` do not trip |
-| `overload` | `CV003.Motor` `thermal-bias`, `amount` 1.0 | CV003 overload trip; `INT_CV003` trips; CV003 stops; `INT_CV002` trips; CV002 stops; `INT_CV001` trips; `INT_FEED` trips | — |
+| `pull-key` | `CV002.PullKey1` pulled | CV002's relay de-energises and its contactor opens; `INT_CV001` trips on it (6a.1: before CV002 has coasted to rest); `CV001.Start` false by `INT_CV001`; `INT_FEED` trips; then both belts coast to rest | `INT_CV003` does not trip; CV003 stays at speed |
+| `e-stop` | `CV001.EStop` operated | CV001's relay de-energises and its contactor opens; `INT_FEED` trips on it (6a.1: before CV001 has coasted to rest) | `INT_CV002`, `INT_CV003` do not trip |
+| `overload` | `CV003.Motor` `thermal-bias`, `amount` 1.0 | CV003 overload trip; `INT_CV003` trips; `INT_CV002` trips on CV003's contactor; CV002's contactor opens; `INT_CV001` trips; CV001's opens; `INT_FEED` trips — one scan apart (6a.1); then the belts coast to rest | — |
 | `chute-blockage` | `CH1` `blockage` | CH1 fills; CV001's discharge backs up and the belt loads; `ALM_CV001` `Hi` then `HiHi`; CV001's overload relay trips (measured: 109.7 s after the blockage); `INT_CV001` trips; `INT_FEED` trips | no `INTERLOCK_TRIP` before the overload trip; `INT_CV002`, `INT_CV003` do not trip |
 | `failed-zero-speed` | CV002's zero-speed switch `fail-low` (reads stopped) | `INT_CV001` trips while CV002 is still at speed; `CV001.Start` false by `INT_CV001`; `INT_FEED` trips | CV002 and CV003 do not stop; `INT_CV002`, `INT_CV003` do not trip |
-| `welded-contactor` | `CV003.Starter` `contactor-welded`; then `SEQ_STOP` (its step 6 writes `CV003.Start` false); then `CV003.EStop` | `CV003.Start` false is written, and CV003 keeps running; `SEQ_STOP` faults on its timeout; the e-stop de-energises the relay (`SAFETY_TRIP`, `INT_CV003` trips) and CV003 **still** keeps running — one welded contactor defeats both | CV003 never stops within the run: no `CONTACTOR_OPENED`, `DE_ENERGISED`, `STOPPED` or `ZERO_SPEED` for CV003 after the weld; `CV003.Speed`, sampled, stays at speed to the end |
+| `welded-contactor` | `CV003.Starter` `contactor-welded`; then `SEQ_STOP` (its step 6 writes `CV003.Start` false); then `CV003.EStop` | `CV003.Start` false is written, and CV003 keeps running; `SEQ_STOP` faults on its timeout; the e-stop de-energises the relay (`SAFETY_TRIP`, `INT_CV003` trips) and CV003 **still** keeps running — one welded contactor defeats both | CV003 never stops within the run: no `CONTACTOR_OPENED`, `DE_ENERGISED`, `STOPPED` or `ZERO_SPEED` for CV003 after the weld; `CV003.Speed`, sampled, stays at speed to the end; `INT_CV002` does not trip after the weld (6a.1: a welded contactor's auxiliary contact reads closed) |
 | `feed-starve` | `Feed` `starve` | by state: the belt-scale values (`CVn.TonnesPerHour`, sampled every 100 ms) each above 200 t/h at the fault (CV003's is still rising, 268 t/h), then fall to near zero (≤ 5 t/h, and stay there) in transport order CV001 → CV002 → CV003 | no `INTERLOCK_TRIP`, no `ALARM_RAISED`, no conveyor stops after start-up |
 
 Fault ids and tag names above are the catalogue's as of 5d; the plan confirms each

@@ -4,15 +4,15 @@
 06:00:00.000  INT_CV003  INTERLOCK_TRIP  PERM_CV003.Ok abnormal.
 06:00:00.000  INT_CV002  INTERLOCK_TRIP  PERM_CV002.Ok abnormal.
 06:00:00.000  INT_CV001  INTERLOCK_TRIP  PERM_CV001.Ok abnormal.
+06:00:00.000  INT_FEED  INTERLOCK_TRIP  CV001.Contactor abnormal.
 06:00:00.010  CV003.Start  WRITE  Set to false by INT_CV003.
 06:00:00.010  CV002.Start  WRITE  Set to false by INT_CV002.
 06:00:00.010  CV001.Start  WRITE  Set to false by INT_CV001.
+06:00:00.010  Feed.Enabled  WRITE  Set to false by INT_FEED.
 06:00:00.990  CV001.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.
 06:00:00.990  CV002.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.
 06:00:00.990  CV003.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.
 06:00:01.000  SEQ_START.Start  WRITE  Set to true.
-06:00:01.000  INT_FEED  INTERLOCK_TRIP  CV001.Stopped abnormal.
-06:00:01.010  Feed.Enabled  WRITE  Set to false by INT_FEED.
 06:00:01.200  SEQ_START  STEP_ENTERED  1: Reset the safety relays.
 06:00:01.210  CV001.SafetyReset  WRITE  Set to true by SEQ_START.
 06:00:01.210  CV002.SafetyReset  WRITE  Set to true by SEQ_START.
@@ -67,7 +67,7 @@
 06:01:21.010  CV001.Start  WRITE  Set to false by INT_CV001.
 06:01:21.010  CV001.Starter  CONTACTOR_OPENED  Motor de-energised.
 06:01:21.020  CV001.Motor  DE_ENERGISED  Contactor open; coasting.
+06:01:21.100  INT_FEED  INTERLOCK_TRIP  CV001.Contactor abnormal.
+06:01:21.110  Feed.Enabled  WRITE  Set to false by INT_FEED.
 06:01:28.820  CV001.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.
-06:01:28.900  INT_FEED  INTERLOCK_TRIP  CV001.Stopped abnormal.
-06:01:28.910  Feed.Enabled  WRITE  Set to false by INT_FEED.
 06:01:28.910  CV001.Motor  STOPPED  Shaft at rest.

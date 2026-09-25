@@ -52,6 +52,7 @@
         "conditions": [
           { "tag": "CV002.Tripped",  "normal": false },
           { "tag": "PERM_CV002.Ok",  "normal": true },
+          { "tag": "CV003.Contactor", "normal": true },
           { "tag": "CV003.Stopped",  "normal": false } ],
         "trip": [ { "tag": "CV002.Start", "value": false } ] } },
     { "id": "INT_CV001", "type": "interlock", "scanPeriodMs": 100,
@@ -59,11 +60,14 @@
         "conditions": [
           { "tag": "CV001.Tripped",  "normal": false },
           { "tag": "PERM_CV001.Ok",  "normal": true },
+          { "tag": "CV002.Contactor", "normal": true },
           { "tag": "CV002.Stopped",  "normal": false } ],
         "trip": [ { "tag": "CV001.Start", "value": false } ] } },
     { "id": "INT_FEED", "type": "interlock", "scanPeriodMs": 100,
       "parameters": {
-        "conditions": [ { "tag": "CV001.Stopped", "normal": false } ],
+        "conditions": [
+          { "tag": "CV001.Contactor", "normal": true },
+          { "tag": "CV001.Stopped",   "normal": false } ],
         "trip": [ { "tag": "Feed.Enabled", "value": false } ] } },
 
     { "id": "ALM_CV001", "type": "alarm", "scanPeriodMs": 100,

@@ -34,13 +34,20 @@ empty.
 
 **Cascade interlocks.** Each belt's interlock stops it when the belt downstream
 of it stops, and the feeder's interlock stops the feeder when CV001 stops. An
-interlock reads the downstream belt's **zero-speed switch** (`CV002.Stopped`),
-the instrument, as a real PLC is wired — never the true speed. That is why a
-failed switch trips a healthy line (scenario 6). Each interlock also trips on
-its own belt's overload relay (`CVn.Tripped`) and on its permissive, and it is
-latched: `SEQ_START` resets it only once the belt downstream is proved. That
-latch gates `SEQ_START`'s own reset step, not the run command itself — see the
-first item under "What this demo line leaves out on purpose" below for what
+interlock reads two field instruments of the downstream belt, ORed: its
+contactor's **auxiliary contact** (`CV002.Contactor`, the run feedback) and its
+**zero-speed switch** (`CV002.Stopped`) — as a real PLC is wired, never the
+true speed. The auxiliary contact opens with the contactor, so any stop that
+drops the contactor — a sequenced stop, a pull-key, an e-stop, an overload —
+cascades on the next scan, while the belt is still coasting. The zero-speed
+switch catches a belt that reports stopped with its contactor still closed — a
+stalled belt, or, in this sample, a failed switch, which is why one trips a
+healthy line (scenario 6). A welded contactor, whose auxiliary contact stays
+closed, cascades nothing (scenario 7). Each interlock also trips on its own
+belt's overload relay (`CVn.Tripped`) and on its permissive, and it is latched:
+`SEQ_START` resets it only once the belt downstream is proved. That latch
+gates `SEQ_START`'s own reset step, not the run command itself — see the first
+item under "What this demo line leaves out on purpose" below for what
 that means for a write that does not go through `SEQ_START`.
 
 **Safety is hardwired.** The pull-keys and the e-stop of each belt are wired
@@ -111,8 +118,9 @@ it has stopped and it has run out:
 06:03:09.600  SEQ_STOP  SEQUENCE_COMPLETE  Finished after 6 steps.
 ```
 
-The cascade interlocks trip during the stop too — `INT_FEED` when CV001 stops,
-`INT_CV001` when CV002 stops, `INT_CV002` when CV003 stops. That is harmless
+The cascade interlocks trip during the stop too — `INT_FEED` when CV001's
+contactor opens, `INT_CV001` when CV002's does, `INT_CV002` when CV003's does,
+each one scan later. That is harmless
 (each writes a `Start` that is already false) and expected: an interlock does not
 know a stop was planned. Between `SEQUENCE_COMPLETE` and `SEQ_STOP` nothing
 trips, and no alarm raises in the whole run.
@@ -124,19 +132,25 @@ dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/normal-
 ## 2. Pull-key
 
 An operator pulls CV002's first pull-wire at 80 s. The relay drops the contactor
-at once; the PLC follows; once CV002's switch reports it stopped, CV001 is
-stopped by its interlock, and then the feeder. CV003 carries on and runs empty.
+at once. On the next scan CV001's interlock sees CV002's auxiliary contact open
+and stops CV001; a scan after that the feeder's interlock sees CV001's open and
+stops the feeder, 0.21 s after the pull, while both belts are still coasting.
+The PLC also drops CV002's own run command, through its permissive. CV003
+carries on and runs empty.
 
 ```text expected/pull-key.log
 06:01:20.000  CV002.PullKey1  PULLKEY_PULLED  Actuated by the operator.
 06:01:20.000  CV002.Safety  SAFETY_TRIP  Channel1 open; relay de-energised.
 06:01:20.000  CV002.Starter  CONTACTOR_OPENED  Motor de-energised.
 06:01:20.100  PERM_CV002  PERMISSIVE_LOST  CV002.SafetyOk dropped.
+06:01:20.100  INT_CV001  INTERLOCK_TRIP  CV002.Contactor abnormal.
+06:01:20.110  CV001.Start  WRITE  Set to false by INT_CV001.
+06:01:20.110  CV001.Starter  CONTACTOR_OPENED  Motor de-energised.
 06:01:20.200  INT_CV002  INTERLOCK_TRIP  PERM_CV002.Ok abnormal.
+06:01:20.200  INT_FEED  INTERLOCK_TRIP  CV001.Contactor abnormal.
+06:01:20.210  Feed.Enabled  WRITE  Set to false by INT_FEED.
 06:01:27.820  CV002.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.
-06:01:27.900  INT_CV001  INTERLOCK_TRIP  CV002.Stopped abnormal.
-06:01:27.910  CV001.Start  WRITE  Set to false by INT_CV001.
-06:01:35.800  INT_FEED  INTERLOCK_TRIP  CV001.Stopped abnormal.
+06:01:27.920  CV001.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.
 ```
 
 ```bash
@@ -145,18 +159,19 @@ dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/pull-ke
 
 ## 3. Emergency stop
 
-CV001's e-stop is pressed at 80 s. The relay stops CV001; once its switch
-reports it stopped, the feeder's interlock stops the feeder. CV002 and CV003 are
-downstream and keep running.
+CV001's e-stop is pressed at 80 s. The relay stops CV001; on the next scan the
+feeder's interlock sees CV001's auxiliary contact open and stops the feeder,
+0.11 s after the press, long before CV001 has coasted to rest. CV002 and CV003
+are downstream and keep running.
 
 ```text expected/e-stop.log
 06:01:20.000  CV001.EStop  ESTOP_PRESSED  Actuated by the operator.
 06:01:20.000  CV001.Safety  SAFETY_TRIP  Channel3 open; relay de-energised.
 06:01:20.000  CV001.Starter  CONTACTOR_OPENED  Motor de-energised.
+06:01:20.100  INT_FEED  INTERLOCK_TRIP  CV001.Contactor abnormal.
+06:01:20.110  Feed.Enabled  WRITE  Set to false by INT_FEED.
 06:01:20.200  INT_CV001  INTERLOCK_TRIP  PERM_CV001.Ok abnormal.
 06:01:27.810  CV001.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.
-06:01:27.900  INT_FEED  INTERLOCK_TRIP  CV001.Stopped abnormal.
-06:01:27.910  Feed.Enabled  WRITE  Set to false by INT_FEED.
 ```
 
 ```bash
@@ -167,17 +182,21 @@ dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/e-stop.
 
 A step of 1.0 in CV003's motor thermal state at 80 s — a blocked fan, a hot
 restart — takes it past the overload relay's trip level at once. The whole line
-stops behind it, one belt at a time, each on the zero-speed switch of the belt
-below it. The current does not rise: an overload trip opens the contactor, and
-the current falls to zero.
+stops behind it, one belt a scan, each on the auxiliary contact of the belt
+below it: CV002 0.11 s after the trip, CV001 0.21 s, the feeder 0.31 s. The
+three belts then coast to rest within 0.2 s of one another. The current does
+not rise: an overload trip opens the contactor, and the current falls to zero.
 
 ```text expected/overload.log
 06:01:20.000  CV003.Motor  FAULT  thermal-bias injected: amount=1.
 06:01:20.000  CV003.Starter  OVERLOAD_TRIP  Thermal state 1.2884784008371077 reached the trip level 1.1.
 06:01:20.100  INT_CV003  INTERLOCK_TRIP  CV003.Tripped abnormal.
-06:01:27.900  INT_CV002  INTERLOCK_TRIP  CV003.Stopped abnormal.
-06:01:35.800  INT_CV001  INTERLOCK_TRIP  CV002.Stopped abnormal.
-06:01:43.700  INT_FEED  INTERLOCK_TRIP  CV001.Stopped abnormal.
+06:01:20.100  INT_CV002  INTERLOCK_TRIP  CV003.Contactor abnormal.
+06:01:20.110  CV002.Starter  CONTACTOR_OPENED  Motor de-energised.
+06:01:20.200  INT_CV001  INTERLOCK_TRIP  CV002.Contactor abnormal.
+06:01:20.210  CV001.Starter  CONTACTOR_OPENED  Motor de-energised.
+06:01:20.300  INT_FEED  INTERLOCK_TRIP  CV001.Contactor abnormal.
+06:01:20.310  Feed.Enabled  WRITE  Set to false by INT_FEED.
 ```
 
 ```bash
@@ -194,7 +213,9 @@ feeding it". Nothing interlocks CV001 before its own overload does. A real
 transfer chute carries a blocked-chute probe interlocked to the belt feeding it,
 which trips that belt within seconds; this sample deliberately has none, so the
 overload chain can play out, and it does not interlock on `CH1.Full` instead —
-that tag is the model's truth, not an instrument a PLC could wire.
+that tag is the model's truth, not an instrument a PLC could wire. Once the
+overload relay does trip, the feeder stops on the next scan, on CV001's
+auxiliary contact.
 
 ```text expected/chute-blockage.log
 06:01:20.000  CH1  FAULT  blockage injected.
@@ -203,7 +224,8 @@ that tag is the model's truth, not an instrument a PLC could wire.
 06:02:09.300  ALM_CV001  ALARM_RAISED  HiHi: 8.806547735328072 above 8.6.
 06:03:09.700  CV001.Starter  OVERLOAD_TRIP  Thermal state 1.1000144443933113 reached the trip level 1.1.
 06:03:09.800  INT_CV001  INTERLOCK_TRIP  CV001.Tripped abnormal.
-06:03:17.500  INT_FEED  INTERLOCK_TRIP  CV001.Stopped abnormal.
+06:03:09.800  INT_FEED  INTERLOCK_TRIP  CV001.Contactor abnormal.
+06:03:09.810  Feed.Enabled  WRITE  Set to false by INT_FEED.
 ```
 
 ```bash
@@ -213,16 +235,20 @@ dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/chute-b
 ## 6. Failed zero-speed switch
 
 CV002's zero-speed switch fails low at 80 s: it reads stopped while the belt
-runs at full speed. The PLC believes the switch — it has nothing else to
-believe — and stops CV001 and the feeder. CV002 and CV003 never stop. This is a
-nuisance trip, and it is the price of an interlock that reads the instrument.
+runs at full speed. `INT_CV001` ORs the switch with CV002's auxiliary contact,
+which still reads closed; either one abnormal trips it, so the PLC believes the
+switch and stops CV001, and the feeder follows a scan later on CV001's auxiliary
+contact. CV002 and CV003 never stop. This is a nuisance trip, and it is the
+price of an interlock that reads the instrument.
 
 ```text expected/failed-zero-speed.log
 06:01:20.000  CV002.ZeroSpeed  FAULT  fail-low injected.
 06:01:20.990  CV002.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.
 06:01:21.000  INT_CV001  INTERLOCK_TRIP  CV002.Stopped abnormal.
 06:01:21.010  CV001.Start  WRITE  Set to false by INT_CV001.
-06:01:28.900  INT_FEED  INTERLOCK_TRIP  CV001.Stopped abnormal.
+06:01:21.010  CV001.Starter  CONTACTOR_OPENED  Motor de-energised.
+06:01:21.100  INT_FEED  INTERLOCK_TRIP  CV001.Contactor abnormal.
+06:01:21.110  Feed.Enabled  WRITE  Set to false by INT_FEED.
 ```
 
 ```bash
@@ -245,10 +271,12 @@ through a single contactor: it switches two in series, each able to break the
 motor current alone, and monitors them — a normally-closed auxiliary contact of
 each is fed back to the safety relay, which will not reset while either reports
 closed. A weld is then detected at the next stop and cannot defeat the e-stop.
-This sample's starter has one contactor and no feedback to the safety relay —
-the plant does expose `CVn.Contactor`, but nothing reads it back into a
-permissive or an interlock; a redundant, monitored safety-contactor starter is
-a later component.
+This sample's starter has one contactor and no feedback to the safety relay.
+The PLC does read CV003's auxiliary contact, but only as run feedback for the
+cascade: a welded contactor reads closed, so `INT_CV002` never trips on it, and
+nothing compares that feedback with the run command (see "What this demo line
+leaves out on purpose" below). A redundant, monitored safety-contactor starter
+is a later component.
 
 ```text expected/welded-contactor.log
 06:01:20.000  CV003.Starter  FAULT  contactor-welded injected.
@@ -261,7 +289,8 @@ a later component.
 ```
 
 Nothing after that: CV003's contactor never opens, and its zero-speed switch
-never reports it stopped.
+never reports it stopped — so `INT_CV002`, which reads both, never trips on
+CV003.
 
 ```bash
 dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/welded-contactor.json --expect samples/mine-conveyors/expected/welded-contactor.log
@@ -293,12 +322,12 @@ dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/feed-st
   In this plant only `SEQ_START` writes those tags, and it resets each
   interlock just before it writes them; treat any new writer — an HMI start
   button, a second sequence — as unprotected until the interlock gates it too.
-- The cascade interlocks wait for the downstream belt's zero-speed switch, so
-  upstream belts and the feed run on for several seconds while a tripped belt
-  coasts down (the pull-key scenario above: the feed stops about 16 s after the
-  pull). A real trunk line more often cascades on the downstream contactor's
-  own auxiliary contact or a run-feedback signal, or on underspeed, to limit
-  spill at the transfer instead of waiting for the belt to coast to zero.
+- The cascade reads the downstream contactor's auxiliary contact and the
+  downstream zero-speed switch, not underspeed: a downstream belt that slows —
+  slipping, say — with its contactor still closed does not stop the belts
+  feeding it until its switch reports it stopped (see the underspeed item
+  below). The auxiliary contact here always agrees with the main contacts:
+  unlike the zero-speed switch in scenario 6, it has no fault of its own.
 - CV001 has no plugged-chute switch and no HiHi-current interlock of its own,
   so in the chute-blockage scenario above it runs about a minute at HiHi
   current until its thermal relay trips; see that section for why a real
@@ -331,9 +360,9 @@ dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/feed-st
 
 ## Power-up
 
-The first second of every run is the same. The belt interlocks trip at 0.000 s,
-because each reads its permissive, whose `Ok` starts false until `SEQ_START`
-resets the safety relays. `INT_FEED` trips at 1.000 s, when CV001's zero-speed
-switch first reports the belt stopped, and writes `Feed.Enabled` false — which
-it already is: the feeder is declared disabled, so no ore moves until
-`SEQ_START` enables it at 9.41 s.
+The first second of every run is the same. Every interlock trips at 0.000 s:
+each belt's because it reads its permissive, whose `Ok` starts false until
+`SEQ_START` resets the safety relays, and `INT_FEED` because CV001's contactor
+starts open. `INT_FEED` writes `Feed.Enabled` false — which it already is: the
+feeder is declared disabled, so no ore moves until `SEQ_START` enables it at
+9.41 s.
