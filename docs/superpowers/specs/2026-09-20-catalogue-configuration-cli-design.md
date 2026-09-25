@@ -352,14 +352,16 @@ environment substitution; YAML.
 
 `dse run <scenario>` arrives with plan 5b.
 
-Options: `--assembly <path>` (repeatable, all commands); `--out <file>` (payload
-to a file); `--format text|json` (`validate`, `tags`); `--time-step <ms>`
+Options: `--assembly <path>` (repeatable, all commands); `--out <file>`
+(payload to a file — accepted by `catalog export`, `schema export` and `run`
+only; `validate` and `tags` write to standard output, amended by plan 5d);
+`--format text|json` (`validate`, `tags`); `--time-step <ms>`
 (`validate`, `tags`). `dse`, `dse help` and `dse <command> --help` print help
 generated from one command table.
 
 On success `validate` prints components, flattened leaves, signal links, flow
-links, tags, and the time step used. On failure it prints every diagnostic in
-the 3.3 format. With `--format json` the output is
+links, tags, controllers (plan 5d), and the time step used. On failure it
+prints every diagnostic in the 3.3 format. With `--format json` the output is
 `{ "ok": bool, "summary": {…} | null, "diagnostics": [ { code, severity, path, message, fix } ] }`.
 
 `tags` reuses `TagDirectory.ToText()` for text and emits an array of tag

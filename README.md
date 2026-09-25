@@ -42,8 +42,9 @@ On top of that sits the control layer: a scan-block contract in
 `Dse.Io.Abstractions`, a host in `Dse.Core` that scans each block at its own
 period through the event queue and publishes its outputs as ordinary tags, and
 `Dse.Control` — a timer, a permissive, an interlock, an alarm and a sequencer,
-which reference the I/O contract alone. Blocks are attached in code for now;
-describing them in the plant file, and the reference samples, are planned.
+which reference the I/O contract alone. Blocks are declared in a plant file's
+`controllers` section — `Dse.Control.Catalogue` registers them — or attached in
+code; the reference samples are planned.
 
 See `docs/superpowers/specs/` for the design, `docs/superpowers/plans/` for the
 implementation plans, `docs/architecture.md` for how the engine works, and
@@ -52,7 +53,7 @@ implementation plans, `docs/architecture.md` for how the engine works, and
 ## Command line
 
 ```bash
-dotnet run --project src/Dse.Cli -- catalog export            # every component, transform, hold and material, as JSON
+dotnet run --project src/Dse.Cli -- catalog export            # every component, block, transform, hold and material, as JSON
 dotnet run --project src/Dse.Cli -- schema export --out dse-plant.schema.json
 dotnet run --project src/Dse.Cli -- validate plant.json       # every error, each with its fix; exit 1 if any
 dotnet run --project src/Dse.Cli -- tags plant.json           # the tag directory a SCADA would see
@@ -92,6 +93,18 @@ A scenario over that plant looks like this:
     { "at": 30, "fault": "CV001.Motor", "id": "thermal-bias", "args": { "amount": 0.8 } }
   ]
 }
+```
+
+A plant adds control blocks under `controllers`; a scenario may write their
+commands (`SEQ01.Start`, `INT01.Reset`) like any other tag:
+
+```json
+"controllers": [
+  { "id": "INT01", "type": "interlock", "scanPeriodMs": 100,
+    "parameters": {
+      "conditions": [ { "tag": "CV001.Tripped", "normal": false } ],
+      "trip": [ { "tag": "CV001.Start", "value": false } ] } }
+]
 ```
 
 See [scenarios](docs/scenarios.md), [control blocks](docs/control-blocks.md),

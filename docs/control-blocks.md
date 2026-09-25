@@ -63,10 +63,9 @@ builder.AddScanBlock(new Interlock(
     TimeSpan.FromMilliseconds(100)));
 ```
 
-Blocks are attached **in code**. Describing them in the plant JSON — a
-`controllers` section, catalogue descriptors, a loader stage and schema — is a
-later plan: the block API gets a shakedown before it is frozen into a file
-format. `dse run` therefore cannot attach blocks yet.
+That is the code form. A plant file declares the same block under
+`controllers` — see *In the plant file* below — and `dse validate`, `dse tags`
+and `dse run` handle it with no C#.
 
 `Build()` checks every block:
 
@@ -79,6 +78,51 @@ format. `dse run` therefore cannot attach blocks yet.
 `Inputs` and `Writes` are resolved against the plant's tags **and every block's
 owned tags**, whichever order the blocks were added, so an interlock may list
 `PERM01.Ok` before `PERM01` is added.
+
+### In the plant file
+
+A plant file lists its blocks under `controllers`, a sibling of `components`.
+Each entry has the component envelope — `id`, `type`, `parameters` — plus
+`scanPeriodMs`, which is required: a PLC task period has no sensible default.
+
+```json
+"controllers": [
+  { "id": "INT01", "type": "interlock", "scanPeriodMs": 100,
+    "parameters": {
+      "conditions": [
+        { "tag": "CV001.Tripped", "normal": false },
+        { "tag": "PERM01.Ok",     "normal": true } ],
+      "trip": [ { "tag": "CV001.Start", "value": false } ] } }
+]
+```
+
+Durations are seconds and end in `S` — `presetS`, `timeoutS`, `delayS`,
+`onDelayS` — and are at most a year. Only the scan period is in milliseconds,
+like `timeStepMs` and a PLC task: a whole number of time steps, at most a day. A
+controller id follows the component id rule — no dot, no whitespace — and is
+unique across components and controllers.
+
+A tag parameter is a tag's full name, a plant tag or one a block owns, in any
+file order: an interlock may list `PERM01.Ok` before `PERM01` is declared. A
+value is `true`, `false` or a number, converted to the kind of the tag it is for:
+an integer-valued number fits an Int64 or a Double tag, a fraction only a Double,
+and only `true` and `false` fit a Bool. The loader resolves every tag and every
+value before it builds any block, and reports every mistake at its path:
+
+| code | check |
+|---|---|
+| DSE113 | The tag exists; the fix names the nearest one. |
+| DSE114 | The tag is of a kind the block can use, and the value fits the tag. |
+| DSE115 | A tag the block commands is read-write — not a measured value, another block's output, or an input a signal link drives. |
+
+Block types come from the catalogue: `ControlModule`, in
+`Dse.Control.Catalogue`, registers the five below, and `dse catalog export`
+lists them under `"blocks"`. A module loaded with `--assembly` may register
+more.
+
+**File order is scan order.** Blocks due on the same tick scan in the order the
+`controllers` array lists them, and when two write one tag on one tick the later
+one wins.
 
 ## The timing rule
 
@@ -137,8 +181,15 @@ that lands the tick after that:
 ```
 06:00:40.000  CV001.Starter  OVERLOAD_TRIP  Thermal state 1.1796472378913028 reached the trip level 1.1.
 06:00:40.100  INT01  INTERLOCK_TRIP  CV001.Tripped abnormal.
-06:00:40.110  CV001.Start  WRITE  Set to false.
+06:00:40.110  CV001.Start  WRITE  Set to false by INT01.
 ```
+
+A write a block issues is logged with its origin — `Set to false by INT01.` —
+and every other write keeps the plain `Set to false.`, so the log tells a
+block's command from an operator's. The example is also a plant file,
+`tests/Dse.Configuration.Tests/Plants/valid/conveyor-control.json`; with the
+scenario `tests/Dse.Cli.Tests/Scenarios/conveyor-control.json`, `dse run`
+reproduces this golden byte for byte.
 
 The example deliberately has no interlock between the feed and the belt: once
 `INT01` trips the belt, `Feed.Enabled` stays true for a further 24 s onto a
@@ -158,6 +209,13 @@ new Timer("TMR01", TimerMode.OnDelay, "CV001.Running", TimeSpan.FromSeconds(5), 
 | `Q` | Bool | output |
 | `ET` | Double, `s` | elapsed time |
 
+In a plant file (`mode` is `on-delay`, `off-delay` or `pulse`):
+
+```json
+{ "id": "TMR01", "type": "timer", "scanPeriodMs": 100,
+  "parameters": { "mode": "on-delay", "input": "CV001.Running", "presetS": 5 } }
+```
+
 `OnDelay` (IEC TON) raises `Q` once the input has held true for `Preset`;
 `OffDelay` (TOF) holds `Q` true for `Preset` after the input falls; `Pulse` (TP)
 gives one `Preset`-long pulse on a rising edge and is not retriggerable while it
@@ -176,6 +234,15 @@ new Permissive("PERM01",
     TimeSpan.FromMilliseconds(100))
 ```
 
+In a plant file:
+
+```json
+{ "id": "PERM01", "type": "permissive", "scanPeriodMs": 100,
+  "parameters": { "conditions": [
+    { "tag": "CV001.SafetyOk", "normal": true },
+    { "tag": "Pile.Full",      "normal": false } ] } }
+```
+
 The conditions something needs before it may **start**. `Ok` is every condition
 at its normal polarity, re-evaluated every scan and **never latched**.
 `FirstOut` is the index of the first condition to leave normal while `Ok` was
@@ -191,6 +258,15 @@ new Interlock("INT01",
     [new Condition("CV001.Tripped", false), new Condition("PERM01.Ok", true)],
     [new BlockWrite("CV001.Start", TagValue.Bool(false))],
     TimeSpan.FromMilliseconds(100))
+```
+
+In a plant file (`trip` may be left out):
+
+```json
+{ "id": "INT01", "type": "interlock", "scanPeriodMs": 100,
+  "parameters": {
+    "conditions": [ { "tag": "CV001.Tripped", "normal": false }, { "tag": "PERM01.Ok", "normal": true } ],
+    "trip": [ { "tag": "CV001.Start", "value": false } ] } }
 ```
 
 The conditions that **stop** a running thing. Any abnormal condition latches
@@ -211,6 +287,18 @@ new Alarm("CUR01", "CV001.Current",
         new AlarmLimit(AlarmLimitKind.HiHi, 8.0, 0.5, TimeSpan.FromSeconds(0.1)),
     ],
     TimeSpan.FromMilliseconds(100))
+```
+
+In a plant file (`kind` is `lo-lo`, `lo`, `hi` or `hi-hi`; `deadband` and
+`onDelayS` default to 0):
+
+```json
+{ "id": "CUR01", "type": "alarm", "scanPeriodMs": 100,
+  "parameters": {
+    "input": "CV001.Current",
+    "limits": [
+      { "kind": "hi",    "value": 3.0, "deadband": 0.2, "onDelayS": 0.5 },
+      { "kind": "hi-hi", "value": 8.0, "deadband": 0.5, "onDelayS": 0.1 } ] } }
 ```
 
 One Double tag and up to four limits, which must ascend
@@ -249,6 +337,23 @@ new Sequencer("SEQ01",
     ],
     TimeSpan.FromMilliseconds(200),
     [new BlockWrite("CV001.Start", TagValue.Bool(false))])
+```
+
+In a plant file (`op` is `==`, `!=`, `<`, `<=`, `>` or `>=`; `writes`, `abort`
+and `timeoutS` may be left out):
+
+```json
+{ "id": "SEQ01", "type": "sequencer", "scanPeriodMs": 200,
+  "parameters": {
+    "steps": [
+      { "name": "Start the belt",
+        "writes": [ { "tag": "CV001.Start", "value": true } ],
+        "transition": { "type": "when", "tag": "CV001.Speed", "op": ">=", "value": 1.0 },
+        "timeoutS": 15 },
+      { "name": "Run the feed",
+        "writes": [ { "tag": "Feed.Enabled", "value": true } ],
+        "transition": { "type": "after", "delayS": 60 } } ],
+    "abort": [ { "tag": "CV001.Start", "value": false } ] } }
 ```
 
 A linear sequence — there is no branching, and no parallel step. Each step names
@@ -302,5 +407,4 @@ published values, writes and events out, no `Simulation`.
 ## What is not here
 
 Branching sequential function charts; PID; alarm shelving, priorities and a
-dedicated `LiveState.Alarms`; blocks described in the plant file. All are later
-plans.
+dedicated `LiveState.Alarms`. All are later plans.

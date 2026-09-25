@@ -174,3 +174,41 @@ truthfully, `dse schema export` validates plants that use it, and
 `dse validate` loads them.
 
 Then test the physics — that part is yours.
+
+## 11. Registering a block
+
+A control block is registered the same way, with a `BlockDescriptor` instead of
+a `ComponentDescriptor`. `tests/Dse.Cli.Tests.SampleModule/Latch.cs` is the
+worked example:
+
+```csharp
+public static BlockDescriptor Descriptor { get; } = new(
+    "latch",
+    "A set/reset latch, reset dominant: Q follows set until reset clears it.",
+    (id, p) => [(new TagSpec($"{id}.Q", TagKind.Bool, string.Empty, "Latched"), TagAccess.ReadOnly)],
+    (id, period, p) => new Latch(id, p.Tag("set"), p.Tag("reset"), period))
+{
+    Parameters =
+    [
+        Param.Tag("set", "Sets the latch while true.", TagKind.Bool),
+        Param.Tag("reset", "Clears the latch while true; wins over set.", TagKind.Bool),
+    ],
+};
+```
+
+- **`OwnedTags`** returns every tag the block will own, by full name — outputs
+  `ReadOnly`, commands `ReadWrite` — as a function of the id and the parameters
+  alone. The loader calls it before any block exists, to resolve every tag a
+  controller names, so it must not read a value or an object parameter.
+- **The factory** takes the id, the scan period and the resolved parameters.
+- **`Param.Tag(name, description, kind, writes)`** is a tag name the loader
+  resolves: give `kind` when the block needs one, and `writes: true` when the
+  block commands the tag. **`Param.Value(name, description, tagParameter)`** is
+  a value the loader converts to the kind of its sibling tag parameter. A
+  component may not declare either.
+- Register it with `builder.AddBlock(Latch.Descriptor)`. Block and component
+  types share one namespace.
+- Prove it with `new ConformanceFixtures().BlockParameters("latch", """{ … }""")`
+  — call it again to check the type with several fixtures. Conformance compares
+  `OwnedTags` with the instance's `Outputs` and `Commands` by name, kind and
+  access.

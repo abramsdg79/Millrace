@@ -299,6 +299,16 @@ Determinism is unaffected: the loader adds components in file order, the
 catalogue and every export are sorted, and the round-trip test holds a JSON plant
 and its hand-built twin to byte-identical event logs.
 
+A plant's **controllers** are read in the structure stage like components and
+resolved in the build stage, after the plant alone has passed `Validate()`. The tag table is
+`SimulationBuilder.PlantTags()` — the directory `Build()` would publish, R23
+downgrades included — plus every controller's declared owned tags, so every tag
+and value is checked (`DSE113`–`DSE115`) before any block is built; the blocks
+are then added in file order and pass `Validate()`'s `DSE013`–`DSE015` like a
+block attached in code. Block descriptors live beside component and object
+descriptors in the catalogue; `ControlModule`, in `Dse.Control.Catalogue`,
+registers the five shipped ones.
+
 ## Scenarios and replay
 
 A scenario is a JSON file: a plant to run, the three engine overrides, a
@@ -328,11 +338,13 @@ Replay works because a scheduled write lands on the tick it names.
 live command arriving from outside; a replayed write must land where the
 original landed, so `Simulation.WriteAt` applies through `TagImage.ApplyNow`
 during the event drain, logging the identical `WRITE` record. `IActionRecorder`
-watches all three landing sites — the queued-write drain, `ApplyNow` and
-`FaultEvent.Apply` — so a recording captures actions by where they took effect,
-not by where they came from. `Dse.Realtime`'s `ICommandRecorder` is a different
-thing and stays: it also sees commands the bus *rejected*, which is an audit
-trail, not a replay.
+watches all three landing sites — the queued-write drain,
+`ApplyNow` and `FaultEvent.Apply` — for external actions, so a recording
+captures actions by where they took effect, not by where they came from. A
+control block's write carries its origin: it is logged `by <block id>` and is
+not recorded, because a replay re-runs the block. `Dse.Realtime`'s
+`ICommandRecorder` is a different thing and stays: it also sees commands the bus
+*rejected*, which is an audit trail, not a replay.
 
 See [scenarios](scenarios.md) for the file format and the golden workflow.
 
@@ -349,8 +361,10 @@ tests need none of them.
 the period, `DSE014` for the pins, `DSE015` for the names — and turns its
 declared outputs and commands into ordinary tags over ordinary ports: an output
 is an `OutputPort<T>` behind a read-only binding, a command an `InputPort<T>`
-behind a writable one. Nothing in `TagImage`, `Dse.Realtime` or the scenario
-recorder had to learn what a block is. `Simulation` then schedules one
+behind a writable one. Nothing in `Dse.Realtime` or the scenario recorder had to
+learn what a block is; `TagImage` learned only a write's origin, so the log
+attributes a block's write and the recorder skips it. `Simulation` then
+schedules one
 self-rescheduling `ScanEvent` per block, first due at tick 0, drained in phase 1
 in schedule order.
 
@@ -363,8 +377,10 @@ read the same previous publish. A plant with no blocks schedules nothing and
 adds nothing to the directory, which is why the four scenario goldens of plan 5b
 are byte-identical across this change.
 
-Blocks are attached in code. Describing them in the plant file is a later plan;
-the API gets a shakedown before it is frozen into a format.
+Blocks are declared in a plant file's `controllers` section or attached in
+code. `Dse.Control.Catalogue` — which sees `Dse.Core` and `Dse.Control` —
+registers them in the catalogue through `ControlModule`, so `Dse.Control` itself
+still sees the I/O contract alone.
 
 See [control blocks](control-blocks.md) for each block's pins, parameters and
 events.

@@ -12,8 +12,9 @@ namespace Dse.Control.Tests;
 /// <summary>
 /// Spec 5c §5's worked example: the conveyor plant under a permissive, an
 /// interlock, a current alarm and a start-up sequence, for two simulated
-/// minutes. The blocks are attached in code because 5c gives the plant file no
-/// way to describe them.
+/// minutes. The example is built twice — with the blocks attached in code, as
+/// in 5c, and from <c>conveyor-control.json</c>, which must match it byte for
+/// byte.
 /// </summary>
 public class WorkedExampleTests
 {

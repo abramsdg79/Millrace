@@ -114,10 +114,10 @@ JSON path and a fix, and a wrong scenario never produces a partial log. See
 
 ## Recording a live run
 
-`ScenarioRecorder` implements `IActionRecorder`, the seam every action that
-takes effect passes through — a command bus write, a scenario write, a direct
-`InjectFaultAt`. Attach it, drive the plant however you like, and ask for the
-file:
+`ScenarioRecorder` implements `IActionRecorder`, the seam every external action
+that takes effect passes through — a command bus write, a scenario write, a
+direct `InjectFaultAt`. Attach it, drive the plant however you like, and ask for
+the file:
 
 ```csharp
 var recorder = new ScenarioRecorder();
@@ -130,3 +130,8 @@ File.WriteAllText("recorded.json", ScenarioJson.Write(recorded));
 The overrides written out are the run's *actual* seed, start time and step, and
 each action's `at` is the tick it landed on times the step, so replaying the
 file reproduces the run's event log byte for byte.
+
+A recording holds external actions only. A write a control block issues is not
+one: it is logged `Set to … by <block id>.` and never reaches the recorder,
+because replaying the external actions re-runs the block, which issues it again.
+A recorded run of a plant with `controllers` therefore replays byte for byte.

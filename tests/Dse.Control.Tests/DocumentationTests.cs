@@ -26,6 +26,24 @@ public class DocumentationTests
         Assert.DoesNotContain('\r', page);
     }
 
+    [Fact]
+    public void TheControlBlocksPageDescribesThePlantFile()
+    {
+        string page = Page();
+
+        foreach (string token in new[]
+                 {
+                     "\"controllers\"", "scanPeriodMs", "presetS", "timeoutS", "delayS", "onDelayS",
+                     "DSE113", "DSE114", "DSE115", "Set to false by INT01.", "File order is scan order",
+                     "ControlModule", "Dse.Control.Catalogue",
+                 })
+        {
+            Assert.Contains(token, page, StringComparison.Ordinal);
+        }
+
+        Assert.DoesNotContain("cannot attach blocks", page, StringComparison.Ordinal);
+    }
+
     /// <summary>Two levels up from this file is the repository root.</summary>
     private static string Page([CallerFilePath] string callerFile = "") =>
         File.ReadAllText(Path.Combine(Path.GetDirectoryName(callerFile)!, "..", "..", "docs", "control-blocks.md"));
