@@ -28,9 +28,9 @@ public class ConfigDiagnosticTests
     {
         string[] codes = ConfigDiagnostics.All.Select(d => d.Code).ToArray();
 
-        Assert.Equal(13, codes.Length);
+        Assert.Equal(16, codes.Length);
         Assert.Equal("DSE100", codes[0]);
-        Assert.Equal("DSE112", codes[^1]);
+        Assert.Equal("DSE115", codes[^1]);
         Assert.Equal(codes.Order(StringComparer.Ordinal), codes);
         Assert.Equal(codes.Length, codes.Distinct().Count());
         Assert.All(ConfigDiagnostics.All, d =>

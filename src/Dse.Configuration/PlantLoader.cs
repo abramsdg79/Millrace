@@ -44,7 +44,7 @@ public static class PlantLoader
             state.Diagnostics,
             valid ? state.Builder : null,
             valid ? state.SimulationOptions : null,
-            valid ? new PlantSummary(state.Components.Count, state.Signals.Count, state.Flows.Count, state.Tags.Count) : null,
+            valid ? new PlantSummary(state.Components.Count, state.Signals.Count, state.Flows.Count, state.Tags.Count, state.Controllers.Count) : null,
             valid
                 ? state.Components.ToDictionary(c => c.Id, c => c.Node!, StringComparer.Ordinal)
                 : new Dictionary<string, ISimNode>(StringComparer.Ordinal));

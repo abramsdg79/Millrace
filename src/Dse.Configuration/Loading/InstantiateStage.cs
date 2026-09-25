@@ -64,7 +64,7 @@ internal static class InstantiateStage
 
     // ArgumentException appends " (Parameter 'x')" naming a C# parameter, which means nothing to a plant
     // author; a third-party exception's message is not guaranteed to be a sentence at all.
-    private static string AsSentence(string message)
+    internal static string AsSentence(string message)
     {
         int cut = message.IndexOf(" (Parameter '", StringComparison.Ordinal);
         string text = (cut < 0 ? message : message[..cut]).Trim();

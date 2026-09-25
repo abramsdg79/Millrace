@@ -5,7 +5,7 @@ using Dse.Core.Validation;
 
 namespace Dse.Configuration.Loading;
 
-/// <summary>Stage 6: hand the plant to Core and pass its verdict through.</summary>
+/// <summary>Stage 6: hand the plant to Core; if it is valid, resolve and add the controllers (R80) and hand it over again.</summary>
 internal static class BuildStage
 {
     public static void Run(LoadState state)
@@ -30,7 +30,18 @@ internal static class BuildStage
             builder.Bind(name, binding);
         }
 
-        foreach (ValidationError error in builder.Validate().Errors)
+        IReadOnlyList<ValidationError> errors = builder.Validate().Errors;
+        if (errors.Count == 0 && state.Controllers.Count > 0)
+        {
+            if (!ControllerPass.Run(state, builder))
+            {
+                return;
+            }
+
+            errors = builder.Validate().Errors;
+        }
+
+        foreach (ValidationError error in errors)
         {
             (string message, string fix) = Split(error.Message);
             state.Error(error.Code, PathOf(state, error), message, fix);
@@ -59,6 +70,13 @@ internal static class BuildStage
             if (entry is not null)
             {
                 return entry.Path;
+            }
+
+            ControllerEntry? controller = state.Controllers.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal));
+            if (controller is not null)
+            {
+                // R92: a scan period off the step is the one block check with a key of its own.
+                return string.Equals(error.Code, "DSE013", StringComparison.Ordinal) ? $"{controller.Path}.scanPeriodMs" : controller.Path;
             }
         }
 

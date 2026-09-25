@@ -1,4 +1,5 @@
 using Dse.Components;
+using Dse.Control;
 using Dse.Core.Catalogue;
 using Dse.Core.Graph;
 
@@ -38,6 +39,31 @@ internal sealed class TestModule : ICatalogueModule
             Ports = [PortSpec.In<bool>("In"), PortSpec.Out<bool>("Out")],
             Provides = [typeof(ISimComponent)],
         });
+        builder.AddBlock(new BlockDescriptor(
+            "broken-block",
+            "Its factory is wrong.",
+            (id, p) => [],
+            (id, period, p) => throw new InvalidOperationException("bad wiring")));
+        builder.AddBlock(new BlockDescriptor(
+            "tagless",
+            "Its owned-tag function is wrong.",
+            (id, p) => throw new InvalidOperationException("no tags today"),
+            (id, period, p) => throw new InvalidOperationException("never reached")));
+        builder.AddBlock(new BlockDescriptor(
+            "null-tags",
+            "Its owned-tag function returns nothing at all.",
+            (id, p) => null!,
+            (id, period, p) => throw new InvalidOperationException("never reached")));
+        builder.AddBlock(new BlockDescriptor(
+            "null-block",
+            "Its factory returns nothing at all.",
+            (id, p) => [],
+            (id, period, p) => null!));
+        builder.AddBlock(new BlockDescriptor(
+            "wrong-id",
+            "Its factory ignores the id it is given.",
+            (id, p) => [],
+            (id, period, p) => new Permissive("OTHER", [new Condition("PILE.Full", false)], period)));
     }
 }
 

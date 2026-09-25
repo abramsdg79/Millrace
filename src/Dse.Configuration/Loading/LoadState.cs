@@ -28,6 +28,28 @@ internal sealed class ComponentEntry(int index, string id, ComponentDescriptor d
     public List<string> ReferencedIds { get; } = [];
 }
 
+internal sealed class ControllerEntry(
+    int index, string id, BlockDescriptor descriptor, TimeSpan scanPeriod, JsonElement parameters, ParameterValues checkedValues)
+{
+    public int Index { get; } = index;
+
+    public string Id { get; } = id;
+
+    public BlockDescriptor Descriptor { get; } = descriptor;
+
+    public TimeSpan ScanPeriod { get; } = scanPeriod;
+
+    /// <summary>The <c>parameters</c> object, or <c>default</c> when the entry has none.</summary>
+    public JsonElement Parameters { get; } = parameters;
+
+    /// <summary>The parameters as the structure stage bound them, for <see cref="BlockDescriptor.OwnedTags"/> (R82).</summary>
+    public ParameterValues CheckedValues { get; } = checkedValues;
+
+    public string Path => $"$.controllers[{Index}]";
+
+    public string ParametersPath => $"{Path}.parameters";
+}
+
 internal sealed record LinkEntry(string From, string To, string Path);
 
 internal sealed record TagRequest(
@@ -54,6 +76,9 @@ internal sealed class LoadState(ComponentCatalogue catalogue, LoadOptions option
 
     /// <summary>Set by the reference stage: <see cref="Components"/> in an order that builds referents first.</summary>
     public List<ComponentEntry> BuildOrder { get; set; } = [];
+
+    /// <summary>In file order, which is scan order.</summary>
+    public List<ControllerEntry> Controllers { get; } = [];
 
     public List<LinkEntry> Signals { get; } = [];
 
