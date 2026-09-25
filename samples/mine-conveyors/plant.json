@@ -1,0 +1,163 @@
+{
+  "defaults": { "seed": 7, "timeStepMs": 10, "startTime": "2026-03-02T06:00:00+08:00" },
+  "materials": [
+    { "name": "Ore", "kind": "bulk", "properties": { "density": 1600, "moisture": 0.04, "temperature": 25 } }
+  ],
+  "components": [
+    { "id": "Feed", "type": "bulk-source",
+      "parameters": { "material": "Ore", "rateKgPerS": 80, "hopperCapacityKg": 2000, "enabled": false } },
+    { "id": "CV001", "type": "conveyor", "parameters": {
+        "lengthM": 60, "cellSizeM": 1, "beltWidthM": 1.0, "angleOfReposeDeg": 20, "materialDensityKgM3": 1600,
+        "emptyBeltMassKg": 1200, "frictionCoefficient": 0.03, "pulleyDiameterM": 0.63, "gearRatio": 25,
+        "motor": { "ratedPowerW": 4000, "ratedSpeedRadPerS": 155, "ratedCurrentA": 8.2, "coastTimeConstantS": 1.5 },
+        "tailDragN": 200 } },
+    { "id": "CH1", "type": "transfer-chute", "parameters": { "capacityKg": 1000 } },
+    { "id": "CV002", "type": "conveyor", "parameters": {
+        "lengthM": 40, "cellSizeM": 1, "beltWidthM": 1.0, "angleOfReposeDeg": 20, "materialDensityKgM3": 1600,
+        "emptyBeltMassKg": 800, "frictionCoefficient": 0.03, "pulleyDiameterM": 0.63, "gearRatio": 25,
+        "motor": { "ratedPowerW": 3000, "ratedSpeedRadPerS": 155, "ratedCurrentA": 6.3, "coastTimeConstantS": 1.5 },
+        "tailDragN": 150 } },
+    { "id": "CH2", "type": "transfer-chute", "parameters": { "capacityKg": 1000 } },
+    { "id": "CV003", "type": "conveyor", "parameters": {
+        "lengthM": 30, "cellSizeM": 1, "beltWidthM": 1.0, "angleOfReposeDeg": 20, "materialDensityKgM3": 1600,
+        "emptyBeltMassKg": 600, "frictionCoefficient": 0.03, "pulleyDiameterM": 0.63, "gearRatio": 25,
+        "motor": { "ratedPowerW": 2200, "ratedSpeedRadPerS": 155, "ratedCurrentA": 4.7, "coastTimeConstantS": 1.5 },
+        "tailDragN": 100 } },
+    { "id": "Stockpile", "type": "bulk-sink" }
+  ],
+  "flows": [
+    { "from": "Feed.Out",  "to": "CV001.In" },
+    { "from": "CV001.Out", "to": "CH1.In" },
+    { "from": "CH1.Out",   "to": "CV002.In" },
+    { "from": "CV002.Out", "to": "CH2.In" },
+    { "from": "CH2.Out",   "to": "CV003.In" },
+    { "from": "CV003.Out", "to": "Stockpile.In" }
+  ],
+  "controllers": [
+    { "id": "PERM_CV001", "type": "permissive", "scanPeriodMs": 100,
+      "parameters": { "conditions": [ { "tag": "CV001.SafetyOk", "normal": true } ] } },
+    { "id": "PERM_CV002", "type": "permissive", "scanPeriodMs": 100,
+      "parameters": { "conditions": [ { "tag": "CV002.SafetyOk", "normal": true } ] } },
+    { "id": "PERM_CV003", "type": "permissive", "scanPeriodMs": 100,
+      "parameters": { "conditions": [ { "tag": "CV003.SafetyOk", "normal": true } ] } },
+
+    { "id": "INT_CV003", "type": "interlock", "scanPeriodMs": 100,
+      "parameters": {
+        "conditions": [
+          { "tag": "CV003.Tripped",  "normal": false },
+          { "tag": "PERM_CV003.Ok",  "normal": true } ],
+        "trip": [ { "tag": "CV003.Start", "value": false } ] } },
+    { "id": "INT_CV002", "type": "interlock", "scanPeriodMs": 100,
+      "parameters": {
+        "conditions": [
+          { "tag": "CV002.Tripped",  "normal": false },
+          { "tag": "PERM_CV002.Ok",  "normal": true },
+          { "tag": "CV003.Stopped",  "normal": false } ],
+        "trip": [ { "tag": "CV002.Start", "value": false } ] } },
+    { "id": "INT_CV001", "type": "interlock", "scanPeriodMs": 100,
+      "parameters": {
+        "conditions": [
+          { "tag": "CV001.Tripped",  "normal": false },
+          { "tag": "PERM_CV001.Ok",  "normal": true },
+          { "tag": "CV002.Stopped",  "normal": false } ],
+        "trip": [ { "tag": "CV001.Start", "value": false } ] } },
+    { "id": "INT_FEED", "type": "interlock", "scanPeriodMs": 100,
+      "parameters": {
+        "conditions": [ { "tag": "CV001.Stopped", "normal": false } ],
+        "trip": [ { "tag": "Feed.Enabled", "value": false } ] } },
+
+    { "id": "ALM_CV001", "type": "alarm", "scanPeriodMs": 100,
+      "parameters": {
+        "input": "CV001.Current",
+        "limits": [
+          { "kind": "hi",    "value": 7.5, "deadband": 0.3, "onDelayS": 3 },
+          { "kind": "hi-hi", "value": 8.6, "deadband": 0.3, "onDelayS": 3 } ] } },
+    { "id": "ALM_CV002", "type": "alarm", "scanPeriodMs": 100,
+      "parameters": {
+        "input": "CV002.Current",
+        "limits": [
+          { "kind": "hi",    "value": 5.7, "deadband": 0.3, "onDelayS": 3 },
+          { "kind": "hi-hi", "value": 6.6, "deadband": 0.3, "onDelayS": 3 } ] } },
+    { "id": "ALM_CV003", "type": "alarm", "scanPeriodMs": 100,
+      "parameters": {
+        "input": "CV003.Current",
+        "limits": [
+          { "kind": "hi",    "value": 4.3, "deadband": 0.3, "onDelayS": 3 },
+          { "kind": "hi-hi", "value": 4.9, "deadband": 0.3, "onDelayS": 3 } ] } },
+
+    { "id": "SEQ_START", "type": "sequencer", "scanPeriodMs": 200,
+      "parameters": {
+        "steps": [
+          { "name": "Reset the safety relays",
+            "writes": [
+              { "tag": "CV001.SafetyReset", "value": true },
+              { "tag": "CV002.SafetyReset", "value": true },
+              { "tag": "CV003.SafetyReset", "value": true } ],
+            "transition": { "type": "after", "delayS": 1 } },
+          { "name": "Start CV003",
+            "writes": [
+              { "tag": "CV001.SafetyReset", "value": false },
+              { "tag": "CV002.SafetyReset", "value": false },
+              { "tag": "CV003.SafetyReset", "value": false },
+              { "tag": "INT_CV003.Reset",   "value": true },
+              { "tag": "CV003.Start",       "value": true } ],
+            "transition": { "type": "when", "tag": "CV003.Speed", "op": ">=", "value": 1.74 },
+            "timeoutS": 15 },
+          { "name": "Start CV002",
+            "writes": [
+              { "tag": "INT_CV003.Reset", "value": false },
+              { "tag": "INT_CV002.Reset", "value": true },
+              { "tag": "CV002.Start",     "value": true } ],
+            "transition": { "type": "when", "tag": "CV002.Speed", "op": ">=", "value": 1.74 },
+            "timeoutS": 15 },
+          { "name": "Start CV001",
+            "writes": [
+              { "tag": "INT_CV002.Reset", "value": false },
+              { "tag": "INT_CV001.Reset", "value": true },
+              { "tag": "CV001.Start",     "value": true } ],
+            "transition": { "type": "when", "tag": "CV001.Speed", "op": ">=", "value": 1.74 },
+            "timeoutS": 15 },
+          { "name": "Start the feed",
+            "writes": [
+              { "tag": "INT_CV001.Reset", "value": false },
+              { "tag": "INT_FEED.Reset",  "value": true },
+              { "tag": "Feed.Enabled",    "value": true } ],
+            "transition": { "type": "after", "delayS": 1 } },
+          { "name": "Release the feed reset",
+            "writes": [ { "tag": "INT_FEED.Reset", "value": false } ],
+            "transition": { "type": "after", "delayS": 1 } } ],
+        "abort": [
+          { "tag": "Feed.Enabled", "value": false },
+          { "tag": "CV001.Start",  "value": false },
+          { "tag": "CV002.Start",  "value": false },
+          { "tag": "CV003.Start",  "value": false } ] } },
+
+    { "id": "SEQ_STOP", "type": "sequencer", "scanPeriodMs": 200,
+      "parameters": {
+        "steps": [
+          { "name": "Stop the feed",
+            "writes": [ { "tag": "Feed.Enabled", "value": false } ],
+            "transition": { "type": "after", "delayS": 40 } },
+          { "name": "Stop CV001",
+            "writes": [ { "tag": "CV001.Start", "value": false } ],
+            "transition": { "type": "when", "tag": "CV001.Stopped", "op": "==", "value": true },
+            "timeoutS": 20 },
+          { "name": "Run out CV002",
+            "transition": { "type": "after", "delayS": 20 } },
+          { "name": "Stop CV002",
+            "writes": [ { "tag": "CV002.Start", "value": false } ],
+            "transition": { "type": "when", "tag": "CV002.Stopped", "op": "==", "value": true },
+            "timeoutS": 20 },
+          { "name": "Run out CV003",
+            "transition": { "type": "after", "delayS": 15 } },
+          { "name": "Stop CV003",
+            "writes": [ { "tag": "CV003.Start", "value": false } ],
+            "transition": { "type": "when", "tag": "CV003.Stopped", "op": "==", "value": true },
+            "timeoutS": 20 } ],
+        "abort": [
+          { "tag": "Feed.Enabled", "value": false },
+          { "tag": "CV001.Start",  "value": false },
+          { "tag": "CV002.Start",  "value": false },
+          { "tag": "CV003.Start",  "value": false } ] } }
+  ]
+}
