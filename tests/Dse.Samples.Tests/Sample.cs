@@ -27,6 +27,8 @@ public static class Sample
         "overload",
         "chute-blockage",
         "failed-zero-speed",
+        "welded-contactor",
+        "feed-starve",
     ];
 
     public static TheoryData<string> Scenarios => new(Names);

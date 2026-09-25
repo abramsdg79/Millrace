@@ -6,7 +6,9 @@ public sealed record Story(IReadOnlyList<EventPattern> Chain, IReadOnlyList<Abse
 /// <summary>
 /// The eight stories of the design (spec section 5), as the measured event logs
 /// tell them. Each chain is an ordered subsequence of the scenario's log; each
-/// absence is bounded by a start point that must itself occur.
+/// absence is bounded by a start point that must itself occur. Feed-starve's
+/// fall in transport order is state, not events: see
+/// <c>MineConveyorTests.AStarvedFeedEmptiesTheBeltsInTransportOrder</c>.
 /// </summary>
 public static class Stories
 {
@@ -138,6 +140,36 @@ public static class Stories
                 new(E("CV002.ZeroSpeed", "FAULT"), E("CV003.Starter", "CONTACTOR_OPENED")),
                 new(E("CV002.ZeroSpeed", "FAULT"), E("INT_CV002", "INTERLOCK_TRIP")),
                 new(E("CV002.ZeroSpeed", "FAULT"), E("INT_CV003", "INTERLOCK_TRIP")),
+            ]),
+
+        ["welded-contactor"] = new(
+            [
+                StartComplete,
+                E("CV003.Starter", "FAULT", "contactor-welded injected."),
+                E("SEQ_STOP", "STEP_ENTERED", "6: Stop CV003."),
+                E("CV003.Start", "WRITE", "Set to false by SEQ_STOP."),
+                E("SEQ_STOP", "SEQUENCE_FAULTED", "Step 6 timed out after 20 s."),
+                E("CV003.EStop", "ESTOP_PRESSED"),
+                E("CV003.Safety", "SAFETY_TRIP", "Channel3 open"),
+                E("INT_CV003", "INTERLOCK_TRIP", "PERM_CV003.Ok abnormal."),
+                E("CV003.Start", "WRITE", "Set to false by INT_CV003."),
+            ],
+            [
+                new(E("CV003.Starter", "FAULT"), E("CV003.Starter", "CONTACTOR_OPENED")),
+                new(E("CV003.Starter", "FAULT"), E("CV003.Motor", "DE_ENERGISED")),
+                new(E("CV003.Starter", "FAULT"), E("CV003.ZeroSpeed", "ZERO_SPEED")),
+                new(E("CV003.Starter", "FAULT"), E("CV003.Motor", "STOPPED")),
+            ]),
+
+        ["feed-starve"] = new(
+            [
+                StartComplete,
+                E("Feed", "FAULT", "starve injected."),
+            ],
+            [
+                new(StartComplete, E(null, "INTERLOCK_TRIP")),
+                new(StartComplete, E(null, "ALARM_RAISED")),
+                new(StartComplete, E(null, "CONTACTOR_OPENED")),
             ]),
     };
 

@@ -107,6 +107,35 @@ public class MineConveyorTests
             $"'{name}' logs its last event {quietTicks} ticks before the end; lengthen its duration so the consequence settles.");
     }
 
+    [Fact]
+    public void AStarvedFeedEmptiesTheBeltsInTransportOrder()
+    {
+        string[] scales = ["CV001.TonnesPerHour", "CV002.TonnesPerHour", "CV003.TonnesPerHour"];
+
+        IReadOnlyDictionary<string, IReadOnlyList<TagSample>> traces =
+            Sample.Trace("feed-starve", scales, TimeSpan.FromMilliseconds(100));
+
+        Assert.Null(StateChain.FindFallInOrder(traces, scales, TimeSpan.FromSeconds(80), floor: 200, ceiling: 5));
+    }
+
+    [Fact]
+    public void AWeldedContactorKeepsCV003AtSpeedThroughTheStopAndTheEStop()
+    {
+        IReadOnlyDictionary<string, IReadOnlyList<TagSample>> traces =
+            Sample.Trace("welded-contactor", ["CV003.Speed"], TimeSpan.FromMilliseconds(100));
+
+        Assert.All(
+            traces["CV003.Speed"].Where(s => s.Time >= TimeSpan.FromSeconds(80)),
+            s => Assert.True(s.Value >= 1.7, $"CV003 slowed to {s.Value} m/s at {s.Time}."));
+    }
+
+    [Fact]
+    public void ATraceCannotSampleFasterThanTheTimeStep()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => Sample.Trace("feed-starve", ["CV001.Speed"], TimeSpan.FromMilliseconds(5)));
+    }
+
     [Theory]
     [MemberData(nameof(Sample.Scenarios), MemberType = typeof(Sample))]
     public void EveryScenarioReplaysByteForByteFromARecording(string name)
