@@ -117,6 +117,24 @@ public class SourceSinkTests
     }
 
     [Fact]
+    public void ASourceWithoutItsPermitCreatesNothingWhateverEnabledSays()
+    {
+        var source = new BulkSource("Feed", Ore, rateKgPerSecond: 2.0);
+        var sink = new BulkSink("Pile");
+        source.Out.ConnectTo(sink.In);
+        Simulation sim = new SimulationBuilder(Options()).Add(sink).Add(source).Build();
+        sim.WriteIn(TimeSpan.Zero, "Feed.Permit", TagValue.Bool(false));
+
+        sim.RunFor(TimeSpan.FromSeconds(2));
+        Assert.True(sim.IO.Read("Feed.Enabled").AsBool);
+        Assert.Equal(0.0, sim.MassBalance.Created, 9);
+
+        sim.WriteIn(TimeSpan.Zero, "Feed.Permit", TagValue.Bool(true));
+        sim.RunFor(TimeSpan.FromSeconds(1));
+        Assert.Equal(2.0, sim.MassBalance.Created, 9);
+    }
+
+    [Fact]
     public void ASinkWithCapacityFillsOnceAndSaysSo()
     {
         var source = new BulkSource("Feed", Ore, rateKgPerSecond: 2.0);

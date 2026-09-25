@@ -625,6 +625,12 @@
           "description": "Defaults to the enabled parameter."
         },
         {
+          "name": "Permit",
+          "direction": "in",
+          "valueType": "bool",
+          "description": "Run permit from an interlock; false stops the feeder whatever Enabled says. Defaults to true."
+        },
+        {
           "name": "HopperMass",
           "direction": "out",
           "valueType": "double",
@@ -648,6 +654,11 @@
       "tags": [
         {
           "name": "Enabled",
+          "kind": "bool",
+          "access": "readWrite"
+        },
+        {
+          "name": "Permit",
           "kind": "bool",
           "access": "readWrite"
         },
@@ -888,6 +899,12 @@
           "description": "Run command to the starter."
         },
         {
+          "name": "Permit",
+          "direction": "in",
+          "valueType": "bool",
+          "description": "Run permit to the starter; false holds the contactor open. Defaults to true."
+        },
+        {
           "name": "Reset",
           "direction": "in",
           "valueType": "bool",
@@ -975,6 +992,11 @@
       "tags": [
         {
           "name": "Start",
+          "kind": "bool",
+          "access": "readWrite"
+        },
+        {
+          "name": "Permit",
           "kind": "bool",
           "access": "readWrite"
         },
@@ -2166,6 +2188,12 @@
           "description": "Overload reset, rising edge."
         },
         {
+          "name": "Permit",
+          "direction": "in",
+          "valueType": "bool",
+          "description": "Run permit from an interlock; false holds the contactor open. Defaults to true when unwired."
+        },
+        {
           "name": "Contactor",
           "direction": "out",
           "valueType": "bool"
@@ -2197,6 +2225,11 @@
         },
         {
           "name": "Reset",
+          "kind": "bool",
+          "access": "readWrite"
+        },
+        {
+          "name": "Permit",
           "kind": "bool",
           "access": "readWrite"
         },

@@ -141,8 +141,8 @@ public class WorkedExampleTests
             Assert.True(sim.IO.Directory.TryFind(name, out _), $"The directory has no tag '{name}'.");
         }
 
-        // 25 plant tags (dse tags conveyor-line.json) plus 22 owned ones.
-        Assert.Equal(47, sim.IO.Directory.Count);
+        // 27 plant tags (dse tags conveyor-line.json) plus 22 owned ones.
+        Assert.Equal(49, sim.IO.Directory.Count);
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public class WorkedExampleTests
         Simulation inCode = Build();
 
         Assert.Equal(4, fromJson.ScanBlockCount);
-        Assert.Equal(47, fromJson.IO.Directory.Count);
+        Assert.Equal(49, fromJson.IO.Directory.Count);
         Assert.Equal(inCode.IO.Directory.ToText(), fromJson.IO.Directory.ToText());
     }
 

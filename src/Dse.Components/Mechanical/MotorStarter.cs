@@ -10,8 +10,8 @@ namespace Dse.Components.Mechanical;
 
 /// <summary>
 /// A direct-on-line starter: a contactor and a thermal overload relay. The
-/// contactor closes on command when the safety circuit allows and the relay
-/// is not tripped. The relay trips when the motor's thermal state crosses
+/// contactor closes on command when the safety circuit allows, the run permit
+/// is given and the relay is not tripped. The relay trips when the motor's thermal state crosses
 /// the trip level and resets on a reset edge once it has cooled below the
 /// reset level. The safety input bypasses everything: a dropped safety relay
 /// opens the contactor with no controller involved.
@@ -47,6 +47,7 @@ public sealed class MotorStarter : ComponentBase, IFaultTarget, ITagProvider
             PortSpec.In<bool>("SafetyOk", description: "Safety circuit healthy; defaults to true when unwired."),
             PortSpec.In<double>("ThermalState", description: "The motor's thermal state."),
             PortSpec.In<bool>("Reset", description: "Overload reset, rising edge."),
+            PortSpec.In<bool>("Permit", description: "Run permit from an interlock; false holds the contactor open. Defaults to true when unwired."),
             PortSpec.Out<bool>("Contactor"),
             PortSpec.Out<bool>("Tripped"),
         ],
@@ -55,6 +56,7 @@ public sealed class MotorStarter : ComponentBase, IFaultTarget, ITagProvider
         [
             new TagEntry("Command", TagKind.Bool, TagAccess.ReadWrite),
             new TagEntry("Reset", TagKind.Bool, TagAccess.ReadWrite),
+            new TagEntry("Permit", TagKind.Bool, TagAccess.ReadWrite),
             new TagEntry("Contactor", TagKind.Bool, TagAccess.ReadOnly),
             new TagEntry("Tripped", TagKind.Bool, TagAccess.ReadOnly),
         ],
@@ -82,6 +84,7 @@ public sealed class MotorStarter : ComponentBase, IFaultTarget, ITagProvider
         SafetyOk = AddInput<bool>("SafetyOk", defaultValue: true);
         ThermalState = AddInput<double>("ThermalState");
         Reset = AddInput<bool>("Reset");
+        Permit = AddInput<bool>("Permit", defaultValue: true);
         Contactor = AddOutput<bool>("Contactor");
         Tripped = AddOutput<bool>("Tripped");
     }
@@ -104,6 +107,9 @@ public sealed class MotorStarter : ComponentBase, IFaultTarget, ITagProvider
     /// <summary>Rising edge resets the overload relay if cooled.</summary>
     public InputPort<bool> Reset { get; }
 
+    /// <summary>Run permit, an interlock contact in series with the run command. False holds the contactor open. Unconnected reads true.</summary>
+    public InputPort<bool> Permit { get; }
+
     /// <summary>True energises the motor.</summary>
     public OutputPort<bool> Contactor { get; }
 
@@ -115,6 +121,7 @@ public sealed class MotorStarter : ComponentBase, IFaultTarget, ITagProvider
     [
         TagBinding.Write("Command", Command, "Run command"),
         TagBinding.Write("Reset", Reset, "Overload reset, rising edge"),
+        TagBinding.Write("Permit", Permit, "Run permit; false holds the contactor open"),
         TagBinding.Read("Contactor", Contactor, "Contactor closed"),
         TagBinding.Read("Tripped", Tripped, "Overload relay tripped"),
     ];
@@ -138,7 +145,7 @@ public sealed class MotorStarter : ComponentBase, IFaultTarget, ITagProvider
             ctx.Log(Id, "OVERLOAD_RESET", "Overload relay reset.");
         }
 
-        bool closed = _welded || (Command.Value && SafetyOk.Value && !_tripped && !_open);
+        bool closed = _welded || (Command.Value && SafetyOk.Value && Permit.Value && !_tripped && !_open);
         if (closed != _closed)
         {
             ctx.Log(Id, closed ? "CONTACTOR_CLOSED" : "CONTACTOR_OPENED", closed ? "Motor energised." : "Motor de-energised.");

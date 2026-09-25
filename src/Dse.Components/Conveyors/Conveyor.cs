@@ -64,6 +64,7 @@ public sealed class Conveyor : CompositeComponent, ICapabilityProvider
         Ports =
         [
             PortSpec.In<bool>("Start", description: "Run command to the starter."),
+            PortSpec.In<bool>("Permit", description: "Run permit to the starter; false holds the contactor open. Defaults to true."),
             PortSpec.In<bool>("Reset", description: "Overload reset, rising edge."),
             PortSpec.In<bool>("SafetyReset", description: "Safety relay reset, rising edge."),
             PortSpec.In<bool>("EStop", description: "The e-stop is pressed."),
@@ -80,6 +81,7 @@ public sealed class Conveyor : CompositeComponent, ICapabilityProvider
         Tags =
         [
             new TagEntry("Start", TagKind.Bool, TagAccess.ReadWrite),
+            new TagEntry("Permit", TagKind.Bool, TagAccess.ReadWrite),
             new TagEntry("Reset", TagKind.Bool, TagAccess.ReadWrite),
             new TagEntry("SafetyReset", TagKind.Bool, TagAccess.ReadWrite),
             new TagEntry("EStop", TagKind.Bool, TagAccess.ReadWrite),
@@ -194,6 +196,7 @@ public sealed class Conveyor : CompositeComponent, ICapabilityProvider
         Expose("In", Belt.In);
         Expose("Out", Belt.Out);
         Expose("Start", Starter.Command);
+        Expose("Permit", Starter.Permit);
         Expose("Reset", Starter.Reset);
         Expose("SafetyReset", Safety.Reset);
         Expose("EStop", EStop.Actuated);

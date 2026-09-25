@@ -119,7 +119,7 @@ public class ValidateCommandTests
         Assert.Equal(ExitCodes.Ok, run.ExitCode);
         Assert.Empty(run.Err);
         Assert.Matches(@"components\s+4\n", run.Out);
-        Assert.Matches(@"  tags          47 \(0 explicit\)\n  controllers   4\n  time step     10 ms\n", run.Out);
+        Assert.Matches(@"  tags          49 \(0 explicit\)\n  controllers   4\n  time step     10 ms\n", run.Out);
     }
 
     [Fact]
@@ -134,6 +134,6 @@ public class ValidateCommandTests
             ["components", "leaves", "signalLinks", "flowLinks", "tags", "explicitTags", "controllers", "timeStepMs"],
             summary.EnumerateObject().Select(p => p.Name));
         Assert.Equal(4, summary.GetProperty("controllers").GetInt32());
-        Assert.Equal(47, summary.GetProperty("tags").GetInt32());
+        Assert.Equal(49, summary.GetProperty("tags").GetInt32());
     }
 }

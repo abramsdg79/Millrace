@@ -44,6 +44,7 @@ public sealed class BulkSource : FlowComponentBase, IBulkProducer, IFaultTarget,
         [
             PortSpec.In<double>("Rate", "kg/s", "Defaults to rateKgPerS."),
             PortSpec.In<bool>("Enabled", description: "Defaults to the enabled parameter."),
+            PortSpec.In<bool>("Permit", description: "Run permit from an interlock; false stops the feeder whatever Enabled says. Defaults to true."),
             PortSpec.Out<double>("HopperMass", "kg"),
         ],
         FlowPorts = [PortSpec.Outlet("Out", PayloadKind.Bulk)],
@@ -51,6 +52,7 @@ public sealed class BulkSource : FlowComponentBase, IBulkProducer, IFaultTarget,
         Tags =
         [
             new TagEntry("Enabled", TagKind.Bool, TagAccess.ReadWrite),
+            new TagEntry("Permit", TagKind.Bool, TagAccess.ReadWrite),
             new TagEntry("Rate", TagKind.Double, TagAccess.ReadWrite, "kg/s"),
             new TagEntry("HopperMass", TagKind.Double, TagAccess.ReadOnly, "kg"),
         ],
@@ -85,6 +87,7 @@ public sealed class BulkSource : FlowComponentBase, IBulkProducer, IFaultTarget,
         Out = AddOutlet("Out", PayloadKind.Bulk);
         Rate = AddInput<double>("Rate", defaultValue: rateKgPerSecond);
         Enabled = AddInput<bool>("Enabled", defaultValue: enabled);
+        Permit = AddInput<bool>("Permit", defaultValue: true);
         HopperMass = AddOutput<double>("HopperMass");
     }
 
@@ -95,6 +98,9 @@ public sealed class BulkSource : FlowComponentBase, IBulkProducer, IFaultTarget,
 
     /// <summary>False stops the feeder. Unconnected, it reads the <c>enabled</c> given at construction: true unless told otherwise.</summary>
     public InputPort<bool> Enabled { get; }
+
+    /// <summary>Run permit, an interlock contact in series with <see cref="Enabled"/>. False stops the feeder. Unconnected reads true.</summary>
+    public InputPort<bool> Permit { get; }
 
     /// <summary>Mass waiting in the hopper, kg, as of the last evaluate.</summary>
     public OutputPort<double> HopperMass { get; }
@@ -111,6 +117,7 @@ public sealed class BulkSource : FlowComponentBase, IBulkProducer, IFaultTarget,
     public IEnumerable<TagBinding> DescribeTags() =>
     [
         TagBinding.Write("Enabled", Enabled, "Feeder enabled"),
+        TagBinding.Write("Permit", Permit, "Run permit; false stops the feeder"),
         TagBinding.Write("Rate", Rate, "kg/s", description: "Feed rate"),
         double.IsFinite(HopperCapacityKg)
             ? TagBinding.Read("HopperMass", HopperMass, "kg", 0.0, HopperCapacityKg, "Mass in the hopper")
@@ -132,7 +139,7 @@ public sealed class BulkSource : FlowComponentBase, IBulkProducer, IFaultTarget,
 
     public override void Advance(in TickContext ctx)
     {
-        if (_starved || !Enabled.Value)
+        if (_starved || !Enabled.Value || !Permit.Value)
         {
             return;
         }

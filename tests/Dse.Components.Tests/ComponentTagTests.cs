@@ -23,6 +23,7 @@ public class ComponentTagTests
             {
                 ("Command", TagKind.Bool, TagAccess.ReadWrite),
                 ("Reset", TagKind.Bool, TagAccess.ReadWrite),
+                ("Permit", TagKind.Bool, TagAccess.ReadWrite),
                 ("Contactor", TagKind.Bool, TagAccess.ReadOnly),
                 ("Tripped", TagKind.Bool, TagAccess.ReadOnly),
             },
@@ -55,6 +56,7 @@ public class ComponentTagTests
             new[]
             {
                 ("Enabled", TagKind.Bool, TagAccess.ReadWrite),
+                ("Permit", TagKind.Bool, TagAccess.ReadWrite),
                 ("Rate", TagKind.Double, TagAccess.ReadWrite),
                 ("HopperMass", TagKind.Double, TagAccess.ReadOnly),
             },

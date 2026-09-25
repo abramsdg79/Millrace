@@ -67,7 +67,7 @@ public class ConveyorIoTests
         Assert.Equal(
             new[]
             {
-                "CV001.Contactor", "CV001.Current", "CV001.EStop", "CV001.EStop.Ok",
+                "CV001.Contactor", "CV001.Current", "CV001.EStop", "CV001.EStop.Ok", "CV001.Permit",
                 "CV001.PullKey1", "CV001.PullKey1.Ok", "CV001.PullKey2", "CV001.PullKey2.Ok",
                 "CV001.Reset", "CV001.SafetyOk", "CV001.SafetyReset", "CV001.Speed",
                 "CV001.Start", "CV001.Stopped", "CV001.TonnesPerHour", "CV001.Tripped",
@@ -112,6 +112,26 @@ public class ConveyorIoTests
         Assert.False(sim.IO.ReadBool("CV001.Contactor"));
         Assert.True(sim.IO.ReadBool("CV001.Stopped"));
         Assert.True(sim.IO.ReadDouble("CV001.Speed") < 0.05);
+    }
+
+    [Fact]
+    public void APermitWrittenFalseHoldsTheBeltStoppedUntilItIsWrittenTrue()
+    {
+        Simulation sim = Build();
+        sim.IO.WriteBool("CV001.Permit", false);
+        StartUp(sim);
+        sim.RunFor(TimeSpan.FromSeconds(10));
+
+        Assert.True(sim.IO.ReadBool("CV001.Start"));
+        Assert.False(sim.IO.ReadBool("CV001.Contactor"));
+        Assert.True(sim.IO.ReadBool("CV001.Stopped"));
+        Assert.DoesNotContain(sim.Events.Records, r => r.Source == "CV001.Starter" && r.Code == "CONTACTOR_CLOSED");
+
+        sim.IO.WriteBool("CV001.Permit", true);
+        sim.RunFor(TimeSpan.FromSeconds(10));
+
+        Assert.True(sim.IO.ReadBool("CV001.Contactor"));
+        Assert.InRange(sim.IO.ReadDouble("CV001.Speed"), 1.75, 1.95);
     }
 
     [Fact]

@@ -53,7 +53,7 @@ public class TagsCommandTests
         Assert.Contains("INT01.Reset  Bool  ReadWrite", run.Out, StringComparison.Ordinal);
         Assert.Contains("CUR01.HiHi.Active  Bool  ReadOnly", run.Out, StringComparison.Ordinal);
         Assert.Contains("SEQ01.StepTime  Double  ReadOnly  s", run.Out, StringComparison.Ordinal);
-        Assert.Equal(47, run.Out.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length);
+        Assert.Equal(49, run.Out.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length);
     }
 
     [Fact]

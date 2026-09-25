@@ -17,7 +17,8 @@ public class MotorStarterTests
 
     private sealed record Rig(Simulation Sim, MotorStarter Starter, Switch Command, Switch Safety, Setpoint Thermal, Switch Reset);
 
-    private static Rig Build()
+    /// <summary>The starter and its drivers; the permit is wired only when a test passes one, so it reads its default otherwise.</summary>
+    private static Rig Build(Switch? permit = null)
     {
         var starter = new MotorStarter("K1");
         var command = new Switch("Cmd");
@@ -28,8 +29,14 @@ public class MotorStarterTests
         safety.Out.ConnectTo(starter.SafetyOk);
         thermal.Out.ConnectTo(starter.ThermalState);
         reset.Out.ConnectTo(starter.Reset);
-        Simulation sim = new SimulationBuilder(Options()).Add(starter).Add(command).Add(safety).Add(thermal).Add(reset).Build();
-        return new Rig(sim, starter, command, safety, thermal, reset);
+        SimulationBuilder builder = new SimulationBuilder(Options()).Add(starter).Add(command).Add(safety).Add(thermal).Add(reset);
+        if (permit is not null)
+        {
+            permit.Out.ConnectTo(starter.Permit);
+            builder.Add(permit);
+        }
+
+        return new Rig(builder.Build(), starter, command, safety, thermal, reset);
     }
 
     [Fact]
@@ -98,6 +105,40 @@ public class MotorStarterTests
         rig.Command.Value = true;
         rig.Sim.Tick();
         Assert.False(rig.Starter.Contactor.Value);
+    }
+
+    [Fact]
+    public void AFalsePermitHoldsTheContactorOpenWhateverTheCommand()
+    {
+        var permit = new Switch("Permit");
+        Rig rig = Build(permit);
+        rig.Command.Value = true;
+
+        rig.Sim.RunFor(TimeSpan.FromSeconds(1));
+        Assert.False(rig.Starter.Contactor.Value);
+        Assert.Empty(rig.Sim.Events.Records);           // a refused command logs nothing
+
+        permit.Value = true;
+        rig.Sim.Tick();
+        Assert.True(rig.Starter.Contactor.Value);
+
+        permit.Value = false;                            // an interlock contact in series: opening it drops a running starter
+        rig.Sim.Tick();
+        Assert.False(rig.Starter.Contactor.Value);
+        Assert.Equal(["CONTACTOR_CLOSED", "CONTACTOR_OPENED"], rig.Sim.Events.Records.Select(r => r.Code));
+    }
+
+    [Fact]
+    public void AWeldedContactorStaysClosedWithoutAPermit()
+    {
+        var permit = new Switch("Permit");
+        Rig rig = Build(permit);
+        rig.Sim.InjectFaultIn(TimeSpan.Zero, "K1", MotorStarter.ContactorWelded);
+
+        rig.Sim.RunFor(TimeSpan.FromSeconds(1));
+
+        Assert.False(rig.Starter.Permit.Value);
+        Assert.True(rig.Starter.Contactor.Value);
     }
 
     [Fact]
