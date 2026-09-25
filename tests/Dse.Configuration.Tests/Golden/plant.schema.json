@@ -701,6 +701,11 @@
               "description": "Hopper size. Omit for unlimited. Unit: kg.",
               "type": "number",
               "exclusiveMinimum": 0
+            },
+            "enabled": {
+              "description": "Whether the feeder runs before anything writes Enabled. A PLC output is off at power-up; set false to match.",
+              "type": "boolean",
+              "default": true
             }
           }
         }

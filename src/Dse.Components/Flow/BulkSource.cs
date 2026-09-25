@@ -31,18 +31,19 @@ public sealed class BulkSource : FlowComponentBase, IBulkProducer, IFaultTarget,
         "Creates bulk material at a commanded rate, from an optional finite hopper.",
         (id, p) => new BulkSource(
             id, p.Material("material"), p.Double("rateKgPerS"), p.MaterialProperties("material"),
-            p.DoubleOr("hopperCapacityKg", double.PositiveInfinity)))
+            p.DoubleOr("hopperCapacityKg", double.PositiveInfinity), p.Bool("enabled")))
     {
         Parameters =
         [
             Param.Material("material", "What it feeds; new material takes this material's defined properties.", PayloadKind.Bulk),
             Param.Double("rateKgPerS", "Feed rate when nothing drives the Rate input.", "kg/s", min: 0.0),
             Param.Double("hopperCapacityKg", "Hopper size. Omit for unlimited.", "kg", min: 0.0, exclusiveMin: true, optional: true),
+            Param.Bool("enabled", "Whether the feeder runs before anything writes Enabled. A PLC output is off at power-up; set false to match.", @default: true),
         ],
         Ports =
         [
             PortSpec.In<double>("Rate", "kg/s", "Defaults to rateKgPerS."),
-            PortSpec.In<bool>("Enabled", description: "Defaults to true."),
+            PortSpec.In<bool>("Enabled", description: "Defaults to the enabled parameter."),
             PortSpec.Out<double>("HopperMass", "kg"),
         ],
         FlowPorts = [PortSpec.Outlet("Out", PayloadKind.Bulk)],
@@ -69,7 +70,8 @@ public sealed class BulkSource : FlowComponentBase, IBulkProducer, IFaultTarget,
         MaterialType type,
         double rateKgPerSecond,
         MaterialProperties properties = default,
-        double hopperCapacityKg = double.PositiveInfinity)
+        double hopperCapacityKg = double.PositiveInfinity,
+        bool enabled = true)
         : base(id)
     {
         ArgumentNullException.ThrowIfNull(type);
@@ -82,7 +84,7 @@ public sealed class BulkSource : FlowComponentBase, IBulkProducer, IFaultTarget,
 
         Out = AddOutlet("Out", PayloadKind.Bulk);
         Rate = AddInput<double>("Rate", defaultValue: rateKgPerSecond);
-        Enabled = AddInput<bool>("Enabled", defaultValue: true);
+        Enabled = AddInput<bool>("Enabled", defaultValue: enabled);
         HopperMass = AddOutput<double>("HopperMass");
     }
 
@@ -91,7 +93,7 @@ public sealed class BulkSource : FlowComponentBase, IBulkProducer, IFaultTarget,
     /// <summary>Feed rate, kg/s. Unconnected reads the rate given at construction.</summary>
     public InputPort<double> Rate { get; }
 
-    /// <summary>False stops the feeder. Unconnected reads true.</summary>
+    /// <summary>False stops the feeder. Unconnected, it reads the <c>enabled</c> given at construction: true unless told otherwise.</summary>
     public InputPort<bool> Enabled { get; }
 
     /// <summary>Mass waiting in the hopper, kg, as of the last evaluate.</summary>

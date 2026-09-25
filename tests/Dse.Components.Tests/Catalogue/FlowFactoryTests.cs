@@ -23,6 +23,17 @@ public class FlowFactoryTests
     }
 
     [Fact]
+    public void ASourceIsEnabledAtPowerUpUnlessTheFileSaysOtherwise()
+    {
+        BulkSource running = MechanicalFactoryTests.Build<BulkSource>(BulkSource.Descriptor, """{ "material": "flour", "rateKgPerS": 2 }""", Context());
+        BulkSource held = MechanicalFactoryTests.Build<BulkSource>(
+            BulkSource.Descriptor, """{ "material": "flour", "rateKgPerS": 2, "enabled": false }""", Context());
+
+        Assert.True(running.Enabled.Value);
+        Assert.False(held.Enabled.Value);
+    }
+
+    [Fact]
     public void AProcessUnitGetsOneInletPerRecipeLineAndANestedHold()
     {
         BulkProcessUnit mixer = MechanicalFactoryTests.Build<BulkProcessUnit>(

@@ -601,6 +601,13 @@
           "optional": true,
           "minimum": 0,
           "exclusiveMinimum": true
+        },
+        {
+          "name": "enabled",
+          "kind": "bool",
+          "required": false,
+          "description": "Whether the feeder runs before anything writes Enabled. A PLC output is off at power-up; set false to match.",
+          "default": true
         }
       ],
       "ports": [
@@ -615,7 +622,7 @@
           "name": "Enabled",
           "direction": "in",
           "valueType": "bool",
-          "description": "Defaults to true."
+          "description": "Defaults to the enabled parameter."
         },
         {
           "name": "HopperMass",

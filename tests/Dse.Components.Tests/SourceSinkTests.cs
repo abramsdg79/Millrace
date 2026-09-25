@@ -3,6 +3,7 @@ using Dse.Components.Tests.Fakes;
 using Dse.Core;
 using Dse.Core.Flow;
 using Dse.Core.Time;
+using Dse.Io;
 using Xunit;
 
 namespace Dse.Components.Tests;
@@ -96,6 +97,23 @@ public class SourceSinkTests
         sim.ClearFaultIn(TimeSpan.Zero, "Feed", BulkSource.Starve);
         sim.RunFor(TimeSpan.FromSeconds(1));
         Assert.Equal(4.0, sim.MassBalance.Created, 9);
+    }
+
+    [Fact]
+    public void ASourceBuiltDisabledCreatesNothingUntilItsEnabledTagIsWritten()
+    {
+        var source = new BulkSource("Feed", Ore, rateKgPerSecond: 2.0, enabled: false);
+        var sink = new BulkSink("Pile");
+        source.Out.ConnectTo(sink.In);
+        Simulation sim = new SimulationBuilder(Options()).Add(sink).Add(source).Build();
+
+        sim.RunFor(TimeSpan.FromSeconds(2));
+        Assert.False(sim.IO.Read("Feed.Enabled").AsBool);
+        Assert.Equal(0.0, sim.MassBalance.Created, 9);
+
+        sim.WriteIn(TimeSpan.Zero, "Feed.Enabled", TagValue.Bool(true));
+        sim.RunFor(TimeSpan.FromSeconds(1));
+        Assert.Equal(2.0, sim.MassBalance.Created, 9);
     }
 
     [Fact]
