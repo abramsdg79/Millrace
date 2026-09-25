@@ -5,3 +5,6 @@ obj/
 *.user
 TestResults/
 *.actual
+
+# Scratch and ledgers for plan execution
+.superpowers/
