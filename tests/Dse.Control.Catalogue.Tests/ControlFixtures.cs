@@ -15,5 +15,24 @@ internal static class ControlFixtures
         .BlockParameters("permissive", """{ "conditions": [ { "tag": "V1.Tripped", "normal": false } ] }""")
         .BlockParameters(
             "interlock",
-            """{ "conditions": [ { "tag": "V1.Tripped", "normal": false } ], "trip": [ { "tag": "V1.Fill", "value": false } ] }""");
+            """{ "conditions": [ { "tag": "V1.Tripped", "normal": false } ], "trip": [ { "tag": "V1.Fill", "value": false } ] }""")
+        .BlockParameters("alarm", """{ "input": "V1.Level", "limits": [ { "kind": "hi", "value": 80 } ] }""")
+        .BlockParameters(
+            "alarm",
+            """
+            { "input": "V1.Level", "limits": [
+                { "kind": "hi-hi", "value": 95, "deadband": 2, "onDelayS": 1 },
+                { "kind": "lo-lo", "value": 5 },
+                { "kind": "hi", "value": 80 },
+                { "kind": "lo", "value": 20 } ] }
+            """)
+        .BlockParameters(
+            "sequencer",
+            """
+            { "steps": [
+                { "name": "Fill", "writes": [ { "tag": "V1.Fill", "value": true } ],
+                  "transition": { "type": "when", "tag": "V1.Level", "op": ">=", "value": 80 }, "timeoutS": 30 },
+                { "name": "Settle", "transition": { "type": "after", "delayS": 5 } } ],
+              "abort": [ { "tag": "V1.Fill", "value": false } ] }
+            """);
 }

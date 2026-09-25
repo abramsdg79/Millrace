@@ -18,6 +18,8 @@ public sealed class ControlModule : ICatalogueModule
         builder.AddBlock(TimerCatalogue.Descriptor);
         builder.AddBlock(PermissiveCatalogue.Descriptor);
         builder.AddBlock(InterlockCatalogue.Descriptor);
+        builder.AddBlock(AlarmCatalogue.Descriptor);
+        builder.AddBlock(SequencerCatalogue.Descriptor);
 
         // Transitions
         builder.Add(TransitionCatalogue.After);

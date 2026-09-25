@@ -58,4 +58,56 @@ public class BlockFactoryTests
 
         Assert.Empty(block.Writes);
     }
+
+    [Fact]
+    public void AnAlarmOwnsAPairPerConfiguredLimitInLimitOrder()
+    {
+        ParameterValues values = Bind.Values(
+            AlarmCatalogue.Descriptor.Parameters,
+            """{ "input": "V1.Level", "limits": [ { "kind": "hi-hi", "value": 95 }, { "kind": "lo", "value": 20 } ] }""");
+
+        Assert.Equal(
+            new[]
+            {
+                ("CUR01.Lo.Active", TagAccess.ReadOnly),
+                ("CUR01.Lo.Acked", TagAccess.ReadOnly),
+                ("CUR01.HiHi.Active", TagAccess.ReadOnly),
+                ("CUR01.HiHi.Acked", TagAccess.ReadOnly),
+                ("CUR01.Ack", TagAccess.ReadWrite),
+            },
+            AlarmCatalogue.Descriptor.OwnedTags("CUR01", values).Select(t => (t.Spec.Name, t.Access)));
+    }
+
+    [Fact]
+    public void ASequencerReadsItsTransitionsAndCommandsItsStepAndAbortWrites()
+    {
+        ParameterValues values = Bind.Values(
+            SequencerCatalogue.Descriptor.Parameters,
+            """
+            { "steps": [
+                { "name": "Fill", "writes": [ { "tag": "V1.Fill", "value": true } ],
+                  "transition": { "type": "when", "tag": "V1.Level", "op": ">=", "value": 80 }, "timeoutS": 30 },
+                { "name": "Settle", "transition": { "type": "after", "delayS": 5 } } ],
+              "abort": [ { "tag": "V1.Fill", "value": false } ] }
+            """);
+
+        IScanBlock block = SequencerCatalogue.Descriptor.Factory("SEQ01", Bind.Period, values);
+
+        Assert.Equal(new TagRef("V1.Level", TagKind.Double), Assert.Single(block.Inputs));
+        Assert.Equal(new TagRef("V1.Fill", TagKind.Bool), Assert.Single(block.Writes));
+        Assert.Equal(Bind.Period, block.ScanPeriod);
+    }
+
+    [Fact]
+    public void ADurationLongerThanAYearIsOutOfRange()
+    {
+        (ParameterValues? values, List<BindingIssue> issues) = Bind.TryValues(
+            TimerCatalogue.Descriptor.Parameters, """{ "mode": "pulse", "input": "V1.Running", "presetS": 1e30 }""");
+
+        Assert.Null(values);
+        BindingIssue issue = Assert.Single(issues);
+        Assert.Equal(BindingIssueKind.BadParameter, issue.Kind);
+        Assert.Equal("$.presetS", issue.Path);
+        Assert.Contains("[0, 31536000]", issue.Message, StringComparison.Ordinal);
+    }
 }
