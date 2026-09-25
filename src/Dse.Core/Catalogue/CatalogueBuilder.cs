@@ -8,6 +8,7 @@ public sealed partial class CatalogueBuilder
     internal const string Direct = "(direct)";
 
     private readonly Dictionary<string, (ComponentDescriptor Descriptor, string Module)> _components = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, (BlockDescriptor Descriptor, string Module)> _blocks = new(StringComparer.Ordinal);
     private readonly Dictionary<(string Slot, string Type), (ObjectDescriptor Descriptor, string Module)> _objects = [];
     private readonly Dictionary<string, (MaterialDescriptor Descriptor, string Module)> _materials = new(StringComparer.Ordinal);
     private readonly List<string> _modules = [];
@@ -47,12 +48,37 @@ public sealed partial class CatalogueBuilder
         RequireUniqueParameters(descriptor.Parameters, $"component '{descriptor.Type}'");
         RequireMaterialStateNamesSibling(descriptor.Parameters, $"component '{descriptor.Type}'");
         RequireUniquePortNames(descriptor);
+        if (_blocks.TryGetValue(descriptor.Type, out var block))
+        {
+            throw SharedName(descriptor.Type, block.Module, "a block", "a component");
+        }
+
         if (_components.TryGetValue(descriptor.Type, out var existing))
         {
             throw Duplicate("Component type", descriptor.Type, existing.Module);
         }
 
         _components[descriptor.Type] = (descriptor, _current);
+        return this;
+    }
+
+    public CatalogueBuilder AddBlock(BlockDescriptor descriptor)
+    {
+        ArgumentNullException.ThrowIfNull(descriptor);
+        RequireKebabCase(descriptor.Type, "Block type");
+        RequireUniqueParameters(descriptor.Parameters, $"block '{descriptor.Type}'");
+        RequireMaterialStateNamesSibling(descriptor.Parameters, $"block '{descriptor.Type}'");
+        if (_components.TryGetValue(descriptor.Type, out var component))
+        {
+            throw SharedName(descriptor.Type, component.Module, "a component", "a block");
+        }
+
+        if (_blocks.TryGetValue(descriptor.Type, out var existing))
+        {
+            throw Duplicate("Block type", descriptor.Type, existing.Module);
+        }
+
+        _blocks[descriptor.Type] = (descriptor, _current);
         return this;
     }
 
@@ -93,6 +119,7 @@ public sealed partial class CatalogueBuilder
 
     public ComponentCatalogue Build() => new(
         _components.Values.OrderBy(e => e.Descriptor.Type, StringComparer.Ordinal).ToList(),
+        _blocks.Values.OrderBy(e => e.Descriptor.Type, StringComparer.Ordinal).ToList(),
         _objects.Values
             .OrderBy(e => e.Descriptor.Slot, StringComparer.Ordinal)
             .ThenBy(e => e.Descriptor.Type, StringComparer.Ordinal)
@@ -103,6 +130,10 @@ public sealed partial class CatalogueBuilder
     private InvalidOperationException Duplicate(string what, string name, string firstModule) => new(
         $"{what} '{name}' is registered twice: by module '{firstModule}' and by module '{_current}'. " +
         $"Rename one of them; type names are unique across a catalogue.");
+
+    private InvalidOperationException SharedName(string name, string firstModule, string first, string second) => new(
+        $"Type '{name}' is registered as {first} by module '{firstModule}' and as {second} by module '{_current}'. " +
+        "Rename one of them; component and block types share one namespace.");
 
     private static void RequireKebabCase(string type, string what)
     {

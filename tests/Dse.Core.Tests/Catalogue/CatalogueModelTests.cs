@@ -1,6 +1,8 @@
 using Dse.Core.Catalogue;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
+using Dse.Core.Tests.Fakes;
+using Dse.Io;
 
 namespace Dse.Core.Tests.Catalogue;
 
@@ -24,6 +26,33 @@ public class CatalogueModelTests
         public string Name => "B";
 
         public void Register(CatalogueBuilder builder) => builder.Add(Delay("delay"));
+    }
+
+    private static BlockDescriptor Echo(string type) =>
+        new(type,
+            "Echoes a tag.",
+            (id, p) => [(new TagSpec($"{id}.Q", TagKind.Bool), TagAccess.ReadOnly)],
+            (id, period, p) => new EchoBlock(id, period).Publishes("Q"));
+
+    private sealed class BlocksA : ICatalogueModule
+    {
+        public string Name => "A";
+
+        public void Register(CatalogueBuilder builder) => builder.AddBlock(Echo("echo"));
+    }
+
+    private sealed class BlocksB : ICatalogueModule
+    {
+        public string Name => "B";
+
+        public void Register(CatalogueBuilder builder) => builder.AddBlock(Echo("echo"));
+    }
+
+    private sealed class DelayBlockB : ICatalogueModule
+    {
+        public string Name => "B";
+
+        public void Register(CatalogueBuilder builder) => builder.AddBlock(Echo("delay"));
     }
 
     [Fact]
@@ -209,5 +238,56 @@ public class CatalogueModelTests
         var repeat = new PortRepeat("recipe", "inlet");
 
         Assert.Equal(["Flour", "Water"], repeat.Expand("{n}", count: 0, names: ["Flour", "Water"]));
+    }
+
+    [Fact]
+    public void ABlockIsFoundByTypeWithTheModuleThatRegisteredIt()
+    {
+        ComponentCatalogue catalogue = new CatalogueBuilder().Add(new BlocksA()).AddBlock(Echo("aaa")).Build();
+
+        Assert.Equal(["aaa", "echo"], catalogue.Blocks.Select(b => b.Type));
+        Assert.True(catalogue.TryGetBlock("echo", out BlockDescriptor? echo));
+        Assert.Equal("A", catalogue.ModuleOf(echo));
+        Assert.Equal("(direct)", catalogue.ModuleOf(catalogue.Blocks[0]));
+        Assert.False(catalogue.TryGetBlock("delay", out _));
+        Assert.Empty(catalogue.Components);
+    }
+
+    [Fact]
+    public void ADuplicateBlockTypeNamesBothModules()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() => new CatalogueBuilder().Add(new BlocksA()).Add(new BlocksB()));
+
+        Assert.Contains("'echo'", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("module 'A'", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("module 'B'", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ABlockTypeEqualToAComponentTypeNamesBothModules()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() => new CatalogueBuilder().Add(new ModuleA()).Add(new DelayBlockB()));
+
+        Assert.Equal(
+            "Type 'delay' is registered as a component by module 'A' and as a block by module 'B'. " +
+            "Rename one of them; component and block types share one namespace.",
+            ex.Message);
+    }
+
+    [Fact]
+    public void AComponentTypeEqualToABlockTypeNamesBothModules()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() => new CatalogueBuilder().Add(new DelayBlockB()).Add(new ModuleA()));
+
+        Assert.Equal(
+            "Type 'delay' is registered as a block by module 'B' and as a component by module 'A'. " +
+            "Rename one of them; component and block types share one namespace.",
+            ex.Message);
+    }
+
+    [Fact]
+    public void ABlockTypeMustBeKebabCase()
+    {
+        Assert.Throws<ArgumentException>(() => new CatalogueBuilder().AddBlock(Echo("Echo_Block")));
     }
 }
