@@ -14,6 +14,11 @@ public sealed class ControlModule : ICatalogueModule
     {
         ArgumentNullException.ThrowIfNull(builder);
 
+        // Blocks
+        builder.AddBlock(TimerCatalogue.Descriptor);
+        builder.AddBlock(PermissiveCatalogue.Descriptor);
+        builder.AddBlock(InterlockCatalogue.Descriptor);
+
         // Transitions
         builder.Add(TransitionCatalogue.After);
         builder.Add(TransitionCatalogue.When);

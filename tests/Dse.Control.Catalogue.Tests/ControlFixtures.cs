@@ -10,5 +10,10 @@ internal static class ControlFixtures
 
     public static ConformanceFixtures Create() => new ConformanceFixtures()
         .ObjectParameters(ControlCatalogue.TransitionSlot, "when", """{ "tag": "V1.Level", "op": ">=", "value": 80 }""")
-        .ObjectParameters(ControlCatalogue.TransitionSlot, "after", """{ "delayS": 5 }""");
+        .ObjectParameters(ControlCatalogue.TransitionSlot, "after", """{ "delayS": 5 }""")
+        .BlockParameters("timer", """{ "mode": "on-delay", "input": "V1.Running", "presetS": 2 }""")
+        .BlockParameters("permissive", """{ "conditions": [ { "tag": "V1.Tripped", "normal": false } ] }""")
+        .BlockParameters(
+            "interlock",
+            """{ "conditions": [ { "tag": "V1.Tripped", "normal": false } ], "trip": [ { "tag": "V1.Fill", "value": false } ] }""");
 }
