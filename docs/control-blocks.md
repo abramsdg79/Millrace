@@ -194,8 +194,16 @@ reproduces this golden byte for byte.
 The example deliberately has no interlock between the feed and the belt: once
 `INT01` trips the belt, `Feed.Enabled` stays true for a further 24 s onto a
 stopped belt, and the sequence runs to `SEQUENCE_COMPLETE` while the plant is
-still tripped. Plan 6's mine-conveyor sample interlocks the feed on the belt
+still tripped. The mine-conveyor sample interlocks the feed on the belt
 instead, so this gap is not carried forward as a pattern to copy.
+
+### The full-size example
+
+`samples/mine-conveyors/` is the control layer at plant scale: twelve blocks
+over three conveyors — a permissive per belt on its safety relay, cascade
+interlocks that read the downstream belt's zero-speed switch, current alarms,
+and a start and a stop sequencer — with eight scenarios and their goldens. Its
+README explains each design choice; its `plant.json` is the file to copy from.
 
 ## `Timer`
 

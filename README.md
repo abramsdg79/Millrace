@@ -44,7 +44,14 @@ period through the event queue and publishes its outputs as ordinary tags, and
 `Dse.Control` — a timer, a permissive, an interlock, an alarm and a sequencer,
 which reference the I/O contract alone. Blocks are declared in a plant file's
 `controllers` section — `Dse.Control.Catalogue` registers them — or attached in
-code; the reference samples are planned.
+code.
+
+The first reference sample, `samples/mine-conveyors/`, is three conveyors, a
+feeder and a stockpile with a sequenced start and stop, cascade interlocks,
+permissives and alarms, and eight scenarios — a normal start and stop, a
+pull-key, an e-stop, an overload, a blocked chute, a failed zero-speed switch, a
+welded contactor and a starved feed — each with its golden log. It is data only: no C#. The second
+sample, a wheel line of discrete items, is planned (plan 6b).
 
 See `docs/superpowers/specs/` for the design, `docs/superpowers/plans/` for the
 implementation plans, `docs/architecture.md` for how the engine works, and
@@ -58,6 +65,7 @@ dotnet run --project src/Dse.Cli -- schema export --out dse-plant.schema.json
 dotnet run --project src/Dse.Cli -- validate plant.json       # every error, each with its fix; exit 1 if any
 dotnet run --project src/Dse.Cli -- tags plant.json           # the tag directory a SCADA would see
 dotnet run --project src/Dse.Cli -- run scenario.json --expect golden.log  # replay a scenario; exit 4 if the log changed
+dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/pull-key.json  # the sample: a pull-key stops the line
 ```
 
 Add `--assembly path/to/YourModule.dll` to any command to include your own
@@ -107,7 +115,8 @@ commands (`SEQ01.Start`, `INT01.Reset`) like any other tag:
 ]
 ```
 
-See [scenarios](docs/scenarios.md), [control blocks](docs/control-blocks.md),
+See the [mine-conveyor sample](samples/mine-conveyors/README.md),
+[scenarios](docs/scenarios.md), [control blocks](docs/control-blocks.md),
 [authoring a component](docs/authoring-a-component.md), the
 [configuration diagnostics](docs/configuration-diagnostics.md) and the
 [scenario diagnostics](docs/scenario-diagnostics.md).

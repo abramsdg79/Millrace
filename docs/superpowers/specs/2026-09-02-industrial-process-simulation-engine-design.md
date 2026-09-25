@@ -3,6 +3,10 @@
 **Date:** 2026-09-02
 **Status:** Approved for implementation planning
 
+**Amended 2026-09-25 by plan 6a** (`docs/superpowers/specs/2026-09-25-mine-conveyor-sample-design.md`):
+§4's samples and §15.1 describe the mine-conveyor sample as it was built — a
+data folder, not a C# project — and §15.2 names plan 6b.
+
 ## 1. Purpose
 
 A deterministic, composable simulation engine for real-world industrial
@@ -75,7 +79,9 @@ Eight shipping projects, two samples, and a test project per shipping project.
 | `Dse.Configuration` | Declarative plant definition (JSON), loader, and JSON Schema generated from the catalogue. | `Core`, `Components` |
 | `Dse.Cli` | Thin CLI: `catalog export`, `validate`, `run`. | all |
 
-Samples: `samples/Dse.Samples.MineConveyors`, `samples/Dse.Samples.WheelLine`.
+Samples: `samples/mine-conveyors/` — a plant file with its controllers,
+scenarios, golden logs and a README; data only, run by `dse`, and tested by
+`tests/Dse.Samples.Tests` — and the wheel line (plan 6b).
 
 `Dse.Control` deliberately does *not* reference `Dse.Components`. A control
 block that reaches into a component has broken the layering.
@@ -611,13 +617,17 @@ single domain reliably turns out to fit only that domain.
 Three interconnected conveyors: ore source → CV001 → transfer → CV002 →
 transfer → CV003 → sink. Each conveyor composes motor, gearbox, drive and tail
 pulley, belt, speed sensor, belt scale, current sensor, zero-speed switch,
-pull-keys, e-stops, safety relay and starter. A demo controller in `Dse.Control`
-provides sequenced start, interlocks and permissives.
+pull-keys, e-stops, safety relay and starter. The plant file's `controllers`
+section provides sequenced start and stop, interlocks, permissives and alarms
+from the `Dse.Control` blocks; the sample is a data folder,
+`samples/mine-conveyors/`, with no C#.
 
 Demonstrates: plant start, sequenced conveyor start, material flow, speed
 change, belt scale measurement, pull-key activation, emergency stop,
 upstream/downstream interlocks, motor overload, material accumulation, fault
-injection, deterministic replay.
+injection, deterministic replay. The drives are direct-on-line, so "speed
+change" is the start, stop and trip transients and the speed sag under load; a
+variable-speed drive is a later plan.
 
 ### 15.2 Wheel line — discrete
 
@@ -631,6 +641,10 @@ type change at the press (blank → wheel), and cycle-time-limited throughput.
 Its own causal chain, in a different domain: the press runs slow → blanks queue
 on the conveyor → the furnace cannot discharge → billets over-soak → a
 temperature interlock rejects them. None of it is conveyor-specific code.
+
+The wheel line is plan 6b. Its chain needs component behaviour that does not
+exist yet — a graded slow-cycle fault on a process unit, a blocked furnace batch
+that keeps soaking, a reject path for discrete items — which 6b designs first.
 
 ## 16. Testing strategy
 
