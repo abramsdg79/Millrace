@@ -53,7 +53,7 @@ implementation plans, `docs/architecture.md` for how the engine works, and
 ## Command line
 
 ```bash
-dotnet run --project src/Dse.Cli -- catalog export            # every component, block, transform, hold and material, as JSON
+dotnet run --project src/Dse.Cli -- catalog export            # every component, block, transform, transition, hold and material, as JSON
 dotnet run --project src/Dse.Cli -- schema export --out dse-plant.schema.json
 dotnet run --project src/Dse.Cli -- validate plant.json       # every error, each with its fix; exit 1 if any
 dotnet run --project src/Dse.Cli -- tags plant.json           # the tag directory a SCADA would see

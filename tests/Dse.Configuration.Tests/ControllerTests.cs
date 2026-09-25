@@ -213,6 +213,10 @@ public class ControllerTests
     [InlineData("null-tags", "The owned-tag function of type 'null-tags' returned null or a null tag.")]
     [InlineData("null-block", "The factory for type 'null-block' returned null.")]
     [InlineData("wrong-id", "The factory for type 'wrong-id' built block 'OTHER' scanning every 100 ms, but was given 'B1' and 100 ms.")]
+    [InlineData("throwing-outputs", "Reading the Outputs of the block built for type 'throwing-outputs' failed with InvalidOperationException: no outputs today.")]
+    [InlineData("null-inputs", "The block built for type 'null-inputs' has a null Inputs list or a null entry in it.")]
+    [InlineData("null-command", "The block built for type 'null-command' has a null Commands list or a null entry in it.")]
+    [InlineData("misdeclared", "The block built for type 'misdeclared' owns 'B1.Ok' (Bool ReadOnly), but its descriptor declares 'B1.Ok' (Bool ReadWrite).")]
     public void AModuleDefectIsDse111NamingTheModule(string type, string message)
     {
         string json = $$"""{ "components": [ { "id": "PILE", "type": "bulk-sink" } ], "controllers": [ { "id": "B1", "type": "{{type}}", "scanPeriodMs": 100 } ] }""";
@@ -223,6 +227,19 @@ public class ControllerTests
         Assert.Equal("$.controllers[0]", d.Path);
         Assert.Equal(message, d.Message);
         Assert.Contains("module 'Test'", d.Fix, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ATransitionThatRejectsItsParametersIsASentenceWithoutTheParameterSuffix()
+    {
+        const string Seq01 =
+            """{ "id": "SEQ01", "type": "sequencer", "scanPeriodMs": 100, "parameters": { "steps": [ { "name": "Fill the chute", "transition": { "type": "when", "tag": "CHUTE.Full", "op": "<", "value": true } } ] } }""";
+
+        ConfigDiagnostic d = Plants.Only(Plant(Seq01));
+
+        Assert.Equal("DSE111", d.Code);
+        Assert.EndsWith("Use Equal or NotEqual.", d.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("(Parameter", d.Message, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -2,6 +2,7 @@ using Dse.Components;
 using Dse.Control;
 using Dse.Core.Catalogue;
 using Dse.Core.Graph;
+using Dse.Io;
 
 namespace Dse.Configuration.Tests;
 
@@ -64,6 +65,54 @@ internal sealed class TestModule : ICatalogueModule
             "Its factory ignores the id it is given.",
             (id, p) => [],
             (id, period, p) => new Permissive("OTHER", [new Condition("PILE.Full", false)], period)));
+        builder.AddBlock(new BlockDescriptor(
+            "throwing-outputs",
+            "Its block's Outputs getter throws.",
+            (id, p) => [],
+            (id, period, p) => new DefectiveBlock(id, period) { OutputsOverride = () => throw new InvalidOperationException("no outputs today") }));
+        builder.AddBlock(new BlockDescriptor(
+            "null-inputs",
+            "Its block's Inputs getter returns null.",
+            (id, p) => [],
+            (id, period, p) => new DefectiveBlock(id, period) { InputsOverride = () => null! }));
+        builder.AddBlock(new BlockDescriptor(
+            "null-command",
+            "Its block's Commands list holds a null.",
+            (id, p) => [],
+            (id, period, p) => new DefectiveBlock(id, period) { CommandsOverride = () => [null!] }));
+        builder.AddBlock(new BlockDescriptor(
+            "misdeclared",
+            "Declares its output read-write; the block publishes it read-only.",
+            (id, p) => [(new TagSpec($"{id}.Ok", TagKind.Bool), TagAccess.ReadWrite)],
+            (id, period, p) => new DefectiveBlock(id, period) { OutputsOverride = () => [new TagSpec("Ok", TagKind.Bool)] }));
+    }
+}
+
+/// <summary>A block with no pins unless an override says otherwise; the overrides model a defective module.</summary>
+internal sealed class DefectiveBlock(string id, TimeSpan scanPeriod) : IScanBlock
+{
+    public Func<IReadOnlyList<TagRef>> InputsOverride { get; init; } = () => [];
+
+    public Func<IReadOnlyList<TagRef>> WritesOverride { get; init; } = () => [];
+
+    public Func<IReadOnlyList<TagSpec>> OutputsOverride { get; init; } = () => [];
+
+    public Func<IReadOnlyList<TagSpec>> CommandsOverride { get; init; } = () => [];
+
+    public string Id { get; } = id;
+
+    public TimeSpan ScanPeriod { get; } = scanPeriod;
+
+    public IReadOnlyList<TagRef> Inputs => InputsOverride();
+
+    public IReadOnlyList<TagRef> Writes => WritesOverride();
+
+    public IReadOnlyList<TagSpec> Outputs => OutputsOverride();
+
+    public IReadOnlyList<TagSpec> Commands => CommandsOverride();
+
+    public void Scan(in ScanInputs inputs, ref ScanOutputs outputs)
+    {
     }
 }
 

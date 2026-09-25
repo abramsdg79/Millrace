@@ -369,7 +369,7 @@ public static class ParameterBinder
             issues.Add(new BindingIssue(
                 BindingIssueKind.Rejected,
                 path,
-                $"The {slot} '{type}' rejected its parameters: {ex.Message}",
+                $"The {slot} '{type}' rejected its parameters: {AsSentence(ex.Message)}",
                 "Change the parameter the message names."));
             return null;
         }
@@ -719,4 +719,18 @@ public static class ParameterBinder
         ParameterKind.Value => "true, false or a number",
         _ => "a value",
     };
+
+    // ArgumentException appends " (Parameter 'x')" naming a C# parameter, which means nothing to a plant author;
+    // a third-party exception's message is not guaranteed to be a sentence at all.
+    private static string AsSentence(string message)
+    {
+        int cut = message.IndexOf(" (Parameter '", StringComparison.Ordinal);
+        string text = (cut < 0 ? message : message[..cut]).Trim();
+        if (text.Length == 0)
+        {
+            return "No message was given.";
+        }
+
+        return text.EndsWith('.') ? text : text + ".";
+    }
 }

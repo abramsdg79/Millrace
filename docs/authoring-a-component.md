@@ -200,7 +200,10 @@ public static BlockDescriptor Descriptor { get; } = new(
   `ReadOnly`, commands `ReadWrite` — as a function of the id and the parameters
   alone. The loader calls it before any block exists, to resolve every tag a
   controller names, so it must not read a value or an object parameter.
-- **The factory** takes the id, the scan period and the resolved parameters.
+- **The factory** takes the id, the scan period and the resolved parameters,
+  and must build a block with exactly that id and scan period. The tags in
+  `OwnedTags` must match the block's `Outputs` (read-only) and `Commands`
+  (read-write), or the loader reports DSE111 naming the module.
 - **`Param.Tag(name, description, kind, writes)`** is a tag name the loader
   resolves: give `kind` when the block needs one, and `writes: true` when the
   block commands the tag. **`Param.Value(name, description, tagParameter)`** is
@@ -210,5 +213,5 @@ public static BlockDescriptor Descriptor { get; } = new(
   types share one namespace.
 - Prove it with `new ConformanceFixtures().BlockParameters("latch", """{ … }""")`
   — call it again to check the type with several fixtures. Conformance compares
-  `OwnedTags` with the instance's `Outputs` and `Commands` by name, kind and
-  access.
+  `OwnedTags` with the instance's `Outputs` and `Commands` by name, kind,
+  access, unit and description.

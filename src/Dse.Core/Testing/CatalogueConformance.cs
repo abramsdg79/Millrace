@@ -213,8 +213,14 @@ public static class CatalogueConformance
             return;
         }
 
-        var actual = block.Outputs.Select(s => (Spec: s, Access: TagAccess.ReadOnly))
-            .Concat(block.Commands.Select(s => (Spec: s, Access: TagAccess.ReadWrite)))
+        if (!TryReadPins(nameof(IScanBlock.Outputs), () => block.Outputs, label, mismatches, out IReadOnlyList<TagSpec> outputs)
+            || !TryReadPins(nameof(IScanBlock.Commands), () => block.Commands, label, mismatches, out IReadOnlyList<TagSpec> commands))
+        {
+            return;
+        }
+
+        var actual = outputs.Select(s => (Spec: s, Access: TagAccess.ReadOnly))
+            .Concat(commands.Select(s => (Spec: s, Access: TagAccess.ReadWrite)))
             .Select(t => (Name: $"{block.Id}.{t.Spec.Name}", t.Spec.Kind, t.Access, t.Spec.Unit, t.Spec.Description))
             .ToList();
 
@@ -241,6 +247,33 @@ public static class CatalogueConformance
                 }
             }
         }
+    }
+
+    /// <summary>A pin getter that throws, returns null or holds a null is a finding to report, not a crash.</summary>
+    private static bool TryReadPins(
+        string pin, Func<IReadOnlyList<TagSpec>> read, string label, List<string> mismatches, out IReadOnlyList<TagSpec> pins)
+    {
+        try
+        {
+            pins = read();
+        }
+#pragma warning disable CA1031 // Reported, not rethrown: a broken pin getter is a finding like any other.
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            mismatches.Add($"{label}: the instance's {pin} failed with {ex.GetType().Name}: {ex.Message}");
+            pins = [];
+            return false;
+        }
+
+        if (pins is null || pins.Any(p => p is null))
+        {
+            mismatches.Add($"{label}: the instance's {pin} is null or holds a null.");
+            pins = [];
+            return false;
+        }
+
+        return true;
     }
 
     private static IReadOnlyList<string> Names(string pattern, PortRepeat? repeat, ParameterValues values)

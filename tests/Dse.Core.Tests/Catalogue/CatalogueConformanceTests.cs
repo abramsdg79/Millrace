@@ -473,4 +473,36 @@ public class CatalogueConformanceTests
             "echo (fixture 2): owned tag 'probe.Extra' (Bool ReadOnly) is in the descriptor but not on the instance.",
             Assert.Single(report.Mismatches));
     }
+
+    [Fact]
+    public void ReportsAPinGetterThatThrowsInsteadOfThrowing()
+    {
+        var throwing = new BlockDescriptor("echo", "Echoes a tag.", (id, p) => [], (id, period, p) => new ThrowingOutputsBlock(id, period));
+
+        ConformanceReport report = CheckBlock(throwing, "{}");
+
+        Assert.Equal(
+            "echo: the instance's Outputs failed with InvalidOperationException: The stub has no outputs.",
+            Assert.Single(report.Mismatches));
+    }
+
+    /// <summary>A block whose Outputs getter throws.</summary>
+    private sealed class ThrowingOutputsBlock(string id, TimeSpan scanPeriod) : IScanBlock
+    {
+        public string Id { get; } = id;
+
+        public TimeSpan ScanPeriod { get; } = scanPeriod;
+
+        public IReadOnlyList<TagRef> Inputs => [];
+
+        public IReadOnlyList<TagRef> Writes => [];
+
+        public IReadOnlyList<TagSpec> Outputs => throw new InvalidOperationException("The stub has no outputs.");
+
+        public IReadOnlyList<TagSpec> Commands => [];
+
+        public void Scan(in ScanInputs inputs, ref ScanOutputs outputs)
+        {
+        }
+    }
 }
