@@ -59,4 +59,21 @@ public class StateChainTests
             "A was not above 250 at 10 s, so its fall proves nothing.",
             StateChain.FindFallInOrder(traces, ["A"], Start, 250, 5));
     }
+
+    [Fact]
+    public void AZeroLengthSeriesFailsRatherThanPassingVacuously()
+    {
+        List<TagSample> empty = [];
+
+        Assert.Null(StateChain.SettlesAtOrBelow(empty, 5, Start));
+
+        var traces = new Dictionary<string, IReadOnlyList<TagSample>>(StringComparer.Ordinal)
+        {
+            ["A"] = empty,
+        };
+
+        Assert.Equal(
+            "A was not above 250 at 10 s, so its fall proves nothing.",
+            StateChain.FindFallInOrder(traces, ["A"], Start, 250, 5));
+    }
 }

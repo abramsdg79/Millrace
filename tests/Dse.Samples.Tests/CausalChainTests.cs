@@ -110,4 +110,20 @@ public class CausalChainTests
             "The absence of any source INTERLOCK_TRIP ends at SEQ_STOP SEQUENCE_COMPLETE, which never occurs after its start.",
             CausalChain.FindAbsence(Log, new Absence(null, forbidden, new EventPattern("SEQ_STOP", "SEQUENCE_COMPLETE"))));
     }
+
+    [Fact]
+    public void AnEmptyLogFailsRatherThanPassingVacuously()
+    {
+        SimEventRecord[] empty = [];
+
+        Assert.Equal(
+            "The chain breaks at CV001.Starter CONTACTOR_CLOSED: no such event after the start of the log.",
+            CausalChain.FindChain(empty, [new EventPattern("CV001.Starter", "CONTACTOR_CLOSED")]));
+
+        Assert.Equal(
+            "The absence of any source INTERLOCK_TRIP starts at SEQ_STOP SEQUENCE_COMPLETE, which never occurs.",
+            CausalChain.FindAbsence(
+                empty,
+                new Absence(new EventPattern("SEQ_STOP", "SEQUENCE_COMPLETE"), new EventPattern(null, "INTERLOCK_TRIP"))));
+    }
 }
