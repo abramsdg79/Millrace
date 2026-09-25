@@ -1,0 +1,64 @@
+{
+  "defaults": { "seed": 1, "timeStepMs": 10, "startTime": "2026-01-01T06:00:00Z" },
+  "materials": [
+    { "name": "Ore", "kind": "bulk", "properties": { "density": 2000, "moisture": 0.03, "temperature": 15 } }
+  ],
+  "components": [
+    { "id": "Pile", "type": "bulk-sink" },
+    { "id": "Chute", "type": "transfer-chute", "parameters": { "capacityKg": 200 } },
+    { "id": "CV001", "type": "conveyor", "parameters": {
+        "lengthM": 10, "cellSizeM": 0.5, "beltWidthM": 0.8, "angleOfReposeDeg": 20, "materialDensityKgM3": 2000,
+        "emptyBeltMassKg": 250, "frictionCoefficient": 0.04, "pulleyDiameterM": 0.5, "gearRatio": 20,
+        "motor": { "ratedPowerW": 750, "ratedSpeedRadPerS": 150, "ratedCurrentA": 2 },
+        "tailDragN": 80 } },
+    { "id": "Feed", "type": "bulk-source", "parameters": { "material": "Ore", "rateKgPerS": 20 } }
+  ],
+  "flows": [
+    { "from": "Feed.Out", "to": "CV001.In" },
+    { "from": "CV001.Out", "to": "Chute.In" },
+    { "from": "Chute.Out", "to": "Pile.In" }
+  ],
+  "controllers": [
+    { "id": "PERM01", "type": "permissive", "scanPeriodMs": 100,
+      "parameters": {
+        "conditions": [
+          { "tag": "CV001.SafetyOk", "normal": true },
+          { "tag": "Pile.Full",      "normal": false } ] } },
+    { "id": "INT01", "type": "interlock", "scanPeriodMs": 100,
+      "parameters": {
+        "conditions": [
+          { "tag": "CV001.Tripped", "normal": false },
+          { "tag": "PERM01.Ok",     "normal": true } ],
+        "trip": [ { "tag": "CV001.Start", "value": false } ] } },
+    { "id": "CUR01", "type": "alarm", "scanPeriodMs": 100,
+      "parameters": {
+        "input": "CV001.Current",
+        "limits": [
+          { "kind": "hi",    "value": 3.0, "deadband": 0.2, "onDelayS": 0.5 },
+          { "kind": "hi-hi", "value": 8.0, "deadband": 0.5, "onDelayS": 0.1 } ] } },
+    { "id": "SEQ01", "type": "sequencer", "scanPeriodMs": 200,
+      "parameters": {
+        "steps": [
+          { "name": "Reset the safety relay",
+            "writes": [ { "tag": "CV001.SafetyReset", "value": true } ],
+            "transition": { "type": "after", "delayS": 1 } },
+          { "name": "Reset the interlock",
+            "writes": [ { "tag": "CV001.SafetyReset", "value": false }, { "tag": "INT01.Reset", "value": true } ],
+            "transition": { "type": "after", "delayS": 1 } },
+          { "name": "Start the belt",
+            "writes": [ { "tag": "INT01.Reset", "value": false }, { "tag": "CV001.Start", "value": true } ],
+            "transition": { "type": "when", "tag": "CV001.Speed", "op": ">=", "value": 1.0 },
+            "timeoutS": 15 },
+          { "name": "Run the feed",
+            "writes": [ { "tag": "Feed.Enabled", "value": true } ],
+            "transition": { "type": "after", "delayS": 60 } },
+          { "name": "Stop the feed",
+            "writes": [ { "tag": "Feed.Enabled", "value": false } ],
+            "transition": { "type": "after", "delayS": 2 } },
+          { "name": "Stop the belt",
+            "writes": [ { "tag": "CV001.Start", "value": false } ],
+            "transition": { "type": "when", "tag": "CV001.Stopped", "op": "==", "value": true },
+            "timeoutS": 60 } ],
+        "abort": [ { "tag": "CV001.Start", "value": false } ] } }
+  ]
+}

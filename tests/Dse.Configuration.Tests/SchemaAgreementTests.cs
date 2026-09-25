@@ -80,4 +80,27 @@ public class SchemaAgreementTests
         Assert.False(Accepts(bad));
         Assert.False(Plants.Load(bad).IsValid);
     }
+
+    [Theory]
+    [InlineData("\"scanPeriodMs\": 100", "\"scanPeriodMs\": 0")]
+    [InlineData("\"scanPeriodMs\": 100,", "")]
+    [InlineData("\"type\": \"timer\"", "\"type\": \"timmer\"")]
+    [InlineData("\"mode\": \"on-delay\"", "\"mode\": \"on_delay\"")]
+    [InlineData("\"presetS\": 2", "\"presetS\": 2, \"preset\": 2")]
+    [InlineData("\"id\": \"TMR01\"", "\"id\": \"TMR.01\"")]
+    public void BothValidatorsRejectTheSameControllerMistakes(string from, string to)
+    {
+        const string Good = """
+            { "components": [ { "id": "PILE", "type": "bulk-sink" } ],
+              "controllers": [ { "id": "TMR01", "type": "timer", "scanPeriodMs": 100,
+                                 "parameters": { "mode": "on-delay", "input": "PILE.Full", "presetS": 2 } } ] }
+            """;
+        string bad = Good.Replace(from, to, StringComparison.Ordinal);
+
+        Assert.NotEqual(Good, bad);                   // every `from` must occur in Good, byte for byte
+        Assert.True(Accepts(Good));
+        Assert.True(Plants.Load(Good).IsValid, Plants.Load(Good).ToText());
+        Assert.False(Accepts(bad));
+        Assert.False(Plants.Load(bad).IsValid);
+    }
 }

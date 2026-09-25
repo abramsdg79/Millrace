@@ -1,0 +1,14 @@
+{
+  "defaults": { "seed": 1, "timeStepMs": 10, "startTime": "2026-01-01T06:00:00Z" },
+  "materials": [ { "name": "ore", "kind": "bulk" } ],
+  "components": [
+    { "id": "FEED", "type": "bulk-source", "parameters": { "material": "ore", "rateKgPerS": 20 } },
+    { "id": "CHUTE", "type": "transfer-chute", "parameters": { "capacityKg": 200 } },
+    { "id": "PILE", "type": "bulk-sink" }
+  ],
+  "flows": [ { "from": "FEED.Out", "to": "CHUTE.In" }, { "from": "CHUTE.Out", "to": "PILE.In" } ],
+  "controllers": [
+    { "id": "CHUTE", "type": "permissive", "scanPeriodMs": 100,
+      "parameters": { "conditions": [ { "tag": "CHUTE.Full", "normal": false } ] } }
+  ]
+}
