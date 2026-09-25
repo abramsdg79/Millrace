@@ -6,6 +6,55 @@ refining the interlock of `2026-09-22-control-blocks-design.md` (5c) and the
 mine-conveyor sample of `2026-09-25-mine-conveyor-sample-design.md` (6a, with
 6a.1). All merged.
 
+**Amended 2026-09-25 by the plan**
+(`docs/superpowers/plans/2026-09-25-interlock-start-inhibit.md`, rulings
+R122–R132), where the owner's ruling, the code or a measured run forced a
+change. The sections below read as amended:
+
+- **A reset drops the command (R126, owner's ruling).** Section 1's "a reset
+  alone never restarts a device" was false as written: `Start` and `Enabled`
+  are held values, so a start written during a trip was refused, kept, and
+  released by the reset (measured: CV001 closed on the reset's permit write).
+  The sample's reset writes now give the permit back **and** write the command
+  false, as a seal-in circuit forgets a start pressed while its interlock was
+  open: `INT_CVn` resets write `CVn.Permit` true and `CVn.Start` false;
+  `INT_FEED` writes `Feed.Permit` true and `Feed.Enabled` false. Section 4's
+  table reads so. A device runs again only on a fresh command after the reset.
+- **`SEQ_START` is reordered (R124).** Section 4's "`SEQ_START` needs no change"
+  no longer holds: a reset and a start in one step would have the start
+  overwritten by the reset's `false`. It now has nine steps — reset the safety
+  relays; then, for CV003, CV002, CV001 and the feed in turn, reset the
+  interlock (until its `Ok`, 5 s timeout) and, a step later, start the device
+  (proved at 1.74 m/s, 15 s timeout, for the belts). Contactors close at 2.41,
+  5.01 and 7.61 s and ore moves from 10.21 s; each proving scan has 90–120 ms of
+  slack (the one-step variant had one tick or none).
+- **Write pins (R122, R123).** The interlock's write pins are its trip tags in
+  order, then each tag only a reset write names — one pin per distinct tag; the
+  host sends a scan's writes in pin order. The new constructor takes the reset
+  writes last, after the scan period; a tag written as two kinds across the
+  lists is refused; a tag twice in one list is refused with a message naming
+  the list ("… commanded twice on reset."), which a plant file reports as
+  `DSE111`.
+- **Criterion 6 (R127).** Eight existing tests assert an exact tag set or tag
+  count that the four new tags change (two component shape tests, the
+  conveyor's face, the worked example's two directory counts and three CLI
+  counts, 47 → 49). They change by the added tags only, as criterion 5 lets the
+  goldens change; one sample test is renamed ("eight scenarios" → "named").
+- **Section 4's goldens (R129).** Besides the `Permit` lines, every start-up
+  line from step 2 moves with the reordered `SEQ_START`, and two goldens change
+  values because the belts and the feed start later: overload's
+  `OVERLOAD_TRIP` thermal state (1.285658707267615) and chute-blockage's
+  `Hi`/`HiHi` values and overload trip (3:09.700 → 3:09.770). The README quotes
+  of normal-start-stop, overload and chute-blockage follow.
+- **Scenario 9 (R125).** Runs 150 s and proves both halves of the inhibit and a
+  fresh start: the start and enable written at 100 s while tripped move
+  nothing; after the pull-key is restored and CV002's relay and interlock are
+  reset and CV002 restarted, `INT_CV001`'s reset (115 s) gives the permit back
+  and drops the start, so CV001 stays stopped until a fresh start at 125 s; and
+  `INT_FEED`'s reset (130 s) drops the enable, so the feeder stays off to the
+  end. The state check samples `CV001.Speed`, `CV001.TonnesPerHour` (100–125 s)
+  and `Feed.HopperMass` (100 s to the end).
+
 ## 1. Scope
 
 The 5c interlock writes its trip values once, on the trip scan (R71). It does
@@ -96,8 +145,8 @@ and drops its run command on trip.
 
 | block | trip writes | reset writes |
 |---|---|---|
-| `INT_CV001..3` | `CVn.Start` false, `CVn.Permit` false | `CVn.Permit` true |
-| `INT_FEED` | `Feed.Enabled` false, `Feed.Permit` false | `Feed.Permit` true |
+| `INT_CV001..3` | `CVn.Start` false, `CVn.Permit` false | `CVn.Permit` true, `CVn.Start` false |
+| `INT_FEED` | `Feed.Enabled` false, `Feed.Permit` false | `Feed.Permit` true, `Feed.Enabled` false |
 
 `SEQ_START` needs no change: it resets each interlock before commanding its
 device, so the permit is true by the time the command lands. The plan measures
