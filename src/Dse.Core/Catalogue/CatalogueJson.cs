@@ -45,6 +45,20 @@ public static class CatalogueJson
 
             writer.WriteEndArray();
 
+            writer.WriteStartArray("blocks");
+            foreach (BlockDescriptor block in catalogue.Blocks)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("type", block.Type);
+                writer.WriteString("module", catalogue.ModuleOf(block));
+                writer.WriteString("description", block.Description);
+                writer.WritePropertyName("parameters");
+                WriteParameters(writer, block.Parameters);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+
             writer.WriteStartArray("objects");
             foreach (ObjectDescriptor descriptor in catalogue.Objects)
             {
@@ -198,6 +212,21 @@ public static class CatalogueJson
             if (parameter.MinCount > 0)
             {
                 writer.WriteNumber("minCount", parameter.MinCount);
+            }
+
+            if (parameter.RequiredKind is { } tagKind)
+            {
+                writer.WriteString("tagKind", Camel(tagKind.ToString()));
+            }
+
+            if (parameter.IsWriteTarget)
+            {
+                writer.WriteBoolean("writes", true);
+            }
+
+            if (parameter.TagParameter.Length > 0)
+            {
+                writer.WriteString("tagParameter", parameter.TagParameter);
             }
 
             writer.WriteEndObject();

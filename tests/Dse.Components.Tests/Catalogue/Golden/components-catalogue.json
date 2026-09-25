@@ -3251,6 +3251,7 @@
       "provides": []
     }
   ],
+  "blocks": [],
   "objects": [
     {
       "slot": "hold",

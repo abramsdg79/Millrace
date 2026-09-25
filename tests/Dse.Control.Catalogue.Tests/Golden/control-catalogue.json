@@ -1,0 +1,328 @@
+{
+  "formatVersion": 1,
+  "modules": [
+    "Dse.Control"
+  ],
+  "components": [],
+  "blocks": [
+    {
+      "type": "alarm",
+      "module": "Dse.Control",
+      "description": "An ISA-18.2 analog alarm over one Double tag: one to four limits, each with a deadband and an on-delay, acknowledged by Ack.",
+      "parameters": [
+        {
+          "name": "input",
+          "kind": "tag",
+          "required": true,
+          "description": "The Double tag watched.",
+          "tagKind": "double"
+        },
+        {
+          "name": "limits",
+          "kind": "groupList",
+          "required": true,
+          "description": "One to four limits, each kind at most once.",
+          "group": "AlarmLimit",
+          "parameters": [
+            {
+              "name": "kind",
+              "kind": "enum",
+              "required": true,
+              "description": "Which limit. Configured limits must ascend lo-lo < lo < hi < hi-hi, each at most once.",
+              "allowedValues": [
+                "lo-lo",
+                "lo",
+                "hi",
+                "hi-hi"
+              ]
+            },
+            {
+              "name": "value",
+              "kind": "double",
+              "required": true,
+              "description": "The limit, in the tag's engineering unit."
+            },
+            {
+              "name": "deadband",
+              "kind": "double",
+              "required": false,
+              "description": "How far back inside the limit the value must come before the alarm clears.",
+              "default": 0,
+              "minimum": 0
+            },
+            {
+              "name": "onDelayS",
+              "kind": "double",
+              "required": false,
+              "description": "How long the value must stay across before the alarm raises.",
+              "unit": "s",
+              "default": 0,
+              "minimum": 0,
+              "maximum": 31536000
+            }
+          ],
+          "minCount": 1
+        }
+      ]
+    },
+    {
+      "type": "interlock",
+      "module": "Dse.Control",
+      "description": "The conditions that stop a running thing: any abnormal condition latches Tripped and sends the trip writes once, until Reset.",
+      "parameters": [
+        {
+          "name": "conditions",
+          "kind": "groupList",
+          "required": true,
+          "description": "The Bool tags whose abnormal value trips the interlock, in report order.",
+          "group": "Condition",
+          "parameters": [
+            {
+              "name": "tag",
+              "kind": "tag",
+              "required": true,
+              "description": "The Bool tag watched.",
+              "tagKind": "bool"
+            },
+            {
+              "name": "normal",
+              "kind": "bool",
+              "required": true,
+              "description": "The value that means the condition is satisfied."
+            }
+          ],
+          "minCount": 1
+        },
+        {
+          "name": "trip",
+          "kind": "groupList",
+          "required": false,
+          "description": "What to command when the interlock trips, once, on the trip scan.",
+          "group": "BlockWrite",
+          "parameters": [
+            {
+              "name": "tag",
+              "kind": "tag",
+              "required": true,
+              "description": "The tag commanded.",
+              "writes": true
+            },
+            {
+              "name": "value",
+              "kind": "value",
+              "required": true,
+              "description": "The value commanded.",
+              "tagParameter": "tag"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "permissive",
+      "module": "Dse.Control",
+      "description": "The conditions something needs before it may start: Ok while every condition is normal, never latched.",
+      "parameters": [
+        {
+          "name": "conditions",
+          "kind": "groupList",
+          "required": true,
+          "description": "The Bool tags that must be normal, in report order.",
+          "group": "Condition",
+          "parameters": [
+            {
+              "name": "tag",
+              "kind": "tag",
+              "required": true,
+              "description": "The Bool tag watched.",
+              "tagKind": "bool"
+            },
+            {
+              "name": "normal",
+              "kind": "bool",
+              "required": true,
+              "description": "The value that means the condition is satisfied."
+            }
+          ],
+          "minCount": 1
+        }
+      ]
+    },
+    {
+      "type": "sequencer",
+      "module": "Dse.Control",
+      "description": "A linear sequence of steps, each with entry writes, a transition and an optional timeout, run by Start, Hold, Resume, Abort and Reset.",
+      "parameters": [
+        {
+          "name": "steps",
+          "kind": "groupList",
+          "required": true,
+          "description": "The steps, in order. There is no branching and no parallel step.",
+          "group": "SequenceStep",
+          "parameters": [
+            {
+              "name": "name",
+              "kind": "string",
+              "required": true,
+              "description": "A short phrase for the step's event message, without a full stop."
+            },
+            {
+              "name": "writes",
+              "kind": "groupList",
+              "required": false,
+              "description": "What to command on the scan that enters the step.",
+              "group": "BlockWrite",
+              "parameters": [
+                {
+                  "name": "tag",
+                  "kind": "tag",
+                  "required": true,
+                  "description": "The tag commanded.",
+                  "writes": true
+                },
+                {
+                  "name": "value",
+                  "kind": "value",
+                  "required": true,
+                  "description": "The value commanded.",
+                  "tagParameter": "tag"
+                }
+              ]
+            },
+            {
+              "name": "transition",
+              "kind": "object",
+              "required": true,
+              "description": "What ends the step: when a tag compares as asked, or after a delay.",
+              "slot": "transition"
+            },
+            {
+              "name": "timeoutS",
+              "kind": "double",
+              "required": false,
+              "description": "How long the step may run before the sequence faults and sends the abort writes. Omit for no limit.",
+              "unit": "s",
+              "optional": true,
+              "minimum": 0,
+              "exclusiveMinimum": true,
+              "maximum": 31536000
+            }
+          ],
+          "minCount": 1
+        },
+        {
+          "name": "abort",
+          "kind": "groupList",
+          "required": false,
+          "description": "What to command on an Abort or a step timeout.",
+          "group": "BlockWrite",
+          "parameters": [
+            {
+              "name": "tag",
+              "kind": "tag",
+              "required": true,
+              "description": "The tag commanded.",
+              "writes": true
+            },
+            {
+              "name": "value",
+              "kind": "value",
+              "required": true,
+              "description": "The value commanded.",
+              "tagParameter": "tag"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "timer",
+      "module": "Dse.Control",
+      "description": "An IEC 61131-3 timer over one Bool tag: on-delay (TON), off-delay (TOF) or pulse (TP).",
+      "parameters": [
+        {
+          "name": "mode",
+          "kind": "enum",
+          "required": true,
+          "description": "on-delay raises Q once the input has held true for the preset; off-delay holds Q for the preset after the input falls; pulse gives one preset-long pulse on a rising edge.",
+          "allowedValues": [
+            "on-delay",
+            "off-delay",
+            "pulse"
+          ]
+        },
+        {
+          "name": "input",
+          "kind": "tag",
+          "required": true,
+          "description": "The Bool tag timed.",
+          "tagKind": "bool"
+        },
+        {
+          "name": "presetS",
+          "kind": "double",
+          "required": true,
+          "description": "The delay or pulse length. Zero acts immediately.",
+          "unit": "s",
+          "minimum": 0,
+          "maximum": 31536000
+        }
+      ]
+    }
+  ],
+  "objects": [
+    {
+      "slot": "transition",
+      "type": "after",
+      "module": "Dse.Control",
+      "description": "Ends the step when its clock reaches a delay.",
+      "parameters": [
+        {
+          "name": "delayS",
+          "kind": "double",
+          "required": true,
+          "description": "How long the step runs.",
+          "unit": "s",
+          "minimum": 0,
+          "maximum": 31536000
+        }
+      ]
+    },
+    {
+      "slot": "transition",
+      "type": "when",
+      "module": "Dse.Control",
+      "description": "Ends the step when a tag compares with a value as asked.",
+      "parameters": [
+        {
+          "name": "tag",
+          "kind": "tag",
+          "required": true,
+          "description": "The tag compared."
+        },
+        {
+          "name": "op",
+          "kind": "enum",
+          "required": true,
+          "description": "How the tag is compared. A Bool tag allows only == and !=.",
+          "allowedValues": [
+            "==",
+            "!=",
+            "<",
+            "<=",
+            ">",
+            ">="
+          ]
+        },
+        {
+          "name": "value",
+          "kind": "value",
+          "required": true,
+          "description": "What the tag is compared with.",
+          "tagParameter": "tag"
+        }
+      ]
+    }
+  ],
+  "materials": []
+}

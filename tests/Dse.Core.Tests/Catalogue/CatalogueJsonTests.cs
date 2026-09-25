@@ -38,6 +38,19 @@ public class CatalogueJsonTests
                 Parameters = [Param.Double("seconds", "How long.", "s", min: 0.0)],
             });
             builder.Add(new MaterialDescriptor(new MaterialType("ore", PayloadKind.Bulk, "wet"), new MaterialProperties(2000.0, 0.03, 15.0), "Ore."));
+            builder.AddBlock(new BlockDescriptor(
+                "echo",
+                "Echoes a tag.",
+                (id, p) => [(new TagSpec($"{id}.Q", TagKind.Bool), TagAccess.ReadOnly)],
+                (id, period, p) => throw new NotSupportedException("The export never builds a block."))
+            {
+                Parameters =
+                [
+                    Param.Tag("input", "The tag read.", TagKind.Bool),
+                    Param.Tag("target", "The tag commanded.", writes: true),
+                    Param.Value("value", "The value commanded.", "target"),
+                ],
+            });
         }
     }
 
@@ -115,5 +128,32 @@ public class CatalogueJsonTests
         Assert.DoesNotContain('\r', Json);
         Assert.EndsWith("}\n", Json, StringComparison.Ordinal);
         Assert.DoesNotContain("\\u", Json, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void WritesBlocksBetweenComponentsAndObjects()
+    {
+        using JsonDocument document = JsonDocument.Parse(Json);
+        JsonElement root = document.RootElement;
+
+        Assert.Equal(
+            ["formatVersion", "modules", "components", "blocks", "objects", "materials"],
+            root.EnumerateObject().Select(p => p.Name));
+
+        JsonElement echo = Assert.Single(root.GetProperty("blocks").EnumerateArray());
+        Assert.Equal(["type", "module", "description", "parameters"], echo.EnumerateObject().Select(p => p.Name));
+        Assert.Equal("echo", echo.GetProperty("type").GetString());
+        Assert.Equal("Test", echo.GetProperty("module").GetString());
+
+        JsonElement input = echo.GetProperty("parameters")[0];
+        JsonElement target = echo.GetProperty("parameters")[1];
+        JsonElement value = echo.GetProperty("parameters")[2];
+        Assert.Equal("tag", input.GetProperty("kind").GetString());
+        Assert.Equal("bool", input.GetProperty("tagKind").GetString());
+        Assert.False(input.TryGetProperty("writes", out _));
+        Assert.True(target.GetProperty("writes").GetBoolean());
+        Assert.False(target.TryGetProperty("tagKind", out _));
+        Assert.Equal("value", value.GetProperty("kind").GetString());
+        Assert.Equal("target", value.GetProperty("tagParameter").GetString());
     }
 }

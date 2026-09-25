@@ -19,6 +19,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Shared\Golden.cs" Link="Shared\Golden.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Dse.Control.Catalogue\Dse.Control.Catalogue.csproj" />
   </ItemGroup>
 

@@ -1,6 +1,8 @@
+using System.Text.Json;
 using Dse.Core.Catalogue;
 using Dse.Core.Testing;
 using Dse.Io;
+using Dse.Tests.Shared;
 
 namespace Dse.Control.Catalogue.Tests;
 
@@ -38,5 +40,23 @@ public class ControlCatalogueTests
         Assert.Equal(
             new[] { ("transition", "after"), ("transition", "when") },
             catalogue.Objects.Select(o => (o.Slot, o.Type)));
+    }
+
+    [Fact]
+    public void TheControlCatalogueExportsExactlyTheGoldenFile()
+    {
+        Golden.Assert("Golden/control-catalogue.json", CatalogueJson.Export(ControlFixtures.Catalogue));
+    }
+
+    [Fact]
+    public void TheControlCatalogueHasTheExpectedCounts()
+    {
+        using JsonDocument document = JsonDocument.Parse(CatalogueJson.Export(ControlFixtures.Catalogue));
+        JsonElement root = document.RootElement;
+
+        Assert.Empty(root.GetProperty("components").EnumerateArray());
+        Assert.Equal(5, root.GetProperty("blocks").GetArrayLength());
+        Assert.Equal(2, root.GetProperty("objects").GetArrayLength());
+        Assert.Empty(root.GetProperty("materials").EnumerateArray());
     }
 }
