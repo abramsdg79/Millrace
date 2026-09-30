@@ -53,9 +53,12 @@ once. It also writes the device's `Permit` false, and gives it back only on the
 scan that accepts a reset. A starter closes only while its `Start`, its safety
 relay and its `Permit` all allow it; the feeder makes ore only while `Enabled`
 and `Permit` are both true. So while an interlock is tripped, no write of
-`Start` or `Enabled`, from anywhere, starts its device — `CVn.Permit` and
-`Feed.Permit` are themselves ordinary, writable tags, but only the interlock
-should ever write them. The reset that gives the permit back also writes the
+`Start` or `Enabled`, from anywhere, starts its device. Nor can anything else
+give the permit back: each interlock claims its device's permit
+(`"claims": [ "CV001.Permit" ]`), so `dse tags` lists `CVn.Permit` and
+`Feed.Permit` as `ReadOnly … claimed by INT_…`, and a write from an HMI, a
+scenario or another block is refused — as an HMI has no write access to a PLC
+program's permit bit. The reset that gives the permit back also writes the
 command false, as a seal-in circuit does when the interlock breaks it: a start
 written during the trip is forgotten, and a device runs again only on a fresh
 start (scenario 9). That is why `SEQ_START` resets each interlock one step
@@ -426,13 +429,12 @@ dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/start-w
   welded-contactor scenario above shows. A real safety circuit uses two
   monitored contactors in series, so a weld in one is caught at the next stop
   instead of defeating the e-stop.
-- The permit is not protected from other writers: `CVn.Permit` and
-  `Feed.Permit` are ordinary tags, and nothing here stops another block or
-  scenario from writing one true while its interlock is still tripped. Doing
-  so defeats the inhibit, like forcing a permit bit in a PLC, and the
-  interlock will not take it away again until it trips again. On a real
-  system an HMI would have no write access to it; block-owned, write-protected
-  tags would be an engine change.
+- A claimed permit cannot be forced: there is no override path for
+  commissioning or fault-finding, as a PLC's force table would give. A
+  scenario that writes `CV001.Permit` is refused before tick 0
+  (`Tag 'CV001.Permit' is claimed by INT_CV001; a scenario cannot write it.`),
+  so the way to move a device during a trip is the one the plant offers: put
+  the fault right and reset its interlock.
 
 ## Power-up
 

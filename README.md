@@ -105,7 +105,8 @@ A scenario over that plant looks like this:
 ```
 
 A plant adds control blocks under `controllers`; a scenario may write their
-commands (`SEQ01.Start`, `INT01.Reset`) like any other tag:
+commands (`SEQ01.Start`, `INT01.Reset`) like any other tag, unless a block
+claims one:
 
 ```json
 "controllers": [

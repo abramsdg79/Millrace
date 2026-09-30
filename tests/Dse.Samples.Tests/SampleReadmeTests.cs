@@ -27,6 +27,17 @@ public partial class SampleReadmeTests
             StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void TheReadmeSaysEachPermitIsClaimedByItsInterlock()
+    {
+        string readme = Readme;
+
+        Assert.Contains("each interlock claims its device's permit", readme, StringComparison.Ordinal);
+        Assert.Contains("Tag 'CV001.Permit' is claimed by INT_CV001; a scenario cannot write it.", readme, StringComparison.Ordinal);
+        Assert.DoesNotContain("ordinary, writable tags", readme, StringComparison.Ordinal);
+        Assert.DoesNotContain("The permit is not protected", readme, StringComparison.Ordinal);
+    }
+
     [Theory]
     [MemberData(nameof(Sample.Scenarios), MemberType = typeof(Sample))]
     public void EveryQuotedLineIsAWholeLineOfItsGolden(string name)

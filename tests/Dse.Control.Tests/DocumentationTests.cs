@@ -60,6 +60,24 @@ public class DocumentationTests
         Assert.DoesNotContain("does not hold its output", page, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void TheControlBlocksPageDescribesClaimedTags()
+    {
+        string page = Page();
+
+        foreach (string token in new[]
+                 {
+                     "### Claiming a tag", "\"claims\": [ \"CV001.Permit\" ]", "AddScanBlock(interlock, [\"CV001.Permit\"])",
+                     "ClaimedBy", "claimed by INT01", "Tag 'CV001.Permit' is claimed by INT01; only that block writes it.",
+                     "DSE016", "duplicate-coil", "it may also list `claims` (*Claiming a tag*, below)",
+                 })
+        {
+            Assert.Contains(token, page, StringComparison.Ordinal);
+        }
+
+        Assert.DoesNotContain("The permit is an ordinary, writable tag", page, StringComparison.Ordinal);
+    }
+
     /// <summary>Two levels up from this file is the repository root.</summary>
     private static string Page([CallerFilePath] string callerFile = "") =>
         File.ReadAllText(Path.Combine(Path.GetDirectoryName(callerFile)!, "..", "..", "docs", "control-blocks.md"));

@@ -74,6 +74,7 @@ and `dse run` handle it with no C#.
 | DSE013 | `ScanPeriod` is a positive whole number of time steps. |
 | DSE014 | Every `Inputs` and `Writes` entry names a tag the plant has, with the same kind; every `Writes` entry is read-write. |
 | DSE015 | The block id is unique across components and blocks, and no owned tag name collides with an existing tag. |
+| DSE016 | Every claim names a read-write tag in the block's `Writes`, once; no two blocks claim one tag; no other block's `Writes` names a claimed tag. |
 
 `Inputs` and `Writes` are resolved against the plant's tags **and every block's
 owned tags**, whichever order the blocks were added, so an interlock may list
@@ -83,7 +84,8 @@ owned tags**, whichever order the blocks were added, so an interlock may list
 
 A plant file lists its blocks under `controllers`, a sibling of `components`.
 Each entry has the component envelope — `id`, `type`, `parameters` — plus
-`scanPeriodMs`, which is required: a PLC task period has no sensible default.
+`scanPeriodMs`, which is required: a PLC task period has no sensible default;
+it may also list `claims` (*Claiming a tag*, below).
 
 ```json
 "controllers": [
@@ -123,6 +125,42 @@ more.
 **File order is scan order.** Blocks due on the same tick scan in the order the
 `controllers` array lists them, and when two write one tag on one tick the later
 one wins.
+
+### Claiming a tag
+
+A block may **claim** a plant tag it writes: a claimed tag is written by that
+block and by nothing else, as a PLC program's permit bit is written by its own
+rung and never by the HMI. A controller entry lists its claims in an optional
+`"claims"` array of full tag names; in code, `AddScanBlock` takes the same list.
+
+```json
+{ "id": "INT01", "type": "interlock", "scanPeriodMs": 100,
+  "claims": [ "CV001.Permit" ],
+  "parameters": {
+    "conditions": [ { "tag": "CV001.Tripped", "normal": false } ],
+    "trip":  [ { "tag": "CV001.Start", "value": false }, { "tag": "CV001.Permit", "value": false } ],
+    "reset": [ { "tag": "CV001.Permit", "value": true }, { "tag": "CV001.Start", "value": false } ] } }
+```
+
+```csharp
+builder.AddScanBlock(interlock, ["CV001.Permit"]);
+```
+
+The claimant's own writes land and log exactly as before — `Set to true by
+INT01.` Every other writer is refused before anything is queued. The directory
+publishes the tag `ReadOnly` with `ClaimedBy` set to the block's id, and
+`dse tags` prints it as `CV001.Permit  Bool  ReadOnly  …  claimed by INT01`, so an
+OPC UA server or an HMI generator sees an ordinary read-only tag. `TagImage.Write`,
+`Simulation.WriteAt` and `WriteIn` throw
+`Tag 'CV001.Permit' is claimed by INT01; only that block writes it.`; the
+realtime `CommandBus` answers `ReadOnly`; a scenario that writes it does not bind
+(`DSE206`, naming the claimant). Another block whose writes name a claimed tag
+fails validation, like a PLC's duplicate-coil check. There is no force or
+override. A claim must name a read-write tag the block commands — not a measured
+value, another block's output, or an input a signal link drives — and each tag
+has one claimant; every breach is `DSE016`, reported in a plant file at the
+`claims` entry it is about. A block may claim another block's command (a
+sequence that alone resets an interlock), or its own.
 
 ## The timing rule
 
@@ -317,11 +355,11 @@ its device must therefore do it in two steps — reset, wait for the interlock's
 `Ok`, then command — or the reset's `false` lands after its start. In this
 pattern each trip logs two writes, `Set to false by INT01.` for the command and
 again for `Permit`; each reset also logs two, `Set to true by INT01.` for
-`Permit` and `Set to false by INT01.` for the command. The mine-conveyor sample
-uses this pattern on every interlock. The permit is an ordinary, writable tag
-like any other: nothing stops another block from writing it true while the
-interlock is still tripped, which defeats the inhibit until the interlock trips
-again.
+`Permit` and `Set to false by INT01.` for the command. Claim the permit for the
+interlock (*Claiming a tag*, above): unclaimed, it is an ordinary writable tag,
+and anything that writes it true while the interlock is still tripped defeats
+the inhibit until the interlock trips again. The mine-conveyor sample uses this
+pattern on every interlock, and each interlock claims its device's permit.
 
 ## `Alarm`
 
