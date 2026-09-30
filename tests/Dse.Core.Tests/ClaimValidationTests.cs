@@ -131,8 +131,8 @@ public class ClaimValidationTests
         ValidationError error = OnlyDse016(Plant().AddScanBlock(Block("A"), ["U.Enabel"]));
 
         Assert.Equal(
-            "Block 'A' claims tag 'U.Enabel', which the plant does not have. Check the name against 'dse tags'; a block claims " +
-            "a tag it commands.",
+            "Block 'A' claims tag 'U.Enabel', which the plant does not have. Check the name against 'dse tags' — 'U.Enable' is " +
+            "closest; a block claims a tag it commands.",
             error.Message);
         Assert.Equal(["A"], error.ComponentIds);
         Assert.Equal(("U.Enabel", 0), (error.Tag, error.ClaimIndex));
@@ -147,6 +147,52 @@ public class ClaimValidationTests
         ValidationError error = OnlyDse016(Plant().AddScanBlock(Block("A"), [claim]));
 
         Assert.StartsWith($"Block 'A' claims tag '{claim}', which the plant does not have.", error.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("u.enable", "U.Enable")]
+    [InlineData(" U.Enable", "U.Enable")]
+    [InlineData("U.Setpont", "U.Setpoint")]
+    public void AClaimNearATagIsHintedWithTheNearestName(string claim, string closest)
+    {
+        ValidationError error = OnlyDse016(Plant().AddScanBlock(Block("A"), [claim]));
+
+        Assert.Equal(
+            $"Block 'A' claims tag '{claim}', which the plant does not have. Check the name against 'dse tags' — '{closest}' is " +
+            "closest; a block claims a tag it commands.",
+            error.Message);
+    }
+
+    [Theory]
+    [InlineData("Heater9.RunPermit")]
+    [InlineData("")]
+    public void AClaimNearNoTagKeepsThePlainFix(string claim)
+    {
+        ValidationError error = OnlyDse016(Plant().AddScanBlock(Block("A"), [claim]));
+
+        Assert.Equal(
+            $"Block 'A' claims tag '{claim}', which the plant does not have. Check the name against 'dse tags'; a block claims " +
+            "a tag it commands.",
+            error.Message);
+    }
+
+    [Fact]
+    public void TheBlocksOwnWritesAreSearchedBeforeEveryOtherTag()
+    {
+        // 'T.Enable' is as near to 'V.Enable' as 'U.Enable' and sorts first; the block commands only U.Enable.
+        ValidationError error = OnlyDse016(Plant().AddScanBlock(Block("A"), ["V.Enable"]));
+
+        Assert.Contains("— 'U.Enable' is closest;", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AWriteThePlantDoesNotHaveIsNeverTheHint()
+    {
+        ValidationResult result = Plant().AddScanBlock(Block("A").MayWrite("U.Enabel"), ["U.Enabel"]).Validate();
+
+        ValidationError claim = Assert.Single(result.Errors, e => e.Code == "DSE016");
+        Assert.Contains("— 'U.Enable' is closest;", claim.Message, StringComparison.Ordinal);
+        Assert.Single(result.Errors, e => e.Code == "DSE014");
     }
 
     [Fact]

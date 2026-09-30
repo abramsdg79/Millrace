@@ -197,6 +197,34 @@ public class MineConveyorTests
         Assert.Null(result.Events);
     }
 
+    [Theory]
+    [InlineData("cv003.permit", "Check the name against 'dse tags' — 'CV003.Permit' is closest; a block claims a tag it commands.")]
+    [InlineData("Conveyor3.RunPermit", "Check the name against 'dse tags'; a block claims a tag it commands.")]
+    public void DseValidateNamesTheNearestTagOnTheFixLineOfAMistypedClaim(string claim, string fix)
+    {
+        string plant = File.ReadAllText(Sample.Plant);
+        string mistyped = plant.Replace("\"claims\": [ \"CV003.Permit\" ]", $"\"claims\": [ \"{claim}\" ]", StringComparison.Ordinal);
+        Assert.NotEqual(plant, mistyped);
+        string path = Path.Combine(Path.GetTempPath(), $"dse-sample-{Guid.NewGuid():N}.json");
+        File.WriteAllText(path, mistyped);
+        try
+        {
+            CliRun run = Cli.Run("validate", path);
+
+            Assert.Equal(ExitCodes.PlantInvalid, run.ExitCode);
+            Assert.Empty(run.Out);
+            Assert.StartsWith(
+                $"DSE016 $.controllers[3].claims[0]\n  Block 'INT_CV003' claims tag '{claim}', which the plant does not have.\n  Fix: {fix}\n",
+                run.Err,
+                StringComparison.Ordinal);
+            Assert.EndsWith($"1 error in {Path.GetFileName(path)}\n", run.Err, StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     [Fact]
     public void ATraceCannotSampleFasterThanTheTimeStep()
     {

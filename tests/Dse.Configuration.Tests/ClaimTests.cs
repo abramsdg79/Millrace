@@ -80,8 +80,19 @@ public class ClaimTests
         ConfigDiagnostic d = Plants.Only(Plant(Claiming(Int01, """[ "FEED.Permt" ]""")));
         ConfigDiagnostic spaced = Plants.Only(Plant(Claiming(Int01, """[ "FEED. Permit" ]""")));
 
-        Assert.Equal("Check the name against 'dse tags'; a block claims a tag it commands.", d.Fix);
+        Assert.Equal("Check the name against 'dse tags' — 'FEED.Permit' is closest; a block claims a tag it commands.", d.Fix);
         Assert.Equal(d.Fix, spaced.Fix);
+        Assert.Equal("Block 'INT01' claims tag 'FEED. Permit', which the plant does not have.", spaced.Message);
+    }
+
+    [Fact]
+    public void AClaimNearNoTagKeepsThePlainFix()
+    {
+        ConfigDiagnostic d = Plants.Only(Plant(Claiming(Int01, """[ "Silo9.RunPermit" ]""")));
+
+        Assert.Equal(("DSE016", "$.controllers[0].claims[0]"), (d.Code, d.Path));
+        Assert.Equal("Block 'INT01' claims tag 'Silo9.RunPermit', which the plant does not have.", d.Message);
+        Assert.Equal("Check the name against 'dse tags'; a block claims a tag it commands.", d.Fix);
     }
 
     [Fact]

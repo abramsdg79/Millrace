@@ -1,4 +1,5 @@
 using System.Globalization;
+using Dse.Core.Catalogue;
 using Dse.Core.Control;
 using Dse.Core.Flow;
 using Dse.Core.Graph;
@@ -571,8 +572,7 @@ public sealed class SimulationBuilder
                 }
                 else if (!byName.TryGetValue(claim, out TagBinding? binding))
                 {
-                    error = Claim(
-                        block.Id, claim, j, "which the plant does not have. Check the name against 'dse tags'; a block claims a tag it commands.");
+                    error = Claim(block.Id, claim, j, $"which the plant does not have. {NearestFix(block, claim, byName)}");
                 }
                 else if (binding.Access != TagAccess.ReadWrite)
                 {
@@ -632,6 +632,17 @@ public sealed class SimulationBuilder
         }
 
         return claimants;
+
+        // The nearest name among the block's own writes the plant has, then among every tag (spec 6e criterion 7);
+        // Suggest.Closest sorts its candidates, so the order handed to it never matters.
+        static string NearestFix(IScanBlock block, string claim, Dictionary<string, TagBinding> byName)
+        {
+            string? closest = Suggest.Closest(claim, block.Writes.Select(w => w.Name).Where(byName.ContainsKey))
+                ?? Suggest.Closest(claim, byName.Keys);
+            return closest is null
+                ? "Check the name against 'dse tags'; a block claims a tag it commands."
+                : $"Check the name against 'dse tags' — '{closest}' is closest; a block claims a tag it commands.";
+        }
 
         static ValidationError Claim(string blockId, string claim, int index, string rest) =>
             new("DSE016", $"Block '{blockId}' claims tag '{claim}', {rest}", [blockId]) { Tag = claim, ClaimIndex = index };
