@@ -158,6 +158,16 @@ public static class ScenarioRunner
             return;
         }
 
+        if (tag.ClaimedBy.Length > 0)
+        {
+            diagnostics.Add(ScenarioDiagnostics.Error(
+                ScenarioDiagnostics.DoesNotBind,
+                $"{path}.write",
+                $"Tag '{tag.Name}' is claimed by {tag.ClaimedBy}; a scenario cannot write it.",
+                "Write the claiming block's inputs instead — for an interlock's permit, its reset."));
+            return;
+        }
+
         if (tag.Access != TagAccess.ReadWrite)
         {
             diagnostics.Add(ScenarioDiagnostics.Error(
