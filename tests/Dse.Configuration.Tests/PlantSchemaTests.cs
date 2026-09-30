@@ -155,6 +155,24 @@ public class PlantSchemaTests
     }
 
     [Fact]
+    public void EveryBlockBranchDeclaresTheControllerKeysAndAnOptionalListOfClaims()
+    {
+        using JsonDocument document = JsonDocument.Parse(Text);
+
+        Assert.All(Plants.Catalogue.Blocks, block =>
+        {
+            JsonElement branch = Defs(document).GetProperty($"block.{block.Type}");
+            JsonElement claims = branch.GetProperty("properties").GetProperty("claims");
+
+            Assert.Equal(PlantSchemas.ControllerKeys, branch.GetProperty("properties").EnumerateObject().Select(p => p.Name));
+            Assert.DoesNotContain(branch.GetProperty("required").EnumerateArray(), r => r.GetString() == "claims");
+            Assert.Equal("array", claims.GetProperty("type").GetString());
+            Assert.Equal("string", claims.GetProperty("items").GetProperty("type").GetString());
+            Assert.False(claims.TryGetProperty("uniqueItems", out _));
+        });
+    }
+
+    [Fact]
     public void ABlockBranchRequiresItsScanPeriodAndClosesItsParameters()
     {
         using JsonDocument document = JsonDocument.Parse(Text);

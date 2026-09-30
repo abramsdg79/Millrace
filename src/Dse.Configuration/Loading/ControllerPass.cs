@@ -66,12 +66,12 @@ internal static class ControllerPass
             return false;
         }
 
-        var blocks = new List<IScanBlock>(bound.Count);
+        var blocks = new List<(ControllerEntry Entry, IScanBlock Block)>(bound.Count);
         foreach ((ControllerEntry entry, ParameterValues values) in bound)
         {
             if (TryBuild(state, entry, values, out IScanBlock? block) && PinsMatch(state, entry, block, declared[entry]))
             {
-                blocks.Add(block);
+                blocks.Add((entry, block));
             }
         }
 
@@ -80,10 +80,10 @@ internal static class ControllerPass
             return false;
         }
 
-        // File order is scan order, and the later block wins a same-tick write.
-        foreach (IScanBlock block in blocks)
+        // File order is scan order, and the later block wins a same-tick write. Claims are Core's to check (DSE016).
+        foreach ((ControllerEntry entry, IScanBlock block) in blocks)
         {
-            builder.AddScanBlock(block);
+            builder.AddScanBlock(block, entry.Claims);
         }
 
         return true;

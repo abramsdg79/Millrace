@@ -261,6 +261,16 @@ public static class PlantSchema
         writer.WriteNumber("maximum", 86_400_000);
         writer.WriteEndObject();
 
+        writer.WriteStartObject("claims");
+        writer.WriteString(
+            "description",
+            "Tags only this block may write, by full name: each a read-write tag the block commands. A client, a scenario or another block that writes one is refused.");
+        writer.WriteString("type", "array");
+        writer.WriteStartObject("items");
+        writer.WriteString("type", "string");
+        writer.WriteEndObject();
+        writer.WriteEndObject();
+
         writer.WritePropertyName("parameters");
         WriteParameterObject(writer, block.Parameters, description: null, typeConst: null);
 

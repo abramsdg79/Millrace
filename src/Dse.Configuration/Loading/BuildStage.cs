@@ -1,3 +1,4 @@
+using System.Globalization;
 using Dse.Core;
 using Dse.Core.Io;
 using Dse.Core.Time;
@@ -43,7 +44,7 @@ internal static class BuildStage
 
         foreach (ValidationError error in errors)
         {
-            (string message, string fix) = Split(error.Message);
+            (string message, string fix) = Split(error);
             state.Error(error.Code, PathOf(state, error), message, fix);
         }
 
@@ -51,10 +52,22 @@ internal static class BuildStage
         state.SimulationOptions = options;
     }
 
-    /// <summary>Core messages read "symptom. fix." (R40).</summary>
-    private static (string Message, string Fix) Split(string text)
+    /// <summary>
+    /// Core messages read "symptom. fix." (R40). A DSE016 quotes its claim's tag
+    /// in the symptom, and a claim is any string (R137), so the search for the
+    /// cut starts after the quoted tag.
+    /// </summary>
+    private static (string Message, string Fix) Split(ValidationError error)
     {
-        int cut = text.IndexOf(". ", StringComparison.Ordinal);
+        string text = error.Message;
+        int from = 0;
+        if (error.Tag.Length > 0)
+        {
+            int quoted = text.IndexOf($"'{error.Tag}'", StringComparison.Ordinal);
+            from = quoted < 0 ? 0 : quoted + error.Tag.Length + 2;
+        }
+
+        int cut = text.IndexOf(". ", from, StringComparison.Ordinal);
         return cut < 0
             ? (text, "Correct the plant so that this check passes.")
             : (text[..(cut + 1)], text[(cut + 2)..]);
@@ -62,6 +75,7 @@ internal static class BuildStage
 
     private static string PathOf(LoadState state, ValidationError error)
     {
+        string? fallback = null;
         foreach (string id in error.ComponentIds)
         {
             int dot = id.IndexOf('.', StringComparison.Ordinal);
@@ -73,13 +87,33 @@ internal static class BuildStage
             }
 
             ControllerEntry? controller = state.Controllers.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal));
-            if (controller is not null)
+            if (controller is null)
             {
-                // R92: a scan period off the step is the one block check with a key of its own.
-                return string.Equals(error.Code, "DSE013", StringComparison.Ordinal) ? $"{controller.Path}.scanPeriodMs" : controller.Path;
+                continue;
             }
+
+            // R92: a scan period off the step is a block check with a key of its own.
+            if (string.Equals(error.Code, "DSE013", StringComparison.Ordinal))
+            {
+                return $"{controller.Path}.scanPeriodMs";
+            }
+
+            // R133: a claim's diagnostic lands on the claim — the entry of the controller whose list holds the tag at ClaimIndex.
+            if (string.Equals(error.Code, "DSE016", StringComparison.Ordinal))
+            {
+                int claim = error.ClaimIndex;
+                if (claim >= 0 && claim < controller.Claims.Count && string.Equals(controller.Claims[claim], error.Tag, StringComparison.Ordinal))
+                {
+                    return string.Create(CultureInfo.InvariantCulture, $"{controller.Path}.claims[{claim}]");
+                }
+
+                fallback ??= controller.Path;
+                continue;
+            }
+
+            return controller.Path;
         }
 
-        return "$";
+        return fallback ?? "$";
     }
 }

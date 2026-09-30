@@ -29,7 +29,13 @@ internal sealed class ComponentEntry(int index, string id, ComponentDescriptor d
 }
 
 internal sealed class ControllerEntry(
-    int index, string id, BlockDescriptor descriptor, TimeSpan scanPeriod, JsonElement parameters, ParameterValues checkedValues)
+    int index,
+    string id,
+    BlockDescriptor descriptor,
+    TimeSpan scanPeriod,
+    JsonElement parameters,
+    ParameterValues checkedValues,
+    IReadOnlyList<string> claims)
 {
     public int Index { get; } = index;
 
@@ -44,6 +50,9 @@ internal sealed class ControllerEntry(
 
     /// <summary>The parameters as the structure stage bound them, for <see cref="BlockDescriptor.OwnedTags"/> (R82).</summary>
     public ParameterValues CheckedValues { get; } = checkedValues;
+
+    /// <summary>The <c>claims</c> array, in file order; empty when the entry has none.</summary>
+    public IReadOnlyList<string> Claims { get; } = claims;
 
     public string Path => $"$.controllers[{Index}]";
 

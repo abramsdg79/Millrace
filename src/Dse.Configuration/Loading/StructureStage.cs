@@ -333,6 +333,7 @@ internal static class StructureStage
         string? id = ReadControllerId(state, element, path, seen, componentIds);
         BlockDescriptor? descriptor = ReadBlockType(state, element, path);
         TimeSpan? period = ReadScanPeriod(state, element, path);
+        string[]? claims = ReadClaims(state, element, path);
 
         JsonElement parameters = default;
         if (element.TryGetProperty("parameters", out JsonElement given))
@@ -349,10 +350,53 @@ internal static class StructureStage
         ParameterValues? values = ParameterBinder.Bind(descriptor.Parameters, parameters, $"{path}.parameters", state.Context, construct: false, issues);
         state.AddIssues(issues);
 
-        if (id is not null && period is { } scanPeriod && values is not null)
+        if (id is not null && period is { } scanPeriod && values is not null && claims is not null)
         {
-            state.Controllers.Add(new ControllerEntry(index, id, descriptor, scanPeriod, parameters, values));
+            state.Controllers.Add(new ControllerEntry(index, id, descriptor, scanPeriod, parameters, values, claims));
         }
+    }
+
+    /// <summary>
+    /// Spec 6d: an optional array of tag names, read as written. Whether each
+    /// names a tag the block commands, and is claimed once, is Core's DSE016.
+    /// </summary>
+    private static string[]? ReadClaims(LoadState state, JsonElement element, string path)
+    {
+        const string Fix = "Write \"claims\": [ \"CV001.Permit\" ], naming tags the block commands by their full names.";
+        if (!element.TryGetProperty("claims", out JsonElement claims))
+        {
+            return [];
+        }
+
+        if (claims.ValueKind != JsonValueKind.Array)
+        {
+            state.Error(ConfigDiagnostics.BadParameter, $"{path}.claims", "\"claims\" must be an array of tag names.", Fix);
+            return null;
+        }
+
+        var names = new List<string>();
+        bool ok = true;
+        int index = 0;
+        foreach (JsonElement claim in claims.EnumerateArray())
+        {
+            if (claim.ValueKind == JsonValueKind.String)
+            {
+                names.Add(claim.GetString()!);
+            }
+            else
+            {
+                state.Error(
+                    ConfigDiagnostics.BadParameter,
+                    string.Create(CultureInfo.InvariantCulture, $"{path}.claims[{index}]"),
+                    "A claim is a tag's full name, as a string.",
+                    Fix);
+                ok = false;
+            }
+
+            index++;
+        }
+
+        return ok ? [.. names] : null;
     }
 
     /// <summary>R87: the component id rule, because a block id prefixes every tag the block owns.</summary>

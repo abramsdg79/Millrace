@@ -201,6 +201,13 @@
           "exclusiveMinimum": 0,
           "maximum": 86400000
         },
+        "claims": {
+          "description": "Tags only this block may write, by full name: each a read-write tag the block commands. A client, a scenario or another block that writes one is refused.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "parameters": {
           "type": "object",
           "additionalProperties": false,
@@ -249,6 +256,13 @@
           "type": "number",
           "exclusiveMinimum": 0,
           "maximum": 86400000
+        },
+        "claims": {
+          "description": "Tags only this block may write, by full name: each a read-write tag the block commands. A client, a scenario or another block that writes one is refused.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "parameters": {
           "type": "object",
@@ -308,6 +322,13 @@
           "exclusiveMinimum": 0,
           "maximum": 86400000
         },
+        "claims": {
+          "description": "Tags only this block may write, by full name: each a read-write tag the block commands. A client, a scenario or another block that writes one is refused.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "parameters": {
           "type": "object",
           "additionalProperties": false,
@@ -351,6 +372,13 @@
           "type": "number",
           "exclusiveMinimum": 0,
           "maximum": 86400000
+        },
+        "claims": {
+          "description": "Tags only this block may write, by full name: each a read-write tag the block commands. A client, a scenario or another block that writes one is refused.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "parameters": {
           "type": "object",
@@ -402,6 +430,13 @@
           "type": "number",
           "exclusiveMinimum": 0,
           "maximum": 86400000
+        },
+        "claims": {
+          "description": "Tags only this block may write, by full name: each a read-write tag the block commands. A client, a scenario or another block that writes one is refused.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "parameters": {
           "type": "object",

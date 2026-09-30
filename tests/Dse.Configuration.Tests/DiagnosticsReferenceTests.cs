@@ -41,10 +41,12 @@ public class DiagnosticsReferenceTests
     {
         string page = DiagnosticsReference.Render();
 
-        Assert.Contains("## DSE001–DSE015 — plant validation\n", page, StringComparison.Ordinal);
+        Assert.Contains("## DSE001–DSE016 — plant validation\n", page, StringComparison.Ordinal);
         Assert.Contains("DSE013", page, StringComparison.Ordinal);
         Assert.Contains("DSE014", page, StringComparison.Ordinal);
         Assert.Contains("DSE015", page, StringComparison.Ordinal);
+        Assert.Contains("DSE016", page, StringComparison.Ordinal);
+        Assert.Contains("the `claims` entry it is about", page, StringComparison.Ordinal);
 
         // Plan 5a ruled there is no DSE012, and the page must never print it as
         // though it were a code. The trailer says "The numbering skips 012."

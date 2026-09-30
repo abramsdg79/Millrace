@@ -11,7 +11,7 @@ internal static class PlantSchemas
 
     public static readonly string[] ComponentKeys = ["id", "type", "parameters"];
 
-    public static readonly string[] ControllerKeys = ["id", "type", "scanPeriodMs", "parameters"];
+    public static readonly string[] ControllerKeys = ["id", "type", "scanPeriodMs", "claims", "parameters"];
 
     public static readonly GroupDefinition MaterialProperties = new(
         "MaterialProperties",

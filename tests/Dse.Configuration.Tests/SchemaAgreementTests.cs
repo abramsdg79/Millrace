@@ -88,6 +88,8 @@ public class SchemaAgreementTests
     [InlineData("\"mode\": \"on-delay\"", "\"mode\": \"on_delay\"")]
     [InlineData("\"presetS\": 2", "\"presetS\": 2, \"preset\": 2")]
     [InlineData("\"id\": \"TMR01\"", "\"id\": \"TMR.01\"")]
+    [InlineData("\"scanPeriodMs\": 100,", "\"scanPeriodMs\": 100, \"claims\": \"TMR01.Start\",")]
+    [InlineData("\"scanPeriodMs\": 100,", "\"scanPeriodMs\": 100, \"claims\": [ 1 ],")]
     public void BothValidatorsRejectTheSameControllerMistakes(string from, string to)
     {
         const string Good = """

@@ -99,15 +99,19 @@ A controller's value does not fit the kind of the tag it is for — 1.5 for an I
 
 A controller writes a tag that does not accept writes: a measured value, another block's output, or a command input a signal link already drives, whose tag the plant publishes read-only.
 
-## DSE001–DSE015 — plant validation
+## DSE001–DSE016 — plant validation
 
 Codes below DSE100 come from `SimulationBuilder.Validate()` and mean the same for a plant built in code:
 duplicate ids, unconnected required inputs, algebraic loops, belts too fast for their cells, incompatible
 flow links, tag conflicts — and, for a control block declared under `controllers` or attached with
 `AddScanBlock`, a scan period that is not a positive whole number of time steps (DSE013), a pin naming a
-tag the plant does not have, publishes with another kind or will not accept a command (DSE014), and a
-block id or owned tag name that collides with something the plant already has (DSE015). The numbering
+tag the plant does not have, publishes with another kind or will not accept a command (DSE014), a
+block id or owned tag name that collides with something the plant already has (DSE015), and a claim
+that cannot stand (DSE016): it names no tag, a read-only tag or a tag its block does not command, it
+repeats, another block already claims the tag, or another block commands a claimed tag. Fix a DSE016 by
+correcting the claim's tag name, or by removing the claim or the other block's write. The numbering
 skips 012. The loader passes them through with the path of the first component involved, or of the
-controller (for DSE013, its `scanPeriodMs`); their message is split at its first sentence into message
-and fix. A plant file's controllers are resolved before the blocks are validated, so DSE113–DSE115
-report what DSE014 would. See `docs/architecture.md` and `docs/control-blocks.md`.
+controller (for DSE013, its `scanPeriodMs`; for DSE016, the `claims` entry it is about); their message
+is split at its first sentence into message and fix. A plant file's controllers are resolved before the
+blocks are validated, so DSE113–DSE115 report what DSE014 would. See `docs/architecture.md` and
+`docs/control-blocks.md`.
