@@ -7,6 +7,30 @@ refining the tag image of plan 4, the scan-block host of
 `2026-09-25-controllers-in-plant-json-design.md` (5d) and the run permit of
 `2026-09-25-interlock-start-inhibit-design.md` (6c). All merged.
 
+**Amended 2026-09-30 by the plan**
+(`docs/superpowers/plans/2026-09-30-block-claimed-tags.md`, rulings
+R133–R142), where the code forced a choice:
+
+- **A `DSE016` lands on `claims[j]` through `ValidationError.Tag` and
+  `ClaimIndex` (R133).** Core errors carry only ids, so `ValidationError`
+  gains two init properties; the loader places every `DSE016` on the claim it
+  is about — for another block's write, on the claimant's accepted claim; for
+  a repeat, on the repeat. A repeated claim is reported once, as a repeat
+  (R135).
+- **The loader splits a `DSE016` after the quoted tag (R133)**, so a claim
+  containing `". "` does not cut its own message in two.
+- **The directory is given claimants by tag name (R134)**, not by index.
+- **Two blocks claiming one tag is one `DSE016` (R135)**, not also a
+  "commands a claimed tag" error for the second.
+- **"Unique within the entry" is `DSE016`, not the schema's `uniqueItems`
+  (R138)**, so the schema accepts every plant only the loader can reject.
+- **A block may claim a block command, another block's or its own (R136);**
+  spec §8's "no change to … block commands" means unclaimed commands.
+- **Claim names match ordinally and exactly; a null claim throws
+  `ArgumentException` from `AddScanBlock` (R137).**
+- **`dse tags --format json` gains `"claimedBy"` on a claimed tag (R139)**,
+  and `dse tags`' help says it lists the claimant.
+
 ## 1. Scope
 
 6c gave every starter, conveyor and bulk source a run `Permit` that its
