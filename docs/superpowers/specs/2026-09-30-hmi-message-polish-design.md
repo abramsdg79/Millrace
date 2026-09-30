@@ -6,6 +6,30 @@ refining the event messages of the component library (plan 3), the control
 blocks of `2026-09-22-control-blocks-design.md` (5c), and the claim diagnostics
 of `2026-09-30-block-claimed-tags-design.md` (6d). All merged.
 
+**Amended 2026-09-30 by the plan**
+(`docs/superpowers/plans/2026-09-30-hmi-message-polish.md`, rulings
+R143–R154), where the code forced a choice:
+
+- **Directed rounding starts from the nearest `F<n>` text and steps it at
+  most once (R145)**, when that text lies on the wrong side of the value;
+  scaling by 10ⁿ is wrong in binary (`Math.Ceiling(1.1 * 100) / 100` is
+  `1.11`), and a value whose `F<n>` text parses back to the same double is
+  shown as that text and never stepped (so `1.1` over 0.5 prints `1.10`).
+  Where the spacing of doubles reaches the display step, the display is the
+  nearest `F<n>` text, still beyond the limit.
+- **A raise may overstate by up to one display step (R145)**: a Hi of
+  10.0008 over 10 prints `10.1` (the worked example's `10.000765680139894`
+  over 8 prints `10.1`).
+- **The limit's decimals include its exponent (R144):** `1e-5` (`"1E-05"`)
+  has 5, so its alarm prints 6.
+- **A negative zero prints as zero in both alarm messages (R146).**
+- **`F<n>` rounds an exact binary midpoint half to even (R147)**, e.g.
+  `0.125` → `0.12`, and the 12.5 N·m breakdown torque of a small motor → `12`.
+- **The `DSE016` hint searches only the block's `Writes` the plant has, then
+  every tag (R149)**; `Suggest.Closest` sorts its candidates, so ties go to
+  the ordinally first name within each set.
+- **Criterion 6's check is a script over git history (R151)**, not a test.
+
 ## 1. Scope
 
 Event messages print measured values as full-precision doubles:
