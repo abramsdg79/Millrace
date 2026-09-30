@@ -16,6 +16,7 @@ public sealed class SimulationBuilder
     private readonly List<CompositeComponent> _composites = [];
     private readonly List<(string Name, TagBinding Binding)> _explicitTags = [];
     private readonly List<IScanBlock> _blocks = [];
+    private readonly List<string[]> _claims = [];
     private readonly SimulationOptions _options;
     private bool _built;
 
@@ -66,21 +67,35 @@ public sealed class SimulationBuilder
     /// <summary>
     /// Attaches a control block (spec 5c §3). The block is checked at
     /// <see cref="Build"/>: its period against the time step (DSE013), its
-    /// inputs and writes against the tag directory (DSE014), and its id and
-    /// owned tag names against everything else in the plant (DSE015). Its
-    /// outputs and commands become ordinary tags.
+    /// inputs and writes against the tag directory (DSE014), its id and
+    /// owned tag names against everything else in the plant (DSE015), and its
+    /// claims (DSE016). Its outputs and commands become ordinary tags.
     /// </summary>
-    public SimulationBuilder AddScanBlock(IScanBlock block)
+    /// <param name="block">The block.</param>
+    /// <param name="claims">
+    /// Tags this block alone may write, by full name: each a read-write tag in
+    /// the block's <see cref="IScanBlock.Writes"/>. A claimed tag is published
+    /// read-only, naming the block; an external write to it is refused, and so
+    /// is any other block that commands it (DSE016).
+    /// </param>
+    public SimulationBuilder AddScanBlock(IScanBlock block, IReadOnlyList<string>? claims = null)
     {
         ThrowIfBuilt();
         ArgumentNullException.ThrowIfNull(block);
         TagNameRules.Check(block.Id, nameof(block));
+        string[] claimed = claims is null ? [] : [.. claims];
+        if (claimed.Any(c => c is null))
+        {
+            throw new ArgumentException($"Block '{block.Id}' has a null claim. Name each claimed tag.", nameof(claims));
+        }
+
         _blocks.Add(block);
+        _claims.Add(claimed);
         return this;
     }
 
     /// <summary>Checks the plant without building it. Used by tooling and by Build.</summary>
-    public ValidationResult Validate() => Validate(out _, out _);
+    public ValidationResult Validate() => Validate(out _, out _, out _);
 
     /// <summary>
     /// The tags the plant added so far would publish, exactly as <see cref="Build"/>
@@ -107,7 +122,8 @@ public sealed class SimulationBuilder
     {
         ThrowIfBuilt();
 
-        ValidationResult result = Validate(out List<TagBinding> tags, out List<ScanBlockPlan> blocks);
+        ValidationResult result = Validate(
+            out List<TagBinding> tags, out List<ScanBlockPlan> blocks, out Dictionary<string, string> claimants);
         if (!result.IsValid)
         {
             throw new SimulationValidationException(result);
@@ -124,11 +140,12 @@ public sealed class SimulationBuilder
         FreezePorts();
         _built = true;
 
-        var image = new TagImage(new TagDirectory(tags));
+        var image = new TagImage(new TagDirectory(tags, claimants));
         return new Simulation(ordered, flow, _options, image, [.. blocks]);
     }
 
-    private ValidationResult Validate(out List<TagBinding> tags, out List<ScanBlockPlan> blocks)
+    private ValidationResult Validate(
+        out List<TagBinding> tags, out List<ScanBlockPlan> blocks, out Dictionary<string, string> claimants)
     {
         var errors = new List<ValidationError>();
 
@@ -147,6 +164,7 @@ public sealed class SimulationBuilder
 
         tags = CollectTags(seen, errors);
         blocks = CollectBlocks(seen, tags, errors);
+        claimants = CheckClaims(tags, errors);
 
         var writablePorts = new HashSet<Port>(ReferenceEqualityComparer.Instance);
         foreach (TagBinding tag in tags)
@@ -512,6 +530,111 @@ public sealed class SimulationBuilder
                 $"or bind that port as a writable tag.",
                 [block.Id]));
         }
+    }
+
+    /// <summary>
+    /// DSE016 (spec 6d): each claim names a read-write tag its block commands
+    /// and no other block has claimed; then no other block commands a claimed
+    /// tag. Runs after every block's owned tags have joined
+    /// <paramref name="tags"/>, so a block may claim another block's command.
+    /// Every error carries the claim's tag and its position in its block's list.
+    /// Returns the claims that passed, tag name to block id.
+    /// </summary>
+    private Dictionary<string, string> CheckClaims(List<TagBinding> tags, List<ValidationError> errors)
+    {
+        var claimants = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (_blocks.Count == 0)
+        {
+            return claimants;
+        }
+
+        var byName = new Dictionary<string, TagBinding>(StringComparer.Ordinal);
+        foreach (TagBinding binding in tags)
+        {
+            byName.TryAdd(binding.Name, binding);
+        }
+
+        // Where each accepted claim sits in its claimant's list, for the errors that point at it.
+        var positions = new Dictionary<string, int>(StringComparer.Ordinal);
+        for (int b = 0; b < _blocks.Count; b++)
+        {
+            IScanBlock block = _blocks[b];
+            var own = new HashSet<string>(StringComparer.Ordinal);
+            for (int j = 0; j < _claims[b].Length; j++)
+            {
+                string claim = _claims[b][j];
+                ValidationError? error = null;
+                if (!own.Add(claim))
+                {
+                    // A repeat is reported once, as a repeat, whatever else is wrong with the tag.
+                    error = Claim(block.Id, claim, j, "which it already claims. Claim each tag once.");
+                }
+                else if (!byName.TryGetValue(claim, out TagBinding? binding))
+                {
+                    error = Claim(
+                        block.Id, claim, j, "which the plant does not have. Check the name against 'dse tags'; a block claims a tag it commands.");
+                }
+                else if (binding.Access != TagAccess.ReadWrite)
+                {
+                    error = Claim(
+                        block.Id, claim, j, "which is read-only. Claim a read-write tag the block commands, not a measured value, " +
+                        "a block's output or an input a signal link drives.");
+                }
+                else if (!block.Writes.Any(w => string.Equals(w.Name, claim, StringComparison.Ordinal)))
+                {
+                    error = Claim(
+                        block.Id, claim, j, "which it does not command. Add the tag to the block's writes, or remove the claim.");
+                }
+                else if (claimants.TryGetValue(claim, out string? first))
+                {
+                    error = Claim(
+                        block.Id, claim, j, $"which '{first}' already claims. A tag has one claimant; remove one of the claims.") with
+                    {
+                        ComponentIds = [block.Id, first],
+                    };
+                }
+                else
+                {
+                    claimants[claim] = block.Id;
+                    positions[claim] = j;
+                }
+
+                if (error is not null)
+                {
+                    errors.Add(error);
+                }
+            }
+        }
+
+        for (int b = 0; b < _blocks.Count; b++)
+        {
+            IScanBlock block = _blocks[b];
+
+            // A block that claimed the tag itself was reported above if the claim failed; once is enough.
+            var reported = new HashSet<string>(_claims[b], StringComparer.Ordinal);
+            foreach (TagRef pin in block.Writes)
+            {
+                if (claimants.TryGetValue(pin.Name, out string? claimant)
+                    && !string.Equals(claimant, block.Id, StringComparison.Ordinal)
+                    && reported.Add(pin.Name))
+                {
+                    errors.Add(new ValidationError(
+                        "DSE016",
+                        $"Block '{block.Id}' commands tag '{pin.Name}', which '{claimant}' claims. Only the claiming block " +
+                        $"writes a claimed tag; remove the write from '{block.Id}', or this claim.",
+                        [block.Id, claimant])
+                    {
+                        Tag = pin.Name,
+                        ClaimIndex = positions[pin.Name],
+                    });
+                }
+            }
+        }
+
+        return claimants;
+
+        static ValidationError Claim(string blockId, string claim, int index, string rest) =>
+            new("DSE016", $"Block '{blockId}' claims tag '{claim}', {rest}", [blockId]) { Tag = claim, ClaimIndex = index };
     }
 
     /// <summary>The flow nodes among the added leaves, in registration order.</summary>

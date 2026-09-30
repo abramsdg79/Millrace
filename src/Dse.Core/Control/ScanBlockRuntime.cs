@@ -20,7 +20,8 @@ namespace Dse.Core.Control;
 /// Both writes are queued and applied at phase 1 of the next tick in enqueue
 /// order, and blocks scan in the order they were added, so the block added
 /// later wins. That is deterministic and it is exactly what a PLC does with a
-/// double coil — but, as on a PLC, it is usually a mistake. Every block write
+/// double coil — but, as on a PLC, it is usually a mistake, and a claimed tag
+/// (DSE016) has exactly one writer. Every block write
 /// is logged <c>Set to … by &lt;block id&gt;.</c> and none reaches the action
 /// recorder.
 /// </para>
