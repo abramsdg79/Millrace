@@ -165,6 +165,39 @@ public class MineConveyorTests
     }
 
     [Fact]
+    public void EveryPermitIsReadOnlyAndClaimedByItsInterlock()
+    {
+        CliRun run = Cli.Run("tags", Sample.Plant);
+
+        Assert.Equal(ExitCodes.Ok, run.ExitCode);
+        string[] claimed = run.Out.Split('\n').Where(l => l.Contains("  claimed by ", StringComparison.Ordinal)).ToArray();
+        Assert.Equal(
+            [
+                "CV001.Permit  Bool  ReadOnly  Run permit; false holds the contactor open  claimed by INT_CV001",
+                "CV002.Permit  Bool  ReadOnly  Run permit; false holds the contactor open  claimed by INT_CV002",
+                "CV003.Permit  Bool  ReadOnly  Run permit; false holds the contactor open  claimed by INT_CV003",
+                "Feed.Permit  Bool  ReadOnly  Run permit; false stops the feeder  claimed by INT_FEED",
+            ],
+            claimed);
+    }
+
+    [Theory]
+    [InlineData("CV001.Permit", "INT_CV001")]
+    [InlineData("Feed.Permit", "INT_FEED")]
+    public void AScenarioThatWritesAPermitIsRefusedBeforeTickZero(string permit, string interlock)
+    {
+        Scenario scenario = ScenarioLoader.Parse(
+            $$"""{ "plant": "../plant.json", "duration": 150, "timeline": [ { "at": 100, "write": "{{permit}}", "value": true } ] }""").Scenario!;
+
+        ScenarioRunResult result = ScenarioRunner.Run(scenario, File.ReadAllText(Sample.Plant), Sample.Catalogue);
+
+        ConfigDiagnostic d = Assert.Single(result.Diagnostics);
+        Assert.Equal(("DSE206", "$.timeline[0].write"), (d.Code, d.Path));
+        Assert.Equal($"Tag '{permit}' is claimed by {interlock}; a scenario cannot write it.", d.Message);
+        Assert.Null(result.Events);
+    }
+
+    [Fact]
     public void ATraceCannotSampleFasterThanTheTimeStep()
     {
         Assert.Throws<ArgumentOutOfRangeException>(

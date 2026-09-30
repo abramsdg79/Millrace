@@ -31,7 +31,7 @@ internal static class CommandTable
         new(["catalog", "export"], null, "Print every component, block, transform, transition, hold and material type as JSON.", [Out, Assembly], Commands.CatalogExport.Run),
         new(["schema", "export"], null, "Print the JSON Schema for plant files, generated from the catalogue.", [Out, Assembly], Commands.SchemaExport.Run),
         new(["validate"], "plant.json", "Load a plant and report every error, each with its fix.", [Format, TimeStep, Assembly], Commands.Validate.Run),
-        new(["tags"], "plant.json", "Load and build a plant, then list its tags: name, kind, access, unit, range.", [Format, TimeStep, Assembly], Commands.Tags.Run),
+        new(["tags"], "plant.json", "Load and build a plant, then list its tags: name, kind, access, unit, range, description and claimant.", [Format, TimeStep, Assembly], Commands.Tags.Run),
         new(["run"], "scenario.json", "Run a scenario against its plant and print the event log.", [Expect, Out, Format, Assembly], Commands.RunScenario.Run),
     ];
 

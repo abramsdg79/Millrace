@@ -42,6 +42,7 @@
       "parameters": { "conditions": [ { "tag": "CV003.SafetyOk", "normal": true } ] } },
 
     { "id": "INT_CV003", "type": "interlock", "scanPeriodMs": 100,
+      "claims": [ "CV003.Permit" ],
       "parameters": {
         "conditions": [
           { "tag": "CV003.Tripped",  "normal": false },
@@ -53,6 +54,7 @@
           { "tag": "CV003.Permit", "value": true },
           { "tag": "CV003.Start",  "value": false } ] } },
     { "id": "INT_CV002", "type": "interlock", "scanPeriodMs": 100,
+      "claims": [ "CV002.Permit" ],
       "parameters": {
         "conditions": [
           { "tag": "CV002.Tripped",  "normal": false },
@@ -66,6 +68,7 @@
           { "tag": "CV002.Permit", "value": true },
           { "tag": "CV002.Start",  "value": false } ] } },
     { "id": "INT_CV001", "type": "interlock", "scanPeriodMs": 100,
+      "claims": [ "CV001.Permit" ],
       "parameters": {
         "conditions": [
           { "tag": "CV001.Tripped",  "normal": false },
@@ -79,6 +82,7 @@
           { "tag": "CV001.Permit", "value": true },
           { "tag": "CV001.Start",  "value": false } ] } },
     { "id": "INT_FEED", "type": "interlock", "scanPeriodMs": 100,
+      "claims": [ "Feed.Permit" ],
       "parameters": {
         "conditions": [
           { "tag": "CV001.Contactor", "normal": true },

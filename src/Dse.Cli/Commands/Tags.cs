@@ -40,6 +40,11 @@ internal static class Tags
                 }
 
                 writer.WriteString("description", tag.Description);
+                if (tag.ClaimedBy.Length > 0)
+                {
+                    writer.WriteString("claimedBy", tag.ClaimedBy);
+                }
+
                 writer.WriteEndObject();
             }
 

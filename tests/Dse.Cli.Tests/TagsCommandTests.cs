@@ -57,6 +57,33 @@ public class TagsCommandTests
     }
 
     [Fact]
+    public void AClaimedTagIsListedReadOnlyWithItsClaimant()
+    {
+        CliRun run = Cli.Run("tags", Cli.Plant("claimed-permit.json"));
+
+        Assert.Equal(ExitCodes.Ok, run.ExitCode);
+        Assert.Empty(run.Err);
+        Assert.Contains("FEED.Permit  Bool  ReadOnly  Run permit; false stops the feeder  claimed by INT01\n", run.Out, StringComparison.Ordinal);
+        Assert.Single(run.Out.Split('\n'), line => line.Contains("claimed by", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void JsonFormatNamesTheClaimantOnlyOnAClaimedTag()
+    {
+        CliRun run = Cli.Run("tags", Cli.Plant("claimed-permit.json"), "--format", "json");
+
+        Assert.Equal(ExitCodes.Ok, run.ExitCode);
+        using JsonDocument document = JsonDocument.Parse(run.Out);
+        JsonElement permit = document.RootElement.EnumerateArray().Single(t => t.GetProperty("name").GetString() == "FEED.Permit");
+        Assert.Equal("readOnly", permit.GetProperty("access").GetString());
+        Assert.Equal("INT01", permit.GetProperty("claimedBy").GetString());
+
+        JsonElement enabled = document.RootElement.EnumerateArray().Single(t => t.GetProperty("name").GetString() == "FEED.Enabled");
+        Assert.Equal("readWrite", enabled.GetProperty("access").GetString());
+        Assert.False(enabled.TryGetProperty("claimedBy", out _));
+    }
+
+    [Fact]
     public void AnEmptyPathIsExitThreeNotACrash()
     {
         CliRun run = Cli.Run("tags", "");
