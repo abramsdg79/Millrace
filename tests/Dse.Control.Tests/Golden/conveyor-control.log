@@ -24,9 +24,9 @@
 06:00:04.000  SEQ01  STEP_ENTERED  4: Run the feed.
 06:00:04.010  Feed.Enabled  WRITE  Set to true by SEQ01.
 06:00:04.700  CUR01  ALARM_CLEARED  Hi: 2.7 back within limits.
-06:00:06.190  CV001.Motor  AT_SPEED  Reached 140.02609575456847 rad/s.
+06:00:06.190  CV001.Motor  AT_SPEED  Reached 140.0 rad/s.
 06:00:40.000  CV001.Motor  FAULT  thermal-bias injected: amount=0.8.
-06:00:40.000  CV001.Starter  OVERLOAD_TRIP  Thermal state 1.1796472378913028 reached the trip level 1.1.
+06:00:40.000  CV001.Starter  OVERLOAD_TRIP  Thermal state 1.180 reached the trip level 1.1.
 06:00:40.000  CV001.Starter  CONTACTOR_OPENED  Motor de-energised.
 06:00:40.010  CV001.Motor  DE_ENERGISED  Contactor open; coasting.
 06:00:40.100  INT01  INTERLOCK_TRIP  CV001.Tripped abnormal.

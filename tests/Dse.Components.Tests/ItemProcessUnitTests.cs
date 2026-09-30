@@ -129,4 +129,16 @@ public class ItemProcessUnitTests
         Assert.Throws<ArgumentException>(() => new ItemProcessUnit("U", 1, Hold.ForSeconds(1.0), new MaterialType("B", PayloadKind.Bulk)));
         Assert.Throws<ArgumentOutOfRangeException>(() => new ItemProcessUnit("U", 1, Hold.ForSeconds(1.0), yield: 0.0));
     }
+
+    [Fact]
+    public void TheHoldSatisfiedMessagePrintsSecondsToTwoDecimals()
+    {
+        Plant plant = Build(batchSize: 3, Hold.ForSeconds(2.0));
+
+        plant.Sim.RunFor(TimeSpan.FromSeconds(7));
+
+        Assert.Equal(
+            "Hold satisfied after 2.00 s; discharging 3 items.",
+            Assert.Single(plant.Sim.Events.Records, r => r.Source == "Furnace" && r.Code == "DISCHARGING").Message);
+    }
 }

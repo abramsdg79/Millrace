@@ -53,7 +53,7 @@
 06:00:05.010  CV002.Starter  CONTACTOR_CLOSED  Motor energised.
 06:00:05.020  CV002.Motor  ENERGISED  Contactor closed.
 06:00:05.030  CV002.ZeroSpeed  MOTION  Motion detected.
-06:00:05.400  CV003.Motor  AT_SPEED  Reached 146.17986855114356 rad/s.
+06:00:05.400  CV003.Motor  AT_SPEED  Reached 146.2 rad/s.
 06:00:07.400  SEQ_START  STEP_ENTERED  6: Reset CV001's interlock.
 06:00:07.410  INT_CV001.Reset  WRITE  Set to true by SEQ_START.
 06:00:07.500  INT_CV001  INTERLOCK_RESET  Reset with all conditions normal.
@@ -65,7 +65,7 @@
 06:00:07.610  CV001.Starter  CONTACTOR_CLOSED  Motor energised.
 06:00:07.620  CV001.Motor  ENERGISED  Contactor closed.
 06:00:07.630  CV001.ZeroSpeed  MOTION  Motion detected.
-06:00:08.000  CV002.Motor  AT_SPEED  Reached 146.1547694598214 rad/s.
+06:00:08.000  CV002.Motor  AT_SPEED  Reached 146.2 rad/s.
 06:00:10.000  SEQ_START  STEP_ENTERED  8: Reset the feed's interlock.
 06:00:10.010  INT_FEED.Reset  WRITE  Set to true by SEQ_START.
 06:00:10.100  INT_FEED  INTERLOCK_RESET  Reset with all conditions normal.
@@ -74,13 +74,13 @@
 06:00:10.200  SEQ_START  STEP_ENTERED  9: Start the feed.
 06:00:10.210  INT_FEED.Reset  WRITE  Set to false by SEQ_START.
 06:00:10.210  Feed.Enabled  WRITE  Set to true by SEQ_START.
-06:00:10.590  CV001.Motor  AT_SPEED  Reached 145.98559884017868 rad/s.
+06:00:10.590  CV001.Motor  AT_SPEED  Reached 146.0 rad/s.
 06:00:11.200  SEQ_START  SEQUENCE_COMPLETE  Finished after 9 steps.
 06:01:20.000  CH1  FAULT  blockage injected.
 06:01:32.500  CH1  FULL  Chute is full.
 06:01:53.400  ALM_CV001  ALARM_RAISED  Hi: 7.71 above 7.5.
 06:02:09.300  ALM_CV001  ALARM_RAISED  HiHi: 8.81 above 8.6.
-06:03:09.770  CV001.Starter  OVERLOAD_TRIP  Thermal state 1.1000357303409216 reached the trip level 1.1.
+06:03:09.770  CV001.Starter  OVERLOAD_TRIP  Thermal state 1.100 reached the trip level 1.1.
 06:03:09.770  CV001.Starter  CONTACTOR_OPENED  Motor de-energised.
 06:03:09.780  CV001.Motor  DE_ENERGISED  Contactor open; coasting.
 06:03:09.800  INT_CV001  INTERLOCK_TRIP  CV001.Tripped abnormal.

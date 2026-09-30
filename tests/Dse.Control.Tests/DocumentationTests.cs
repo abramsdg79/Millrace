@@ -1,9 +1,13 @@
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 
 namespace Dse.Control.Tests;
 
-public class DocumentationTests
+public partial class DocumentationTests
 {
+    [GeneratedRegex(@"^\d{2}:\d{2}:\d{2}\.\d{3}  ")]
+    private static partial Regex LogLine();
+
     [Fact]
     public void TheControlBlocksPageNamesEveryBlockEveryEventAndEveryDiagnostic()
     {
@@ -78,7 +82,21 @@ public class DocumentationTests
         Assert.DoesNotContain("The permit is an ordinary, writable tag", page, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void EveryLogLineThePageQuotesIsAWholeLineOfTheWorkedExampleGolden()
+    {
+        HashSet<string> golden = [.. File.ReadAllText(Golden()).ReplaceLineEndings("\n").Split('\n')];
+        string[] quoted = Page().Split('\n').Where(l => LogLine().IsMatch(l)).ToArray();
+
+        Assert.Equal(3, quoted.Length);
+        Assert.All(quoted, line => Assert.True(golden.Contains(line), $"The page quotes a line the golden does not log: '{line}'."));
+    }
+
     /// <summary>Two levels up from this file is the repository root.</summary>
     private static string Page([CallerFilePath] string callerFile = "") =>
         File.ReadAllText(Path.Combine(Path.GetDirectoryName(callerFile)!, "..", "..", "docs", "control-blocks.md"));
+
+    /// <summary>The worked example's golden, beside this file.</summary>
+    private static string Golden([CallerFilePath] string callerFile = "") =>
+        Path.Combine(Path.GetDirectoryName(callerFile)!, "Golden", "conveyor-control.log");
 }

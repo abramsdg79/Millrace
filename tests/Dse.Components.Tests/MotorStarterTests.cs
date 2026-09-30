@@ -146,4 +146,19 @@ public class MotorStarterTests
     {
         Assert.Throws<ArgumentException>(() => new MotorStarter("K1", tripLevel: 1.0, resetLevel: 1.0));
     }
+
+    [Theory]
+    [InlineData(1.23456, "Thermal state 1.235 reached the trip level 1.1.")]
+    [InlineData(1.1000357303409216, "Thermal state 1.100 reached the trip level 1.1.")]
+    public void TheOverloadTripMessagePrintsTheThermalStateToThreeDecimals(double thermal, string message)
+    {
+        Rig rig = Build();
+        rig.Command.Value = true;
+        rig.Sim.Tick();
+
+        rig.Thermal.Value = thermal;
+        rig.Sim.Tick();
+
+        Assert.Equal(message, Assert.Single(rig.Sim.Events.Records, r => r.Code == "OVERLOAD_TRIP").Message);
+    }
 }

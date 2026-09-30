@@ -210,7 +210,7 @@ zero.
 
 ```text expected/overload.log
 06:01:20.000  CV003.Motor  FAULT  thermal-bias injected: amount=1.
-06:01:20.000  CV003.Starter  OVERLOAD_TRIP  Thermal state 1.285658707267615 reached the trip level 1.1.
+06:01:20.000  CV003.Starter  OVERLOAD_TRIP  Thermal state 1.286 reached the trip level 1.1.
 06:01:20.100  INT_CV003  INTERLOCK_TRIP  CV003.Tripped abnormal.
 06:01:20.100  INT_CV002  INTERLOCK_TRIP  CV003.Contactor abnormal.
 06:01:20.110  CV002.Starter  CONTACTOR_OPENED  Motor de-energised.
@@ -243,7 +243,7 @@ auxiliary contact.
 06:01:32.500  CH1  FULL  Chute is full.
 06:01:53.400  ALM_CV001  ALARM_RAISED  Hi: 7.71 above 7.5.
 06:02:09.300  ALM_CV001  ALARM_RAISED  HiHi: 8.81 above 8.6.
-06:03:09.770  CV001.Starter  OVERLOAD_TRIP  Thermal state 1.1000357303409216 reached the trip level 1.1.
+06:03:09.770  CV001.Starter  OVERLOAD_TRIP  Thermal state 1.100 reached the trip level 1.1.
 06:03:09.800  INT_CV001  INTERLOCK_TRIP  CV001.Tripped abnormal.
 06:03:09.800  INT_FEED  INTERLOCK_TRIP  CV001.Contactor abnormal.
 06:03:09.810  Feed.Enabled  WRITE  Set to false by INT_FEED.

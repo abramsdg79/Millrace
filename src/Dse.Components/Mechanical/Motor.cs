@@ -151,7 +151,7 @@ public sealed class Motor : ComponentBase, IFaultTarget
             if (stalled && !_stalled)
             {
                 ctx.Log(Id, "STALLED", string.Create(CultureInfo.InvariantCulture,
-                    $"Torque demand {demand} N·m exceeds breakdown torque {_rating.BreakdownTorqueMultiple * ratedTorque} N·m."));
+                    $"Torque demand {demand:F0} N·m exceeds breakdown torque {_rating.BreakdownTorqueMultiple * ratedTorque:F0} N·m."));
             }
 
             _stalled = stalled;
@@ -162,7 +162,7 @@ public sealed class Motor : ComponentBase, IFaultTarget
             if (!_atSpeed && target > 0.0 && _speed >= 0.95 * target)
             {
                 _atSpeed = true;
-                ctx.Log(Id, "AT_SPEED", string.Create(CultureInfo.InvariantCulture, $"Reached {_speed} rad/s."));
+                ctx.Log(Id, "AT_SPEED", string.Create(CultureInfo.InvariantCulture, $"Reached {_speed:F1} rad/s."));
             }
 
             if (stalled)

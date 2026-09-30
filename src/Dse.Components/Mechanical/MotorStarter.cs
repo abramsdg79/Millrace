@@ -137,7 +137,7 @@ public sealed class MotorStarter : ComponentBase, IFaultTarget, ITagProvider
         {
             _tripped = true;
             ctx.Log(Id, "OVERLOAD_TRIP", string.Create(CultureInfo.InvariantCulture,
-                $"Thermal state {thermal} reached the trip level {TripLevel}."));
+                $"Thermal state {thermal:F3} reached the trip level {TripLevel}."));
         }
         else if (_tripped && resetEdge && thermal < ResetLevel)
         {

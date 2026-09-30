@@ -216,4 +216,20 @@ public class MotorTests
         Assert.False(motor.Energised.IsLatched);
         Assert.Equal(["bearing-friction", "thermal-bias"], motor.SupportedFaults.Select(f => f.Id));
     }
+
+    [Fact]
+    public void TheAtSpeedAndStalledMessagesPrintSpeedToOneDecimalAndTorqueToWholeNewtonMetres()
+    {
+        var rig = new Rig();
+        rig.Energised.Value = true;
+        rig.Run(10.0);
+        rig.Demand.Value = 13.0;   // 2.6 × rated > 2.5 × 5 = 12.5 N·m breakdown
+        rig.Run(10.0);
+
+        // AT_SPEED at 95 % of 150 rad/s (measured 142.93480695413064). The breakdown
+        // torque 12.5 is an exact binary midpoint, which F0 rounds to even: 12.
+        Assert.Equal(
+            ["Contactor closed.", "Reached 142.9 rad/s.", "Torque demand 13 N·m exceeds breakdown torque 12 N·m."],
+            rig.Log.Records.Select(r => r.Message));
+    }
 }

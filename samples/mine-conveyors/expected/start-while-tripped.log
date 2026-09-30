@@ -53,7 +53,7 @@
 06:00:05.010  CV002.Starter  CONTACTOR_CLOSED  Motor energised.
 06:00:05.020  CV002.Motor  ENERGISED  Contactor closed.
 06:00:05.030  CV002.ZeroSpeed  MOTION  Motion detected.
-06:00:05.400  CV003.Motor  AT_SPEED  Reached 146.17986855114356 rad/s.
+06:00:05.400  CV003.Motor  AT_SPEED  Reached 146.2 rad/s.
 06:00:07.400  SEQ_START  STEP_ENTERED  6: Reset CV001's interlock.
 06:00:07.410  INT_CV001.Reset  WRITE  Set to true by SEQ_START.
 06:00:07.500  INT_CV001  INTERLOCK_RESET  Reset with all conditions normal.
@@ -65,7 +65,7 @@
 06:00:07.610  CV001.Starter  CONTACTOR_CLOSED  Motor energised.
 06:00:07.620  CV001.Motor  ENERGISED  Contactor closed.
 06:00:07.630  CV001.ZeroSpeed  MOTION  Motion detected.
-06:00:08.000  CV002.Motor  AT_SPEED  Reached 146.1547694598214 rad/s.
+06:00:08.000  CV002.Motor  AT_SPEED  Reached 146.2 rad/s.
 06:00:10.000  SEQ_START  STEP_ENTERED  8: Reset the feed's interlock.
 06:00:10.010  INT_FEED.Reset  WRITE  Set to true by SEQ_START.
 06:00:10.100  INT_FEED  INTERLOCK_RESET  Reset with all conditions normal.
@@ -74,7 +74,7 @@
 06:00:10.200  SEQ_START  STEP_ENTERED  9: Start the feed.
 06:00:10.210  INT_FEED.Reset  WRITE  Set to false by SEQ_START.
 06:00:10.210  Feed.Enabled  WRITE  Set to true by SEQ_START.
-06:00:10.590  CV001.Motor  AT_SPEED  Reached 145.98559884017868 rad/s.
+06:00:10.590  CV001.Motor  AT_SPEED  Reached 146.0 rad/s.
 06:00:11.200  SEQ_START  SEQUENCE_COMPLETE  Finished after 9 steps.
 06:01:20.000  CV002.PullKey1  WRITE  Set to true.
 06:01:20.000  CV002.PullKey1  PULLKEY_PULLED  Actuated by the operator.
@@ -114,7 +114,7 @@
 06:01:50.000  CV002.Starter  CONTACTOR_CLOSED  Motor energised.
 06:01:50.010  CV002.Motor  ENERGISED  Contactor closed.
 06:01:50.020  CV002.ZeroSpeed  MOTION  Motion detected.
-06:01:52.990  CV002.Motor  AT_SPEED  Reached 144.75486557608986 rad/s.
+06:01:52.990  CV002.Motor  AT_SPEED  Reached 144.8 rad/s.
 06:01:55.000  INT_CV001.Reset  WRITE  Set to true.
 06:01:55.100  INT_CV001  INTERLOCK_RESET  Reset with all conditions normal.
 06:01:55.110  CV001.Start  WRITE  Set to false by INT_CV001.
@@ -124,7 +124,7 @@
 06:02:05.000  CV001.Starter  CONTACTOR_CLOSED  Motor energised.
 06:02:05.010  CV001.Motor  ENERGISED  Contactor closed.
 06:02:05.020  CV001.ZeroSpeed  MOTION  Motion detected.
-06:02:07.990  CV001.Motor  AT_SPEED  Reached 144.5334902393653 rad/s.
+06:02:07.990  CV001.Motor  AT_SPEED  Reached 144.5 rad/s.
 06:02:10.000  INT_FEED.Reset  WRITE  Set to true.
 06:02:10.100  INT_FEED  INTERLOCK_RESET  Reset with all conditions normal.
 06:02:10.110  Feed.Enabled  WRITE  Set to false by INT_FEED.

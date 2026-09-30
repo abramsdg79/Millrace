@@ -53,7 +53,7 @@
 06:00:05.010  CV002.Starter  CONTACTOR_CLOSED  Motor energised.
 06:00:05.020  CV002.Motor  ENERGISED  Contactor closed.
 06:00:05.030  CV002.ZeroSpeed  MOTION  Motion detected.
-06:00:05.400  CV003.Motor  AT_SPEED  Reached 146.17986855114356 rad/s.
+06:00:05.400  CV003.Motor  AT_SPEED  Reached 146.2 rad/s.
 06:00:07.400  SEQ_START  STEP_ENTERED  6: Reset CV001's interlock.
 06:00:07.410  INT_CV001.Reset  WRITE  Set to true by SEQ_START.
 06:00:07.500  INT_CV001  INTERLOCK_RESET  Reset with all conditions normal.
@@ -65,7 +65,7 @@
 06:00:07.610  CV001.Starter  CONTACTOR_CLOSED  Motor energised.
 06:00:07.620  CV001.Motor  ENERGISED  Contactor closed.
 06:00:07.630  CV001.ZeroSpeed  MOTION  Motion detected.
-06:00:08.000  CV002.Motor  AT_SPEED  Reached 146.1547694598214 rad/s.
+06:00:08.000  CV002.Motor  AT_SPEED  Reached 146.2 rad/s.
 06:00:10.000  SEQ_START  STEP_ENTERED  8: Reset the feed's interlock.
 06:00:10.010  INT_FEED.Reset  WRITE  Set to true by SEQ_START.
 06:00:10.100  INT_FEED  INTERLOCK_RESET  Reset with all conditions normal.
@@ -74,7 +74,7 @@
 06:00:10.200  SEQ_START  STEP_ENTERED  9: Start the feed.
 06:00:10.210  INT_FEED.Reset  WRITE  Set to false by SEQ_START.
 06:00:10.210  Feed.Enabled  WRITE  Set to true by SEQ_START.
-06:00:10.590  CV001.Motor  AT_SPEED  Reached 145.98559884017868 rad/s.
+06:00:10.590  CV001.Motor  AT_SPEED  Reached 146.0 rad/s.
 06:00:11.200  SEQ_START  SEQUENCE_COMPLETE  Finished after 9 steps.
 06:01:20.000  CV002.ZeroSpeed  FAULT  fail-low injected.
 06:01:20.990  CV002.ZeroSpeed  ZERO_SPEED  Speed below 0.02 m/s for 1 s.

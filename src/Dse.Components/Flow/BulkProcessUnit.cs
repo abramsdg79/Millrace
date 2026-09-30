@@ -389,7 +389,7 @@ public sealed class BulkProcessUnit : FlowComponentBase, IBulkConsumer, IBulkPro
 
         Transition(
             ProcessPhase.Discharging,
-            string.Create(CultureInfo.InvariantCulture, $"Hold satisfied after {_elapsed} s; discharging {_batch.Mass} kg of {_output}."),
+            string.Create(CultureInfo.InvariantCulture, $"Hold satisfied after {_elapsed:F2} s; discharging {_batch.Mass:F1} kg of {_output}."),
             in ctx);
     }
 

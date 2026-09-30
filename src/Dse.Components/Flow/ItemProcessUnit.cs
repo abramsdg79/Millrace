@@ -302,7 +302,7 @@ public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemPro
 
         Transition(
             ProcessPhase.Discharging,
-            string.Create(CultureInfo.InvariantCulture, $"Hold satisfied after {_elapsed} s; discharging {_items.Count} items."),
+            string.Create(CultureInfo.InvariantCulture, $"Hold satisfied after {_elapsed:F2} s; discharging {_items.Count} items."),
             in ctx);
     }
 

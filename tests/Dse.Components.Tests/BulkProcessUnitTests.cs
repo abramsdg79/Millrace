@@ -234,4 +234,16 @@ public class BulkProcessUnitTests
         Assert.Throws<ArgumentOutOfRangeException>(() => new BulkProcessUnit(
             "M", [new RecipeLine("A", Flour, 1.0)], Hold.ForSeconds(1.0), Dough, yield: 1.5));
     }
+
+    [Fact]
+    public void TheHoldSatisfiedMessagePrintsSecondsToTwoDecimalsAndMassToOne()
+    {
+        Plant plant = Build(Hold.ForSeconds(1.0), yield: 0.9);
+
+        plant.Sim.RunFor(TimeSpan.FromSeconds(4));
+
+        Assert.Equal(
+            "Hold satisfied after 1.00 s; discharging 9.0 kg of Dough.",
+            plant.Sim.Events.Records.First(r => r.Source == "Mixer" && r.Code == "DISCHARGING").Message);
+    }
 }

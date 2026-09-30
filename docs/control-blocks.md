@@ -217,7 +217,7 @@ end — a plant-driven trip, a block that reacts one scan later, and a write
 that lands the tick after that:
 
 ```
-06:00:40.000  CV001.Starter  OVERLOAD_TRIP  Thermal state 1.1796472378913028 reached the trip level 1.1.
+06:00:40.000  CV001.Starter  OVERLOAD_TRIP  Thermal state 1.180 reached the trip level 1.1.
 06:00:40.100  INT01  INTERLOCK_TRIP  CV001.Tripped abnormal.
 06:00:40.110  CV001.Start  WRITE  Set to false by INT01.
 ```
