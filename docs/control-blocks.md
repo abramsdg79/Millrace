@@ -405,6 +405,11 @@ every limit with anything outstanding, still active or not.
 Events: `ALARM_RAISED` — `Hi: 82.5 above 80.` — `ALARM_CLEARED` —
 `Hi: 71.5 back within limits.` — and `ALARM_ACKED` — `Hi acknowledged.`
 
+The value prints with one more decimal than the limit is written with (at most
+six). A raise rounds away from the limit, so it never reads as equal to or
+inside it: a Hi of 10.0008 over a limit of 10 reads `10.1`. A clear rounds to
+the nearest.
+
 ## `Sequencer`
 
 ```csharp

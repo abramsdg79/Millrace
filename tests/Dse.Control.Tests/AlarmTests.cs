@@ -364,6 +364,9 @@ public class AlarmTests
     [InlineData(AlarmLimitKind.Hi, -3.0, -2.96, "Hi: -2.9 above -3.")]
     [InlineData(AlarmLimitKind.Lo, -3.0, -3.04, "Lo: -3.1 below -3.")]
     [InlineData(AlarmLimitKind.Hi, -1.0, -0.01, "Hi: 0.0 above -1.")]
+    [InlineData(AlarmLimitKind.Lo, 0.0, -1e-9, "Lo: -0.1 below 0.")]
+    [InlineData(AlarmLimitKind.Hi, 0.1234567, 0.1234571, "Hi: 0.123458 above 0.1234567.")]
+    [InlineData(AlarmLimitKind.Lo, 0.1234567, 0.1234561, "Lo: 0.123456 below 0.1234567.")]
     public void ARaisePrintsOneMoreDecimalThanTheLimitRoundedAwayFromIt(AlarmLimitKind kind, double limit, double value, string message)
     {
         var scan = new Scan(Make(Limit(kind, limit)));
