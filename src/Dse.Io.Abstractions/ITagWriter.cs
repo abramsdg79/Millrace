@@ -3,8 +3,9 @@ namespace Dse.Io;
 /// <summary>
 /// Queues writes into the simulation (spec 9.3). A write is applied at phase 1
 /// of the next tick; it is never applied on the caller's thread. Implementations
-/// reject an unknown tag, a kind mismatch and a read-only tag by throwing at
-/// the call site, so a caller never queues something that cannot land.
+/// reject an unknown tag, a kind mismatch, a read-only tag and a tag a control
+/// block claims by throwing at the call site, so a caller never queues
+/// something that cannot land.
 /// </summary>
 public interface ITagWriter
 {

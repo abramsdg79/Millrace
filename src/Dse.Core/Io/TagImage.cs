@@ -77,7 +77,7 @@ public sealed class TagImage : ITagReader, ITagWriter
     /// <inheritdoc/>
     public void Write(int index, TagValue value)
     {
-        Check(index, value);
+        Check(index, value, origin: null);
         _writes.Enqueue(new PendingWrite(index, value, null));
     }
 
@@ -89,7 +89,7 @@ public sealed class TagImage : ITagReader, ITagWriter
     /// </summary>
     internal void Write(int index, TagValue value, string origin)
     {
-        Check(index, value);
+        Check(index, value, origin);
         _writes.Enqueue(new PendingWrite(index, value, origin));
     }
 
@@ -104,7 +104,7 @@ public sealed class TagImage : ITagReader, ITagWriter
     internal int CheckWritable(string name, TagValue value)
     {
         int index = Directory.Find(name).Index;
-        Check(index, value);
+        Check(index, value, origin: null);
         return index;
     }
 
@@ -131,7 +131,13 @@ public sealed class TagImage : ITagReader, ITagWriter
         }
     }
 
-    private void Check(int index, TagValue value)
+    /// <summary>
+    /// Refuses a write that cannot land: an index out of range, a read-only
+    /// binding, a kind mismatch — and a claimed tag written by anything but its
+    /// claimant. <paramref name="origin"/> is the writing block's id, or null
+    /// for an external write.
+    /// </summary>
+    private void Check(int index, TagValue value, string? origin)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(index);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, _bindings.Length);
@@ -146,6 +152,13 @@ public sealed class TagImage : ITagReader, ITagWriter
         {
             throw new InvalidOperationException(
                 $"Tag '{binding.Name}' is a {binding.Kind} tag; cannot write a {value.Kind}.");
+        }
+
+        string? claimant = Directory.ClaimantOf(index);
+        if (claimant is not null && !string.Equals(origin, claimant, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Tag '{binding.Name}' is claimed by {claimant}; only that block writes it.");
         }
     }
 

@@ -160,7 +160,7 @@ public sealed class Simulation
     /// <summary>
     /// Schedules a write for phase 1 of the tick at <paramref name="fromStart"/>.
     /// The tag is resolved and checked now — unknown tag, read-only tag, kind
-    /// mismatch — so a mistake fails here rather than mid-run, and the value
+    /// mismatch, a tag a block claims — so a mistake fails here rather than mid-run, and the value
     /// lands on exactly the tick named: queued writes first, then scheduled
     /// events in sequence order.
     /// </summary>

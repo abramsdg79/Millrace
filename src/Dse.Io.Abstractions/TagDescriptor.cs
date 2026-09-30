@@ -9,7 +9,7 @@ namespace Dse.Io;
 /// <param name="Index">Position in the image and in every frame's value array.</param>
 /// <param name="Name">Full ordinal name, e.g. <c>CV001.Scale.Value</c>.</param>
 /// <param name="Kind">The value kind.</param>
-/// <param name="Access">Whether external writes are accepted.</param>
+/// <param name="Access">Whether external writes are accepted. A tag a block claims is published <see cref="TagAccess.ReadOnly"/>.</param>
 /// <param name="Unit">Engineering unit; empty for discrete tags.</param>
 /// <param name="RangeLow">Lower engineering-range bound, or NaN.</param>
 /// <param name="RangeHigh">Upper engineering-range bound, or NaN.</param>
@@ -24,6 +24,13 @@ public sealed record TagDescriptor(
     double RangeHigh,
     string Description)
 {
+    /// <summary>
+    /// The id of the control block that claims this tag — the only writer it
+    /// accepts — or empty when no block claims it. A claimed tag's
+    /// <see cref="Access"/> is <see cref="TagAccess.ReadOnly"/>.
+    /// </summary>
+    public string ClaimedBy { get; init; } = "";
+
     /// <summary>True when both range bounds are numbers.</summary>
     public bool HasRange => !double.IsNaN(RangeLow) && !double.IsNaN(RangeHigh);
 }

@@ -12,14 +12,22 @@ namespace Dse.Core.Io;
 public sealed class TagDirectory : ITagDirectory
 {
     private readonly TagDescriptor[] _descriptors;
+    private readonly string?[] _claimants;
     private readonly Dictionary<string, int> _indexByName = new(StringComparer.Ordinal);
 
-    internal TagDirectory(IEnumerable<TagBinding> fullyNamed)
+    /// <summary>
+    /// Sorts and indexes the bindings. <paramref name="claimants"/> maps a tag
+    /// name to the block that claims it; a claimed tag is published
+    /// <see cref="TagAccess.ReadOnly"/> with <see cref="TagDescriptor.ClaimedBy"/>
+    /// set, while its binding stays writable for the claimant.
+    /// </summary>
+    internal TagDirectory(IEnumerable<TagBinding> fullyNamed, IReadOnlyDictionary<string, string>? claimants = null)
     {
         ArgumentNullException.ThrowIfNull(fullyNamed);
 
         Bindings = fullyNamed.OrderBy(b => b.Name, StringComparer.Ordinal).ToArray();
         _descriptors = new TagDescriptor[Bindings.Length];
+        _claimants = new string?[Bindings.Length];
         for (int i = 0; i < Bindings.Length; i++)
         {
             TagBinding b = Bindings[i];
@@ -31,12 +39,21 @@ public sealed class TagDirectory : ITagDirectory
                     nameof(fullyNamed));
             }
 
-            _descriptors[i] = new TagDescriptor(i, b.Name, b.Kind, b.Access, b.Unit, b.RangeLow, b.RangeHigh, b.Description);
+            string? claimant = claimants is not null && claimants.TryGetValue(b.Name, out string? id) ? id : null;
+            _claimants[i] = claimant;
+            _descriptors[i] = new TagDescriptor(
+                i, b.Name, b.Kind, claimant is null ? b.Access : TagAccess.ReadOnly, b.Unit, b.RangeLow, b.RangeHigh, b.Description)
+            {
+                ClaimedBy = claimant ?? string.Empty,
+            };
         }
     }
 
     /// <summary>The bindings in index order.</summary>
     internal TagBinding[] Bindings { get; }
+
+    /// <summary>The block that claims the tag at <paramref name="index"/>, or null when none does.</summary>
+    internal string? ClaimantOf(int index) => _claimants[index];
 
     /// <inheritdoc/>
     public int Count => _descriptors.Length;
@@ -74,7 +91,7 @@ public sealed class TagDirectory : ITagDirectory
             $"No tag '{name}'. The directory has {Count} tags; call ToText() to list them.");
     }
 
-    /// <summary>One line per tag: name, kind, access, unit, range, description.</summary>
+    /// <summary>One line per tag: name, kind, access, unit, range, description and, for a claimed tag, its claimant.</summary>
     public string ToText()
     {
         var builder = new StringBuilder();
@@ -96,6 +113,11 @@ public sealed class TagDirectory : ITagDirectory
             if (tag.Description.Length > 0)
             {
                 builder.Append("  ").Append(tag.Description);
+            }
+
+            if (tag.ClaimedBy.Length > 0)
+            {
+                builder.Append("  claimed by ").Append(tag.ClaimedBy);
             }
 
             builder.Append(Environment.NewLine);
