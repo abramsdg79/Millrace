@@ -78,15 +78,15 @@
 06:00:11.200  SEQ_START  SEQUENCE_COMPLETE  Finished after 9 steps.
 06:01:20.000  CH1  FAULT  blockage injected.
 06:01:32.500  CH1  FULL  Chute is full.
-06:01:53.400  ALM_CV001  ALARM_RAISED  Hi: 7.705084760820622 above 7.5.
-06:02:09.300  ALM_CV001  ALARM_RAISED  HiHi: 8.806537054771315 above 8.6.
+06:01:53.400  ALM_CV001  ALARM_RAISED  Hi: 7.71 above 7.5.
+06:02:09.300  ALM_CV001  ALARM_RAISED  HiHi: 8.81 above 8.6.
 06:03:09.770  CV001.Starter  OVERLOAD_TRIP  Thermal state 1.1000357303409216 reached the trip level 1.1.
 06:03:09.770  CV001.Starter  CONTACTOR_OPENED  Motor de-energised.
 06:03:09.780  CV001.Motor  DE_ENERGISED  Contactor open; coasting.
 06:03:09.800  INT_CV001  INTERLOCK_TRIP  CV001.Tripped abnormal.
 06:03:09.800  INT_FEED  INTERLOCK_TRIP  CV001.Contactor abnormal.
-06:03:09.800  ALM_CV001  ALARM_CLEARED  Hi: 0 back within limits.
-06:03:09.800  ALM_CV001  ALARM_CLEARED  HiHi: 0 back within limits.
+06:03:09.800  ALM_CV001  ALARM_CLEARED  Hi: 0.00 back within limits.
+06:03:09.800  ALM_CV001  ALARM_CLEARED  HiHi: 0.00 back within limits.
 06:03:09.810  CV001.Start  WRITE  Set to false by INT_CV001.
 06:03:09.810  CV001.Permit  WRITE  Set to false by INT_CV001.
 06:03:09.810  Feed.Enabled  WRITE  Set to false by INT_FEED.

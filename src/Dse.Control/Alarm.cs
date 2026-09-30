@@ -153,7 +153,7 @@ public sealed class Alarm : IScanBlock
                         _crossing[i] = false;
                         _delay[i] = 0.0;
                         outputs.Raise("ALARM_RAISED", string.Create(CultureInfo.InvariantCulture,
-                            $"{limit.Kind}: {value} {(high ? "above" : "below")} {limit.Value}."));
+                            $"{limit.Kind}: {Display(value, limit.Value, high ? 1 : -1)} {(high ? "above" : "below")} {limit.Value}."));
                     }
                 }
                 else
@@ -166,7 +166,7 @@ public sealed class Alarm : IScanBlock
             {
                 _active[i] = false;
                 outputs.Raise("ALARM_CLEARED", string.Create(CultureInfo.InvariantCulture,
-                    $"{limit.Kind}: {value} back within limits."));
+                    $"{limit.Kind}: {Display(value, limit.Value, 0)} back within limits."));
             }
 
             if (ackEdge && !_acked[i])
@@ -178,5 +178,38 @@ public sealed class Alarm : IScanBlock
             outputs.Set(2 * i, TagValue.Bool(_active[i]));
             outputs.Set((2 * i) + 1, TagValue.Bool(_acked[i]));
         }
+    }
+
+    /// <summary>
+    /// The value as an alarm message shows it (spec 6e criteria 2 and 3): with
+    /// one more decimal than the limit's shortest round-trip form has, and at
+    /// most six. <paramref name="direction"/> is +1 to round up (a Hi or HiHi
+    /// raise), -1 to round down (a Lo or LoLo raise) and 0 to round to nearest
+    /// (a clear). A directed rounding starts from the nearest <c>F</c> text and
+    /// moves it one step only when that text lies on the wrong side of the
+    /// value, so a value whose text parses back to the same double is never
+    /// stepped and no binary-scaling artefact appears. A negative zero prints
+    /// as zero.
+    /// </summary>
+    private static string Display(double value, double limit, int direction)
+    {
+        string shortest = limit.ToString("R", CultureInfo.InvariantCulture);
+        int e = shortest.IndexOf('E', StringComparison.Ordinal);
+        int exponent = e < 0 ? 0 : int.Parse(shortest.AsSpan(e + 1), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
+        string mantissa = e < 0 ? shortest : shortest[..e];
+        int dot = mantissa.IndexOf('.', StringComparison.Ordinal);
+        int limitDecimals = Math.Max(0, (dot < 0 ? 0 : mantissa.Length - dot - 1) - exponent);
+        int decimals = Math.Min(limitDecimals + 1, 6);
+
+        string format = "F" + decimals.ToString(CultureInfo.InvariantCulture);
+        string text = value.ToString(format, CultureInfo.InvariantCulture);
+        double shown = double.Parse(text, CultureInfo.InvariantCulture);
+        if ((direction > 0 && shown < value) || (direction < 0 && shown > value))
+        {
+            var step = new decimal(1, 0, 0, direction < 0, (byte)decimals);
+            text = (decimal.Parse(text, CultureInfo.InvariantCulture) + step).ToString(format, CultureInfo.InvariantCulture);
+        }
+
+        return text.StartsWith('-') && text.AsSpan(1).IndexOfAnyExcept('0', '.') < 0 ? text[1..] : text;
     }
 }

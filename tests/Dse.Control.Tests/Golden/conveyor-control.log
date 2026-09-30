@@ -18,12 +18,12 @@
 06:00:03.210  CV001.Starter  CONTACTOR_CLOSED  Motor energised.
 06:00:03.220  CV001.Motor  ENERGISED  Contactor closed.
 06:00:03.230  CV001.ZeroSpeed  MOTION  Motion detected.
-06:00:03.400  CUR01  ALARM_RAISED  HiHi: 10.000765680139894 above 8.
-06:00:03.700  CUR01  ALARM_CLEARED  HiHi: 7.40937291733113 back within limits.
-06:00:03.800  CUR01  ALARM_RAISED  Hi: 6.701381615037194 above 3.
+06:00:03.400  CUR01  ALARM_RAISED  HiHi: 10.1 above 8.
+06:00:03.700  CUR01  ALARM_CLEARED  HiHi: 7.4 back within limits.
+06:00:03.800  CUR01  ALARM_RAISED  Hi: 6.8 above 3.
 06:00:04.000  SEQ01  STEP_ENTERED  4: Run the feed.
 06:00:04.010  Feed.Enabled  WRITE  Set to true by SEQ01.
-06:00:04.700  CUR01  ALARM_CLEARED  Hi: 2.707919679974949 back within limits.
+06:00:04.700  CUR01  ALARM_CLEARED  Hi: 2.7 back within limits.
 06:00:06.190  CV001.Motor  AT_SPEED  Reached 140.02609575456847 rad/s.
 06:00:40.000  CV001.Motor  FAULT  thermal-bias injected: amount=0.8.
 06:00:40.000  CV001.Starter  OVERLOAD_TRIP  Thermal state 1.1796472378913028 reached the trip level 1.1.
