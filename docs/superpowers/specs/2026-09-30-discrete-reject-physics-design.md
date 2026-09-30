@@ -7,6 +7,37 @@ library (3), and adding a block to the control blocks of
 `2026-09-22-control-blocks-design.md` (5c). All merged. This is the first half of
 plan 6b; the wheel-line sample itself is plan 6b.2, with its own spec.
 
+**Amended 2026-09-30 by the plan**
+(`docs/superpowers/plans/2026-09-30-discrete-reject-physics.md`, rulings
+R155–R170), where the code forced a choice:
+
+- **The reject outlet is `RejectOut` (R155).** A component's signal and flow
+  port names must differ ignoring case, so the flow outlet cannot share the
+  input's name `Reject`; the input keeps it, as the tag a coil drives.
+- **Dwell timing (R156):** the dwell is counted from the tick after the item
+  arrives and the item leaves on the tick after it completes — deposited on
+  tick N, it leaves on tick N + ⌈dwell / dt⌉ + 1 at the earliest, the one-tick
+  hand-off every flow node has; the next item may enter on that tick.
+- **`Reject` is read in phase 3 of the release tick (R157)**, so a write that
+  lands in phase 1 of that tick counts; `REJECTED` is logged on the tick the
+  item leaves. An unconnected `RejectOut` holds a rejected item on the station.
+- **`heatWhileHeld` heats each held item exactly once per tick, from the tick
+  after it arrives (R158)**, including the Idle tick that notices the first
+  deposit.
+- **`slow-cycle` is quantised to whole ticks (R159)**, a fraction outside
+  [0, 1] is clamped, and the hold-satisfied message prints the hold timer, not
+  the wall time.
+- **The coil, like the interlock and the permissive, uses the condition's value
+  whatever its quality (R160)**: none of them reads quality.
+- **The pyrometer's descriptions are unchanged (R162)**; it may still target a
+  reject gate, which provides `IMaterialObservable`.
+- **Size the dwell to cover the decision (R168):** with the alarm scanning
+  every *a* ticks and the coil every *c*, a gate honours the decision only
+  when ⌈dwell / dt⌉ ≥ a + c + 1 + a·⌈onDelay / (a·dt)⌉, plus the instrument's
+  lag — 3 × dt when both scan every tick. A shorter dwell lets the item leave
+  before the write lands.
+- **6b.2 sizes its dwell by that rule and proves the full pyrometer → alarm →
+  coil → gate chain (R169).**
 ## 1. Scope
 
 Main spec §15.2 gives the wheel line's causal chain: the press runs slow →
