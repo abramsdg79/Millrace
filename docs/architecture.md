@@ -362,15 +362,14 @@ the period, `DSE014` for the pins, `DSE015` for the names, `DSE016` for its
 claims — and turns its declared outputs and commands into ordinary tags over
 ordinary ports: an output is an `OutputPort<T>` behind a read-only binding, a
 command an `InputPort<T>` behind a writable one. Nothing in `Dse.Realtime` or
-the scenario recorder had to
-learn what a block is; `TagImage` learned only a write's origin, so the log
-attributes a block's write and the recorder skips it. A block added with
-claims (`AddScanBlock(block, claims)`, `DSE016`) is its claimed tags' only
-writer: the binding stays writable, the directory publishes the tag `ReadOnly`
-with `ClaimedBy` set, and `TagImage` refuses a write whose origin is not the
-claimant — so every consumer that already honours `ReadOnly` refuses it too.
-`Simulation` then schedules one self-rescheduling `ScanEvent` per block, first
-due at tick 0, drained in phase 1 in schedule order.
+the scenario recorder had to learn what a block is; `TagImage` learned only a
+write's origin, so the log attributes a block's write and the recorder skips
+it. A block added with claims (`AddScanBlock(block, claims)`, `DSE016`) is its
+claimed tags' only writer: the binding stays writable, the directory publishes
+the tag `ReadOnly` with `ClaimedBy` set, and `TagImage` refuses a write whose
+origin is not the claimant — so every consumer that already honours `ReadOnly`
+refuses it too. `Simulation` then schedules one self-rescheduling `ScanEvent`
+per block, first due at tick 0, drained in phase 1 in schedule order.
 
 The timing rule is one sentence: **a scan at tick N sees the image published at
 the end of tick N−1, publishes its own outputs at the end of tick N, and its

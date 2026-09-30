@@ -164,7 +164,7 @@ public static class ScenarioRunner
                 ScenarioDiagnostics.DoesNotBind,
                 $"{path}.write",
                 $"Tag '{tag.Name}' is claimed by {tag.ClaimedBy}; a scenario cannot write it.",
-                "Write the claiming block's inputs instead — for an interlock's permit, its reset."));
+                "Write the inputs of the block that claims it instead; `dse tags` names it."));
             return;
         }
 

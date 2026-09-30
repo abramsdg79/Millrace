@@ -54,7 +54,7 @@ public class ClaimedTagScenarioTests
         ConfigDiagnostic d = Assert.Single(result.Diagnostics);
         Assert.Equal(("DSE206", "$.timeline[0].write"), (d.Code, d.Path));
         Assert.Equal("Tag 'FEED.Permit' is claimed by INT01; a scenario cannot write it.", d.Message);
-        Assert.Equal("Write the claiming block's inputs instead — for an interlock's permit, its reset.", d.Fix);
+        Assert.Equal("Write the inputs of the block that claims it instead; `dse tags` names it.", d.Fix);
         Assert.Null(result.Events);
         Assert.Null(result.Summary);
     }

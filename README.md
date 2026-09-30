@@ -105,8 +105,7 @@ A scenario over that plant looks like this:
 ```
 
 A plant adds control blocks under `controllers`; a scenario may write their
-commands (`SEQ01.Start`, `INT01.Reset`) like any other tag, unless a block
-claims one:
+commands (`SEQ01.Start`, `INT01.Reset`) like any other tag:
 
 ```json
 "controllers": [
@@ -116,6 +115,9 @@ claims one:
       "trip": [ { "tag": "CV001.Start", "value": false } ] } }
 ]
 ```
+
+A block may claim a tag so that only it writes it; see *Claiming a tag* in
+[control blocks](docs/control-blocks.md).
 
 See the [mine-conveyor sample](samples/mine-conveyors/README.md),
 [scenarios](docs/scenarios.md), [control blocks](docs/control-blocks.md),
