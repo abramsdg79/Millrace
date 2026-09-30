@@ -258,7 +258,11 @@ spec is amended in place to agree (its "Amended 2026-09-25 by the plan" note), a
   event is at 131.000 s: 19 s quiet. State check, sampled every 100 ms:
   `CV001.Speed` ≤ 0.02 m/s and `CV001.TonnesPerHour` ≤ 5 t/h from 100 to 125 s
   (measured maxima at the test's 100 ms sampling 0.0060 m/s and 0.0485 t/h;
-  0.056 t/h at 10 ms sampling); `Feed.HopperMass` exactly 0 kg from
+  0.056 t/h at 10 ms sampling — sensor noise, not motion: CV001's true speed is
+  0 and its belt load frozen, and the zero-mean noise of its speed sensor
+  (σ 0.002 m/s) and scale (σ 0.3 t/h, 1 s lag) is clamped at the range floor
+  of 0, so a stopped belt reads small positive values, as every belt does from
+  t = 0; investigated 2026-09-30); `Feed.HopperMass` exactly 0 kg from
   100 s to the end (measured 0; a running feeder holds 0.8 kg in the hopper while
   CV001 draws it); `CV001.Speed` ≥ 1.74 m/s at 150 s (measured 1.932). Measured
   on the plant *without* the permit writes, with a timeline that stops at the
@@ -2292,7 +2296,8 @@ dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/start-w
 ````
 
 (Measured behind the prose, R125, at 100 ms sampling: from 100 s to 125 s
-CV001's speed ≤ 0.0060 m/s and its scale ≤ 0.0485 t/h; the hopper 0 kg from
+CV001's speed ≤ 0.0060 m/s and its scale ≤ 0.0485 t/h — clamped sensor noise
+over a true 0, not belt motion; the hopper 0 kg from
 100 s to 150 s; CV001 at 1.93 m/s at the end. Without the permit, on a timeline
 that stops at the 100 s writes: `CONTACTOR_CLOSED` at 100.000 s and `CH1 FULL`
 at 114.26 s.)
