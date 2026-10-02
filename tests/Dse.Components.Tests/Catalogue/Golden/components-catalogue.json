@@ -1718,6 +1718,13 @@
           "required": false,
           "description": "Applied, in order, every tick while holding.",
           "slot": "transform"
+        },
+        {
+          "name": "heatWhileHeld",
+          "kind": "bool",
+          "required": false,
+          "description": "Apply the transforms on every tick the unit holds items — filling, processing and discharging — not only while processing, so a batch that cannot leave keeps heating.",
+          "default": false
         }
       ],
       "ports": [
@@ -1763,6 +1770,18 @@
           "id": "discharge-jam",
           "description": "The discharge fails to open; the batch stays in the unit until the fault is cleared.",
           "parameters": []
+        },
+        {
+          "id": "slow-cycle",
+          "description": "The unit runs slow; a timed hold takes longer. Temperature and state holds are unaffected.",
+          "parameters": [
+            {
+              "name": "fraction",
+              "unit": "",
+              "default": 0.5,
+              "description": "Fraction of the hold timer's rate lost, 0..1; at 1 a timed hold never completes."
+            }
+          ]
         }
       ],
       "tags": [

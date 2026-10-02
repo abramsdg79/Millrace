@@ -89,7 +89,9 @@ prefixes the component id. Tag descriptions are fragments without a full stop.
 
 Implement `IFaultTarget`: publish a `FaultDescriptor` per fault, with its
 parameters and their defaults, and change *state* in `ApplyFault` /
-`ClearFault`. Faults arrive through the event queue at a tick boundary. An
+`ClearFault`, switching on the fault id: a component's faults are independent
+and may be active together, as `item-process-unit`'s `discharge-jam` and
+`slow-cycle` are. Faults arrive through the event queue at a tick boundary. An
 instrument gets calibration, noise, drift, lag, freeze and fail-high/low from
 `InstrumentBase` for free.
 

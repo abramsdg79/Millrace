@@ -15,17 +15,24 @@ namespace Dse.Components.Flow;
 /// A batch unit for discrete items: Idle → Filling → Processing → Discharging.
 /// Fills to a fixed count, applies the transforms to every item each tick
 /// while the hold is unsatisfied for any of them, then re-types (optional),
-/// applies the yield, and discharges in arrival order. A furnace and a press
-/// are configurations of this class.
+/// applies the yield, and discharges in arrival order. With
+/// <c>heatWhileHeld</c> the transforms run on every tick it holds items, in
+/// every phase, so a batch that cannot leave keeps soaking. A furnace and a
+/// press are configurations of this class.
 /// </summary>
 public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemProducer, IMaterialObservable, IFaultTarget, ITagProvider
 {
     /// <summary>The discharge fails to open: nothing leaves until cleared.</summary>
     public const string DischargeJam = "discharge-jam";
 
+    /// <summary>The unit runs slow: the hold timer advances at a fraction of real time.</summary>
+    public const string SlowCycle = "slow-cycle";
+
     private static readonly FaultDescriptor[] Faults =
     [
         new(DischargeJam, "The discharge fails to open; the batch stays in the unit until the fault is cleared."),
+        new(SlowCycle, "The unit runs slow; a timed hold takes longer. Temperature and state holds are unaffected.",
+            new FaultParameter("fraction", "", 0.5, "Fraction of the hold timer's rate lost, 0..1; at 1 a timed hold never completes.")),
     ];
 
     public static ComponentDescriptor Descriptor { get; } = new(
@@ -38,7 +45,8 @@ public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemPro
             p.Object<IHoldCondition>("hold"),
             p.MaterialOrNull("output"),
             p.Double("yield"),
-            p.Objects<IMaterialTransform>("transforms")))
+            p.Objects<IMaterialTransform>("transforms"),
+            p.Bool("heatWhileHeld")))
     {
         Parameters =
         [
@@ -47,6 +55,10 @@ public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemPro
             Param.Material("output", "What each item becomes. Omit to keep the material.", PayloadKind.Discrete, optional: true),
             Param.Double("yield", "Fraction of each item's mass that comes out.", @default: 1.0, min: 0.0, max: 1.0, exclusiveMin: true),
             Param.ObjectList("transforms", "Applied, in order, every tick while holding.", ObjectSlots.Transform),
+            Param.Bool(
+                "heatWhileHeld",
+                "Apply the transforms on every tick the unit holds items — filling, processing and discharging — not only while processing, so a batch that cannot leave keeps heating.",
+                @default: false),
         ],
         Ports =
         [
@@ -77,6 +89,7 @@ public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemPro
     private double _lost;
     private long _cycles;
     private bool _jammed;
+    private double _slowFraction;
     private bool _pendingFill;
     private TelemetryHandle _itemsTelemetry;
     private TelemetryHandle _lostTelemetry;
@@ -88,7 +101,8 @@ public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemPro
         IHoldCondition hold,
         MaterialType? output = null,
         double yield = 1.0,
-        IReadOnlyList<IMaterialTransform>? transforms = null)
+        IReadOnlyList<IMaterialTransform>? transforms = null,
+        bool heatWhileHeld = false)
         : base(id)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(batchSize);
@@ -109,6 +123,7 @@ public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemPro
         _output = output;
         Yield = yield;
         _transforms = transforms is null ? [] : transforms.ToArray();
+        HeatWhileHeld = heatWhileHeld;
 
         In = AddInlet("In", PayloadKind.Discrete);
         Out = AddOutlet("Out", PayloadKind.Discrete);
@@ -137,6 +152,9 @@ public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemPro
 
     /// <summary>Fraction of each item's mass that survives release.</summary>
     public double Yield { get; }
+
+    /// <summary>Whether the transforms run on every tick the unit holds items, not only while processing.</summary>
+    public bool HeatWhileHeld { get; }
 
     public ProcessPhase CurrentPhase => _phase;
 
@@ -193,6 +211,13 @@ public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemPro
 
     public override void Advance(in TickContext ctx)
     {
+        // Processing applies the transforms itself; every other phase does it here,
+        // so a held item is heated exactly once per tick (R158).
+        if (HeatWhileHeld && _phase != ProcessPhase.Processing)
+        {
+            ApplyTransforms(ctx.Dt);
+        }
+
         switch (_phase)
         {
             case ProcessPhase.Idle when _pendingFill:
@@ -211,7 +236,7 @@ public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemPro
 
             case ProcessPhase.Processing:
                 ApplyTransforms(ctx.Dt);
-                _elapsed += ctx.Dt;
+                _elapsed += ctx.Dt * (1.0 - _slowFraction);
                 if (AllSatisfied())
                 {
                     Release(in ctx);
@@ -272,9 +297,31 @@ public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemPro
         return true;
     }
 
-    public void ApplyFault(string faultId, FaultArguments arguments) => _jammed = true;
+    public void ApplyFault(string faultId, FaultArguments arguments)
+    {
+        switch (faultId)
+        {
+            case DischargeJam:
+                _jammed = true;
+                break;
+            case SlowCycle:
+                _slowFraction = Math.Clamp(arguments.Get("fraction"), 0.0, 1.0);
+                break;
+        }
+    }
 
-    public void ClearFault(string faultId) => _jammed = false;
+    public void ClearFault(string faultId)
+    {
+        switch (faultId)
+        {
+            case DischargeJam:
+                _jammed = false;
+                break;
+            case SlowCycle:
+                _slowFraction = 0.0;
+                break;
+        }
+    }
 
     private void StartProcessing(in TickContext ctx)
     {

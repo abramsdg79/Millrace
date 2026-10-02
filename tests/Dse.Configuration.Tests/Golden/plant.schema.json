@@ -1163,6 +1163,11 @@
               "items": {
                 "$ref": "#/$defs/object.transform"
               }
+            },
+            "heatWhileHeld": {
+              "description": "Apply the transforms on every tick the unit holds items — filling, processing and discharging — not only while processing, so a batch that cannot leave keeps heating.",
+              "type": "boolean",
+              "default": false
             }
           }
         }

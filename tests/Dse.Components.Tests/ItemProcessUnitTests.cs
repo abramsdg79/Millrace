@@ -2,6 +2,7 @@ using Dse.Components.Flow;
 using Dse.Components.Tests.Fakes;
 using Dse.Components.Transforms;
 using Dse.Core;
+using Dse.Core.Faults;
 using Dse.Core.Flow;
 using Dse.Core.Time;
 using Xunit;
@@ -22,11 +23,19 @@ public class ItemProcessUnitTests
 
     private sealed record Plant(Simulation Sim, ItemSource Source, ItemProcessUnit Unit, ItemSink Sink, Setpoint Zone);
 
-    private static Plant Build(int batchSize, IHoldCondition hold, MaterialType? output = null, double yield = 1.0, IReadOnlyList<IMaterialTransform>? transforms = null, double interval = 1.0)
+    private static Plant Build(
+        int batchSize,
+        IHoldCondition hold,
+        MaterialType? output = null,
+        double yield = 1.0,
+        IReadOnlyList<IMaterialTransform>? transforms = null,
+        double interval = 1.0,
+        bool heatWhileHeld = false,
+        int sinkCapacity = int.MaxValue)
     {
         var source = new ItemSource("Billets", Billet, 20.0, interval, new MaterialProperties(7800.0, 0.0, 25.0));
-        var unit = new ItemProcessUnit("Furnace", batchSize, hold, output, yield, transforms);
-        var sink = new ItemSink("Out");
+        var unit = new ItemProcessUnit("Furnace", batchSize, hold, output, yield, transforms, heatWhileHeld);
+        var sink = new ItemSink("Out", sinkCapacity);
         var zone = new Setpoint("Zone", 1200.0);
         source.Out.ConnectTo(unit.In);
         unit.Out.ConnectTo(sink.In);
@@ -37,6 +46,13 @@ public class ItemProcessUnitTests
 
     private static IEnumerable<string> Phases(Simulation sim) =>
         sim.Events.Records.Where(r => r.Source == "Furnace").Select(r => r.Code);
+
+    /// <summary>A billet that entered at 25 °C after <paramref name="ticks"/> half-second steps toward a 1200 °C zone with a 10 s time constant.</summary>
+    private static double Heated(int ticks) => 1200.0 - (1175.0 * Math.Pow(0.95, ticks));
+
+    /// <summary>The tick the first DISCHARGING was logged on.</summary>
+    private static long DischargeTick(Simulation sim) =>
+        sim.Events.Records.First(r => r.Source == "Furnace" && r.Code == "DISCHARGING").Tick;
 
     [Fact]
     public void FillsToTheBatchSizeHoldsAndDischargesInOrder()
@@ -140,5 +156,176 @@ public class ItemProcessUnitTests
         Assert.Equal(
             "Hold satisfied after 2.00 s; discharging 3 items.",
             Assert.Single(plant.Sim.Events.Records, r => r.Source == "Furnace" && r.Code == "DISCHARGING").Message);
+    }
+
+    [Fact]
+    public void WithHeatWhileHeldAJammedBatchHeatsOnEveryTickTheUnitHoldsIt()
+    {
+        Plant plant = Build(batchSize: 3, Hold.ForSeconds(2.0), transforms: [new ThermalTransfer(10.0)], heatWhileHeld: true);
+        plant.Sim.InjectFaultAt(TimeSpan.Zero, "Furnace", ItemProcessUnit.DischargeJam);
+
+        // Items land on ticks 2, 4, 6 and are heated from the next tick on, in
+        // Idle, Filling, Processing (ticks 8-11) and Discharging alike: after
+        // tick 19 they have had 17, 15 and 13 steps.
+        plant.Sim.RunFor(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(ProcessPhase.Discharging, plant.Unit.CurrentPhase);
+        Assert.Equal(new long[] { 1, 2, 3 }, plant.Unit.Items.Select(i => i.Id));
+        Assert.Equal(Heated(17), plant.Unit.Items[0].Properties.Temperature, 9);
+        Assert.Equal(Heated(15), plant.Unit.Items[1].Properties.Temperature, 9);
+        Assert.Equal(Heated(13), plant.Unit.Items[2].Properties.Temperature, 9);
+    }
+
+    [Fact]
+    public void WithHeatWhileHeldABatchBlockedDownstreamHeatsExactlyAsAJammedOne()
+    {
+        Plant plant = Build(batchSize: 3, Hold.ForSeconds(2.0), transforms: [new ThermalTransfer(10.0)], heatWhileHeld: true, sinkCapacity: 0);
+
+        plant.Sim.RunFor(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(ProcessPhase.Discharging, plant.Unit.CurrentPhase);
+        Assert.Equal(0L, plant.Sink.Count.Value);
+        Assert.Equal(Heated(17), plant.Unit.Items[0].Properties.Temperature, 9);
+        Assert.Equal(Heated(15), plant.Unit.Items[1].Properties.Temperature, 9);
+        Assert.Equal(Heated(13), plant.Unit.Items[2].Properties.Temperature, 9);
+    }
+
+    [Fact]
+    public void WithoutHeatWhileHeldAHeldBatchHeatsOnlyWhileProcessing()
+    {
+        Plant plant = Build(batchSize: 3, Hold.ForSeconds(2.0), transforms: [new ThermalTransfer(10.0)], sinkCapacity: 0);
+
+        plant.Sim.RunFor(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(ProcessPhase.Discharging, plant.Unit.CurrentPhase);
+        Assert.All(plant.Unit.Items, i => Assert.Equal(Heated(4), i.Properties.Temperature, 9));
+    }
+
+    [Theory]
+    [InlineData(0.5, 15L)]
+    [InlineData(0.75, 23L)]
+    [InlineData(0.0, 11L)]
+    [InlineData(-1.0, 11L)]
+    public void ASlowCycleStretchesATimedHoldByOneOverOneMinusTheFraction(double fraction, long dischargeTick)
+    {
+        Plant plant = Build(batchSize: 3, Hold.ForSeconds(2.0));
+        plant.Sim.InjectFaultAt(TimeSpan.Zero, "Furnace", ItemProcessUnit.SlowCycle, new FaultArguments(new FaultArgument("fraction", fraction)));
+
+        // PROCESSING is logged on tick 7; unslowed, the 2 s hold is four ticks.
+        plant.Sim.RunFor(TimeSpan.FromSeconds(15));
+
+        Assert.Equal(dischargeTick, DischargeTick(plant.Sim));
+        Assert.Equal(
+            "Hold satisfied after 2.00 s; discharging 3 items.",
+            plant.Sim.Events.Records.First(r => r.Source == "Furnace" && r.Code == "DISCHARGING").Message);
+    }
+
+    [Fact]
+    public void ASlowCycleDefaultsToHalfRate()
+    {
+        Plant plant = Build(batchSize: 3, Hold.ForSeconds(2.0));
+        plant.Sim.InjectFaultAt(TimeSpan.Zero, "Furnace", ItemProcessUnit.SlowCycle);
+
+        plant.Sim.RunFor(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(15L, DischargeTick(plant.Sim));
+        Assert.Contains(plant.Sim.Events.Records, r => r.Source == "Furnace" && r.Message == "slow-cycle injected: fraction=0.5.");
+    }
+
+    [Theory]
+    [InlineData(1.0)]
+    [InlineData(1.5)]
+    public void AtFullSlowCycleATimedHoldNeverCompletes(double fraction)
+    {
+        Plant plant = Build(batchSize: 3, Hold.ForSeconds(2.0));
+        plant.Sim.InjectFaultAt(TimeSpan.Zero, "Furnace", ItemProcessUnit.SlowCycle, new FaultArguments(new FaultArgument("fraction", fraction)));
+
+        plant.Sim.RunFor(TimeSpan.FromSeconds(60));
+
+        Assert.Equal(ProcessPhase.Processing, plant.Unit.CurrentPhase);
+        Assert.Equal(0.0, plant.Unit.Progress.Value);
+        Assert.DoesNotContain(plant.Sim.Events.Records, r => r.Source == "Furnace" && r.Code == "DISCHARGING");
+    }
+
+    [Fact]
+    public void ASlowCycleLeavesATemperatureHoldAlone()
+    {
+        IMaterialTransform[] heat = [new ThermalTransfer(10.0)];
+        Plant plain = Build(batchSize: 3, Hold.TemperatureAtLeast(200.0), transforms: heat);
+        Plant slowed = Build(batchSize: 3, Hold.TemperatureAtLeast(200.0), transforms: heat);
+        slowed.Sim.InjectFaultAt(TimeSpan.Zero, "Furnace", ItemProcessUnit.SlowCycle, new FaultArguments(new FaultArgument("fraction", 1.0)));
+
+        plain.Sim.RunFor(TimeSpan.FromSeconds(10));
+        slowed.Sim.RunFor(TimeSpan.FromSeconds(10));
+
+        // 192.6 °C after three processing steps, 243.0 °C after four: released on tick 11 either way.
+        Assert.Equal(11L, DischargeTick(plain.Sim));
+        Assert.Equal(11L, DischargeTick(slowed.Sim));
+    }
+
+    [Fact]
+    public void ClearingAFullSlowCycleResumesTheStoppedHold()
+    {
+        Plant plant = Build(batchSize: 3, Hold.ForSeconds(2.0));
+        plant.Sim.InjectFaultAt(TimeSpan.Zero, "Furnace", ItemProcessUnit.SlowCycle, new FaultArguments(new FaultArgument("fraction", 1.0)));
+        plant.Sim.ClearFaultAt(TimeSpan.FromSeconds(6), "Furnace", ItemProcessUnit.SlowCycle);   // tick 12
+
+        // Ticks 8-11 count nothing; ticks 12-15 count the whole 2 s.
+        plant.Sim.RunFor(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(15L, DischargeTick(plant.Sim));
+    }
+
+    [Fact]
+    public void ClearingASlowCycleRestoresFullRateAndKeepsTheTimeAlreadyCounted()
+    {
+        Plant plant = Build(batchSize: 3, Hold.ForSeconds(2.0));
+        plant.Sim.InjectFaultAt(TimeSpan.Zero, "Furnace", ItemProcessUnit.SlowCycle);
+        plant.Sim.ClearFaultAt(TimeSpan.FromSeconds(5), "Furnace", ItemProcessUnit.SlowCycle);
+
+        // Ticks 8 and 9 count 0.25 s each, ticks 10 on count 0.5 s: 2 s after tick 12.
+        // Unslowed it would be tick 11, always slowed tick 15, restarted on clear tick 13.
+        plant.Sim.RunFor(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(12L, DischargeTick(plant.Sim));
+    }
+
+    [Fact]
+    public void ProgressFollowsTheSlowedHoldTimer()
+    {
+        Plant plant = Build(batchSize: 3, Hold.ForSeconds(2.0));
+        plant.Sim.InjectFaultAt(TimeSpan.Zero, "Furnace", ItemProcessUnit.SlowCycle);
+        plant.Sim.RunFor(TimeSpan.FromSeconds(4));   // ticks 0-7: PROCESSING on tick 7
+
+        var progress = new List<double>();
+        for (int i = 0; i < 8; i++)
+        {
+            plant.Sim.Tick();                          // ticks 8-15; each publishes the timer as of the tick before
+            progress.Add(plant.Unit.Progress.Value);
+        }
+
+        Assert.Equal([0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875], progress);
+        Assert.Equal(ProcessPhase.Discharging, plant.Unit.CurrentPhase);
+    }
+
+    [Fact]
+    public void ASlowCycleAndADischargeJamAreIndependent()
+    {
+        Plant plant = Build(batchSize: 3, Hold.ForSeconds(2.0));
+        plant.Sim.InjectFaultAt(TimeSpan.Zero, "Furnace", ItemProcessUnit.DischargeJam);
+        plant.Sim.InjectFaultAt(TimeSpan.Zero, "Furnace", ItemProcessUnit.SlowCycle);
+
+        plant.Sim.RunFor(TimeSpan.FromSeconds(10));
+        Assert.Equal(15L, DischargeTick(plant.Sim));
+        Assert.Equal(0L, plant.Sink.Count.Value);
+
+        plant.Sim.ClearFaultIn(TimeSpan.Zero, "Furnace", ItemProcessUnit.SlowCycle);
+        plant.Sim.RunFor(TimeSpan.FromSeconds(2));
+        Assert.Equal(ProcessPhase.Discharging, plant.Unit.CurrentPhase);
+        Assert.Equal(0.0, plant.Sink.MassReceived);
+
+        plant.Sim.ClearFaultIn(TimeSpan.Zero, "Furnace", ItemProcessUnit.DischargeJam);
+        plant.Sim.RunFor(TimeSpan.FromSeconds(1));
+        Assert.Equal(60.0, plant.Sink.MassReceived);
     }
 }

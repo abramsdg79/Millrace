@@ -67,6 +67,18 @@ public class FlowFactoryTests
     }
 
     [Fact]
+    public void AnItemUnitHeatsWhileHeldOnlyWhenTheFileSaysSo()
+    {
+        const string Batch = """ "batchSize": 1, "hold": { "type": "for-seconds", "seconds": 5 } """;
+        ItemProcessUnit plain = MechanicalFactoryTests.Build<ItemProcessUnit>(ItemProcessUnit.Descriptor, $$"""{ {{Batch}} }""", Context());
+        ItemProcessUnit furnace = MechanicalFactoryTests.Build<ItemProcessUnit>(
+            ItemProcessUnit.Descriptor, $$"""{ {{Batch}}, "heatWhileHeld": true }""", Context());
+
+        Assert.False(plain.HeatWhileHeld);
+        Assert.True(furnace.HeatWhileHeld);
+    }
+
+    [Fact]
     public void ABulkMaterialCannotFeedAnItemSource()
     {
         using var document = System.Text.Json.JsonDocument.Parse("""{ "material": "flour", "itemMassKg": 1, "intervalSeconds": 1 }""");

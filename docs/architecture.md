@@ -125,7 +125,10 @@ head at the minimum spacing.
 
 Transforms (`IMaterialTransform`) run on resident material every tick, before
 it moves and whatever the speed, with ambient conditions taken from the node's
-signal inputs. Bulk cells pass an empty state span in this version; items pass
+signal inputs. A process unit runs them only while it processes, unless it is
+built with `heatWhileHeld`: then they run on every tick it holds items —
+filling, processing and discharging — so a batch that cannot leave keeps
+heating, as it would in a real furnace. Bulk cells pass an empty state span in this version; items pass
 their own.
 
 Every tick the engine sums each node's `MassHeld`, `MassCreated` and
@@ -161,7 +164,9 @@ perturb evaluation order.
 Every instrument derives from `InstrumentBase` and gets calibration, noise,
 drift, lag, freeze, fail-high and fail-low for free; its `Truth` telemetry
 is what it should have read. Physical faults — bearing friction, belt slip,
-a welded contactor, a blocked chute — are declared per component.
+a welded contactor, a blocked chute, a process unit that runs slow
+(`slow-cycle`) — are declared per component. A component switches on the fault
+id, so its faults are independent and may be active together.
 
 ## Determinism rules
 
