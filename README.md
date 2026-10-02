@@ -49,10 +49,11 @@ attached in code.
 The first reference sample, `samples/mine-conveyors/`, is three conveyors, a
 feeder and a stockpile with a sequenced start and stop, cascade interlocks,
 permissives and alarms, and nine scenarios — a normal start and stop, a
-pull-key, an e-stop, an overload, a blocked chute, a failed zero-speed switch, a
-welded contactor, a starved feed and a start written while the line is tripped —
-each with its golden log. It is data only: no C#. The second
-sample, a wheel line of discrete items, is planned (plan 6b).
+pull-key, an e-stop, an overload, a blocked chute, a failed zero-speed switch,
+a welded contactor, a starved feed and a start written while the line is
+tripped — each with its golden log. It is data only: no C#. The second sample,
+a wheel line of discrete items, is planned (plan 6b.2); the physics and the
+reject path it needs are in place (plan 6b.1).
 
 See `docs/superpowers/specs/` for the design, `docs/superpowers/plans/` for the
 implementation plans, `docs/architecture.md` for how the engine works, and
