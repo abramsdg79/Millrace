@@ -21,6 +21,9 @@ namespace Dse.Samples.Tests;
 /// </summary>
 public class WheelLineTests
 {
+    /// <summary>ALM_PYRO's HiHi limit: the over-soak the coil rejects on, °C.</summary>
+    private const double HiHi = 1150.0;
+
     [Fact]
     public void ThePlantValidatesWithFiveControllers()
     {
@@ -217,5 +220,115 @@ public class WheelLineTests
 
         Assert.True(replay.IsValid, replay.ToText());
         Assert.Equal(live.Events.ToText(), replay.Events!.ToText());
+    }
+
+    [Fact]
+    public void TheRejectDecisionLandsSevenTicksBeforeTheOverSoakedBilletLeaves()
+    {
+        IReadOnlyList<SimEventRecord> events = WheelLine.Run("slow-press").Events!.Records;
+        int rejected = events.ToList().FindIndex(r => r.Source == "GATE" && r.Code == "REJECTED");
+        Assert.True(rejected >= 0, "slow-press rejects nothing.");
+
+        // The billet lands on the gate on the tick the furnace logs IDLE (tick N).
+        long n = events.Take(rejected).Last(r => r.Source == "FCE" && r.Code == "IDLE").Tick;
+        long hiHi = events.Take(rejected).Last(r => r.Source == "ALM_PYRO" && r.Message.StartsWith("HiHi: ", StringComparison.Ordinal)).Tick;
+        long write = events.Take(rejected).Last(r => r.Source == "GATE.Reject" && r.Message == "Set to true by COIL_REJECT.").Tick;
+
+        // R168 with a = c = 1, no on-delay and no lag: the pyrometer reads at N + 1, the alarm
+        // raises at N + 2, the coil's write lands at N + a + c + 2 = N + 4; the billet may leave at
+        // N + ceil(1.0 s / 0.1 s) + 1 = N + 11.
+        Assert.Equal((n + 2, n + 4, n + 11), (hiHi, write, events[rejected].Tick));
+    }
+
+    [Fact]
+    public void ASlowPressOverSoaksTheHeldBilletOnlyWhileItIsSlowAndTheBeltFillsAndDrains()
+    {
+        var hottest = new List<(TimeSpan Time, double Celsius)>();
+        var count = new List<(TimeSpan Time, long Blanks)>();
+        var discharging = new List<(TimeSpan Time, bool Held)>();
+        ItemProcessUnit? furnace = null;
+        RejectGate? gate = null;
+
+        WheelLine.Watch("slow-press", sim =>
+        {
+            furnace ??= WheelLine.Component<ItemProcessUnit>(sim, "FCE");
+            gate ??= WheelLine.Component<RejectGate>(sim, "GATE");
+            TimeSpan now = sim.Clock.Elapsed;
+            double inFurnace = furnace.Items.Count > 0 ? furnace.Items.Max(i => i.Properties.Temperature) : 0.0;
+            hottest.Add((now, Math.Max(inFurnace, gate.Item?.Properties.Temperature ?? 0.0)));
+            count.Add((now, sim.IO.Read("CV.ItemCount").AsInt64));
+            discharging.Add((now, sim.IO.Read("FCE.Phase").AsInt64 == (long)ProcessPhase.Discharging));
+        });
+
+        TimeSpan slow = TimeSpan.FromSeconds(300);
+        TimeSpan cleared = TimeSpan.FromSeconds(1140);
+
+        // Steady before the fault: one blank at most on the belt, every billet at its 1100 °C target.
+        Assert.All(count.Where(s => s.Time <= slow), s => Assert.True(s.Blanks <= 1, $"{s.Blanks} blanks at {s.Time}."));
+        Assert.All(hottest.Where(s => s.Time <= slow), s => Assert.True(s.Celsius < 1101.0, $"{s.Celsius} °C at {s.Time}."));
+
+        // Slow: the belt fills (six blanks at 2 m spacing on 10 m), the furnace holds a billet in
+        // Discharging for minutes (measured 285.7 s), and that billet soaks toward its 1250 °C zone
+        // (measured 1249.999 °C) — well above HiHi.
+        Assert.Contains(count, s => s.Blanks == 6 && s.Time > slow && s.Time < cleared);
+        Assert.True(LongestRun(discharging) >= TimeSpan.FromSeconds(280), $"The furnace held a billet for only {LongestRun(discharging)}.");
+        Assert.InRange(hottest.Max(s => s.Celsius), 1245.0, 1250.0);
+
+        // Past HiHi only while the press is slow (measured 840.2 s to 1117.1 s).
+        Assert.All(hottest.Where(s => s.Celsius > HiHi), s => Assert.InRange(s.Time, slow, cleared));
+
+        // After the clear the queue drains: from 2000 s on (measured 1981.5 s) one blank at most.
+        Assert.All(count.Where(s => s.Time >= TimeSpan.FromSeconds(2000)), s => Assert.True(s.Blanks <= 1, $"{s.Blanks} blanks at {s.Time}."));
+    }
+
+    [Fact]
+    public void AStuckKickerTurnsTheOverSoakedBilletsIntoWheels()
+    {
+        var overSoaked = new SortedSet<long>();
+        var wheels = new SortedDictionary<long, string>();
+        RejectGate? gate = null;
+        ItemSink? sink = null;
+
+        Simulation end = WheelLine.Watch("stuck-kicker", sim =>
+        {
+            gate ??= WheelLine.Component<RejectGate>(sim, "GATE");
+            sink ??= WheelLine.Component<ItemSink>(sim, "Wheels");
+            if (gate.Item is { } onGate && onGate.Properties.Temperature > HiHi)
+            {
+                overSoaked.Add(onGate.Id);
+            }
+
+            if (sink.LastItem is { } wheel)
+            {
+                wheels[wheel.Id] = wheel.Type.Name;
+            }
+        });
+
+        // Billet 13 soaked to 1250 °C behind the slow press; billet 14 (1169.5 °C) was held behind it
+        // while the stuck kicker kept 13 on the gate. Both became wheels; nothing reached the bay.
+        Assert.Equal([13L, 14L], overSoaked);
+        Assert.All(overSoaked, id => Assert.Equal("Wheel", Assert.Contains(id, (IDictionary<long, string>)wheels)));
+        Assert.Equal(0L, WheelLine.Component<ItemSink>(end, "Bay").Count.Value);
+        Assert.Equal(0L, end.IO.Read("GATE.Rejected").AsInt64);
+    }
+
+    /// <summary>The longest stretch of consecutive samples that are true.</summary>
+    private static TimeSpan LongestRun(List<(TimeSpan Time, bool Held)> samples)
+    {
+        TimeSpan longest = TimeSpan.Zero;
+        TimeSpan? since = null;
+        TimeSpan previous = TimeSpan.Zero;
+        foreach ((TimeSpan time, bool held) in samples)
+        {
+            since = held ? since ?? previous : null;
+            if (since is { } start && time - start > longest)
+            {
+                longest = time - start;
+            }
+
+            previous = time;
+        }
+
+        return longest;
     }
 }
