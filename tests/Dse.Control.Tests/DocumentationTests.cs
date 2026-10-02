@@ -83,6 +83,23 @@ public partial class DocumentationTests
     }
 
     [Fact]
+    public void TheControlBlocksPageDescribesTheCoil()
+    {
+        string page = Page();
+
+        foreach (string token in new[]
+                 {
+                     "## `Coil`", "new Coil(", "\"type\": \"coil\"", "\"claims\": [ \"GATE.Reject\" ]", "Energised",
+                     "on its first scan and on every scan", "Set to true by COIL01.", "carries six of them", "registers the six below",
+                 })
+        {
+            Assert.Contains(token, page, StringComparison.Ordinal);
+        }
+
+        Assert.DoesNotContain("carries five of them", page, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void EveryLogLineThePageQuotesIsAWholeLineOfTheWorkedExampleGolden()
     {
         HashSet<string> golden = [.. File.ReadAllText(Golden()).ReplaceLineEndings("\n").Split('\n')];

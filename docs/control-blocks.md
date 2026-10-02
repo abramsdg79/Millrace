@@ -2,8 +2,8 @@
 
 A control block is a PLC rung: a small, stateful, pure function of the tags it
 reads, scanned at its own period, whose outputs are ordinary tags. `Dse.Control`
-carries five of them — a timer, a permissive, an interlock, an alarm and a
-sequencer — and `Dse.Core` carries the host that scans them.
+carries six of them — a timer, a permissive, an interlock, an alarm, a
+sequencer and a coil — and `Dse.Core` carries the host that scans them.
 
 `Dse.Control` references `Dse.Io.Abstractions` and nothing else. A block cannot
 see a `Simulation`, a directory, a binding, a clock or an event log, which is
@@ -118,7 +118,7 @@ value before it builds any block, and reports every mistake at its path:
 | DSE115 | A tag the block commands is read-write — not a measured value, another block's output, or an input a signal link drives. |
 
 Block types come from the catalogue: `ControlModule`, in
-`Dse.Control.Catalogue`, registers the five below, and `dse catalog export`
+`Dse.Control.Catalogue`, registers the six below, and `dse catalog export`
 lists them under `"blocks"`. A module loaded with `--assembly` may register
 more.
 
@@ -477,6 +477,59 @@ Events: `STEP_ENTERED` — `2: Start the belt.` — `SEQUENCE_COMPLETE` —
 `Finished after 6 steps.` (pluralised correctly: one step reads `Finished after
 1 step.`) — `SEQUENCE_FAULTED` — `Step 2 timed out after 30 s.` — and
 `SEQUENCE_ABORTED` — `Aborted at step 3.`
+
+## `Coil`
+
+```csharp
+new Coil("COIL01", new Condition("ALM_TT01.HiHi.Active", true), "GATE.Reject", TimeSpan.FromMilliseconds(100))
+```
+
+In a plant file (claim the output — *Claiming a tag*, above):
+
+```json
+{ "id": "COIL01", "type": "coil", "scanPeriodMs": 100,
+  "claims": [ "GATE.Reject" ],
+  "parameters": {
+    "condition": { "tag": "ALM_TT01.HiHi.Active", "normal": true },
+    "output": "GATE.Reject" } }
+```
+
+| pin | kind | |
+|---|---|---|
+| condition | Bool | the tag watched (`Inputs`) |
+| output | Bool | the read-write tag driven (`Writes`) |
+| `Energised` | Bool | output |
+
+An output coil: the rung's result drives one Bool tag. `Energised` is true
+while the condition's tag equals `normal` — so `normal: true` follows the tag
+and `normal: false` inverts it — re-evaluated every scan and never latched. The
+coil writes `output` to match `Energised` **on its first scan and on every scan
+where the value changes**, and at no other time: a real output coil rewrites
+its output every scan, but with the tag claimed nothing else can change it, so
+writing on change leaves the tag in the same state with one `WRITE` per
+transition — `Set to true by COIL01.` as it energises, `Set to false by
+COIL01.` as it drops. The first scan, at tick 0, writes whatever the primed
+image gives it: an alarm's `Active` powers up false, so a coil on it first
+writes `false`. Like the interlock, it reads the condition's value whatever its
+quality. No events.
+
+Use a coil where a plant output must follow logic — a reject kicker driven by
+an over-temperature alarm — and an interlock where it must latch until a reset.
+Claim the output: unclaimed, anything may write it between transitions, and the
+coil does not put it back until its condition next changes.
+
+**Size a reject station's dwell to cover the chain.** From the tick an item
+reaches a `reject-gate`, the pyrometer on it reads it on the next tick, the
+alarm raises on its first scan after that (plus its on-delay, rounded up to
+whole alarm scans), the coil writes on its first scan after the alarm
+publishes, and the write lands one tick later. With the alarm scanning every
+*a* ticks and the coil every *c*, the gate honours the decision only when
+⌈dwell / dt⌉ ≥ a + c + 1, plus the on-delay in ticks rounded up to a multiple
+of *a*, plus any lag the instrument adds. When both scan every tick the write
+lands four ticks after the item arrives, so the dwell must be at least 3 × dt:
+on a 100 ms step with 100 ms scans a 0.3 s dwell rejects every hot billet and a
+0.2 s dwell none. A shorter dwell lets the item leave before the decision; the
+same latency decides when `Reject` falls for the item that follows.
 
 ## Writing your own
 

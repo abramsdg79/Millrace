@@ -66,6 +66,9 @@ internal sealed class Scan
 
     public Scan Set(string tag, long value) => SetInput(tag, TagValue.Int64(value));
 
+    /// <summary>Sets an input to a whole tag value, quality included.</summary>
+    public Scan Set(string tag, TagValue value) => SetInput(tag, value);
+
     /// <summary>Sets a command pin, by its relative name.</summary>
     public Scan Command(string pin, bool value)
     {

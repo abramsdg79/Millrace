@@ -3,7 +3,7 @@ using Dse.Io;
 
 namespace Dse.Control.Catalogue;
 
-/// <summary>What the five block descriptors share: the condition and write groups, the transition slot, the duration bound.</summary>
+/// <summary>What the block descriptors share: the condition and write groups, the transition slot, the duration bound.</summary>
 public static class ControlCatalogue
 {
     /// <summary>The object slot a sequencer step's transition comes from.</summary>
@@ -33,7 +33,9 @@ public static class ControlCatalogue
         Param.Double(name, description, "s", @default, min: 0.0, max: MaxSeconds);
 
     internal static IReadOnlyList<Condition> Conditions(ParameterValues p, string name) =>
-        p.Groups(name).Select(g => new Condition(g.Tag("tag"), g.Bool("normal"))).ToList();
+        p.Groups(name).Select(ConditionOf).ToList();
+
+    internal static Condition ConditionOf(ParameterValues group) => new(group.Tag("tag"), group.Bool("normal"));
 
     internal static IReadOnlyList<BlockWrite> Writes(ParameterValues p, string name) =>
         p.Groups(name).Select(g => new BlockWrite(g.Tag("tag"), g.Value("value"))).ToList();

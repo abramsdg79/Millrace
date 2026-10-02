@@ -1,0 +1,29 @@
+{
+  "defaults": { "timeStepMs": 100 },
+  "materials": [
+    { "name": "billet", "kind": "discrete", "properties": { "density": 7800, "moisture": 0, "temperature": 20 }, "description": "A steel billet." }
+  ],
+  "components": [
+    { "id": "SRC", "type": "item-source", "parameters": { "material": "billet", "itemMassKg": 12, "intervalSeconds": 5 } },
+    { "id": "FCE", "type": "item-process-unit", "parameters": {
+        "batchSize": 2, "heatWhileHeld": true,
+        "hold": { "type": "for-seconds", "seconds": 30 },
+        "transforms": [ { "type": "thermal-transfer", "timeConstantSeconds": 60 } ] } },
+    { "id": "GATE", "type": "reject-gate", "parameters": { "dwellSeconds": 2 } },
+    { "id": "GOOD", "type": "item-sink" },
+    { "id": "SCRAP", "type": "item-sink" },
+    { "id": "TT", "type": "pyrometer",
+      "parameters": { "target": "GATE", "positionM": 0, "windowM": 0, "spec": { "unit": "°C", "rangeLow": 0, "rangeHigh": 1400 } } }
+  ],
+  "flows": [
+    { "from": "SRC.Out", "to": "FCE.In" }, { "from": "FCE.Out", "to": "GATE.In" },
+    { "from": "GATE.Out", "to": "GOOD.In" }, { "from": "GATE.RejectOut", "to": "SCRAP.In" }
+  ],
+  "tags": [ { "name": "FCE.ZONE_SP", "port": "FCE.AmbientTemperature", "access": "write", "unit": "°C", "rangeLow": 0, "rangeHigh": 1400 } ],
+  "controllers": [
+    { "id": "ALM01", "type": "alarm", "scanPeriodMs": 100,
+      "parameters": { "input": "TT.Value", "limits": [ { "kind": "hi-hi", "value": 1200 } ] } },
+    { "id": "COIL01", "type": "coil", "scanPeriodMs": 100, "claims": [ "GATE.Reject" ],
+      "parameters": { "condition": { "tag": "ALM01.HiHi.Active", "normal": true }, "output": "GATE.Reject" } }
+  ]
+}

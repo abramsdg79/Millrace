@@ -126,4 +126,33 @@ public class BlockFactoryTests
         Assert.Equal("$.presetS", issue.Path);
         Assert.Contains("[0, 31536000]", issue.Message, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void ACoilReadsItsConditionAndCommandsItsOutput()
+    {
+        ParameterValues values = Bind.Values(
+            CoilCatalogue.Descriptor.Parameters, """{ "condition": { "tag": "V1.Tripped", "normal": false }, "output": "V1.Fill" }""");
+
+        IScanBlock block = CoilCatalogue.Descriptor.Factory("COIL01", Bind.Period, values);
+
+        Assert.IsType<Coil>(block);
+        Assert.Equal(new TagRef("V1.Tripped", TagKind.Bool), Assert.Single(block.Inputs));
+        Assert.Equal(new TagRef("V1.Fill", TagKind.Bool), Assert.Single(block.Writes));
+        Assert.Equal(Bind.Period, block.ScanPeriod);
+        Assert.Equal(
+            (new TagSpec("COIL01.Energised", TagKind.Bool, "", "The condition is at its normal value; the output is driven true"), TagAccess.ReadOnly),
+            Assert.Single(CoilCatalogue.Descriptor.OwnedTags("COIL01", values)));
+    }
+
+    [Theory]
+    [InlineData("""{ "condition": { "tag": "V1.Tripped", "normal": false }, "output": "V1.Running" }""", "$.output")]
+    [InlineData("""{ "condition": { "tag": "V1.Level", "normal": false }, "output": "V1.Fill" }""", "$.condition.tag")]
+    [InlineData("""{ "condition": { "tag": "V1.Tripped" }, "output": "V1.Fill" }""", "$.condition.normal")]
+    public void ACoilRefusesAReadOnlyOutputANonBoolConditionAndAMissingNormal(string json, string path)
+    {
+        (ParameterValues? values, List<BindingIssue> issues) = Bind.TryValues(CoilCatalogue.Descriptor.Parameters, json);
+
+        Assert.Null(values);
+        Assert.Equal(path, Assert.Single(issues).Path);
+    }
 }

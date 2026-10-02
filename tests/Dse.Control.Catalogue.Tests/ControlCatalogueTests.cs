@@ -25,18 +25,18 @@ public class ControlCatalogueTests
             .ToList();
         var built = new HashSet<Type>(Report.BuiltTypes);
 
-        Assert.Equal(5, blocks.Count);
+        Assert.Equal(6, blocks.Count);
         Assert.Empty(blocks.Where(t => !built.Contains(t)).Select(t => t.FullName));
     }
 
     [Fact]
-    public void TheModuleRegistersFiveBlocksAndTwoTransitions()
+    public void TheModuleRegistersSixBlocksAndTwoTransitions()
     {
         ComponentCatalogue catalogue = ControlFixtures.Catalogue;
 
         Assert.Equal(["Dse.Control"], catalogue.Modules);
         Assert.Empty(catalogue.Components);
-        Assert.Equal(["alarm", "interlock", "permissive", "sequencer", "timer"], catalogue.Blocks.Select(b => b.Type));
+        Assert.Equal(["alarm", "coil", "interlock", "permissive", "sequencer", "timer"], catalogue.Blocks.Select(b => b.Type));
         Assert.Equal(
             new[] { ("transition", "after"), ("transition", "when") },
             catalogue.Objects.Select(o => (o.Slot, o.Type)));
@@ -55,7 +55,7 @@ public class ControlCatalogueTests
         JsonElement root = document.RootElement;
 
         Assert.Empty(root.GetProperty("components").EnumerateArray());
-        Assert.Equal(5, root.GetProperty("blocks").GetArrayLength());
+        Assert.Equal(6, root.GetProperty("blocks").GetArrayLength());
         Assert.Equal(2, root.GetProperty("objects").GetArrayLength());
         Assert.Empty(root.GetProperty("materials").EnumerateArray());
     }

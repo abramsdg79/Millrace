@@ -41,10 +41,10 @@ committed golden event log, and recordable from a live run.
 On top of that sits the control layer: a scan-block contract in
 `Dse.Io.Abstractions`, a host in `Dse.Core` that scans each block at its own
 period through the event queue and publishes its outputs as ordinary tags, and
-`Dse.Control` — a timer, a permissive, an interlock, an alarm and a sequencer,
-which reference the I/O contract alone. Blocks are declared in a plant file's
-`controllers` section — `Dse.Control.Catalogue` registers them — or attached in
-code.
+`Dse.Control` — a timer, a permissive, an interlock, an alarm, a sequencer and
+a coil, which reference the I/O contract alone. Blocks are declared in a plant
+file's `controllers` section — `Dse.Control.Catalogue` registers them — or
+attached in code.
 
 The first reference sample, `samples/mine-conveyors/`, is three conveyors, a
 feeder and a stockpile with a sequenced start and stop, cascade interlocks,

@@ -336,7 +336,7 @@ and value is checked (`DSE113`–`DSE115`) before any block is built; the blocks
 are then added in file order and pass `Validate()`'s `DSE013`–`DSE016` like a
 block attached in code. Block descriptors live beside component and object
 descriptors in the catalogue; `ControlModule`, in `Dse.Control.Catalogue`,
-registers the five shipped ones.
+registers the six shipped ones.
 
 ## Scenarios and replay
 
@@ -379,8 +379,8 @@ See [scenarios](scenarios.md) for the file format and the golden workflow.
 
 ## The control layer
 
-A control block is a PLC rung: `Dse.Control` holds five of them — a timer, a
-permissive, an interlock, an alarm and a sequencer — and sees
+A control block is a PLC rung: `Dse.Control` holds six of them — a timer, a
+permissive, an interlock, an alarm, a sequencer and a coil — and sees
 `Dse.Io.Abstractions` and nothing else. A block is a pure `IScanBlock`: values
 and two elapsed times in, values, writes and events out. It never sees a
 `Simulation`, a directory, a binding, a clock or a log, which is why its unit

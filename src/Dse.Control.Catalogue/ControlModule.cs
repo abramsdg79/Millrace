@@ -3,7 +3,7 @@ using Dse.Core.Catalogue;
 namespace Dse.Control.Catalogue;
 
 /// <summary>
-/// The five control blocks of <c>Dse.Control</c> and the sequencer's
+/// The six control blocks of <c>Dse.Control</c> and the sequencer's
 /// <c>transition</c> slot, for a plant file's <c>controllers</c> section.
 /// </summary>
 public sealed class ControlModule : ICatalogueModule
@@ -20,6 +20,7 @@ public sealed class ControlModule : ICatalogueModule
         builder.AddBlock(InterlockCatalogue.Descriptor);
         builder.AddBlock(AlarmCatalogue.Descriptor);
         builder.AddBlock(SequencerCatalogue.Descriptor);
+        builder.AddBlock(CoilCatalogue.Descriptor);
 
         // Transitions
         builder.Add(TransitionCatalogue.After);

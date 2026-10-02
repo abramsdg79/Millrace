@@ -151,7 +151,7 @@ public class PlantSchemaTests
             .EnumerateArray().Select(b => b.GetProperty("$ref").GetString()!).ToArray();
 
         Assert.Equal(Plants.Catalogue.Blocks.Select(b => $"#/$defs/block.{b.Type}"), branches);
-        Assert.Equal(5, branches.Length);
+        Assert.Equal(6, branches.Length);
     }
 
     [Fact]

@@ -17,6 +17,7 @@ internal static class ControlFixtures
             "interlock",
             """{ "conditions": [ { "tag": "V1.Tripped", "normal": false } ], "trip": [ { "tag": "V1.Fill", "value": false } ] }""")
         .BlockParameters("alarm", """{ "input": "V1.Level", "limits": [ { "kind": "hi", "value": 80 } ] }""")
+        .BlockParameters("coil", """{ "condition": { "tag": "V1.Tripped", "normal": true }, "output": "V1.Fill" }""")
         .BlockParameters(
             "alarm",
             """

@@ -163,6 +163,9 @@
             "$ref": "#/$defs/block.alarm"
           },
           {
+            "$ref": "#/$defs/block.coil"
+          },
+          {
             "$ref": "#/$defs/block.interlock"
           },
           {
@@ -230,6 +233,58 @@
               "items": {
                 "$ref": "#/$defs/group.AlarmLimit"
               }
+            }
+          }
+        }
+      }
+    },
+    "block.coil": {
+      "description": "An output coil: drives a Bool tag true while a condition is at its normal value and false otherwise, writing on its first scan and on each change.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "scanPeriodMs",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique across the plant's components and controllers. No dot and no whitespace: it prefixes every tag the block owns, as in INT01.Ok.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "coil"
+        },
+        "scanPeriodMs": {
+          "description": "How often the block scans, in milliseconds: a whole number of time steps, at most a day.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 86400000
+        },
+        "claims": {
+          "description": "Tags only this block may write, by full name: each a read-write tag the block commands. A client, a scenario or another block that writes one is refused.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "condition",
+            "output"
+          ],
+          "properties": {
+            "condition": {
+              "description": "The Bool tag watched, and the value that energises the coil.",
+              "$ref": "#/$defs/group.Condition"
+            },
+            "output": {
+              "description": "The Bool tag the coil drives; claim it so nothing else writes it. The full name of a Bool tag the block commands, so it must be read-write. The schema cannot check that it exists; the loader does.",
+              "type": "string"
             }
           }
         }

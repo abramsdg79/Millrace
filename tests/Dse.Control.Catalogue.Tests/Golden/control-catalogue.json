@@ -66,6 +66,43 @@
       ]
     },
     {
+      "type": "coil",
+      "module": "Dse.Control",
+      "description": "An output coil: drives a Bool tag true while a condition is at its normal value and false otherwise, writing on its first scan and on each change.",
+      "parameters": [
+        {
+          "name": "condition",
+          "kind": "group",
+          "required": true,
+          "description": "The Bool tag watched, and the value that energises the coil.",
+          "group": "Condition",
+          "parameters": [
+            {
+              "name": "tag",
+              "kind": "tag",
+              "required": true,
+              "description": "The Bool tag watched.",
+              "tagKind": "bool"
+            },
+            {
+              "name": "normal",
+              "kind": "bool",
+              "required": true,
+              "description": "The value that means the condition is satisfied."
+            }
+          ]
+        },
+        {
+          "name": "output",
+          "kind": "tag",
+          "required": true,
+          "description": "The Bool tag the coil drives; claim it so nothing else writes it.",
+          "tagKind": "bool",
+          "writes": true
+        }
+      ]
+    },
+    {
       "type": "interlock",
       "module": "Dse.Control",
       "description": "The conditions that stop a running thing: any abnormal condition latches Tripped and sends the trip writes once, until Reset.",
