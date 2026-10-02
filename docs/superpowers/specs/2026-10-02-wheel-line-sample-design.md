@@ -7,6 +7,32 @@ Date: 2026-10-02. Addendum to
 following the shape of `2026-09-25-mine-conveyor-sample-design.md` (6a). All
 merged.
 
+**Amended 2026-10-02 by the plan**
+(`docs/superpowers/plans/2026-10-02-wheel-line-sample.md`, rulings
+R171–R183), where the code or a measured run forced a choice:
+
+- **`ALM_QUEUE` watches a hot-metal detector (R173).** An `alarm` reads a
+  Double tag and `CV.ItemCount` is Int64 (`DSE114`), so `ALM_QUEUE` raises on
+  `HMD.Value`, a pyrometer aimed at the belt's queue-full position (4 m, 5 s
+  lag; `Hi` 200 °C, 60 s on-delay). `CV.ItemCount` stays read-bound.
+  Criterion 1 gains `HMD` (a second `pyrometer`, observing `CV`); criteria
+  2 and 4 read "the belt queue" as that detector.
+- **The saw sets the line's rate (R172)**: one billet a minute; the 40 s
+  press has spare capacity, so `normal-run` makes one wheel per billet.
+- **`ALM_ZONE` has a 5 s on-delay (R174)**: the tick-0 scan reads the primed
+  20 °C, not the line-start write.
+- **The dwell is 1 s (R175)**: ⌈1.0 / 0.1⌉ = 10 ≥ 3, seven ticks to spare;
+  measured HiHi at N + 2, the write at N + 4, `REJECTED` at N + 11.
+- **A producing scenario ends its shift with `Billets` `starve` (R176)**, so
+  its log falls quiet; `Billets.Enabled` is claimed and cannot be written.
+- **A jam cannot fill the bay (R177).** While the belt is full a good billet
+  waits on the gate and hides the over-soaking one behind it, and an
+  `item-sink` cannot be emptied. `press-jam` shows the hidden over-soak,
+  then the reject when the jam is cleared; `pyro-fail-high` fills the bay:
+  `FULL`, `INT_BAY` trips, the saw stops, a reset is refused and the line
+  ends held.
+- **`ALM_PYRO`'s `Hi` and `HiHi` raise together (R179)**: the reading jumps
+  from the empty station's 20 °C.
 ## 1. Scope
 
 The second reference sample, in a different domain from the mine conveyors:
