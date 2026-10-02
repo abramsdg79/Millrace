@@ -52,8 +52,11 @@ permissives and alarms, and nine scenarios — a normal start and stop, a
 pull-key, an e-stop, an overload, a blocked chute, a failed zero-speed switch,
 a welded contactor, a starved feed and a start written while the line is
 tripped — each with its golden log. It is data only: no C#. The second sample,
-a wheel line of discrete items, is planned (plan 6b.2); the physics and the
-reject path it needs are in place (plan 6b.1).
+`samples/wheel-line/`, is a forging cell of discrete items — a billet saw, a
+furnace, a measuring station with a pyrometer and a reject kicker, a belt and a
+press — whose PLC rejects an over-soaked billet through an alarm and a coil,
+with six scenarios: a normal run, a slow press, a stuck kicker, a press jam, a
+low furnace zone and a pyrometer failed high. It is data only too.
 
 See `docs/superpowers/specs/` for the design, `docs/superpowers/plans/` for the
 implementation plans, `docs/architecture.md` for how the engine works, and
@@ -68,6 +71,7 @@ dotnet run --project src/Dse.Cli -- validate plant.json       # every error, eac
 dotnet run --project src/Dse.Cli -- tags plant.json           # the tag directory a SCADA would see
 dotnet run --project src/Dse.Cli -- run scenario.json --expect golden.log  # replay a scenario; exit 4 if the log changed
 dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/pull-key.json  # the sample: a pull-key stops the line
+dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/slow-press.json      # the second: a slow press over-soaks a billet and the PLC rejects it
 ```
 
 Add `--assembly path/to/YourModule.dll` to any command to include your own
@@ -120,7 +124,8 @@ commands (`SEQ01.Start`, `INT01.Reset`) like any other tag:
 A block may claim a tag so that only it writes it; see *Claiming a tag* in
 [control blocks](docs/control-blocks.md).
 
-See the [mine-conveyor sample](samples/mine-conveyors/README.md),
+See the [mine-conveyor sample](samples/mine-conveyors/README.md), the
+[wheel-line sample](samples/wheel-line/README.md),
 [scenarios](docs/scenarios.md), [control blocks](docs/control-blocks.md),
 [authoring a component](docs/authoring-a-component.md), the
 [configuration diagnostics](docs/configuration-diagnostics.md) and the

@@ -247,6 +247,13 @@ Its interlocks hold their devices off with the run permit described under
 `Interlock` below; its scenario 9, `start-while-tripped`, writes a start while
 the cascade is tripped, and nothing moves — not then, and not after the reset.
 
+`samples/wheel-line/` puts the coil to work: a pyrometer on a reject station
+feeds an alarm whose `HiHi` a claimed coil follows to drive the kicker, the
+station's dwell sized by the rule under `Coil` below, and an interlock on the
+reject cradle's `Full` stops the billet saw. Its six scenarios include a stuck
+kicker the PLC cannot see and a pyrometer that fails high and rejects every
+billet.
+
 ## `Timer`
 
 ```csharp

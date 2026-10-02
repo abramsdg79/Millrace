@@ -7,6 +7,10 @@
 §4's samples and §15.1 describe the mine-conveyor sample as it was built — a
 data folder, not a C# project — and §15.2 names plan 6b.
 
+**Amended 2026-10-02 by plan 6b.2** (`docs/superpowers/specs/2026-10-02-wheel-line-sample-design.md`):
+§4's samples and §15.2 describe the wheel-line sample as it was built — a data
+folder, `samples/wheel-line/`, like the mine conveyors.
+
 ## 1. Purpose
 
 A deterministic, composable simulation engine for real-world industrial
@@ -82,7 +86,7 @@ Eight shipping projects, two samples, and a test project per shipping project;
 
 Samples: `samples/mine-conveyors/` — a plant file with its controllers,
 scenarios, golden logs and a README; data only, run by `dse`, and tested by
-`tests/Dse.Samples.Tests` — and the wheel line (plan 6b).
+`tests/Dse.Samples.Tests` — and `samples/wheel-line/`, the same shape (plan 6b.2).
 
 `Dse.Control` deliberately does *not* reference `Dse.Components`. A control
 block that reaches into a component has broken the layering.
@@ -632,8 +636,9 @@ variable-speed drive is a later plan.
 
 ### 15.2 Wheel line — discrete
 
-Billet source → furnace → conveyor → press → sink. Roughly five components
-beyond the conveyor sample.
+Billet source → furnace → reject station (→ reject bay) → conveyor → press →
+sink, with a pyrometer on the station and a hot-metal detector on the
+conveyor: nine components, none of them conveyor-specific.
 
 Exercises what the conveyor sample cannot: discrete items, per-item state, a
 pyrometer reading item temperature, a transform cooling blanks in transit, a
@@ -643,9 +648,12 @@ Its own causal chain, in a different domain: the press runs slow → blanks queu
 on the conveyor → the furnace cannot discharge → billets over-soak → a
 temperature interlock rejects them. None of it is conveyor-specific code.
 
-The wheel line is plan 6b. Its chain needs component behaviour that does not
-exist yet — a graded slow-cycle fault on a process unit, a blocked furnace batch
-that keeps soaking, a reject path for discrete items — which 6b designs first.
+The wheel line is implemented in `samples/wheel-line/` (plan 6b.2), a data
+folder like the mine conveyors, on the component behaviour plan 6b.1 added: a
+graded slow-cycle fault on a process unit, a furnace batch that keeps soaking
+while it is held, and a reject station for discrete items. The temperature
+interlock is a pyrometer, an alarm and a coil that drives the station's kicker;
+a hot-metal detector on the conveyor raises the queue alarm.
 
 ## 16. Testing strategy
 
