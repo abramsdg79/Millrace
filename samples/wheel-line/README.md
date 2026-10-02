@@ -42,8 +42,9 @@ PYRO looks at GATE; HMD looks at CV, 4 m from its tail.
 | `HMD` | `pyrometer` | a hot-metal detector aimed at the belt 4 m from its tail, 5 s lag: reads hot only when a blank stands in front of it |
 
 Two inputs sit at their defaults until something writes them (the zone at
-20 °C, the belt stopped): the furnace's zone temperature and the belt's speed. The plant binds them as tags,
-`FCE.ZONE_SP` and `CV.SPEED_SP`, through its `tags` envelope (with
+20 °C, the belt stopped): the furnace's zone temperature and the belt's speed.
+The plant binds them as tags, `FCE.ZONE_SP` and `CV.SPEED_SP`, through its
+`tags` envelope (with
 `CV.ItemCount`, the belt's count, bound read-only beside them). There is no
 burner model and no drive; the setpoints are the plant.
 
@@ -172,7 +173,10 @@ and `Reject` is never written again after the first scan.
 
 The causal chain of the main spec, end to end. At 300 s the press slows to a
 tenth of its rate (`slow-cycle`, fraction 0.9): a wheel every 400 s while a
-billet still arrives every 60 s. The blanks queue on the belt; when the queue
+billet still arrives every 60 s. (The press's hold counter accumulates hold time
+at the slowed rate, so the golden's `Hold satisfied after 40.00 s` covers about
+400 s of clock, and the `40.08 s` cycle straddles the fault's clear at 1140 s.)
+The blanks queue on the belt; when the queue
 has stood at the detector for a minute, `ALM_QUEUE` raises. The belt fills, a
 good billet waits on the gate for room, and the furnace cannot discharge the
 billet behind it: it reached its target at 06:13:50.300 and is held, soaking,
@@ -232,12 +236,12 @@ billets 13 and 14 by id into the `Wheels` sink.
 ## 4. Press jam
 
 The press's discharge jams at 300 s: the next wheel it forges (06:05:51.700)
-cannot leave. The belt fills, a good billet waits on the gate, and the billet behind it is held in the furnace from
-06:12:50.300 — and the pyrometer sees none of it: it looks at the gate, where
-the billet is good. While the jam lasts nothing is rejected and `ALM_PYRO`
-stays quiet. The jam is cleared at 1200 s; the belt moves up, the good billet
-goes on, and the billet that has been soaking for seven minutes reaches the
-gate and is rejected five seconds after the clear.
+cannot leave. The belt fills, a good billet waits on the gate, and the billet
+behind it is held in the furnace from 06:12:50.300 — and the pyrometer sees none
+of it: it looks at the gate, where the billet is good. While the jam lasts
+nothing is rejected and `ALM_PYRO` stays quiet. The jam is cleared at 1200 s;
+the belt moves up, the good billet goes on, and the billet that has been soaking
+for seven minutes reaches the gate and is rejected five seconds after the clear.
 
 ```text expected/press-jam.log
 06:05:00.000  PRESS  FAULT  discharge-jam injected.
@@ -281,10 +285,12 @@ reaches the gate.
 At 300 s the pyrometer fails high: it reads the top of its range, 1400 °C,
 whatever is on the gate. `HiHi` raises and the coil holds `Reject` true, so
 every billet is kicked to the bay, good ones included. That is the fail-safe
-direction for a reject: a failed instrument costs good billets, never passes a
-bad one. After four the bay is full, `INT_BAY` trips and stops the saw, and
-the line runs dry. The operator's reset at 600 s is refused — the interlock
-resets only when every condition is normal, and the bay is still full.
+direction for a reject: failing upscale, a failed instrument costs good
+billets, never passes a bad one. (A downscale failure — failing low, or reading
+the empty station's background — would pass every billet, and is not shown.)
+After four the bay is full, `INT_BAY` trips and stops the saw, and the line runs
+dry. The operator's reset at 600 s is refused — the interlock resets only when
+every condition is normal, and the bay is still full.
 
 ```text expected/pyro-fail-high.log
 06:05:00.000  PYRO  FAULT  fail-high injected.
@@ -297,6 +303,11 @@ resets only when every condition is normal, and the bay is still full.
 06:08:51.800  Billets.Enabled  WRITE  Set to false by INT_BAY.
 06:10:00.000  INT_BAY.Reset  WRITE  Set to true.
 ```
+
+A refused reset logs nothing: the proof is that neither `INTERLOCK_RESET` nor a
+`Billets.Enabled … Set to true` line follows the write at 06:10:00.000. The
+false write a second later, at 06:10:01.000, releases the momentary reset
+button; the interlock resets on a rising edge.
 
 The scenario ends with the line held. A real reject cradle is emptied by a
 crane or a forklift, after which the reset is accepted and writes
@@ -317,6 +328,11 @@ show that recovery.
 - **The zone held as a written setpoint.** `ALM_ZONE` watches the setpoint, not
   a thermocouple, because there is no zone model to measure.
 - **Cold blanks are not rejected.** Blanks queued on the belt behind a slow
-  press cool — to about 620 °C in scenario 2 — and are forged anyway; a real
-  press would refuse them. A second pyrometer at the press would be the check.
+  press cool — to about 620 °C in scenario 2, and to about 553 °C in scenario
+  4, where the jam leaves them queued longer (measured 552.6 °C) — and are
+  forged anyway; a real press would refuse them. A second pyrometer at the press
+  would be the check.
+- **An analog stand-in for a discrete detector.** `HMD` is an analog pyrometer
+  standing in for a discrete hot-metal detector; `ALM_QUEUE`'s `Hi` is its
+  switching threshold and the 5 s lag stands in for the detector's off-delay.
 - **No proof of the kick** (scenario 3).
