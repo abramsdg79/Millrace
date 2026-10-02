@@ -529,7 +529,10 @@ of *a*, plus any lag the instrument adds. When both scan every tick the write
 lands four ticks after the item arrives, so the dwell must be at least 3 × dt:
 on a 100 ms step with 100 ms scans a 0.3 s dwell rejects every hot billet and a
 0.2 s dwell none. A shorter dwell lets the item leave before the decision; the
-same latency decides when `Reject` falls for the item that follows.
+same latency decides when `Reject` falls for the item that follows. A late
+write is not lost: `Reject` stays true until the condition clears, so if the
+next item leaves before it falls, that item is diverted instead: a short dwell
+can pass the hot billet and reject the good one behind it.
 
 ## Writing your own
 

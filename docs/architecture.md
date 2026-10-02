@@ -151,8 +151,8 @@ it moves and whatever the speed, with ambient conditions taken from the node's
 signal inputs. A process unit runs them only while it processes, unless it is
 built with `heatWhileHeld`: then they run on every tick it holds items —
 filling, processing and discharging — so a batch that cannot leave keeps
-heating, as it would in a real furnace. Bulk cells pass an empty state span in this version; items pass
-their own.
+heating, as it would in a real furnace. Bulk cells pass an empty state span in
+this version; items pass their own.
 
 Every tick the engine sums each node's `MassHeld`, `MassCreated` and
 `MassDestroyed` and throws `MassConservationException` if

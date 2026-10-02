@@ -8,7 +8,7 @@ using Dse.Core.Time;
 namespace Dse.Configuration.Tests;
 
 /// <summary>
-/// R169: a reject gate's dwell must cover the PLC chain that decides it — the
+/// R168: a reject gate's dwell must cover the PLC chain that decides it — the
 /// pyrometer's tick, an alarm scan, a coil scan and the tick the write lands.
 /// Built in code here because this project is the one that sees both
 /// Dse.Components and Dse.Control.
@@ -19,6 +19,8 @@ public class RejectChainTests
     [InlineData(100, 100, 0.3, 8)]   // scans every tick: the write lands 4 ticks after arrival, the item may leave after 3 + 1
     [InlineData(100, 100, 0.2, 0)]   // one tick short: every hot item passes
     [InlineData(200, 100, 0.4, 8)]   // an alarm scanning every other tick needs one more tick of dwell
+    [InlineData(200, 100, 0.3, 4)]   // the alarm-period term: the dwell that falls short rejects only some items
+    [InlineData(100, 100, 0.25, 8)]  // a dwell that is not a multiple of the step still covers the chain
     public void AHotItemIsRejectedOnlyWhenTheDwellCoversTheChain(int alarmScanMs, int coilScanMs, double dwellSeconds, int rejected)
     {
         var options = new SimulationOptions
