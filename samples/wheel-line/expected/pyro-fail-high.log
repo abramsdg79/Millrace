@@ -1,0 +1,64 @@
+06:00:00.000  FCE.ZONE_SP  WRITE  Set to 1250.
+06:00:00.000  CV.SPEED_SP  WRITE  Set to 0.5.
+06:00:00.100  GATE.Reject  WRITE  Set to false by COIL_REJECT.
+06:01:00.100  FCE  FILLING  First item received; filling.
+06:01:00.100  FCE  PROCESSING  Batch complete; processing.
+06:01:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:01:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:02:00.100  FCE  FILLING  First item received; filling.
+06:02:00.100  FCE  PROCESSING  Batch complete; processing.
+06:02:11.700  PRESS  FILLING  First item received; filling.
+06:02:11.700  PRESS  PROCESSING  Batch complete; processing.
+06:02:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:02:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:02:51.700  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:02:51.800  PRESS  IDLE  Batch discharged; ready for the next.
+06:03:00.100  FCE  FILLING  First item received; filling.
+06:03:00.100  FCE  PROCESSING  Batch complete; processing.
+06:03:11.700  PRESS  FILLING  First item received; filling.
+06:03:11.700  PRESS  PROCESSING  Batch complete; processing.
+06:03:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:03:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:03:51.700  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:03:51.800  PRESS  IDLE  Batch discharged; ready for the next.
+06:04:00.100  FCE  FILLING  First item received; filling.
+06:04:00.100  FCE  PROCESSING  Batch complete; processing.
+06:04:11.700  PRESS  FILLING  First item received; filling.
+06:04:11.700  PRESS  PROCESSING  Batch complete; processing.
+06:04:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:04:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:04:51.700  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:04:51.800  PRESS  IDLE  Batch discharged; ready for the next.
+06:05:00.000  PYRO  FAULT  fail-high injected.
+06:05:00.100  ALM_PYRO  ALARM_RAISED  Hi: 1400.0 above 1130.
+06:05:00.100  ALM_PYRO  ALARM_RAISED  HiHi: 1400.0 above 1150.
+06:05:00.100  FCE  FILLING  First item received; filling.
+06:05:00.100  FCE  PROCESSING  Batch complete; processing.
+06:05:00.300  GATE.Reject  WRITE  Set to true by COIL_REJECT.
+06:05:11.700  PRESS  FILLING  First item received; filling.
+06:05:11.700  PRESS  PROCESSING  Batch complete; processing.
+06:05:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:05:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:05:51.500  GATE  REJECTED  Item 5 rejected.
+06:05:51.700  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:05:51.800  PRESS  IDLE  Batch discharged; ready for the next.
+06:06:00.100  FCE  FILLING  First item received; filling.
+06:06:00.100  FCE  PROCESSING  Batch complete; processing.
+06:06:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:06:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:06:51.500  GATE  REJECTED  Item 6 rejected.
+06:07:00.100  FCE  FILLING  First item received; filling.
+06:07:00.100  FCE  PROCESSING  Batch complete; processing.
+06:07:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:07:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:07:51.500  GATE  REJECTED  Item 7 rejected.
+06:08:00.100  FCE  FILLING  First item received; filling.
+06:08:00.100  FCE  PROCESSING  Batch complete; processing.
+06:08:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:08:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:08:51.500  GATE  REJECTED  Item 8 rejected.
+06:08:51.600  Bay  FULL  Capacity reached; accepting nothing more.
+06:08:51.700  INT_BAY  INTERLOCK_TRIP  Bay.Full abnormal.
+06:08:51.800  Billets.Enabled  WRITE  Set to false by INT_BAY.
+06:10:00.000  INT_BAY.Reset  WRITE  Set to true.
+06:10:01.000  INT_BAY.Reset  WRITE  Set to false.

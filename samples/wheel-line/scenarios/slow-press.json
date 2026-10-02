@@ -1,0 +1,11 @@
+{
+  "plant": "../plant.json",
+  "duration": 2300,
+  "timeline": [
+    { "at": 0,    "write": "FCE.ZONE_SP", "value": 1250 },
+    { "at": 0,    "write": "CV.SPEED_SP", "value": 0.5 },
+    { "at": 300,  "fault": "PRESS", "id": "slow-cycle", "args": { "fraction": 0.9 } },
+    { "at": 1140, "clear": "PRESS", "id": "slow-cycle" },
+    { "at": 2100, "fault": "Billets", "id": "starve" }
+  ]
+}

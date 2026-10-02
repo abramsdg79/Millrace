@@ -1,6 +1,11 @@
+using System.Globalization;
 using System.Text.Json;
 using Dse.Cli;
+using Dse.Components.Flow;
 using Dse.Configuration;
+using Dse.Core;
+using Dse.Core.Flow;
+using Dse.Core.Logging;
 using Dse.Scenarios;
 using Json.Schema;
 
@@ -83,5 +88,134 @@ public class WheelLineTests
         Assert.Equal(("DSE206", "$.timeline[0].write"), (d.Code, d.Path));
         Assert.Equal($"Tag '{tag}' is claimed by {block}; a scenario cannot write it.", d.Message);
         Assert.Null(result.Events);
+    }
+
+    [Fact]
+    public void TheScenarioFolderHoldsExactlyTheSixScenariosEachWithAGoldenAndAStory()
+    {
+        string[] onDisk = Directory.GetFiles(Path.Combine(WheelLine.SourceRoot, "scenarios"), "*.json")
+            .Select(f => Path.GetFileNameWithoutExtension(f))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        string[] expected = WheelLine.Names.Order(StringComparer.Ordinal).ToArray();
+
+        Assert.Equal(expected, onDisk);
+        Assert.Equal(expected, WheelLineStories.All.Keys.Order(StringComparer.Ordinal).ToArray());
+        Assert.All(WheelLine.Names, name => Assert.True(File.Exists(WheelLine.SourceGolden(name)), $"'{name}' has no golden."));
+    }
+
+    [Theory]
+    [MemberData(nameof(WheelLine.Scenarios), MemberType = typeof(WheelLine))]
+    public void EveryScenarioOpensWithTheLineStartAndTheCoilsFirstScan(string name)
+    {
+        Scenario scenario = ScenarioLoader.Parse(File.ReadAllText(WheelLine.Scenario(name))).Scenario!;
+        IReadOnlyList<SimEventRecord> events = WheelLine.Run(name).Events!.Records;
+
+        WriteAction zone = Assert.IsType<WriteAction>(scenario.Timeline[0]);
+        WriteAction belt = Assert.IsType<WriteAction>(scenario.Timeline[1]);
+        Assert.Equal((TimeSpan.Zero, "FCE.ZONE_SP"), (zone.At, zone.Tag));
+        Assert.Equal((TimeSpan.Zero, "CV.SPEED_SP"), (belt.At, belt.Tag));
+        Assert.Equal(
+            [
+                "06:00:00.000  FCE.ZONE_SP  WRITE  Set to 1250.",
+                "06:00:00.000  CV.SPEED_SP  WRITE  Set to 0.5.",
+                "06:00:00.100  GATE.Reject  WRITE  Set to false by COIL_REJECT.",
+            ],
+            events.Take(3).Select(CausalChain.Line));
+    }
+
+    [Theory]
+    [MemberData(nameof(WheelLine.Scenarios), MemberType = typeof(WheelLine))]
+    public void EveryScenarioMatchesItsGolden(string name)
+    {
+        if (Sample.Updating)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(WheelLine.SourceGolden(name))!);
+            CliRun made = Cli.Run("run", WheelLine.Scenario(name), "--out", WheelLine.SourceGolden(name));
+            Assert.Equal(ExitCodes.Ok, made.ExitCode);
+            return;
+        }
+
+        string golden = WheelLine.Golden(name);
+
+        CliRun run = Cli.Run("run", WheelLine.Scenario(name), "--expect", golden);
+
+        Assert.True(run.ExitCode == ExitCodes.Ok, run.Err);
+        Assert.Empty(run.Err);
+        Assert.StartsWith($"Matched {golden} (", run.Out, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [MemberData(nameof(WheelLine.Scenarios), MemberType = typeof(WheelLine))]
+    public void EveryScenarioTellsItsStory(string name)
+    {
+        IReadOnlyList<SimEventRecord> events = WheelLine.Run(name).Events!.Records;
+        Story story = WheelLineStories.All[name];
+
+        Assert.Null(CausalChain.FindChain(events, story.Chain));
+        Assert.All(story.Absences, absence => Assert.Null(CausalChain.FindAbsence(events, absence)));
+    }
+
+    [Theory]
+    [MemberData(nameof(WheelLine.Scenarios), MemberType = typeof(WheelLine))]
+    public void EveryScenarioSettlesAtLeastFiveHundredTicksBeforeItEnds(string name)
+    {
+        ScenarioRunResult result = WheelLine.Run(name);
+
+        long quietTicks = result.Summary!.Ticks - result.Events!.Records[^1].Tick;
+
+        Assert.True(
+            quietTicks >= 500,
+            $"'{name}' logs its last event {quietTicks} ticks before the end; lengthen its duration so the consequence settles.");
+    }
+
+    [Theory]
+    [MemberData(nameof(WheelLine.Scenarios), MemberType = typeof(WheelLine))]
+    public void EveryScenarioConservesMassOnEveryTick(string name)
+    {
+        double worst = 0.0;
+
+        Simulation end = WheelLine.Watch(name, sim => worst = Math.Max(worst, Math.Abs(sim.MassBalance.Drift)));
+
+        MassBalance balance = end.MassBalance;
+        ItemSink wheels = WheelLine.Component<ItemSink>(end, "Wheels");
+        ItemSink bay = WheelLine.Component<ItemSink>(end, "Bay");
+        Assert.True(worst <= 1e-9, string.Create(CultureInfo.InvariantCulture, $"'{name}' drifts {worst} kg."));
+        Assert.True(balance.Created > 0.0, $"'{name}' makes no billet.");
+
+        // Every billet made is a wheel (92 % of it: the press's yield; the rest is flash), a reject,
+        // or still in the line.
+        Assert.Equal(balance.Created, (wheels.MassReceived / 0.92) + bay.MassReceived + balance.Held, 6);
+    }
+
+    [Theory]
+    [MemberData(nameof(WheelLine.Scenarios), MemberType = typeof(WheelLine))]
+    public void EveryScenarioReplaysByteForByteFromARecording(string name)
+    {
+        string path = WheelLine.Scenario(name);
+        Scenario scenario = ScenarioLoader.Parse(File.ReadAllText(path)).Scenario!;
+        string plantJson = File.ReadAllText(scenario.ResolvePlantPath(path));
+        LoadResult load = PlantLoader.Load(plantJson, Sample.Catalogue, scenario.ToLoadOptions());
+        Assert.True(load.IsValid, load.ToText());
+
+        Simulation live = load.Builder!.Build();
+        var recorder = new ScenarioRecorder();
+        live.AttachActionRecorder(recorder);
+        foreach (ScenarioAction action in scenario.Timeline)
+        {
+            Sample.Schedule(live, action);
+        }
+
+        live.RunFor(scenario.Duration);
+
+        Assert.Equal(scenario.Timeline.Count, recorder.Count);
+        Scenario recorded = recorder.ToScenario("../plant.json", load.Options!, scenario.Duration);
+        ScenarioParseResult reparsed = ScenarioLoader.Parse(ScenarioJson.Write(recorded));
+        Assert.Empty(reparsed.Diagnostics);
+
+        ScenarioRunResult replay = ScenarioRunner.Run(reparsed.Scenario!, plantJson, Sample.Catalogue);
+
+        Assert.True(replay.IsValid, replay.ToText());
+        Assert.Equal(live.Events.ToText(), replay.Events!.ToText());
     }
 }

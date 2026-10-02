@@ -1,0 +1,11 @@
+{
+  "plant": "../plant.json",
+  "duration": 700,
+  "timeline": [
+    { "at": 0,   "write": "FCE.ZONE_SP", "value": 1250 },
+    { "at": 0,   "write": "CV.SPEED_SP", "value": 0.5 },
+    { "at": 300, "fault": "PYRO", "id": "fail-high" },
+    { "at": 600, "write": "INT_BAY.Reset", "value": true },
+    { "at": 601, "write": "INT_BAY.Reset", "value": false }
+  ]
+}

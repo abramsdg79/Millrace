@@ -1,0 +1,9 @@
+{
+  "plant": "../plant.json",
+  "duration": 800,
+  "timeline": [
+    { "at": 0, "write": "FCE.ZONE_SP", "value": 1250 },
+    { "at": 0, "write": "CV.SPEED_SP", "value": 0.5 },
+    { "at": 600, "fault": "Billets", "id": "starve" }
+  ]
+}

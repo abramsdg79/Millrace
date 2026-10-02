@@ -1,0 +1,9 @@
+{
+  "plant": "../plant.json",
+  "duration": 600,
+  "timeline": [
+    { "at": 0,   "write": "FCE.ZONE_SP", "value": 1250 },
+    { "at": 0,   "write": "CV.SPEED_SP", "value": 0.5 },
+    { "at": 330, "write": "FCE.ZONE_SP", "value": 1050 }
+  ]
+}

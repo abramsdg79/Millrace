@@ -1,0 +1,267 @@
+06:00:00.000  FCE.ZONE_SP  WRITE  Set to 1250.
+06:00:00.000  CV.SPEED_SP  WRITE  Set to 0.5.
+06:00:00.100  GATE.Reject  WRITE  Set to false by COIL_REJECT.
+06:01:00.100  FCE  FILLING  First item received; filling.
+06:01:00.100  FCE  PROCESSING  Batch complete; processing.
+06:01:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:01:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:02:00.100  FCE  FILLING  First item received; filling.
+06:02:00.100  FCE  PROCESSING  Batch complete; processing.
+06:02:11.700  PRESS  FILLING  First item received; filling.
+06:02:11.700  PRESS  PROCESSING  Batch complete; processing.
+06:02:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:02:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:02:51.700  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:02:51.800  PRESS  IDLE  Batch discharged; ready for the next.
+06:03:00.100  FCE  FILLING  First item received; filling.
+06:03:00.100  FCE  PROCESSING  Batch complete; processing.
+06:03:11.700  PRESS  FILLING  First item received; filling.
+06:03:11.700  PRESS  PROCESSING  Batch complete; processing.
+06:03:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:03:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:03:51.700  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:03:51.800  PRESS  IDLE  Batch discharged; ready for the next.
+06:04:00.100  FCE  FILLING  First item received; filling.
+06:04:00.100  FCE  PROCESSING  Batch complete; processing.
+06:04:11.700  PRESS  FILLING  First item received; filling.
+06:04:11.700  PRESS  PROCESSING  Batch complete; processing.
+06:04:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:04:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:04:51.700  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:04:51.800  PRESS  IDLE  Batch discharged; ready for the next.
+06:05:00.000  PRESS  FAULT  slow-cycle injected: fraction=0.9.
+06:05:00.100  FCE  FILLING  First item received; filling.
+06:05:00.100  FCE  PROCESSING  Batch complete; processing.
+06:05:11.700  PRESS  FILLING  First item received; filling.
+06:05:11.700  PRESS  PROCESSING  Batch complete; processing.
+06:05:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:05:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:06:00.100  FCE  FILLING  First item received; filling.
+06:06:00.100  FCE  PROCESSING  Batch complete; processing.
+06:06:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:06:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:07:00.100  FCE  FILLING  First item received; filling.
+06:07:00.100  FCE  PROCESSING  Batch complete; processing.
+06:07:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:07:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:08:00.100  FCE  FILLING  First item received; filling.
+06:08:00.100  FCE  PROCESSING  Batch complete; processing.
+06:08:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:08:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:09:00.100  FCE  FILLING  First item received; filling.
+06:09:00.100  FCE  PROCESSING  Batch complete; processing.
+06:09:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:09:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:10:00.100  FCE  FILLING  First item received; filling.
+06:10:00.100  FCE  PROCESSING  Batch complete; processing.
+06:10:00.500  ALM_QUEUE  ALARM_RAISED  Hi: 1044.1 above 200.
+06:10:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:10:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:11:00.100  FCE  FILLING  First item received; filling.
+06:11:00.100  FCE  PROCESSING  Batch complete; processing.
+06:11:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:11:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:11:51.700  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:11:51.800  PRESS  IDLE  Batch discharged; ready for the next.
+06:11:51.900  PRESS  FILLING  First item received; filling.
+06:11:51.900  PRESS  PROCESSING  Batch complete; processing.
+06:12:00.100  FCE  FILLING  First item received; filling.
+06:12:00.100  FCE  PROCESSING  Batch complete; processing.
+06:12:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:12:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:13:00.100  FCE  FILLING  First item received; filling.
+06:13:00.100  FCE  PROCESSING  Batch complete; processing.
+06:13:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:18:31.900  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:18:32.000  PRESS  IDLE  Batch discharged; ready for the next.
+06:18:32.100  PRESS  FILLING  First item received; filling.
+06:18:32.100  PRESS  PROCESSING  Batch complete; processing.
+06:18:36.000  FCE  IDLE  Batch discharged; ready for the next.
+06:18:36.100  FCE  FILLING  First item received; filling.
+06:18:36.100  FCE  PROCESSING  Batch complete; processing.
+06:18:36.200  ALM_PYRO  ALARM_RAISED  Hi: 1250.0 above 1130.
+06:18:36.200  ALM_PYRO  ALARM_RAISED  HiHi: 1250.0 above 1150.
+06:18:36.400  GATE.Reject  WRITE  Set to true by COIL_REJECT.
+06:18:37.100  GATE  REJECTED  Item 13 rejected.
+06:18:37.300  ALM_PYRO  ALARM_CLEARED  Hi: 20.0 back within limits.
+06:18:37.300  ALM_PYRO  ALARM_CLEARED  HiHi: 20.0 back within limits.
+06:18:37.500  GATE.Reject  WRITE  Set to false by COIL_REJECT.
+06:19:00.000  PRESS  FAULT_CLEARED  slow-cycle cleared.
+06:19:26.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:19:26.400  FCE  IDLE  Batch discharged; ready for the next.
+06:19:26.500  FCE  FILLING  First item received; filling.
+06:19:26.500  FCE  PROCESSING  Batch complete; processing.
+06:19:37.200  PRESS  DISCHARGING  Hold satisfied after 40.08 s; discharging 1 items.
+06:19:37.300  PRESS  IDLE  Batch discharged; ready for the next.
+06:19:37.400  PRESS  FILLING  First item received; filling.
+06:19:37.400  PRESS  PROCESSING  Batch complete; processing.
+06:20:16.700  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:20:16.800  FCE  IDLE  Batch discharged; ready for the next.
+06:20:16.900  FCE  FILLING  First item received; filling.
+06:20:16.900  FCE  PROCESSING  Batch complete; processing.
+06:20:17.400  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:20:17.500  PRESS  IDLE  Batch discharged; ready for the next.
+06:20:17.600  PRESS  FILLING  First item received; filling.
+06:20:17.600  PRESS  PROCESSING  Batch complete; processing.
+06:20:57.600  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:20:57.700  PRESS  IDLE  Batch discharged; ready for the next.
+06:20:57.800  PRESS  FILLING  First item received; filling.
+06:20:57.800  PRESS  PROCESSING  Batch complete; processing.
+06:21:07.100  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:21:07.200  FCE  IDLE  Batch discharged; ready for the next.
+06:21:07.300  FCE  FILLING  First item received; filling.
+06:21:07.300  FCE  PROCESSING  Batch complete; processing.
+06:21:37.800  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:21:37.900  PRESS  IDLE  Batch discharged; ready for the next.
+06:21:38.000  PRESS  FILLING  First item received; filling.
+06:21:38.000  PRESS  PROCESSING  Batch complete; processing.
+06:21:57.500  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:21:57.600  FCE  IDLE  Batch discharged; ready for the next.
+06:21:57.700  FCE  FILLING  First item received; filling.
+06:21:57.700  FCE  PROCESSING  Batch complete; processing.
+06:22:18.000  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:22:18.100  PRESS  IDLE  Batch discharged; ready for the next.
+06:22:18.200  PRESS  FILLING  First item received; filling.
+06:22:18.200  PRESS  PROCESSING  Batch complete; processing.
+06:22:47.900  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:22:48.000  FCE  IDLE  Batch discharged; ready for the next.
+06:22:48.100  FCE  FILLING  First item received; filling.
+06:22:48.100  FCE  PROCESSING  Batch complete; processing.
+06:22:58.200  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:22:58.300  PRESS  IDLE  Batch discharged; ready for the next.
+06:22:58.400  PRESS  FILLING  First item received; filling.
+06:22:58.400  PRESS  PROCESSING  Batch complete; processing.
+06:23:38.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:23:38.400  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:23:38.400  FCE  IDLE  Batch discharged; ready for the next.
+06:23:38.500  PRESS  IDLE  Batch discharged; ready for the next.
+06:23:38.500  FCE  FILLING  First item received; filling.
+06:23:38.500  FCE  PROCESSING  Batch complete; processing.
+06:23:38.600  PRESS  FILLING  First item received; filling.
+06:23:38.600  PRESS  PROCESSING  Batch complete; processing.
+06:24:18.600  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:24:18.700  PRESS  IDLE  Batch discharged; ready for the next.
+06:24:18.800  PRESS  FILLING  First item received; filling.
+06:24:18.800  PRESS  PROCESSING  Batch complete; processing.
+06:24:28.700  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:24:28.800  FCE  IDLE  Batch discharged; ready for the next.
+06:24:28.900  FCE  FILLING  First item received; filling.
+06:24:28.900  FCE  PROCESSING  Batch complete; processing.
+06:24:58.800  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:24:58.900  PRESS  IDLE  Batch discharged; ready for the next.
+06:24:59.000  PRESS  FILLING  First item received; filling.
+06:24:59.000  PRESS  PROCESSING  Batch complete; processing.
+06:25:19.100  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:25:19.200  FCE  IDLE  Batch discharged; ready for the next.
+06:25:19.300  FCE  FILLING  First item received; filling.
+06:25:19.300  FCE  PROCESSING  Batch complete; processing.
+06:25:39.000  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:25:39.100  PRESS  IDLE  Batch discharged; ready for the next.
+06:25:39.200  PRESS  FILLING  First item received; filling.
+06:25:39.200  PRESS  PROCESSING  Batch complete; processing.
+06:26:09.500  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:26:09.600  FCE  IDLE  Batch discharged; ready for the next.
+06:26:09.700  FCE  FILLING  First item received; filling.
+06:26:09.700  FCE  PROCESSING  Batch complete; processing.
+06:26:19.200  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:26:19.300  PRESS  IDLE  Batch discharged; ready for the next.
+06:26:19.400  PRESS  FILLING  First item received; filling.
+06:26:19.400  PRESS  PROCESSING  Batch complete; processing.
+06:26:59.400  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:26:59.500  PRESS  IDLE  Batch discharged; ready for the next.
+06:26:59.600  PRESS  FILLING  First item received; filling.
+06:26:59.600  PRESS  PROCESSING  Batch complete; processing.
+06:26:59.900  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:27:00.000  FCE  IDLE  Batch discharged; ready for the next.
+06:27:00.100  FCE  FILLING  First item received; filling.
+06:27:00.100  FCE  PROCESSING  Batch complete; processing.
+06:27:39.600  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:27:39.700  PRESS  IDLE  Batch discharged; ready for the next.
+06:27:39.800  PRESS  FILLING  First item received; filling.
+06:27:39.800  PRESS  PROCESSING  Batch complete; processing.
+06:27:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:27:50.400  ALM_QUEUE  ALARM_CLEARED  Hi: 148.2 back within limits.
+06:27:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:28:00.100  FCE  FILLING  First item received; filling.
+06:28:00.100  FCE  PROCESSING  Batch complete; processing.
+06:28:19.800  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:28:19.900  PRESS  IDLE  Batch discharged; ready for the next.
+06:28:20.000  PRESS  FILLING  First item received; filling.
+06:28:20.000  PRESS  PROCESSING  Batch complete; processing.
+06:28:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:28:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:29:00.000  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:29:00.100  PRESS  IDLE  Batch discharged; ready for the next.
+06:29:00.100  FCE  FILLING  First item received; filling.
+06:29:00.100  FCE  PROCESSING  Batch complete; processing.
+06:29:00.200  PRESS  FILLING  First item received; filling.
+06:29:00.200  PRESS  PROCESSING  Batch complete; processing.
+06:29:40.200  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:29:40.300  PRESS  IDLE  Batch discharged; ready for the next.
+06:29:40.400  PRESS  FILLING  First item received; filling.
+06:29:40.400  PRESS  PROCESSING  Batch complete; processing.
+06:29:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:29:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:30:00.100  FCE  FILLING  First item received; filling.
+06:30:00.100  FCE  PROCESSING  Batch complete; processing.
+06:30:20.400  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:30:20.500  PRESS  IDLE  Batch discharged; ready for the next.
+06:30:20.600  PRESS  FILLING  First item received; filling.
+06:30:20.600  PRESS  PROCESSING  Batch complete; processing.
+06:30:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:30:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:31:00.100  FCE  FILLING  First item received; filling.
+06:31:00.100  FCE  PROCESSING  Batch complete; processing.
+06:31:00.600  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:31:00.700  PRESS  IDLE  Batch discharged; ready for the next.
+06:31:00.800  PRESS  FILLING  First item received; filling.
+06:31:00.800  PRESS  PROCESSING  Batch complete; processing.
+06:31:40.800  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:31:40.900  PRESS  IDLE  Batch discharged; ready for the next.
+06:31:41.000  PRESS  FILLING  First item received; filling.
+06:31:41.000  PRESS  PROCESSING  Batch complete; processing.
+06:31:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:31:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:32:00.100  FCE  FILLING  First item received; filling.
+06:32:00.100  FCE  PROCESSING  Batch complete; processing.
+06:32:21.000  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:32:21.100  PRESS  IDLE  Batch discharged; ready for the next.
+06:32:21.200  PRESS  FILLING  First item received; filling.
+06:32:21.200  PRESS  PROCESSING  Batch complete; processing.
+06:32:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:32:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:33:00.100  FCE  FILLING  First item received; filling.
+06:33:00.100  FCE  PROCESSING  Batch complete; processing.
+06:33:01.200  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:33:01.300  PRESS  IDLE  Batch discharged; ready for the next.
+06:33:01.400  PRESS  FILLING  First item received; filling.
+06:33:01.400  PRESS  PROCESSING  Batch complete; processing.
+06:33:41.400  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:33:41.500  PRESS  IDLE  Batch discharged; ready for the next.
+06:33:41.600  PRESS  FILLING  First item received; filling.
+06:33:41.600  PRESS  PROCESSING  Batch complete; processing.
+06:33:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:33:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:34:00.100  FCE  FILLING  First item received; filling.
+06:34:00.100  FCE  PROCESSING  Batch complete; processing.
+06:34:21.600  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:34:21.700  PRESS  IDLE  Batch discharged; ready for the next.
+06:34:21.800  PRESS  FILLING  First item received; filling.
+06:34:21.800  PRESS  PROCESSING  Batch complete; processing.
+06:34:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:34:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:35:00.000  Billets  FAULT  starve injected.
+06:35:00.100  FCE  FILLING  First item received; filling.
+06:35:00.100  FCE  PROCESSING  Batch complete; processing.
+06:35:01.800  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:35:01.900  PRESS  IDLE  Batch discharged; ready for the next.
+06:35:11.700  PRESS  FILLING  First item received; filling.
+06:35:11.700  PRESS  PROCESSING  Batch complete; processing.
+06:35:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
+06:35:50.400  FCE  IDLE  Batch discharged; ready for the next.
+06:35:51.700  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:35:51.800  PRESS  IDLE  Batch discharged; ready for the next.
+06:36:11.700  PRESS  FILLING  First item received; filling.
+06:36:11.700  PRESS  PROCESSING  Batch complete; processing.
+06:36:51.700  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:36:51.800  PRESS  IDLE  Batch discharged; ready for the next.
