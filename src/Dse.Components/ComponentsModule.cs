@@ -57,6 +57,7 @@ public sealed class ComponentsModule : ICatalogueModule
         builder.Add(Former.Descriptor);
         builder.Add(BulkProcessUnit.Descriptor);
         builder.Add(ItemProcessUnit.Descriptor);
+        builder.Add(RejectGate.Descriptor);
 
         // Conveyor
         builder.Add(Conveyor.Descriptor);

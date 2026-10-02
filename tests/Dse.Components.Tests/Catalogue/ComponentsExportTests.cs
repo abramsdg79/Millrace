@@ -17,7 +17,7 @@ public class ComponentsExportTests
     {
         using JsonDocument document = JsonDocument.Parse(CatalogueJson.Export(ComponentsFixtures.Catalogue));
 
-        Assert.Equal(29, document.RootElement.GetProperty("components").GetArrayLength());
+        Assert.Equal(30, document.RootElement.GetProperty("components").GetArrayLength());
         Assert.Equal(8, document.RootElement.GetProperty("objects").GetArrayLength());
         Assert.Equal(0, document.RootElement.GetProperty("materials").GetArrayLength());
     }

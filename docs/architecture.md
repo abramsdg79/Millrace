@@ -123,6 +123,29 @@ exceeded. Speed zero freezes the load profile exactly. `DiscreteBelt` carries
 items at continuous positions with no diffusion; items queue behind a blocked
 head at the minimum spacing.
 
+A node may have more than one outlet; each still feeds exactly one inlet.
+`RejectGate` (`reject-gate`) has `Out` and `RejectOut` and holds one item at a
+time. It shows that item through `TryPeekItem` on exactly one outlet — the one
+its `Reject` input chooses on that tick — so an item leaves by one outlet or
+waits, and the choice is taken again on every tick it waits. The item stays for
+`dwellSeconds`, counted from the tick after it arrives, and leaves on the tick
+after that: deposited on tick N, it leaves on tick N + ⌈dwell / dt⌉ + 1 at the
+earliest, the same one-tick hand-off a belt and a process unit have, and the
+next item may enter on that same tick. The dwell is what lets an instrument
+read the item and a control block decide before it leaves.
+
+Size the dwell to cover that decision. From the tick an item arrives, its
+instrument reads it on the next tick; an alarm raises on its first scan after
+that, plus its on-delay rounded up to whole alarm scans; the block that writes
+`Reject` writes on its first scan after the alarm publishes; and the write
+lands one tick later. With the alarm scanning every *a* ticks and the writer
+every *c* ticks, the decision is certain to land in time only when
+⌈dwell / dt⌉ ≥ a + c + 1, plus the on-delay's ticks rounded up to a multiple
+of *a*, plus any lag the instrument adds: 3 × dt when both scan every tick,
+because the write then lands four ticks after the item arrives. A shorter dwell
+lets the item leave before the decision, and the same latency decides when
+`Reject` falls again for the item that follows.
+
 Transforms (`IMaterialTransform`) run on resident material every tick, before
 it moves and whatever the speed, with ambient conditions taken from the node's
 signal inputs. A process unit runs them only while it processes, unless it is
@@ -165,8 +188,9 @@ Every instrument derives from `InstrumentBase` and gets calibration, noise,
 drift, lag, freeze, fail-high and fail-low for free; its `Truth` telemetry
 is what it should have read. Physical faults — bearing friction, belt slip,
 a welded contactor, a blocked chute, a process unit that runs slow
-(`slow-cycle`) — are declared per component. A component switches on the fault
-id, so its faults are independent and may be active together.
+(`slow-cycle`), a reject kicker that does not fire (`stuck`) — are declared per
+component. A component switches on the fault id, so its faults are independent
+and may be active together.
 
 ## Determinism rules
 

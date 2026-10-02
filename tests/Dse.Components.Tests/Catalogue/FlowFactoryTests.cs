@@ -79,6 +79,15 @@ public class FlowFactoryTests
     }
 
     [Fact]
+    public void ARejectGateReadsItsDwellAndHasTwoOutlets()
+    {
+        RejectGate gate = MechanicalFactoryTests.Build<RejectGate>(RejectGate.Descriptor, """{ "dwellSeconds": 1.5 }""");
+
+        Assert.Equal(1.5, gate.DwellSeconds);
+        Assert.Equal(["Out", "RejectOut"], gate.Ports.OfType<FlowOutlet>().Select(p => p.Name));
+    }
+
+    [Fact]
     public void ABulkMaterialCannotFeedAnItemSource()
     {
         using var document = System.Text.Json.JsonDocument.Parse("""{ "material": "flour", "itemMassKg": 1, "intervalSeconds": 1 }""");

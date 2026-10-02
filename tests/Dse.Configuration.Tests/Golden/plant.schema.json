@@ -107,6 +107,9 @@
             "$ref": "#/$defs/component.pyrometer"
           },
           {
+            "$ref": "#/$defs/component.reject-gate"
+          },
+          {
             "$ref": "#/$defs/component.safety-relay"
           },
           {
@@ -1439,6 +1442,40 @@
             "spec": {
               "description": "Unit, range, noise and lag.",
               "$ref": "#/$defs/group.InstrumentSpec"
+            }
+          }
+        }
+      }
+    },
+    "component.reject-gate": {
+      "description": "A measuring station for discrete items: holds each for a dwell, then passes it on, or diverts it to the reject outlet while Reject is true.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "reject-gate"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "dwellSeconds"
+          ],
+          "properties": {
+            "dwellSeconds": {
+              "description": "How long each item stays on the station before it may leave. Unit: s.",
+              "type": "number",
+              "exclusiveMinimum": 0
             }
           }
         }

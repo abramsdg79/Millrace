@@ -700,8 +700,10 @@ external dependencies.
 
 ## 18. Deferred
 
-Pumps, valves, tanks, pipes, fans, crushers, feeders, hoppers, splitters,
-mergers, disintegrators; pressure, level, flow and vibration sensors; guard
+Pumps, valves, tanks, pipes, fans, crushers, feeders, hoppers, general
+splitters and mergers (a routed reject station for discrete items,
+`reject-gate`, exists since plan 6b.1), disintegrators; pressure, level, flow
+and vibration sensors; guard
 switches; overspeed detectors; PID control; raw-count to engineering-unit
 scaling; YAML configuration; mid-run state snapshot and restore; any GUI.
 

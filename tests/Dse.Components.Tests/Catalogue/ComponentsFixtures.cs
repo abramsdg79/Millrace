@@ -43,6 +43,7 @@ internal static class ComponentsFixtures
               "hold": { "type": "for-seconds", "seconds": 10 }, "output": "test-bulk" }
             """)
         .Parameters("item-process-unit", """{ "batchSize": 4, "hold": { "type": "for-seconds", "seconds": 10 } }""")
+        .Parameters("reject-gate", """{ "dwellSeconds": 2 }""")
         .ObjectParameters(ObjectSlots.Transform, "thermal-transfer", """{ "timeConstantSeconds": 30 }""")
         .ObjectParameters(ObjectSlots.Transform, "moisture-loss", """{ "ratePerDegreeSecond": 0.0001, "thresholdTemperature": 100 }""")
         .ObjectParameters(ObjectSlots.Transform, "residence-accumulator", """{ "material": "test-item", "state": "soak", "thresholdTemperature": 700 }""")

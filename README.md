@@ -17,9 +17,9 @@ latched inputs, composites, topological resolution with algebraic-loop
 detection, validation, telemetry, an ordered event log, a runner), the
 material layer (bulk and discrete payloads, typed flow ports, offer/accept
 transport, cell-based and position-based belts, residence transforms, a
-per-tick mass conservation audit), the fault channel, and the first
-component library: sources, sinks, a transfer chute, a former, bulk and
-item process units, three transforms, an instrument base with the full
+per-tick mass conservation audit), the fault channel, and the first component
+library: sources, sinks, a transfer chute, a former, bulk and item process
+units, a reject gate, three transforms, an instrument base with the full
 sensor-fault vocabulary, seven instruments, a motor with an I²t thermal model,
 a drivetrain, a safety circuit, a starter, and a `Conveyor` composite that
 trips its own overload when the belt downstream of it blocks — plus the I/O
