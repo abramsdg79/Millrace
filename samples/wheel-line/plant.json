@@ -1,0 +1,64 @@
+{
+  "defaults": { "seed": 11, "timeStepMs": 100, "startTime": "2026-04-06T06:00:00+02:00" },
+  "materials": [
+    { "name": "Billet", "kind": "discrete", "properties": { "density": 7850, "moisture": 0, "temperature": 25 },
+      "description": "A round steel billet, cut to weight for one wheel." },
+    { "name": "Wheel", "kind": "discrete", "properties": { "density": 7850, "moisture": 0, "temperature": 25 },
+      "description": "A forged wheel blank." }
+  ],
+  "components": [
+    { "id": "Billets", "type": "item-source",
+      "parameters": { "material": "Billet", "itemMassKg": 400, "intervalSeconds": 60, "queueCapacity": 2 } },
+    { "id": "FCE", "type": "item-process-unit", "parameters": {
+        "batchSize": 1, "heatWhileHeld": true,
+        "hold": { "type": "temperature-at-least", "celsius": 1100 },
+        "transforms": [ { "type": "thermal-transfer", "timeConstantSeconds": 24 } ] } },
+    { "id": "GATE", "type": "reject-gate", "parameters": { "dwellSeconds": 1 } },
+    { "id": "Bay", "type": "item-sink", "parameters": { "capacity": 4 } },
+    { "id": "CV", "type": "discrete-belt", "parameters": {
+        "lengthM": 10, "maxSpeedMps": 1, "minSpacingM": 2,
+        "transforms": [ { "type": "thermal-transfer", "timeConstantSeconds": 1200 } ] } },
+    { "id": "PRESS", "type": "item-process-unit", "parameters": {
+        "batchSize": 1, "hold": { "type": "for-seconds", "seconds": 40 }, "output": "Wheel", "yield": 0.92 } },
+    { "id": "Wheels", "type": "item-sink" },
+    { "id": "PYRO", "type": "pyrometer", "parameters": {
+        "target": "GATE", "positionM": 0, "windowM": 0,
+        "spec": { "unit": "°C", "rangeLow": 0, "rangeHigh": 1400, "lagSeconds": 0 } } },
+    { "id": "HMD", "type": "pyrometer", "parameters": {
+        "target": "CV", "positionM": 4, "windowM": 0.1,
+        "spec": { "unit": "°C", "rangeLow": 0, "rangeHigh": 1400, "lagSeconds": 5 } } }
+  ],
+  "flows": [
+    { "from": "Billets.Out",    "to": "FCE.In" },
+    { "from": "FCE.Out",        "to": "GATE.In" },
+    { "from": "GATE.Out",       "to": "CV.In" },
+    { "from": "GATE.RejectOut", "to": "Bay.In" },
+    { "from": "CV.Out",         "to": "PRESS.In" },
+    { "from": "PRESS.Out",      "to": "Wheels.In" }
+  ],
+  "tags": [
+    { "name": "FCE.ZONE_SP", "port": "FCE.AmbientTemperature", "access": "write", "unit": "°C", "rangeLow": 0, "rangeHigh": 1400,
+      "description": "Furnace zone temperature setpoint" },
+    { "name": "CV.SPEED_SP", "port": "CV.Speed", "access": "write", "unit": "m/s", "rangeLow": 0, "rangeHigh": 1,
+      "description": "Belt speed setpoint" },
+    { "name": "CV.ItemCount", "port": "CV.ItemCount", "access": "read", "unit": "count",
+      "description": "Blanks on the belt" }
+  ],
+  "controllers": [
+    { "id": "ALM_PYRO", "type": "alarm", "scanPeriodMs": 100, "parameters": { "input": "PYRO.Value", "limits": [
+        { "kind": "hi", "value": 1130, "deadband": 10 },
+        { "kind": "hi-hi", "value": 1150, "deadband": 10 } ] } },
+    { "id": "COIL_REJECT", "type": "coil", "scanPeriodMs": 100, "claims": [ "GATE.Reject" ],
+      "parameters": { "condition": { "tag": "ALM_PYRO.HiHi.Active", "normal": true }, "output": "GATE.Reject" } },
+    { "id": "ALM_QUEUE", "type": "alarm", "scanPeriodMs": 100, "parameters": { "input": "HMD.Value", "limits": [
+        { "kind": "hi", "value": 200, "deadband": 50, "onDelayS": 60 } ] } },
+    { "id": "ALM_ZONE", "type": "alarm", "scanPeriodMs": 100, "parameters": { "input": "FCE.ZONE_SP", "limits": [
+        { "kind": "lo", "value": 1200, "deadband": 10, "onDelayS": 5 },
+        { "kind": "hi", "value": 1300, "deadband": 10, "onDelayS": 5 } ] } },
+    { "id": "INT_BAY", "type": "interlock", "scanPeriodMs": 100, "claims": [ "Billets.Enabled" ],
+      "parameters": {
+        "conditions": [ { "tag": "Bay.Full", "normal": false } ],
+        "trip": [ { "tag": "Billets.Enabled", "value": false } ],
+        "reset": [ { "tag": "Billets.Enabled", "value": true } ] } }
+  ]
+}

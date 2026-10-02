@@ -23,6 +23,8 @@
   <ItemGroup>
     <None Include="..\..\samples\mine-conveyors\**\*"
           Link="mine-conveyors\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\samples\wheel-line\**\*"
+          Link="wheel-line\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
