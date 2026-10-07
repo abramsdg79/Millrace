@@ -29,6 +29,9 @@ public partial class ReleaseTests
         string readme = RepositoryFile("README.md");
 
         Assert.Contains("    <Version>1.0.0</Version>\n", props, StringComparison.Ordinal);
+        Assert.All(
+            Directory.EnumerateFiles(Path.Combine(RepositoryRoot(), "src"), "*.csproj", SearchOption.AllDirectories),
+            path => Assert.False(File.ReadAllText(path).Contains("<Version>", StringComparison.Ordinal), $"{path} sets its own <Version>, overriding Directory.Build.props."));
 
         Assert.StartsWith("# Changelog\n", changelog, StringComparison.Ordinal);
         Assert.Single(ReleaseHeading().Matches(changelog));

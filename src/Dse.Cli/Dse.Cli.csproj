@@ -9,7 +9,6 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dse</ToolCommandName>
     <PackageId>Dse.Cli</PackageId>
-    <Version>0.1.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Dse.Core\Dse.Core.csproj" />
