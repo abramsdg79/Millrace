@@ -67,6 +67,8 @@ dotnet run --project src/Dse.Cli -- tags plant.json           # the tag director
 dotnet run --project src/Dse.Cli -- run scenario.json --expect golden.log  # replay a scenario; exit 4 if the log changed
 dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/pull-key.json  # the sample: a pull-key stops the line
 dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/slow-press.json      # the second: a slow press over-soaks a billet and the PLC rejects it
+dotnet run --project src/Dse.Cli -- modbus-map plant.json     # the Modbus register map dse serve serves
+dotnet run --project src/Dse.Cli -- serve samples/mine-conveyors/plant.json  # run it in real time on Modbus TCP port 5020 until Ctrl+C
 ```
 
 Add `--assembly path/to/YourModule.dll` to any command to include your own
@@ -125,6 +127,21 @@ See the [mine-conveyor sample](samples/mine-conveyors/README.md), the
 [authoring a component](docs/authoring-a-component.md), the
 [configuration diagnostics](docs/configuration-diagnostics.md) and the
 [scenario diagnostics](docs/scenario-diagnostics.md).
+
+## A SCADA on the sample
+
+`dse serve` runs a plant in real time and serves its tags over Modbus TCP, so a
+real SCADA can watch and operate it. `hmi/fuxa/` puts the mine-conveyor sample
+in the open-source web SCADA FUXA — an overview mimic, alarms and trends, with
+start, stop, reset, pull-key and e-stop buttons — with one command:
+
+```bash
+cd hmi/fuxa
+docker compose up --build
+```
+
+then open <http://localhost:1881>. See the [FUXA HMI](hmi/fuxa/README.md) for
+what each screen and button does, and the register map.
 
 ## Licence
 

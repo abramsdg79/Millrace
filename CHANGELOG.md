@@ -10,6 +10,38 @@ plant over Modbus TCP
 ([design](docs/superpowers/specs/2026-10-07-modbus-fuxa-hmi-design.md),
 [plan 8](docs/superpowers/plans/2026-10-07-modbus-fuxa-hmi.md)).
 
+### Modbus (`Dse.Modbus`)
+
+- A register map built from a plant's tag directory, in directory order: a
+  read-write Bool is a coil, a read-only one a discrete input; a Double is a
+  big-endian Float32 and an Int64 a saturating big-endian Int32, two holding
+  registers when read-write and two input registers when read-only. A claimed
+  tag maps read-only.
+- A Modbus TCP server, with no external package: function codes 1, 2, 3, 4,
+  5, 6, 15 and 16; exceptions 01, 02 and 03; any unit id; several clients at
+  once. Reads come from the published tag image; writes go through
+  `Dse.Realtime`'s `CommandBus` and land at phase 1 of the next tick.
+
+### Scenarios (`Dse.Scenarios`)
+
+- `ScenarioRunner.Bind` loads a scenario's plant and schedules its timeline
+  without running it, for a host that ticks the simulation itself.
+
+### Cli (`dse`)
+
+- `dse serve <plant.json> [--scenario <file>] [--port <n>] [--speed <x>]`
+  runs a plant paced to the wall clock and serves it over Modbus TCP until
+  Ctrl+C. Exit 3 now also covers a port that cannot be opened.
+- `dse modbus-map <plant.json> [--format text|csv|fuxa]` prints the register
+  map, or the tags of a FUXA Modbus device.
+
+### HMI (`hmi/fuxa/`)
+
+- The mine-conveyor sample in the FUXA web SCADA, with one
+  `docker compose up`: an overview mimic with the line's states, values,
+  lamps and operator buttons, an alarms view and a trends view. See
+  [its README](hmi/fuxa/README.md).
+
 ## 1.0.0 — 2026-10-07
 
 The first release: every item of the v1 scope (§17 of the

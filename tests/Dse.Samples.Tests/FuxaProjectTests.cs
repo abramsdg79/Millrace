@@ -100,6 +100,21 @@ public class FuxaProjectTests
         Assert.Equal(map.Out, quoted);
     }
 
+    [Fact]
+    public void TheRootReadmeTheArchitectureAndTheScenariosPageNameServeAndTheHmi()
+    {
+        string readme = File.ReadAllText(Path.Combine(RepositoryRoot(), "README.md")).ReplaceLineEndings("\n");
+        string architecture = File.ReadAllText(Path.Combine(RepositoryRoot(), "docs", "architecture.md")).ReplaceLineEndings("\n");
+        string scenarios = File.ReadAllText(Path.Combine(RepositoryRoot(), "docs", "scenarios.md")).ReplaceLineEndings("\n");
+
+        Assert.Contains("-- serve samples/mine-conveyors/plant.json", readme, StringComparison.Ordinal);
+        Assert.Contains("-- modbus-map plant.json", readme, StringComparison.Ordinal);
+        Assert.Contains("[FUXA HMI](hmi/fuxa/README.md)", readme, StringComparison.Ordinal);
+        Assert.Contains("\n## Modbus TCP\n", architecture, StringComparison.Ordinal);
+        Assert.Contains("`Dse.Modbus`", architecture, StringComparison.Ordinal);
+        Assert.Contains("dse serve plant.json --scenario scenario.json", scenarios, StringComparison.Ordinal);
+    }
+
     /// <summary>Every <c>t_…</c> tag id in a subtree: a string value that is one, or a comma-separated list of them.</summary>
     private static void Collect(JsonNode? node, List<string> ids)
     {

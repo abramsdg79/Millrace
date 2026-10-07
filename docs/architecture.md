@@ -291,6 +291,28 @@ the directory — unknown tag, read-only, wrong kind, outside the declared range
 forwards accepted ones to `ITagWriter`, and reports every command to an
 optional `ICommandRecorder`, which is where a scenario recorder attaches.
 
+## Modbus TCP
+
+`Dse.Modbus` is the first protocol adapter built on that boundary. It
+references `Dse.Io.Abstractions` and `Dse.Realtime` only, and no package.
+`RegisterMap.Build` turns a tag directory into a register map, in directory
+order: a read-write Bool is a coil and a read-only one a discrete input; a
+Double is a big-endian Float32 and an Int64 a saturating big-endian Int32,
+each two holding registers when read-write and two input registers when
+read-only. Access is the directory's published access, so a claimed tag is
+read-only on the wire too.
+
+`ModbusServer` answers function codes 1, 2, 3, 4, 5, 6, 15 and 16 for any
+unit id and any number of connections. It is given a function that returns
+the published image — `Simulation.IO.Snapshot` — and reads it once per
+request, so every value in a response belongs to one tick; it is given a
+`CommandBus` for writes, which therefore land at phase 1 of the next tick like
+any other external write. A multi-value write is validated whole before any of
+it is queued. `dse serve` puts the two together: it ticks the simulation on
+its own thread with `SimulationRunner` in real time (or `--speed` times it),
+while the server answers on the thread pool. `hmi/fuxa/` connects the FUXA
+web SCADA to it.
+
 ## Catalogue, schema and loader
 
 Three things are generated from one source, the descriptors, and therefore agree:

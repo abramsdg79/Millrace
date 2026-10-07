@@ -10,6 +10,7 @@ dse run scenario.json                              # print the event log
 dse run scenario.json --out golden.log             # make or remake a golden
 dse run scenario.json --expect golden.log          # exit 0 if unchanged, 4 if not
 dse run scenario.json --format json                # the same run, as records
+dse serve plant.json --scenario scenario.json      # the same timeline in real time, served over Modbus TCP
 ```
 
 ## The file
