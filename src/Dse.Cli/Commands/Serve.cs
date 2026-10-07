@@ -33,6 +33,7 @@ internal static class Serve
         int port = context.CommandLine.Single(CommandTable.Port) is { } text
             ? int.Parse(text, NumberStyles.None, CultureInfo.InvariantCulture)
             : DefaultPort;
+        IPAddress bind = context.CommandLine.Single(CommandTable.Bind) is { } address ? IPAddress.Parse(address) : IPAddress.Loopback;
         double speed = context.CommandLine.Single(CommandTable.Speed) is { } factor
             ? double.Parse(factor, NumberStyles.Float, CultureInfo.InvariantCulture)
             : 1.0;
@@ -52,7 +53,7 @@ internal static class Serve
             IPEndPoint endpoint;
             try
             {
-                endpoint = server.Start(new IPEndPoint(IPAddress.Any, port));
+                endpoint = server.Start(new IPEndPoint(bind, port));
             }
             catch (SocketException ex)
             {
@@ -94,7 +95,14 @@ internal static class Serve
     private static Action<PosixSignalContext> Stop(CancellationTokenSource stop) => signal =>
     {
         signal.Cancel = true;
-        stop.Cancel();
+        try
+        {
+            stop.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            // A signal during teardown: the run is already over.
+        }
     };
 
     /// <summary>The plant alone, or the plant bound to <c>--scenario</c>'s timeline. Reports failure as <c>validate</c> and <c>run</c> do.</summary>

@@ -25,7 +25,7 @@ a few minutes; later starts take seconds. Three services start:
 
 | service | what it does |
 |---|---|
-| `dse` | `dse serve samples/mine-conveyors/plant.json --port 5020`: the plant, in real time, on port 5020 (localhost only) |
+| `dse` | `dse serve samples/mine-conveyors/plant.json --port 5020 --bind 0.0.0.0`: the plant, in real time, on port 5020 (`--bind 0.0.0.0` listens on all of the container's interfaces; the published port is localhost only. Outside a container `dse serve` defaults to `--bind 127.0.0.1`) |
 | `fuxa` | FUXA 1.3.4 with its Modbus driver, on port 1881 (localhost only) |
 | `fuxa-init` | waits for FUXA, loads `mine-conveyors.fuxap.json` into it on the first start, and exits |
 
@@ -56,7 +56,9 @@ relays (see "Power-up" in the sample's README).
 **Alarms** lists FUXA's alarms: each belt's motor current `Hi` and `HiHi` (the
 sample's `ALM_CVn` blocks, with their deadband and 3 s on-delay; FUXA raises
 on the blocks' `Active` tags) and each interlock's trip. The bell in the
-header counts them; acknowledge a row with its tick.
+header counts them; acknowledge a row with its tick. The tick acknowledges FUXA's own alarm only:
+the plant's alarm blocks (the `ALM_CVn.Ack` coil) are not wired to a button,
+so `ALM_CVn.*.Acked` stays false in DSE.
 
 **Trends** draws the three belts' speeds and motor currents, live since the
 view opened, ten minutes at most. The charts are drawn in the browser from the

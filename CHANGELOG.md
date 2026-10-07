@@ -29,9 +29,11 @@ plant over Modbus TCP
 
 ### Cli (`dse`)
 
-- `dse serve <plant.json> [--scenario <file>] [--port <n>] [--speed <x>]`
+- `dse serve <plant.json> [--scenario <file>] [--port <n>] [--bind <address>] [--speed <x>]`
   runs a plant paced to the wall clock and serves it over Modbus TCP until
-  Ctrl+C. Exit 3 now also covers a port that cannot be opened.
+  Ctrl+C. It listens on 127.0.0.1 unless `--bind` says otherwise (Modbus has
+  no authentication); `--speed` must be at least 0.001; `--scenario` runs its
+  timeline but ignores the scenario's duration. Exit 3 now also covers a port that cannot be opened.
 - `dse modbus-map <plant.json> [--format text|csv|fuxa]` prints the register
   map, or the tags of a FUXA Modbus device.
 

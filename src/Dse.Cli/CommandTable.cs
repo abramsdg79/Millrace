@@ -27,7 +27,10 @@ internal static class CommandTable
         "--expect", "golden.log", "Compare the event log with this file; exit 4 if they differ.");
 
     public static readonly OptionSpec Scenario = new(
-        "--scenario", "scenario.json", "Schedule this scenario's timeline and use its seed, start time and time step. It must name the same plant.");
+        "--scenario", "scenario.json", "Schedule this scenario's timeline and use its seed, start time and time step. It must name the same plant. serve runs until stopped; the scenario's duration is ignored.");
+
+    public static readonly OptionSpec Bind = new(
+        "--bind", "address", "Address to listen on; default 127.0.0.1 (this machine only). Use 0.0.0.0 to listen on every interface — Modbus has no authentication.");
 
     public static readonly OptionSpec Port = new("--port", "n", "Serve Modbus TCP on this port; 0 lets the system choose a free one. Default: 5020.");
 
@@ -43,7 +46,7 @@ internal static class CommandTable
         new(["validate"], "plant.json", "Load a plant and report every error, each with its fix.", [Format, TimeStep, Assembly], Commands.Validate.Run),
         new(["tags"], "plant.json", "Load and build a plant, then list its tags: name, kind, access, unit, range, description and claimant.", [Format, TimeStep, Assembly], Commands.Tags.Run),
         new(["run"], "scenario.json", "Run a scenario against its plant and print the event log.", [Expect, Out, Format, Assembly], Commands.RunScenario.Run),
-        new(["serve"], "plant.json", "Run a plant in real time and serve its tags over Modbus TCP until Ctrl+C.", [Scenario, Port, Speed, Assembly], Commands.Serve.Run),
+        new(["serve"], "plant.json", "Run a plant in real time and serve its tags over Modbus TCP until Ctrl+C.", [Scenario, Port, Bind, Speed, Assembly], Commands.Serve.Run),
         new(["modbus-map"], "plant.json", "Print the plant's Modbus register map: area, address, type and tag of every tag.", [MapFormat, Out, Assembly], Commands.ModbusMap.Run),
     ];
 

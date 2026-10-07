@@ -68,7 +68,7 @@ dotnet run --project src/Dse.Cli -- run scenario.json --expect golden.log  # rep
 dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/pull-key.json  # the sample: a pull-key stops the line
 dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/slow-press.json      # the second: a slow press over-soaks a billet and the PLC rejects it
 dotnet run --project src/Dse.Cli -- modbus-map plant.json     # the Modbus register map dse serve serves
-dotnet run --project src/Dse.Cli -- serve samples/mine-conveyors/plant.json  # run it in real time on Modbus TCP port 5020 until Ctrl+C
+dotnet run --project src/Dse.Cli -- serve samples/mine-conveyors/plant.json  # run it in real time on Modbus TCP port 5020 until Ctrl+C (localhost only; --bind 0.0.0.0 opens it to the network)
 ```
 
 Add `--assembly path/to/YourModule.dll` to any command to include your own

@@ -13,6 +13,9 @@ dse run scenario.json --format json                # the same run, as records
 dse serve plant.json --scenario scenario.json      # the same timeline in real time, served over Modbus TCP
 ```
 
+`dse serve --scenario` schedules the timeline and uses the seed, start time and
+time step, but ignores `duration`: it runs until stopped.
+
 ## The file
 
 ```json

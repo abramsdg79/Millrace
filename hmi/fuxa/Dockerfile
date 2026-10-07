@@ -13,5 +13,7 @@ WORKDIR /dse
 COPY --from=build /app /app
 COPY samples/ samples/
 EXPOSE 5020
+# Not root: $APP_UID is the runtime image's unprivileged user.
+USER $APP_UID
 ENTRYPOINT ["/app/dse"]
-CMD ["serve", "samples/mine-conveyors/plant.json", "--port", "5020"]
+CMD ["serve", "samples/mine-conveyors/plant.json", "--port", "5020", "--bind", "0.0.0.0"]

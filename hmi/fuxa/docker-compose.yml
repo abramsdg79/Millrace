@@ -11,7 +11,7 @@ services:
       context: ../..
       dockerfile: hmi/fuxa/Dockerfile
     image: dse-hmi/dse:local
-    command: ["serve", "samples/mine-conveyors/plant.json", "--port", "5020"]
+    command: ["serve", "samples/mine-conveyors/plant.json", "--port", "5020", "--bind", "0.0.0.0"]
     ports:
       - "127.0.0.1:5020:5020"
 

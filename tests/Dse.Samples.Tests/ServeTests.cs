@@ -18,7 +18,7 @@ public partial class ServeTests
 {
     private static readonly TimeSpan Patience = TimeSpan.FromSeconds(30);
 
-    [GeneratedRegex(@"Listening on 0\.0\.0\.0:(\d+) ")]
+    [GeneratedRegex(@"Listening on 127\.0\.0\.1:(\d+) ")]
     private static partial Regex Listening();
 
     [Fact]

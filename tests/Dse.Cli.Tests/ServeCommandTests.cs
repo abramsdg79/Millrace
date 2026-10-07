@@ -12,7 +12,7 @@ namespace Dse.Cli.Tests;
 /// </summary>
 public partial class ServeCommandTests
 {
-    [GeneratedRegex(@"^Listening on 0\.0\.0\.0:(\d+) \(Modbus TCP, any unit id\) at 1x real time\. Press Ctrl\+C to stop\.$", RegexOptions.Multiline)]
+    [GeneratedRegex(@"^Listening on 127\.0\.0\.1:(\d+) \(Modbus TCP, any unit id\) at 1x real time\. Press Ctrl\+C to stop\.$", RegexOptions.Multiline)]
     private static partial Regex ListeningLine();
 
     private static CliRun Stopped(params string[] args)
@@ -28,6 +28,8 @@ public partial class ServeCommandTests
     [InlineData("serve a.json --port -1")]
     [InlineData("serve a.json --port 50.5")]
     [InlineData("serve a.json --speed 0")]
+    [InlineData("serve a.json --speed 0.0009")]
+    [InlineData("serve a.json --bind not-an-address")]
     [InlineData("serve a.json --speed -2")]
     [InlineData("serve a.json --speed fast")]
     [InlineData("serve a.json --speed NaN")]
@@ -41,6 +43,15 @@ public partial class ServeCommandTests
         Assert.Equal(ExitCodes.Usage, run.ExitCode);
         Assert.Empty(run.Out);
         Assert.Contains("dse serve --help", run.Err, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ABadBindValueIsAUsageErrorThatNamesIt()
+    {
+        CliRun run = Cli.Run("serve", "a.json", "--bind", "not-an-address");
+
+        Assert.Equal(ExitCodes.Usage, run.ExitCode);
+        Assert.Contains("'--bind not-an-address' is not an IP address", run.Err, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -113,7 +124,7 @@ public partial class ServeCommandTests
     [Fact]
     public void APortInUseExits3AndSaysWhichPort()
     {
-        using var holder = new TcpListener(IPAddress.Any, 0);
+        using var holder = new TcpListener(IPAddress.Loopback, 0);
         holder.Start();
         int port = ((IPEndPoint)holder.LocalEndpoint).Port;
 
@@ -134,7 +145,7 @@ public partial class ServeCommandTests
         Assert.Contains("  serve <plant.json>  ", help.Out, StringComparison.Ordinal);
         Assert.Contains("  modbus-map <plant.json>  ", help.Out, StringComparison.Ordinal);
         Assert.Contains("the port could not be opened", help.Out, StringComparison.Ordinal);
-        Assert.All(["--scenario <scenario.json>", "--port <n>", "--speed <x>", "--assembly <path>"], o => Assert.Contains(o, serve.Out, StringComparison.Ordinal));
+        Assert.All(["--scenario <scenario.json>", "--port <n>", "--bind <address>", "--speed <x>", "--assembly <path>"], o => Assert.Contains(o, serve.Out, StringComparison.Ordinal));
         Assert.All(["--format <text|csv|fuxa>", "--out <file>", "--assembly <path>"], o => Assert.Contains(o, map.Out, StringComparison.Ordinal));
     }
 }

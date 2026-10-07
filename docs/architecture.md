@@ -310,7 +310,9 @@ request, so every value in a response belongs to one tick; it is given a
 any other external write. A multi-value write is validated whole before any of
 it is queued. `dse serve` puts the two together: it ticks the simulation on
 its own thread with `SimulationRunner` in real time (or `--speed` times it),
-while the server answers on the thread pool. `hmi/fuxa/` connects the FUXA
+while the server answers on the thread pool. It listens on 127.0.0.1 unless
+`--bind` names another address, because the protocol has no authentication
+and the server accepts writes. `hmi/fuxa/` connects the FUXA
 web SCADA to it.
 
 ## Catalogue, schema and loader

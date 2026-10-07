@@ -79,6 +79,7 @@ public class ServerTests
     [InlineData(new byte[] { 0x00, 0x01, 0x00, 0x01, 0x00, 0x06, 0x01, 0x01, 0x00, 0x00, 0x00, 0x01 })]
     [InlineData(new byte[] { 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x01 })]
     [InlineData(new byte[] { 0x00, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01 })]
+    [InlineData(new byte[] { 0x00, 0x01, 0x00, 0x00, 0x00, 0xFF, 0x01 })]
     public async Task AFrameWithAForeignProtocolIdOrAnImpossibleLengthClosesTheConnection(byte[] frame)
     {
         await using Rig rig = Rig.Start();
@@ -89,6 +90,27 @@ public class ServerTests
         Assert.True(client.IsClosedByServer());
         using ModbusClient next = rig.Connect();
         Assert.Equal(new[] { true, true }, next.ReadCoils(0, 2));
+    }
+
+    [Fact]
+    public async Task AFrameWithTheLargestAllowedLengthIsAnsweredNotClosed()
+    {
+        await using Rig rig = Rig.Start();
+
+        // Length 254: the unit id plus a 253-byte PDU, here a read of one coil padded with zeros.
+        byte[] pdu = new byte[253];
+        ModbusClient.Pdu(0x01, 0, 1).CopyTo(pdu, 0);
+
+        byte[] response = await Task.Factory.StartNew(() =>
+        {
+            using ModbusClient client = rig.Connect();
+            client.Send(ModbusClient.Frame(9, 1, pdu));
+            (ushort transaction, _, byte[] answer) = client.Receive();
+            Assert.Equal(9, transaction);
+            return answer;
+        }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default).WaitAsync(Patience);
+
+        Assert.Equal(0x01, response[0] & 0x7F);
     }
 
     [Fact]

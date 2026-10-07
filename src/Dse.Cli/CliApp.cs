@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Net;
 using Dse.Components;
 using Dse.Control.Catalogue;
 using Dse.Core.Catalogue;
@@ -70,9 +71,14 @@ public static class CliApp
         }
 
         if (parsed.Single(CommandTable.Speed) is { } speed
-            && !(double.TryParse(speed, NumberStyles.Float, CultureInfo.InvariantCulture, out double factor) && double.IsFinite(factor) && factor > 0.0))
+            && !(double.TryParse(speed, NumberStyles.Float, CultureInfo.InvariantCulture, out double factor) && double.IsFinite(factor) && factor >= 0.001))
         {
-            return $"'--speed {speed}' is not a speed. Give a factor greater than zero, such as 10 or 0.5.";
+            return $"'--speed {speed}' is not a speed. Give a factor of at least 0.001, such as 10 or 0.5.";
+        }
+
+        if (parsed.Single(CommandTable.Bind) is { } bind && !IPAddress.TryParse(bind, out _))
+        {
+            return $"'--bind {bind}' is not an IP address. Give an address such as 127.0.0.1 or 0.0.0.0.";
         }
 
         if (parsed.Single(CommandTable.TimeStep) is { } step
