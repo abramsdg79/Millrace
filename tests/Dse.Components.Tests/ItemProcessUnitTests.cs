@@ -202,11 +202,11 @@ public class ItemProcessUnitTests
     }
 
     [Theory]
-    [InlineData(0.5, 15L)]
-    [InlineData(0.75, 23L)]
-    [InlineData(0.0, 11L)]
-    [InlineData(-1.0, 11L)]
-    public void ASlowCycleStretchesATimedHoldByOneOverOneMinusTheFraction(double fraction, long dischargeTick)
+    [InlineData(0.5, 15L, "Hold satisfied after 2.00 s of hold (4.00 s elapsed); discharging 3 items.")]
+    [InlineData(0.75, 23L, "Hold satisfied after 2.00 s of hold (8.00 s elapsed); discharging 3 items.")]
+    [InlineData(0.0, 11L, "Hold satisfied after 2.00 s; discharging 3 items.")]
+    [InlineData(-1.0, 11L, "Hold satisfied after 2.00 s; discharging 3 items.")]
+    public void ASlowCycleStretchesATimedHoldByOneOverOneMinusTheFraction(double fraction, long dischargeTick, string message)
     {
         Plant plant = Build(batchSize: 3, Hold.ForSeconds(2.0));
         plant.Sim.InjectFaultAt(TimeSpan.Zero, "Furnace", ItemProcessUnit.SlowCycle, new FaultArguments(new FaultArgument("fraction", fraction)));
@@ -215,9 +215,7 @@ public class ItemProcessUnitTests
         plant.Sim.RunFor(TimeSpan.FromSeconds(15));
 
         Assert.Equal(dischargeTick, DischargeTick(plant.Sim));
-        Assert.Equal(
-            "Hold satisfied after 2.00 s; discharging 3 items.",
-            plant.Sim.Events.Records.First(r => r.Source == "Furnace" && r.Code == "DISCHARGING").Message);
+        Assert.Equal(message, plant.Sim.Events.Records.First(r => r.Source == "Furnace" && r.Code == "DISCHARGING").Message);
     }
 
     [Fact]
@@ -327,5 +325,60 @@ public class ItemProcessUnitTests
         plant.Sim.ClearFaultIn(TimeSpan.Zero, "Furnace", ItemProcessUnit.DischargeJam);
         plant.Sim.RunFor(TimeSpan.FromSeconds(1));
         Assert.Equal(60.0, plant.Sink.MassReceived);
+    }
+
+    /// <summary>The first DISCHARGING message.</summary>
+    private static string HoldMessage(Simulation sim) =>
+        sim.Events.Records.First(r => r.Source == "Furnace" && r.Code == "DISCHARGING").Message;
+
+    [Fact]
+    public void AClearedSlowCycleLeavesTheHoldTimeAndTheWallTimeApart()
+    {
+        Plant plant = Build(batchSize: 3, Hold.ForSeconds(2.0));
+        plant.Sim.InjectFaultAt(TimeSpan.Zero, "Furnace", ItemProcessUnit.SlowCycle);
+        plant.Sim.ClearFaultAt(TimeSpan.FromSeconds(5), "Furnace", ItemProcessUnit.SlowCycle);
+
+        // Ticks 8 and 9 count 0.25 s each, ticks 10-12 0.5 s: 2 s of hold in 2.5 s.
+        plant.Sim.RunFor(TimeSpan.FromSeconds(10));
+
+        Assert.Equal("Hold satisfied after 2.00 s of hold (2.50 s elapsed); discharging 3 items.", HoldMessage(plant.Sim));
+    }
+
+    [Fact]
+    public void ASlowCycleClearedBeforeProcessingLeavesTheMessageAsItWas()
+    {
+        Plant plant = Build(batchSize: 3, Hold.ForSeconds(2.0));
+        plant.Sim.InjectFaultAt(TimeSpan.Zero, "Furnace", ItemProcessUnit.SlowCycle);
+        plant.Sim.ClearFaultAt(TimeSpan.FromSeconds(3), "Furnace", ItemProcessUnit.SlowCycle);   // tick 6, before PROCESSING on tick 7
+
+        plant.Sim.RunFor(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(11L, DischargeTick(plant.Sim));
+        Assert.Equal("Hold satisfied after 2.00 s; discharging 3 items.", HoldMessage(plant.Sim));
+    }
+
+    [Fact]
+    public void AHoldSlowedTooLittleToShowAtTwoDecimalsPrintsOneTime()
+    {
+        Plant plant = Build(batchSize: 3, Hold.ForSeconds(2.0));
+        plant.Sim.InjectFaultAt(TimeSpan.Zero, "Furnace", ItemProcessUnit.SlowCycle, new FaultArguments(new FaultArgument("fraction", 0.001)));
+
+        // 0.4995 s a tick: 1.998 s after four ticks, 2.4975 s after five, in 2.5 s of wall time.
+        plant.Sim.RunFor(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(12L, DischargeTick(plant.Sim));
+        Assert.Equal("Hold satisfied after 2.50 s; discharging 3 items.", HoldMessage(plant.Sim));
+    }
+
+    [Fact]
+    public void ATemperatureHoldUnderAFullSlowCycleGivesTheWallTime()
+    {
+        Plant plant = Build(batchSize: 3, Hold.TemperatureAtLeast(200.0), transforms: [new ThermalTransfer(10.0)]);
+        plant.Sim.InjectFaultAt(TimeSpan.Zero, "Furnace", ItemProcessUnit.SlowCycle, new FaultArguments(new FaultArgument("fraction", 1.0)));
+
+        plant.Sim.RunFor(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(11L, DischargeTick(plant.Sim));
+        Assert.Equal("Hold satisfied after 0.00 s of hold (2.00 s elapsed); discharging 3 items.", HoldMessage(plant.Sim));
     }
 }

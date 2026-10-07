@@ -86,6 +86,9 @@ public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemPro
     private readonly IMaterialTransform[] _transforms;
     private ProcessPhase _phase;
     private double _elapsed;
+
+    /// <summary>Seconds since Processing began, at full rate; differs from the hold timer only under slow-cycle.</summary>
+    private double _wall;
     private double _lost;
     private long _cycles;
     private bool _jammed;
@@ -237,6 +240,7 @@ public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemPro
             case ProcessPhase.Processing:
                 ApplyTransforms(ctx.Dt);
                 _elapsed += ctx.Dt * (1.0 - _slowFraction);
+                _wall += ctx.Dt;
                 if (AllSatisfied())
                 {
                     Release(in ctx);
@@ -326,6 +330,7 @@ public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemPro
     private void StartProcessing(in TickContext ctx)
     {
         _elapsed = 0.0;
+        _wall = 0.0;
         Transition(ProcessPhase.Processing, "Batch complete; processing.", in ctx);
     }
 
@@ -347,9 +352,14 @@ public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemPro
             }
         }
 
+        string hold = _elapsed.ToString("F2", CultureInfo.InvariantCulture);
+        string wall = _wall.ToString("F2", CultureInfo.InvariantCulture);
+        string after = string.Equals(hold, wall, StringComparison.Ordinal)
+            ? $"{hold} s"
+            : $"{hold} s of hold ({wall} s elapsed)";
         Transition(
             ProcessPhase.Discharging,
-            string.Create(CultureInfo.InvariantCulture, $"Hold satisfied after {_elapsed:F2} s; discharging {_items.Count} items."),
+            string.Create(CultureInfo.InvariantCulture, $"Hold satisfied after {after}; discharging {_items.Count} items."),
             in ctx);
     }
 

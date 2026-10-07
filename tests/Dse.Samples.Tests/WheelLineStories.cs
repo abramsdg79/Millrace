@@ -24,6 +24,12 @@ public static class WheelLineStories
 
     private static readonly EventPattern QueueClear = E("ALM_QUEUE", "ALARM_CLEARED", "Hi: ");
 
+    /// <summary>A press cycle run wholly under slow-cycle 0.9: 40 s of hold in 400 s.</summary>
+    private static readonly EventPattern SlowedHold = E("PRESS", "DISCHARGING", "Hold satisfied after 40.00 s of hold (400.00 s elapsed); discharging 1 items.");
+
+    /// <summary>The press cycle the clear at 1140 s falls in: 40.08 s of hold in 65.1 s.</summary>
+    private static readonly EventPattern StraddlingHold = E("PRESS", "DISCHARGING", "Hold satisfied after 40.08 s of hold (65.10 s elapsed); discharging 1 items.");
+
     public static IReadOnlyDictionary<string, Story> All { get; } = new Dictionary<string, Story>(StringComparer.Ordinal)
     {
         ["normal-run"] = new(
@@ -41,6 +47,9 @@ public static class WheelLineStories
                 new(null, E("GATE", "REJECTED")),
                 new(null, E(null, "INTERLOCK_TRIP")),
                 new(CoilFirstScan, E("GATE.Reject", "WRITE")),
+
+                // Nothing slows a hold, so no hold message gives a wall time.
+                new(null, E(null, "DISCHARGING", " elapsed)")),
             ]),
 
         ["slow-press"] = new(
@@ -50,6 +59,7 @@ public static class WheelLineStories
                 CoilFirstScan,
                 E("PRESS", "FAULT", "slow-cycle injected: fraction=0.9."),
                 QueueHigh,
+                SlowedHold,
                 E("ALM_PYRO", "ALARM_RAISED", "Hi: 1250.0 above 1130."),
                 E("ALM_PYRO", "ALARM_RAISED", "HiHi: 1250.0 above 1150."),
                 RejectOn,
@@ -57,11 +67,14 @@ public static class WheelLineStories
                 E("ALM_PYRO", "ALARM_CLEARED", "HiHi: "),
                 E("GATE.Reject", "WRITE", "Set to false by COIL_REJECT."),
                 E("PRESS", "FAULT_CLEARED", "slow-cycle cleared."),
+                StraddlingHold,
                 QueueClear,
                 Starve,
             ],
             [
                 new(null, E("ALM_PYRO", "ALARM_RAISED"), E("PRESS", "FAULT", "slow-cycle")),
+                new(null, E(null, "DISCHARGING", " elapsed)"), E("PRESS", "FAULT", "slow-cycle")),
+                new(StraddlingHold, E(null, "DISCHARGING", " elapsed)")),
                 new(E("GATE", "REJECTED"), E("GATE", "REJECTED")),
                 new(E("PRESS", "FAULT_CLEARED"), E("ALM_PYRO", "ALARM_RAISED")),
                 new(QueueClear, E("ALM_QUEUE", "ALARM_RAISED")),
@@ -77,9 +90,11 @@ public static class WheelLineStories
                 E("PRESS", "FAULT", "slow-cycle injected: fraction=0.9."),
                 E("GATE", "FAULT", "stuck injected."),
                 QueueHigh,
+                SlowedHold,
                 E("ALM_PYRO", "ALARM_RAISED", "HiHi: 1250.0 above 1150."),
                 RejectOn,
                 E("PRESS", "FAULT_CLEARED", "slow-cycle cleared."),
+                StraddlingHold,
                 E("ALM_PYRO", "ALARM_CLEARED", "HiHi: "),
                 E("GATE.Reject", "WRITE", "Set to false by COIL_REJECT."),
                 QueueClear,

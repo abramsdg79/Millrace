@@ -62,7 +62,7 @@
 06:11:00.100  FCE  PROCESSING  Batch complete; processing.
 06:11:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
 06:11:50.400  FCE  IDLE  Batch discharged; ready for the next.
-06:11:51.700  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:11:51.700  PRESS  DISCHARGING  Hold satisfied after 40.00 s of hold (400.00 s elapsed); discharging 1 items.
 06:11:51.800  PRESS  IDLE  Batch discharged; ready for the next.
 06:11:51.900  PRESS  FILLING  First item received; filling.
 06:11:51.900  PRESS  PROCESSING  Batch complete; processing.
@@ -73,7 +73,7 @@
 06:13:00.100  FCE  FILLING  First item received; filling.
 06:13:00.100  FCE  PROCESSING  Batch complete; processing.
 06:13:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
-06:18:31.900  PRESS  DISCHARGING  Hold satisfied after 40.00 s; discharging 1 items.
+06:18:31.900  PRESS  DISCHARGING  Hold satisfied after 40.00 s of hold (400.00 s elapsed); discharging 1 items.
 06:18:32.000  PRESS  IDLE  Batch discharged; ready for the next.
 06:18:32.100  PRESS  FILLING  First item received; filling.
 06:18:32.100  PRESS  PROCESSING  Batch complete; processing.
@@ -85,7 +85,7 @@
 06:18:36.400  GATE.Reject  WRITE  Set to true by COIL_REJECT.
 06:19:00.000  PRESS  FAULT_CLEARED  slow-cycle cleared.
 06:19:26.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
-06:19:37.200  PRESS  DISCHARGING  Hold satisfied after 40.08 s; discharging 1 items.
+06:19:37.200  PRESS  DISCHARGING  Hold satisfied after 40.08 s of hold (65.10 s elapsed); discharging 1 items.
 06:19:37.300  PRESS  IDLE  Batch discharged; ready for the next.
 06:19:37.400  PRESS  FILLING  First item received; filling.
 06:19:37.400  PRESS  PROCESSING  Batch complete; processing.

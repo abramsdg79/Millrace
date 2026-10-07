@@ -173,9 +173,10 @@ and `Reject` is never written again after the first scan.
 
 The causal chain of the main spec, end to end. At 300 s the press slows to a
 tenth of its rate (`slow-cycle`, fraction 0.9): a wheel every 400 s while a
-billet still arrives every 60 s. (The press's hold counter accumulates hold time
-at the slowed rate, so the golden's `Hold satisfied after 40.00 s` covers about
-400 s of clock, and the `40.08 s` cycle straddles the fault's clear at 1140 s.)
+billet still arrives every 60 s. (The press's hold counter runs at the slowed
+rate, so a slowed cycle's message gives both times — 40 s of hold in 400 s of
+clock — and the cycle the fault's clear at 1140 s falls in logs 40.08 s of hold
+in 65.10 s.)
 The blanks queue on the belt; when the queue
 has stood at the detector for a minute, `ALM_QUEUE` raises. The belt fills, a
 good billet waits on the gate for room, and the furnace cannot discharge the
@@ -190,6 +191,7 @@ clears, and the line runs normally until the saw stops at 2100 s.
 ```text expected/slow-press.log
 06:05:00.000  PRESS  FAULT  slow-cycle injected: fraction=0.9.
 06:10:00.500  ALM_QUEUE  ALARM_RAISED  Hi: 1044.1 above 200.
+06:11:51.700  PRESS  DISCHARGING  Hold satisfied after 40.00 s of hold (400.00 s elapsed); discharging 1 items.
 06:13:50.300  FCE  DISCHARGING  Hold satisfied after 50.20 s; discharging 1 items.
 06:18:36.000  FCE  IDLE  Batch discharged; ready for the next.
 06:18:36.200  ALM_PYRO  ALARM_RAISED  Hi: 1250.0 above 1130.
@@ -199,6 +201,7 @@ clears, and the line runs normally until the saw stops at 2100 s.
 06:18:37.300  ALM_PYRO  ALARM_CLEARED  HiHi: 20.0 back within limits.
 06:18:37.500  GATE.Reject  WRITE  Set to false by COIL_REJECT.
 06:19:00.000  PRESS  FAULT_CLEARED  slow-cycle cleared.
+06:19:37.200  PRESS  DISCHARGING  Hold satisfied after 40.08 s of hold (65.10 s elapsed); discharging 1 items.
 06:27:50.400  ALM_QUEUE  ALARM_CLEARED  Hi: 148.2 back within limits.
 ```
 
