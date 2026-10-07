@@ -1,0 +1,59 @@
+# The mine-conveyor sample as a SCADA would see it: DSE serves the plant over
+# Modbus TCP, FUXA polls it and shows the HMI on http://localhost:1881, and a
+# one-shot container loads the HMI project into FUXA on its first start.
+# Run from this folder: docker compose up --build
+
+name: dse-hmi
+
+services:
+  dse:
+    build:
+      context: ../..
+      dockerfile: hmi/fuxa/Dockerfile
+    image: dse-hmi/dse:local
+    command: ["serve", "samples/mine-conveyors/plant.json", "--port", "5020"]
+    ports:
+      - "5020:5020"
+
+  fuxa:
+    build:
+      context: .
+      dockerfile: fuxa.Dockerfile
+    image: dse-hmi/fuxa:1.3.4-modbus
+    depends_on:
+      - dse
+    ports:
+      - "1881:1881"
+    volumes:
+      - fuxa-appdata:/usr/src/app/FUXA/server/_appdata
+      - fuxa-db:/usr/src/app/FUXA/server/_db
+      - fuxa-logs:/usr/src/app/FUXA/server/_logs
+
+  fuxa-init:
+    image: curlimages/curl:8.22.0@sha256:58adaa4e8dca9c988bae2aba4ab3434a0bb2da16bbe3f92dec39ec7785166777
+    depends_on:
+      - fuxa
+    volumes:
+      - ./mine-conveyors.fuxap.json:/project/mine-conveyors.fuxap.json:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        tries=0
+        until curl -fs -o /dev/null http://fuxa:1881/api/settings; do
+          tries=$$((tries + 1))
+          if [ "$$tries" -ge 120 ]; then echo "FUXA did not answer within 120 s." >&2; exit 1; fi
+          sleep 1
+        done
+        if curl -fsS http://fuxa:1881/api/project | grep -q '"address":"dse:5020"'; then
+          echo "FUXA already has the DSE project; leaving it as it is."
+          exit 0
+        fi
+        curl -fsS -X POST -H 'Content-Type: application/json' \
+          --data-binary @/project/mine-conveyors.fuxap.json http://fuxa:1881/api/project
+        echo "Loaded the mine-conveyors project into FUXA."
+    restart: "no"
+
+volumes:
+  fuxa-appdata:
+  fuxa-db:
+  fuxa-logs:

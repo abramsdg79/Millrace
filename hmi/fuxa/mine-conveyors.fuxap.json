@@ -1,0 +1,3159 @@
+{
+  "version": "1.01",
+  "name": "DSE mine conveyors",
+  "server": {
+    "id": "0",
+    "name": "FUXA Server",
+    "type": "FuxaServer",
+    "property": {},
+    "enabled": true,
+    "tags": {}
+  },
+  "devices": {
+    "dse": {
+      "id": "dse",
+      "name": "DSE",
+      "type": "ModbusTCP",
+      "enabled": true,
+      "polling": 200,
+      "property": {
+        "address": "dse:5020",
+        "port": null,
+        "slot": null,
+        "rack": null,
+        "slaveid": "1",
+        "baudrate": null,
+        "databits": null,
+        "stopbits": null,
+        "parity": null,
+        "connectionOption": "TcpPort",
+        "delay": 10,
+        "socketReuse": null,
+        "forceFC16": false
+      },
+      "tags": {
+        "t_ALM_CV001.Ack": {
+          "id": "t_ALM_CV001.Ack",
+          "name": "ALM_CV001.Ack",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "1",
+          "description": "Acknowledges every outstanding limit on a rising edge"
+        },
+        "t_ALM_CV001.Hi.Acked": {
+          "id": "t_ALM_CV001.Hi.Acked",
+          "name": "ALM_CV001.Hi.Acked",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "1",
+          "description": "Nothing is outstanding on the Hi limit"
+        },
+        "t_ALM_CV001.Hi.Active": {
+          "id": "t_ALM_CV001.Hi.Active",
+          "name": "ALM_CV001.Hi.Active",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "2",
+          "description": "The Hi limit is in alarm"
+        },
+        "t_ALM_CV001.HiHi.Acked": {
+          "id": "t_ALM_CV001.HiHi.Acked",
+          "name": "ALM_CV001.HiHi.Acked",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "3",
+          "description": "Nothing is outstanding on the HiHi limit"
+        },
+        "t_ALM_CV001.HiHi.Active": {
+          "id": "t_ALM_CV001.HiHi.Active",
+          "name": "ALM_CV001.HiHi.Active",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "4",
+          "description": "The HiHi limit is in alarm"
+        },
+        "t_ALM_CV002.Ack": {
+          "id": "t_ALM_CV002.Ack",
+          "name": "ALM_CV002.Ack",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "2",
+          "description": "Acknowledges every outstanding limit on a rising edge"
+        },
+        "t_ALM_CV002.Hi.Acked": {
+          "id": "t_ALM_CV002.Hi.Acked",
+          "name": "ALM_CV002.Hi.Acked",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "5",
+          "description": "Nothing is outstanding on the Hi limit"
+        },
+        "t_ALM_CV002.Hi.Active": {
+          "id": "t_ALM_CV002.Hi.Active",
+          "name": "ALM_CV002.Hi.Active",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "6",
+          "description": "The Hi limit is in alarm"
+        },
+        "t_ALM_CV002.HiHi.Acked": {
+          "id": "t_ALM_CV002.HiHi.Acked",
+          "name": "ALM_CV002.HiHi.Acked",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "7",
+          "description": "Nothing is outstanding on the HiHi limit"
+        },
+        "t_ALM_CV002.HiHi.Active": {
+          "id": "t_ALM_CV002.HiHi.Active",
+          "name": "ALM_CV002.HiHi.Active",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "8",
+          "description": "The HiHi limit is in alarm"
+        },
+        "t_ALM_CV003.Ack": {
+          "id": "t_ALM_CV003.Ack",
+          "name": "ALM_CV003.Ack",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "3",
+          "description": "Acknowledges every outstanding limit on a rising edge"
+        },
+        "t_ALM_CV003.Hi.Acked": {
+          "id": "t_ALM_CV003.Hi.Acked",
+          "name": "ALM_CV003.Hi.Acked",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "9",
+          "description": "Nothing is outstanding on the Hi limit"
+        },
+        "t_ALM_CV003.Hi.Active": {
+          "id": "t_ALM_CV003.Hi.Active",
+          "name": "ALM_CV003.Hi.Active",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "10",
+          "description": "The Hi limit is in alarm"
+        },
+        "t_ALM_CV003.HiHi.Acked": {
+          "id": "t_ALM_CV003.HiHi.Acked",
+          "name": "ALM_CV003.HiHi.Acked",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "11",
+          "description": "Nothing is outstanding on the HiHi limit"
+        },
+        "t_ALM_CV003.HiHi.Active": {
+          "id": "t_ALM_CV003.HiHi.Active",
+          "name": "ALM_CV003.HiHi.Active",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "12",
+          "description": "The HiHi limit is in alarm"
+        },
+        "t_CH1.Full": {
+          "id": "t_CH1.Full",
+          "name": "CH1.Full",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "13",
+          "description": "At capacity"
+        },
+        "t_CH1.Level": {
+          "id": "t_CH1.Level",
+          "name": "CH1.Level",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "1",
+          "description": "Held mass over capacity (fraction)"
+        },
+        "t_CH2.Full": {
+          "id": "t_CH2.Full",
+          "name": "CH2.Full",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "14",
+          "description": "At capacity"
+        },
+        "t_CH2.Level": {
+          "id": "t_CH2.Level",
+          "name": "CH2.Level",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "3",
+          "description": "Held mass over capacity (fraction)"
+        },
+        "t_CV001.Contactor": {
+          "id": "t_CV001.Contactor",
+          "name": "CV001.Contactor",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "15",
+          "description": "Contactor closed"
+        },
+        "t_CV001.Current": {
+          "id": "t_CV001.Current",
+          "name": "CV001.Current",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "5",
+          "description": "Measured value (A)"
+        },
+        "t_CV001.EStop": {
+          "id": "t_CV001.EStop",
+          "name": "CV001.EStop",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "4",
+          "description": "Actuated by the operator"
+        },
+        "t_CV001.EStop.Ok": {
+          "id": "t_CV001.EStop.Ok",
+          "name": "CV001.EStop.Ok",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "16",
+          "description": "Safety loop healthy"
+        },
+        "t_CV001.Permit": {
+          "id": "t_CV001.Permit",
+          "name": "CV001.Permit",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "17",
+          "description": "Run permit; false holds the contactor open"
+        },
+        "t_CV001.PullKey1": {
+          "id": "t_CV001.PullKey1",
+          "name": "CV001.PullKey1",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "5",
+          "description": "Actuated by the operator"
+        },
+        "t_CV001.PullKey1.Ok": {
+          "id": "t_CV001.PullKey1.Ok",
+          "name": "CV001.PullKey1.Ok",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "18",
+          "description": "Safety loop healthy"
+        },
+        "t_CV001.PullKey2": {
+          "id": "t_CV001.PullKey2",
+          "name": "CV001.PullKey2",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "6",
+          "description": "Actuated by the operator"
+        },
+        "t_CV001.PullKey2.Ok": {
+          "id": "t_CV001.PullKey2.Ok",
+          "name": "CV001.PullKey2.Ok",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "19",
+          "description": "Safety loop healthy"
+        },
+        "t_CV001.Reset": {
+          "id": "t_CV001.Reset",
+          "name": "CV001.Reset",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "7",
+          "description": "Overload reset, rising edge"
+        },
+        "t_CV001.SafetyOk": {
+          "id": "t_CV001.SafetyOk",
+          "name": "CV001.SafetyOk",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "20",
+          "description": "Relay energised"
+        },
+        "t_CV001.SafetyReset": {
+          "id": "t_CV001.SafetyReset",
+          "name": "CV001.SafetyReset",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "8",
+          "description": "Safety reset, rising edge"
+        },
+        "t_CV001.Speed": {
+          "id": "t_CV001.Speed",
+          "name": "CV001.Speed",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "7",
+          "description": "Measured value (m/s)"
+        },
+        "t_CV001.Start": {
+          "id": "t_CV001.Start",
+          "name": "CV001.Start",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "9",
+          "description": "Run command"
+        },
+        "t_CV001.Stopped": {
+          "id": "t_CV001.Stopped",
+          "name": "CV001.Stopped",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "21",
+          "description": "Below the threshold for the delay"
+        },
+        "t_CV001.TonnesPerHour": {
+          "id": "t_CV001.TonnesPerHour",
+          "name": "CV001.TonnesPerHour",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "9",
+          "description": "Measured value (t/h)"
+        },
+        "t_CV001.Tripped": {
+          "id": "t_CV001.Tripped",
+          "name": "CV001.Tripped",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "22",
+          "description": "Overload relay tripped"
+        },
+        "t_CV001.ZeroSpeed.Value": {
+          "id": "t_CV001.ZeroSpeed.Value",
+          "name": "CV001.ZeroSpeed.Value",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "11",
+          "description": "Monitored speed (m/s)"
+        },
+        "t_CV002.Contactor": {
+          "id": "t_CV002.Contactor",
+          "name": "CV002.Contactor",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "23",
+          "description": "Contactor closed"
+        },
+        "t_CV002.Current": {
+          "id": "t_CV002.Current",
+          "name": "CV002.Current",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "13",
+          "description": "Measured value (A)"
+        },
+        "t_CV002.EStop": {
+          "id": "t_CV002.EStop",
+          "name": "CV002.EStop",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "10",
+          "description": "Actuated by the operator"
+        },
+        "t_CV002.EStop.Ok": {
+          "id": "t_CV002.EStop.Ok",
+          "name": "CV002.EStop.Ok",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "24",
+          "description": "Safety loop healthy"
+        },
+        "t_CV002.Permit": {
+          "id": "t_CV002.Permit",
+          "name": "CV002.Permit",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "25",
+          "description": "Run permit; false holds the contactor open"
+        },
+        "t_CV002.PullKey1": {
+          "id": "t_CV002.PullKey1",
+          "name": "CV002.PullKey1",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "11",
+          "description": "Actuated by the operator"
+        },
+        "t_CV002.PullKey1.Ok": {
+          "id": "t_CV002.PullKey1.Ok",
+          "name": "CV002.PullKey1.Ok",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "26",
+          "description": "Safety loop healthy"
+        },
+        "t_CV002.PullKey2": {
+          "id": "t_CV002.PullKey2",
+          "name": "CV002.PullKey2",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "12",
+          "description": "Actuated by the operator"
+        },
+        "t_CV002.PullKey2.Ok": {
+          "id": "t_CV002.PullKey2.Ok",
+          "name": "CV002.PullKey2.Ok",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "27",
+          "description": "Safety loop healthy"
+        },
+        "t_CV002.Reset": {
+          "id": "t_CV002.Reset",
+          "name": "CV002.Reset",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "13",
+          "description": "Overload reset, rising edge"
+        },
+        "t_CV002.SafetyOk": {
+          "id": "t_CV002.SafetyOk",
+          "name": "CV002.SafetyOk",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "28",
+          "description": "Relay energised"
+        },
+        "t_CV002.SafetyReset": {
+          "id": "t_CV002.SafetyReset",
+          "name": "CV002.SafetyReset",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "14",
+          "description": "Safety reset, rising edge"
+        },
+        "t_CV002.Speed": {
+          "id": "t_CV002.Speed",
+          "name": "CV002.Speed",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "15",
+          "description": "Measured value (m/s)"
+        },
+        "t_CV002.Start": {
+          "id": "t_CV002.Start",
+          "name": "CV002.Start",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "15",
+          "description": "Run command"
+        },
+        "t_CV002.Stopped": {
+          "id": "t_CV002.Stopped",
+          "name": "CV002.Stopped",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "29",
+          "description": "Below the threshold for the delay"
+        },
+        "t_CV002.TonnesPerHour": {
+          "id": "t_CV002.TonnesPerHour",
+          "name": "CV002.TonnesPerHour",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "17",
+          "description": "Measured value (t/h)"
+        },
+        "t_CV002.Tripped": {
+          "id": "t_CV002.Tripped",
+          "name": "CV002.Tripped",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "30",
+          "description": "Overload relay tripped"
+        },
+        "t_CV002.ZeroSpeed.Value": {
+          "id": "t_CV002.ZeroSpeed.Value",
+          "name": "CV002.ZeroSpeed.Value",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "19",
+          "description": "Monitored speed (m/s)"
+        },
+        "t_CV003.Contactor": {
+          "id": "t_CV003.Contactor",
+          "name": "CV003.Contactor",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "31",
+          "description": "Contactor closed"
+        },
+        "t_CV003.Current": {
+          "id": "t_CV003.Current",
+          "name": "CV003.Current",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "21",
+          "description": "Measured value (A)"
+        },
+        "t_CV003.EStop": {
+          "id": "t_CV003.EStop",
+          "name": "CV003.EStop",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "16",
+          "description": "Actuated by the operator"
+        },
+        "t_CV003.EStop.Ok": {
+          "id": "t_CV003.EStop.Ok",
+          "name": "CV003.EStop.Ok",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "32",
+          "description": "Safety loop healthy"
+        },
+        "t_CV003.Permit": {
+          "id": "t_CV003.Permit",
+          "name": "CV003.Permit",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "33",
+          "description": "Run permit; false holds the contactor open"
+        },
+        "t_CV003.PullKey1": {
+          "id": "t_CV003.PullKey1",
+          "name": "CV003.PullKey1",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "17",
+          "description": "Actuated by the operator"
+        },
+        "t_CV003.PullKey1.Ok": {
+          "id": "t_CV003.PullKey1.Ok",
+          "name": "CV003.PullKey1.Ok",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "34",
+          "description": "Safety loop healthy"
+        },
+        "t_CV003.PullKey2": {
+          "id": "t_CV003.PullKey2",
+          "name": "CV003.PullKey2",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "18",
+          "description": "Actuated by the operator"
+        },
+        "t_CV003.PullKey2.Ok": {
+          "id": "t_CV003.PullKey2.Ok",
+          "name": "CV003.PullKey2.Ok",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "35",
+          "description": "Safety loop healthy"
+        },
+        "t_CV003.Reset": {
+          "id": "t_CV003.Reset",
+          "name": "CV003.Reset",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "19",
+          "description": "Overload reset, rising edge"
+        },
+        "t_CV003.SafetyOk": {
+          "id": "t_CV003.SafetyOk",
+          "name": "CV003.SafetyOk",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "36",
+          "description": "Relay energised"
+        },
+        "t_CV003.SafetyReset": {
+          "id": "t_CV003.SafetyReset",
+          "name": "CV003.SafetyReset",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "20",
+          "description": "Safety reset, rising edge"
+        },
+        "t_CV003.Speed": {
+          "id": "t_CV003.Speed",
+          "name": "CV003.Speed",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "23",
+          "description": "Measured value (m/s)"
+        },
+        "t_CV003.Start": {
+          "id": "t_CV003.Start",
+          "name": "CV003.Start",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "21",
+          "description": "Run command"
+        },
+        "t_CV003.Stopped": {
+          "id": "t_CV003.Stopped",
+          "name": "CV003.Stopped",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "37",
+          "description": "Below the threshold for the delay"
+        },
+        "t_CV003.TonnesPerHour": {
+          "id": "t_CV003.TonnesPerHour",
+          "name": "CV003.TonnesPerHour",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "25",
+          "description": "Measured value (t/h)"
+        },
+        "t_CV003.Tripped": {
+          "id": "t_CV003.Tripped",
+          "name": "CV003.Tripped",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "38",
+          "description": "Overload relay tripped"
+        },
+        "t_CV003.ZeroSpeed.Value": {
+          "id": "t_CV003.ZeroSpeed.Value",
+          "name": "CV003.ZeroSpeed.Value",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "27",
+          "description": "Monitored speed (m/s)"
+        },
+        "t_Feed.Enabled": {
+          "id": "t_Feed.Enabled",
+          "name": "Feed.Enabled",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "22",
+          "description": "Feeder enabled"
+        },
+        "t_Feed.HopperMass": {
+          "id": "t_Feed.HopperMass",
+          "name": "Feed.HopperMass",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "29",
+          "description": "Mass in the hopper (kg)"
+        },
+        "t_Feed.Permit": {
+          "id": "t_Feed.Permit",
+          "name": "Feed.Permit",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "39",
+          "description": "Run permit; false stops the feeder"
+        },
+        "t_Feed.Rate": {
+          "id": "t_Feed.Rate",
+          "name": "Feed.Rate",
+          "type": "Float32",
+          "memaddress": "400000",
+          "address": "1",
+          "description": "Feed rate (kg/s)"
+        },
+        "t_INT_CV001.FirstOut": {
+          "id": "t_INT_CV001.FirstOut",
+          "name": "INT_CV001.FirstOut",
+          "type": "Int32",
+          "memaddress": "300000",
+          "address": "31",
+          "description": "Index of the condition that tripped, or -1 (count)"
+        },
+        "t_INT_CV001.Ok": {
+          "id": "t_INT_CV001.Ok",
+          "name": "INT_CV001.Ok",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "40",
+          "description": "Not tripped"
+        },
+        "t_INT_CV001.Reset": {
+          "id": "t_INT_CV001.Reset",
+          "name": "INT_CV001.Reset",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "23",
+          "description": "Clears the latch on a rising edge when every condition is normal"
+        },
+        "t_INT_CV001.Tripped": {
+          "id": "t_INT_CV001.Tripped",
+          "name": "INT_CV001.Tripped",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "41",
+          "description": "Latched by an abnormal condition"
+        },
+        "t_INT_CV002.FirstOut": {
+          "id": "t_INT_CV002.FirstOut",
+          "name": "INT_CV002.FirstOut",
+          "type": "Int32",
+          "memaddress": "300000",
+          "address": "33",
+          "description": "Index of the condition that tripped, or -1 (count)"
+        },
+        "t_INT_CV002.Ok": {
+          "id": "t_INT_CV002.Ok",
+          "name": "INT_CV002.Ok",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "42",
+          "description": "Not tripped"
+        },
+        "t_INT_CV002.Reset": {
+          "id": "t_INT_CV002.Reset",
+          "name": "INT_CV002.Reset",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "24",
+          "description": "Clears the latch on a rising edge when every condition is normal"
+        },
+        "t_INT_CV002.Tripped": {
+          "id": "t_INT_CV002.Tripped",
+          "name": "INT_CV002.Tripped",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "43",
+          "description": "Latched by an abnormal condition"
+        },
+        "t_INT_CV003.FirstOut": {
+          "id": "t_INT_CV003.FirstOut",
+          "name": "INT_CV003.FirstOut",
+          "type": "Int32",
+          "memaddress": "300000",
+          "address": "35",
+          "description": "Index of the condition that tripped, or -1 (count)"
+        },
+        "t_INT_CV003.Ok": {
+          "id": "t_INT_CV003.Ok",
+          "name": "INT_CV003.Ok",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "44",
+          "description": "Not tripped"
+        },
+        "t_INT_CV003.Reset": {
+          "id": "t_INT_CV003.Reset",
+          "name": "INT_CV003.Reset",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "25",
+          "description": "Clears the latch on a rising edge when every condition is normal"
+        },
+        "t_INT_CV003.Tripped": {
+          "id": "t_INT_CV003.Tripped",
+          "name": "INT_CV003.Tripped",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "45",
+          "description": "Latched by an abnormal condition"
+        },
+        "t_INT_FEED.FirstOut": {
+          "id": "t_INT_FEED.FirstOut",
+          "name": "INT_FEED.FirstOut",
+          "type": "Int32",
+          "memaddress": "300000",
+          "address": "37",
+          "description": "Index of the condition that tripped, or -1 (count)"
+        },
+        "t_INT_FEED.Ok": {
+          "id": "t_INT_FEED.Ok",
+          "name": "INT_FEED.Ok",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "46",
+          "description": "Not tripped"
+        },
+        "t_INT_FEED.Reset": {
+          "id": "t_INT_FEED.Reset",
+          "name": "INT_FEED.Reset",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "26",
+          "description": "Clears the latch on a rising edge when every condition is normal"
+        },
+        "t_INT_FEED.Tripped": {
+          "id": "t_INT_FEED.Tripped",
+          "name": "INT_FEED.Tripped",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "47",
+          "description": "Latched by an abnormal condition"
+        },
+        "t_PERM_CV001.FirstOut": {
+          "id": "t_PERM_CV001.FirstOut",
+          "name": "PERM_CV001.FirstOut",
+          "type": "Int32",
+          "memaddress": "300000",
+          "address": "39",
+          "description": "Index of the first condition to leave normal, or -1 (count)"
+        },
+        "t_PERM_CV001.Ok": {
+          "id": "t_PERM_CV001.Ok",
+          "name": "PERM_CV001.Ok",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "48",
+          "description": "Every condition is normal"
+        },
+        "t_PERM_CV002.FirstOut": {
+          "id": "t_PERM_CV002.FirstOut",
+          "name": "PERM_CV002.FirstOut",
+          "type": "Int32",
+          "memaddress": "300000",
+          "address": "41",
+          "description": "Index of the first condition to leave normal, or -1 (count)"
+        },
+        "t_PERM_CV002.Ok": {
+          "id": "t_PERM_CV002.Ok",
+          "name": "PERM_CV002.Ok",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "49",
+          "description": "Every condition is normal"
+        },
+        "t_PERM_CV003.FirstOut": {
+          "id": "t_PERM_CV003.FirstOut",
+          "name": "PERM_CV003.FirstOut",
+          "type": "Int32",
+          "memaddress": "300000",
+          "address": "43",
+          "description": "Index of the first condition to leave normal, or -1 (count)"
+        },
+        "t_PERM_CV003.Ok": {
+          "id": "t_PERM_CV003.Ok",
+          "name": "PERM_CV003.Ok",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "50",
+          "description": "Every condition is normal"
+        },
+        "t_SEQ_START.Abort": {
+          "id": "t_SEQ_START.Abort",
+          "name": "SEQ_START.Abort",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "27",
+          "description": "Returns to idle on a rising edge"
+        },
+        "t_SEQ_START.Complete": {
+          "id": "t_SEQ_START.Complete",
+          "name": "SEQ_START.Complete",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "51",
+          "description": "The last step finished"
+        },
+        "t_SEQ_START.Faulted": {
+          "id": "t_SEQ_START.Faulted",
+          "name": "SEQ_START.Faulted",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "52",
+          "description": "A step timed out"
+        },
+        "t_SEQ_START.Held": {
+          "id": "t_SEQ_START.Held",
+          "name": "SEQ_START.Held",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "53",
+          "description": "The step clock is frozen"
+        },
+        "t_SEQ_START.Hold": {
+          "id": "t_SEQ_START.Hold",
+          "name": "SEQ_START.Hold",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "28",
+          "description": "Freezes the step clock on a rising edge"
+        },
+        "t_SEQ_START.Reset": {
+          "id": "t_SEQ_START.Reset",
+          "name": "SEQ_START.Reset",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "29",
+          "description": "Returns to idle from faulted or complete on a rising edge"
+        },
+        "t_SEQ_START.Resume": {
+          "id": "t_SEQ_START.Resume",
+          "name": "SEQ_START.Resume",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "30",
+          "description": "Continues a held step on a rising edge"
+        },
+        "t_SEQ_START.Running": {
+          "id": "t_SEQ_START.Running",
+          "name": "SEQ_START.Running",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "54",
+          "description": "A step is running"
+        },
+        "t_SEQ_START.Start": {
+          "id": "t_SEQ_START.Start",
+          "name": "SEQ_START.Start",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "31",
+          "description": "Enters step 1 from idle on a rising edge"
+        },
+        "t_SEQ_START.Step": {
+          "id": "t_SEQ_START.Step",
+          "name": "SEQ_START.Step",
+          "type": "Int32",
+          "memaddress": "300000",
+          "address": "45",
+          "description": "The step running, or 0 when idle (count)"
+        },
+        "t_SEQ_START.StepTime": {
+          "id": "t_SEQ_START.StepTime",
+          "name": "SEQ_START.StepTime",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "47",
+          "description": "Time in the current step (s)"
+        },
+        "t_SEQ_STOP.Abort": {
+          "id": "t_SEQ_STOP.Abort",
+          "name": "SEQ_STOP.Abort",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "32",
+          "description": "Returns to idle on a rising edge"
+        },
+        "t_SEQ_STOP.Complete": {
+          "id": "t_SEQ_STOP.Complete",
+          "name": "SEQ_STOP.Complete",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "55",
+          "description": "The last step finished"
+        },
+        "t_SEQ_STOP.Faulted": {
+          "id": "t_SEQ_STOP.Faulted",
+          "name": "SEQ_STOP.Faulted",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "56",
+          "description": "A step timed out"
+        },
+        "t_SEQ_STOP.Held": {
+          "id": "t_SEQ_STOP.Held",
+          "name": "SEQ_STOP.Held",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "57",
+          "description": "The step clock is frozen"
+        },
+        "t_SEQ_STOP.Hold": {
+          "id": "t_SEQ_STOP.Hold",
+          "name": "SEQ_STOP.Hold",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "33",
+          "description": "Freezes the step clock on a rising edge"
+        },
+        "t_SEQ_STOP.Reset": {
+          "id": "t_SEQ_STOP.Reset",
+          "name": "SEQ_STOP.Reset",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "34",
+          "description": "Returns to idle from faulted or complete on a rising edge"
+        },
+        "t_SEQ_STOP.Resume": {
+          "id": "t_SEQ_STOP.Resume",
+          "name": "SEQ_STOP.Resume",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "35",
+          "description": "Continues a held step on a rising edge"
+        },
+        "t_SEQ_STOP.Running": {
+          "id": "t_SEQ_STOP.Running",
+          "name": "SEQ_STOP.Running",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "58",
+          "description": "A step is running"
+        },
+        "t_SEQ_STOP.Start": {
+          "id": "t_SEQ_STOP.Start",
+          "name": "SEQ_STOP.Start",
+          "type": "Bool",
+          "memaddress": "000000",
+          "address": "36",
+          "description": "Enters step 1 from idle on a rising edge"
+        },
+        "t_SEQ_STOP.Step": {
+          "id": "t_SEQ_STOP.Step",
+          "name": "SEQ_STOP.Step",
+          "type": "Int32",
+          "memaddress": "300000",
+          "address": "49",
+          "description": "The step running, or 0 when idle (count)"
+        },
+        "t_SEQ_STOP.StepTime": {
+          "id": "t_SEQ_STOP.StepTime",
+          "name": "SEQ_STOP.StepTime",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "51",
+          "description": "Time in the current step (s)"
+        },
+        "t_Stockpile.Full": {
+          "id": "t_Stockpile.Full",
+          "name": "Stockpile.Full",
+          "type": "Bool",
+          "memaddress": "100000",
+          "address": "59",
+          "description": "At capacity"
+        },
+        "t_Stockpile.Rate": {
+          "id": "t_Stockpile.Rate",
+          "name": "Stockpile.Rate",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "53",
+          "description": "Receiving rate (kg/s)"
+        },
+        "t_Stockpile.Received": {
+          "id": "t_Stockpile.Received",
+          "name": "Stockpile.Received",
+          "type": "Float32",
+          "memaddress": "300000",
+          "address": "55",
+          "description": "Cumulative mass received (kg)"
+        }
+      }
+    }
+  },
+  "hmi": {
+    "views": [
+      {
+        "id": "v_overview",
+        "name": "Overview",
+        "type": "svg",
+        "profile": {
+          "width": 1280,
+          "height": 720,
+          "bkcolor": "#eceff1ff",
+          "margin": 10,
+          "align": "topCenter",
+          "gridType": "fixed",
+          "viewRenderDelay": 0
+        },
+        "items": {
+          "SHE_feed_enabled": {
+            "id": "SHE_feed_enabled",
+            "type": "svg-ext-shapes-circle",
+            "name": "Enabled",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_Feed.Enabled",
+              "variable": "t_Feed.Enabled",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#9e9e9e",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#2e7d32",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_feed_ok": {
+            "id": "SHE_feed_ok",
+            "type": "svg-ext-shapes-circle",
+            "name": "INT_FEED Ok",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_INT_FEED.Ok",
+              "variable": "t_INT_FEED.Ok",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#c62828",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#2e7d32",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "VAL_feed_mass": {
+            "id": "VAL_feed_mass",
+            "type": "svg-ext-value",
+            "name": "feed_mass",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_Feed.HopperMass",
+              "variable": "t_Feed.HopperMass",
+              "ranges": [
+                {
+                  "type": 1,
+                  "min": 0,
+                  "max": 0,
+                  "color": "",
+                  "stroke": "",
+                  "text": "kg in hopper",
+                  "fractionDigits": 1
+                }
+              ]
+            },
+            "label": "Value",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv001_belt": {
+            "id": "SHE_cv001_belt",
+            "type": "svg-ext-shapes-rect",
+            "name": "CV001 belt",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV001.Contactor",
+              "variable": "t_CV001.Contactor",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#9e9e9e",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#2e7d32",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv001_trip": {
+            "id": "SHE_cv001_trip",
+            "type": "svg-ext-shapes-rect",
+            "name": "CV001 tripped",
+            "property": {
+              "events": [],
+              "actions": [
+                {
+                  "variableId": "t_INT_CV001.Tripped",
+                  "variableSrc": "dse",
+                  "variable": "t_INT_CV001.Tripped",
+                  "bitmask": 0,
+                  "range": {
+                    "min": 0,
+                    "max": 0
+                  },
+                  "type": "hide",
+                  "options": {}
+                },
+                {
+                  "variableId": "t_INT_CV001.Tripped",
+                  "variableSrc": "dse",
+                  "variable": "t_INT_CV001.Tripped",
+                  "bitmask": 0,
+                  "range": {
+                    "min": 1,
+                    "max": 1
+                  },
+                  "type": "show",
+                  "options": {}
+                }
+              ],
+              "variableSrc": "dse",
+              "variableId": "t_INT_CV001.Tripped",
+              "variable": "t_INT_CV001.Tripped",
+              "ranges": []
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "VAL_cv001_speed": {
+            "id": "VAL_cv001_speed",
+            "type": "svg-ext-value",
+            "name": "CV001 speed",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV001.Speed",
+              "variable": "t_CV001.Speed",
+              "ranges": [
+                {
+                  "type": 1,
+                  "min": 0,
+                  "max": 0,
+                  "color": "",
+                  "stroke": "",
+                  "text": "m/s",
+                  "fractionDigits": 2
+                }
+              ]
+            },
+            "label": "Value",
+            "hide": false,
+            "lock": false
+          },
+          "VAL_cv001_load": {
+            "id": "VAL_cv001_load",
+            "type": "svg-ext-value",
+            "name": "CV001 load",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV001.TonnesPerHour",
+              "variable": "t_CV001.TonnesPerHour",
+              "ranges": [
+                {
+                  "type": 1,
+                  "min": 0,
+                  "max": 0,
+                  "color": "",
+                  "stroke": "",
+                  "text": "t/h",
+                  "fractionDigits": 1
+                }
+              ]
+            },
+            "label": "Value",
+            "hide": false,
+            "lock": false
+          },
+          "VAL_cv001_current": {
+            "id": "VAL_cv001_current",
+            "type": "svg-ext-value",
+            "name": "CV001 current",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV001.Current",
+              "variable": "t_CV001.Current",
+              "ranges": [
+                {
+                  "type": 1,
+                  "min": 0,
+                  "max": 0,
+                  "color": "",
+                  "stroke": "",
+                  "text": "A",
+                  "fractionDigits": 1
+                }
+              ]
+            },
+            "label": "Value",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv001_contactor": {
+            "id": "SHE_cv001_contactor",
+            "type": "svg-ext-shapes-circle",
+            "name": "Contactor",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV001.Contactor",
+              "variable": "t_CV001.Contactor",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#9e9e9e",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#2e7d32",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv001_safety": {
+            "id": "SHE_cv001_safety",
+            "type": "svg-ext-shapes-circle",
+            "name": "Safety relay",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV001.SafetyOk",
+              "variable": "t_CV001.SafetyOk",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#c62828",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#2e7d32",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv001_zero": {
+            "id": "SHE_cv001_zero",
+            "type": "svg-ext-shapes-circle",
+            "name": "Zero speed",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV001.Stopped",
+              "variable": "t_CV001.Stopped",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#9e9e9e",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#f9a825",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv001_intok": {
+            "id": "SHE_cv001_intok",
+            "type": "svg-ext-shapes-circle",
+            "name": "INT_CV001 Ok",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_INT_CV001.Ok",
+              "variable": "t_INT_CV001.Ok",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#c62828",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#2e7d32",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv002_belt": {
+            "id": "SHE_cv002_belt",
+            "type": "svg-ext-shapes-rect",
+            "name": "CV002 belt",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV002.Contactor",
+              "variable": "t_CV002.Contactor",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#9e9e9e",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#2e7d32",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv002_trip": {
+            "id": "SHE_cv002_trip",
+            "type": "svg-ext-shapes-rect",
+            "name": "CV002 tripped",
+            "property": {
+              "events": [],
+              "actions": [
+                {
+                  "variableId": "t_INT_CV002.Tripped",
+                  "variableSrc": "dse",
+                  "variable": "t_INT_CV002.Tripped",
+                  "bitmask": 0,
+                  "range": {
+                    "min": 0,
+                    "max": 0
+                  },
+                  "type": "hide",
+                  "options": {}
+                },
+                {
+                  "variableId": "t_INT_CV002.Tripped",
+                  "variableSrc": "dse",
+                  "variable": "t_INT_CV002.Tripped",
+                  "bitmask": 0,
+                  "range": {
+                    "min": 1,
+                    "max": 1
+                  },
+                  "type": "show",
+                  "options": {}
+                }
+              ],
+              "variableSrc": "dse",
+              "variableId": "t_INT_CV002.Tripped",
+              "variable": "t_INT_CV002.Tripped",
+              "ranges": []
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "VAL_cv002_speed": {
+            "id": "VAL_cv002_speed",
+            "type": "svg-ext-value",
+            "name": "CV002 speed",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV002.Speed",
+              "variable": "t_CV002.Speed",
+              "ranges": [
+                {
+                  "type": 1,
+                  "min": 0,
+                  "max": 0,
+                  "color": "",
+                  "stroke": "",
+                  "text": "m/s",
+                  "fractionDigits": 2
+                }
+              ]
+            },
+            "label": "Value",
+            "hide": false,
+            "lock": false
+          },
+          "VAL_cv002_load": {
+            "id": "VAL_cv002_load",
+            "type": "svg-ext-value",
+            "name": "CV002 load",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV002.TonnesPerHour",
+              "variable": "t_CV002.TonnesPerHour",
+              "ranges": [
+                {
+                  "type": 1,
+                  "min": 0,
+                  "max": 0,
+                  "color": "",
+                  "stroke": "",
+                  "text": "t/h",
+                  "fractionDigits": 1
+                }
+              ]
+            },
+            "label": "Value",
+            "hide": false,
+            "lock": false
+          },
+          "VAL_cv002_current": {
+            "id": "VAL_cv002_current",
+            "type": "svg-ext-value",
+            "name": "CV002 current",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV002.Current",
+              "variable": "t_CV002.Current",
+              "ranges": [
+                {
+                  "type": 1,
+                  "min": 0,
+                  "max": 0,
+                  "color": "",
+                  "stroke": "",
+                  "text": "A",
+                  "fractionDigits": 1
+                }
+              ]
+            },
+            "label": "Value",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv002_contactor": {
+            "id": "SHE_cv002_contactor",
+            "type": "svg-ext-shapes-circle",
+            "name": "Contactor",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV002.Contactor",
+              "variable": "t_CV002.Contactor",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#9e9e9e",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#2e7d32",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv002_safety": {
+            "id": "SHE_cv002_safety",
+            "type": "svg-ext-shapes-circle",
+            "name": "Safety relay",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV002.SafetyOk",
+              "variable": "t_CV002.SafetyOk",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#c62828",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#2e7d32",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv002_zero": {
+            "id": "SHE_cv002_zero",
+            "type": "svg-ext-shapes-circle",
+            "name": "Zero speed",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV002.Stopped",
+              "variable": "t_CV002.Stopped",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#9e9e9e",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#f9a825",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv002_intok": {
+            "id": "SHE_cv002_intok",
+            "type": "svg-ext-shapes-circle",
+            "name": "INT_CV002 Ok",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_INT_CV002.Ok",
+              "variable": "t_INT_CV002.Ok",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#c62828",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#2e7d32",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv003_belt": {
+            "id": "SHE_cv003_belt",
+            "type": "svg-ext-shapes-rect",
+            "name": "CV003 belt",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV003.Contactor",
+              "variable": "t_CV003.Contactor",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#9e9e9e",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#2e7d32",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv003_trip": {
+            "id": "SHE_cv003_trip",
+            "type": "svg-ext-shapes-rect",
+            "name": "CV003 tripped",
+            "property": {
+              "events": [],
+              "actions": [
+                {
+                  "variableId": "t_INT_CV003.Tripped",
+                  "variableSrc": "dse",
+                  "variable": "t_INT_CV003.Tripped",
+                  "bitmask": 0,
+                  "range": {
+                    "min": 0,
+                    "max": 0
+                  },
+                  "type": "hide",
+                  "options": {}
+                },
+                {
+                  "variableId": "t_INT_CV003.Tripped",
+                  "variableSrc": "dse",
+                  "variable": "t_INT_CV003.Tripped",
+                  "bitmask": 0,
+                  "range": {
+                    "min": 1,
+                    "max": 1
+                  },
+                  "type": "show",
+                  "options": {}
+                }
+              ],
+              "variableSrc": "dse",
+              "variableId": "t_INT_CV003.Tripped",
+              "variable": "t_INT_CV003.Tripped",
+              "ranges": []
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "VAL_cv003_speed": {
+            "id": "VAL_cv003_speed",
+            "type": "svg-ext-value",
+            "name": "CV003 speed",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV003.Speed",
+              "variable": "t_CV003.Speed",
+              "ranges": [
+                {
+                  "type": 1,
+                  "min": 0,
+                  "max": 0,
+                  "color": "",
+                  "stroke": "",
+                  "text": "m/s",
+                  "fractionDigits": 2
+                }
+              ]
+            },
+            "label": "Value",
+            "hide": false,
+            "lock": false
+          },
+          "VAL_cv003_load": {
+            "id": "VAL_cv003_load",
+            "type": "svg-ext-value",
+            "name": "CV003 load",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV003.TonnesPerHour",
+              "variable": "t_CV003.TonnesPerHour",
+              "ranges": [
+                {
+                  "type": 1,
+                  "min": 0,
+                  "max": 0,
+                  "color": "",
+                  "stroke": "",
+                  "text": "t/h",
+                  "fractionDigits": 1
+                }
+              ]
+            },
+            "label": "Value",
+            "hide": false,
+            "lock": false
+          },
+          "VAL_cv003_current": {
+            "id": "VAL_cv003_current",
+            "type": "svg-ext-value",
+            "name": "CV003 current",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV003.Current",
+              "variable": "t_CV003.Current",
+              "ranges": [
+                {
+                  "type": 1,
+                  "min": 0,
+                  "max": 0,
+                  "color": "",
+                  "stroke": "",
+                  "text": "A",
+                  "fractionDigits": 1
+                }
+              ]
+            },
+            "label": "Value",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv003_contactor": {
+            "id": "SHE_cv003_contactor",
+            "type": "svg-ext-shapes-circle",
+            "name": "Contactor",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV003.Contactor",
+              "variable": "t_CV003.Contactor",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#9e9e9e",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#2e7d32",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv003_safety": {
+            "id": "SHE_cv003_safety",
+            "type": "svg-ext-shapes-circle",
+            "name": "Safety relay",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV003.SafetyOk",
+              "variable": "t_CV003.SafetyOk",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#c62828",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#2e7d32",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv003_zero": {
+            "id": "SHE_cv003_zero",
+            "type": "svg-ext-shapes-circle",
+            "name": "Zero speed",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_CV003.Stopped",
+              "variable": "t_CV003.Stopped",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#9e9e9e",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#f9a825",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_cv003_intok": {
+            "id": "SHE_cv003_intok",
+            "type": "svg-ext-shapes-circle",
+            "name": "INT_CV003 Ok",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_INT_CV003.Ok",
+              "variable": "t_INT_CV003.Ok",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#c62828",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#2e7d32",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "VAL_pile_rate": {
+            "id": "VAL_pile_rate",
+            "type": "svg-ext-value",
+            "name": "Stockpile rate",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_Stockpile.Rate",
+              "variable": "t_Stockpile.Rate",
+              "ranges": [
+                {
+                  "type": 1,
+                  "min": 0,
+                  "max": 0,
+                  "color": "",
+                  "stroke": "",
+                  "text": "kg/s",
+                  "fractionDigits": 1
+                }
+              ]
+            },
+            "label": "Value",
+            "hide": false,
+            "lock": false
+          },
+          "HXB_start": {
+            "id": "HXB_start",
+            "type": "svg-ext-html_button",
+            "name": "Start line",
+            "property": {
+              "events": [
+                {
+                  "type": "click",
+                  "action": "onRunScript",
+                  "actparam": "s_pulse",
+                  "actoptions": {
+                    "params": [
+                      {
+                        "name": "tags",
+                        "type": "value",
+                        "value": "t_SEQ_START.Reset,t_SEQ_START.Start"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "actions": [],
+              "text": "Start line",
+              "ranges": []
+            },
+            "label": "HtmlButton",
+            "hide": false,
+            "lock": false
+          },
+          "HXB_stop": {
+            "id": "HXB_stop",
+            "type": "svg-ext-html_button",
+            "name": "Stop line",
+            "property": {
+              "events": [
+                {
+                  "type": "click",
+                  "action": "onRunScript",
+                  "actparam": "s_pulse",
+                  "actoptions": {
+                    "params": [
+                      {
+                        "name": "tags",
+                        "type": "value",
+                        "value": "t_SEQ_STOP.Reset,t_SEQ_STOP.Start"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "actions": [],
+              "text": "Stop line",
+              "ranges": []
+            },
+            "label": "HtmlButton",
+            "hide": false,
+            "lock": false
+          },
+          "HXB_safety_reset": {
+            "id": "HXB_safety_reset",
+            "type": "svg-ext-html_button",
+            "name": "Reset safety relays",
+            "property": {
+              "events": [
+                {
+                  "type": "click",
+                  "action": "onRunScript",
+                  "actparam": "s_pulse",
+                  "actoptions": {
+                    "params": [
+                      {
+                        "name": "tags",
+                        "type": "value",
+                        "value": "t_CV001.SafetyReset,t_CV002.SafetyReset,t_CV003.SafetyReset"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "actions": [],
+              "text": "Reset safety relays",
+              "ranges": []
+            },
+            "label": "HtmlButton",
+            "hide": false,
+            "lock": false
+          },
+          "HXB_int_reset": {
+            "id": "HXB_int_reset",
+            "type": "svg-ext-html_button",
+            "name": "Reset interlocks",
+            "property": {
+              "events": [
+                {
+                  "type": "click",
+                  "action": "onRunScript",
+                  "actparam": "s_pulse",
+                  "actoptions": {
+                    "params": [
+                      {
+                        "name": "tags",
+                        "type": "value",
+                        "value": "t_INT_CV003.Reset,t_INT_CV002.Reset,t_INT_CV001.Reset,t_INT_FEED.Reset"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "actions": [],
+              "text": "Reset interlocks",
+              "ranges": []
+            },
+            "label": "HtmlButton",
+            "hide": false,
+            "lock": false
+          },
+          "VAL_seq_start_step": {
+            "id": "VAL_seq_start_step",
+            "type": "svg-ext-value",
+            "name": "SEQ_START step",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_SEQ_START.Step",
+              "variable": "t_SEQ_START.Step",
+              "ranges": [
+                {
+                  "type": 1,
+                  "min": 0,
+                  "max": 0,
+                  "color": "",
+                  "stroke": "",
+                  "text": ""
+                }
+              ]
+            },
+            "label": "Value",
+            "hide": false,
+            "lock": false
+          },
+          "VAL_seq_stop_step": {
+            "id": "VAL_seq_stop_step",
+            "type": "svg-ext-value",
+            "name": "SEQ_STOP step",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_SEQ_STOP.Step",
+              "variable": "t_SEQ_STOP.Step",
+              "ranges": [
+                {
+                  "type": 1,
+                  "min": 0,
+                  "max": 0,
+                  "color": "",
+                  "stroke": "",
+                  "text": ""
+                }
+              ]
+            },
+            "label": "Value",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_seq_complete": {
+            "id": "SHE_seq_complete",
+            "type": "svg-ext-shapes-circle",
+            "name": "Start complete",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_SEQ_START.Complete",
+              "variable": "t_SEQ_START.Complete",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#9e9e9e",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#2e7d32",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "SHE_seq_faulted": {
+            "id": "SHE_seq_faulted",
+            "type": "svg-ext-shapes-circle",
+            "name": "Start faulted",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variableSrc": "dse",
+              "variableId": "t_SEQ_START.Faulted",
+              "variable": "t_SEQ_START.Faulted",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#9e9e9e",
+                  "stroke": ""
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#c62828",
+                  "stroke": ""
+                }
+              ]
+            },
+            "label": "Shapes",
+            "hide": false,
+            "lock": false
+          },
+          "HXB_cv001_pullkey": {
+            "id": "HXB_cv001_pullkey",
+            "type": "svg-ext-html_button",
+            "name": "CV001 pull-key",
+            "property": {
+              "events": [
+                {
+                  "type": "click",
+                  "action": "onToggleValue",
+                  "actparam": "",
+                  "actoptions": {
+                    "variable": {
+                      "variableId": "t_CV001.PullKey1"
+                    }
+                  }
+                }
+              ],
+              "actions": [],
+              "text": "CV001 pull-key",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#546e7a",
+                  "stroke": "#ffffff"
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#c62828",
+                  "stroke": "#ffffff"
+                }
+              ],
+              "variableSrc": "dse",
+              "variableId": "t_CV001.PullKey1",
+              "variable": "t_CV001.PullKey1"
+            },
+            "label": "HtmlButton",
+            "hide": false,
+            "lock": false
+          },
+          "HXB_cv001_estop": {
+            "id": "HXB_cv001_estop",
+            "type": "svg-ext-html_button",
+            "name": "CV001 e-stop",
+            "property": {
+              "events": [
+                {
+                  "type": "click",
+                  "action": "onToggleValue",
+                  "actparam": "",
+                  "actoptions": {
+                    "variable": {
+                      "variableId": "t_CV001.EStop"
+                    }
+                  }
+                }
+              ],
+              "actions": [],
+              "text": "CV001 e-stop",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#546e7a",
+                  "stroke": "#ffffff"
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#c62828",
+                  "stroke": "#ffffff"
+                }
+              ],
+              "variableSrc": "dse",
+              "variableId": "t_CV001.EStop",
+              "variable": "t_CV001.EStop"
+            },
+            "label": "HtmlButton",
+            "hide": false,
+            "lock": false
+          },
+          "HXB_cv002_pullkey": {
+            "id": "HXB_cv002_pullkey",
+            "type": "svg-ext-html_button",
+            "name": "CV002 pull-key",
+            "property": {
+              "events": [
+                {
+                  "type": "click",
+                  "action": "onToggleValue",
+                  "actparam": "",
+                  "actoptions": {
+                    "variable": {
+                      "variableId": "t_CV002.PullKey1"
+                    }
+                  }
+                }
+              ],
+              "actions": [],
+              "text": "CV002 pull-key",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#546e7a",
+                  "stroke": "#ffffff"
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#c62828",
+                  "stroke": "#ffffff"
+                }
+              ],
+              "variableSrc": "dse",
+              "variableId": "t_CV002.PullKey1",
+              "variable": "t_CV002.PullKey1"
+            },
+            "label": "HtmlButton",
+            "hide": false,
+            "lock": false
+          },
+          "HXB_cv002_estop": {
+            "id": "HXB_cv002_estop",
+            "type": "svg-ext-html_button",
+            "name": "CV002 e-stop",
+            "property": {
+              "events": [
+                {
+                  "type": "click",
+                  "action": "onToggleValue",
+                  "actparam": "",
+                  "actoptions": {
+                    "variable": {
+                      "variableId": "t_CV002.EStop"
+                    }
+                  }
+                }
+              ],
+              "actions": [],
+              "text": "CV002 e-stop",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#546e7a",
+                  "stroke": "#ffffff"
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#c62828",
+                  "stroke": "#ffffff"
+                }
+              ],
+              "variableSrc": "dse",
+              "variableId": "t_CV002.EStop",
+              "variable": "t_CV002.EStop"
+            },
+            "label": "HtmlButton",
+            "hide": false,
+            "lock": false
+          },
+          "HXB_cv003_pullkey": {
+            "id": "HXB_cv003_pullkey",
+            "type": "svg-ext-html_button",
+            "name": "CV003 pull-key",
+            "property": {
+              "events": [
+                {
+                  "type": "click",
+                  "action": "onToggleValue",
+                  "actparam": "",
+                  "actoptions": {
+                    "variable": {
+                      "variableId": "t_CV003.PullKey1"
+                    }
+                  }
+                }
+              ],
+              "actions": [],
+              "text": "CV003 pull-key",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#546e7a",
+                  "stroke": "#ffffff"
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#c62828",
+                  "stroke": "#ffffff"
+                }
+              ],
+              "variableSrc": "dse",
+              "variableId": "t_CV003.PullKey1",
+              "variable": "t_CV003.PullKey1"
+            },
+            "label": "HtmlButton",
+            "hide": false,
+            "lock": false
+          },
+          "HXB_cv003_estop": {
+            "id": "HXB_cv003_estop",
+            "type": "svg-ext-html_button",
+            "name": "CV003 e-stop",
+            "property": {
+              "events": [
+                {
+                  "type": "click",
+                  "action": "onToggleValue",
+                  "actparam": "",
+                  "actoptions": {
+                    "variable": {
+                      "variableId": "t_CV003.EStop"
+                    }
+                  }
+                }
+              ],
+              "actions": [],
+              "text": "CV003 e-stop",
+              "ranges": [
+                {
+                  "type": 2,
+                  "min": 0,
+                  "max": 0,
+                  "color": "#546e7a",
+                  "stroke": "#ffffff"
+                },
+                {
+                  "type": 2,
+                  "min": 1,
+                  "max": 1,
+                  "color": "#c62828",
+                  "stroke": "#ffffff"
+                }
+              ],
+              "variableSrc": "dse",
+              "variableId": "t_CV003.EStop",
+              "variable": "t_CV003.EStop"
+            },
+            "label": "HtmlButton",
+            "hide": false,
+            "lock": false
+          }
+        },
+        "variables": {},
+        "svgcontent": "<svg width=\"1280\" height=\"720\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\"><g><title>Layer 1</title><text id=\"ov_title\" x=\"24\" y=\"40\" font-family=\"sans-serif\" font-size=\"24\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Mine conveyors — overview</text><text id=\"ov_sub\" x=\"24\" y=\"64\" font-family=\"sans-serif\" font-size=\"13\" font-weight=\"normal\" fill=\"#546e7a\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Simulated by DSE over Modbus TCP · belt green running, grey stopped, red tripped</text><polygon id=\"ov_hopper\" points=\"30,100 130,100 110,150 50,150\" fill=\"#8d6e63\" stroke=\"#4e342e\" stroke-width=\"2\"/><text id=\"ov_hopper_l\" x=\"30\" y=\"92\" font-family=\"sans-serif\" font-size=\"14\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Ore feed</text><circle id=\"SHE_feed_enabled\" cx=\"40\" cy=\"172\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_feed_enabled_l\" x=\"52\" y=\"177\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Enabled</text><circle id=\"SHE_feed_ok\" cx=\"40\" cy=\"194\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_feed_ok_l\" x=\"52\" y=\"199\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">INT_FEED Ok</text><g id=\"VAL_feed_mass\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"13\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_feed_mass_t\" x=\"40\" y=\"222\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"13\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><text id=\"ov_cv001_name\" x=\"200\" y=\"148\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">CV001</text><rect id=\"SHE_cv001_belt\" x=\"140\" y=\"160\" width=\"380\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"2\"/><rect id=\"SHE_cv001_trip\" x=\"140\" y=\"160\" width=\"380\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"2\"/><circle id=\"ov_cv001_tail\" cx=\"151\" cy=\"171\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><circle id=\"ov_cv001_head\" cx=\"509\" cy=\"171\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><g id=\"VAL_cv001_speed\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv001_speed_t\" x=\"140\" y=\"204\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv001_load\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv001_load_t\" x=\"250\" y=\"204\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv001_current\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv001_current_t\" x=\"360\" y=\"204\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><circle id=\"SHE_cv001_contactor\" cx=\"146\" cy=\"224\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv001_contactor_l\" x=\"158\" y=\"229\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Contactor</text><circle id=\"SHE_cv001_safety\" cx=\"246\" cy=\"224\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv001_safety_l\" x=\"258\" y=\"229\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Safety relay</text><circle id=\"SHE_cv001_zero\" cx=\"356\" cy=\"224\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv001_zero_l\" x=\"368\" y=\"229\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Zero speed</text><circle id=\"SHE_cv001_intok\" cx=\"146\" cy=\"246\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv001_intok_l\" x=\"158\" y=\"251\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">INT_CV001 Ok</text><polygon id=\"ov_ch1\" points=\"490,164 540,164 524,280 506,280\" fill=\"#b0bec5\" stroke=\"#37474f\" stroke-width=\"2\"/><text id=\"ov_ch1_l\" x=\"546\" y=\"200\" font-family=\"sans-serif\" font-size=\"13\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">CH1</text><text id=\"ov_cv002_name\" x=\"560\" y=\"278\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">CV002</text><rect id=\"SHE_cv002_belt\" x=\"500\" y=\"290\" width=\"360\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"2\"/><rect id=\"SHE_cv002_trip\" x=\"500\" y=\"290\" width=\"360\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"2\"/><circle id=\"ov_cv002_tail\" cx=\"511\" cy=\"301\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><circle id=\"ov_cv002_head\" cx=\"849\" cy=\"301\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><g id=\"VAL_cv002_speed\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv002_speed_t\" x=\"500\" y=\"334\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv002_load\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv002_load_t\" x=\"610\" y=\"334\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv002_current\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv002_current_t\" x=\"720\" y=\"334\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><circle id=\"SHE_cv002_contactor\" cx=\"506\" cy=\"354\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv002_contactor_l\" x=\"518\" y=\"359\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Contactor</text><circle id=\"SHE_cv002_safety\" cx=\"606\" cy=\"354\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv002_safety_l\" x=\"618\" y=\"359\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Safety relay</text><circle id=\"SHE_cv002_zero\" cx=\"716\" cy=\"354\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv002_zero_l\" x=\"728\" y=\"359\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Zero speed</text><circle id=\"SHE_cv002_intok\" cx=\"506\" cy=\"376\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv002_intok_l\" x=\"518\" y=\"381\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">INT_CV002 Ok</text><polygon id=\"ov_ch2\" points=\"830,294 880,294 864,410 846,410\" fill=\"#b0bec5\" stroke=\"#37474f\" stroke-width=\"2\"/><text id=\"ov_ch2_l\" x=\"886\" y=\"330\" font-family=\"sans-serif\" font-size=\"13\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">CH2</text><text id=\"ov_cv003_name\" x=\"900\" y=\"408\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">CV003</text><rect id=\"SHE_cv003_belt\" x=\"840\" y=\"420\" width=\"300\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"2\"/><rect id=\"SHE_cv003_trip\" x=\"840\" y=\"420\" width=\"300\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"2\"/><circle id=\"ov_cv003_tail\" cx=\"851\" cy=\"431\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><circle id=\"ov_cv003_head\" cx=\"1129\" cy=\"431\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><g id=\"VAL_cv003_speed\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv003_speed_t\" x=\"840\" y=\"464\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv003_load\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv003_load_t\" x=\"950\" y=\"464\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv003_current\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv003_current_t\" x=\"1060\" y=\"464\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><circle id=\"SHE_cv003_contactor\" cx=\"846\" cy=\"484\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv003_contactor_l\" x=\"858\" y=\"489\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Contactor</text><circle id=\"SHE_cv003_safety\" cx=\"946\" cy=\"484\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv003_safety_l\" x=\"958\" y=\"489\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Safety relay</text><circle id=\"SHE_cv003_zero\" cx=\"1056\" cy=\"484\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv003_zero_l\" x=\"1068\" y=\"489\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Zero speed</text><circle id=\"SHE_cv003_intok\" cx=\"846\" cy=\"506\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv003_intok_l\" x=\"858\" y=\"511\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">INT_CV003 Ok</text><polygon id=\"ov_pile\" points=\"1120,560 1250,560 1185,470\" fill=\"#8d6e63\" stroke=\"#4e342e\" stroke-width=\"2\"/><text id=\"ov_pile_l\" x=\"1120\" y=\"584\" font-family=\"sans-serif\" font-size=\"14\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Stockpile</text><g id=\"VAL_pile_rate\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"13\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_pile_rate_t\" x=\"1120\" y=\"604\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"13\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><rect id=\"ov_panel\" x=\"16\" y=\"440\" width=\"760\" height=\"232\" rx=\"6\" fill=\"#ffffff\" stroke=\"#b0bec5\"/><text id=\"ov_panel_l\" x=\"24\" y=\"460\" font-family=\"sans-serif\" font-size=\"15\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Operator</text><g id=\"HXB_start\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_start_r\" x=\"24\" y=\"470\" width=\"170\" height=\"40\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_start\" x=\"24\" y=\"470\" width=\"170\" height=\"40\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_start\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#2e7d32;color:#ffffff;font-size:13px;font-family:sans-serif;\">Start line</button></foreignObject></g><g id=\"HXB_stop\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_stop_r\" x=\"204\" y=\"470\" width=\"170\" height=\"40\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_stop\" x=\"204\" y=\"470\" width=\"170\" height=\"40\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_stop\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#ef6c00;color:#ffffff;font-size:13px;font-family:sans-serif;\">Stop line</button></foreignObject></g><g id=\"HXB_safety_reset\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_safety_reset_r\" x=\"384\" y=\"470\" width=\"170\" height=\"40\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_safety_reset\" x=\"384\" y=\"470\" width=\"170\" height=\"40\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_safety_reset\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#1565c0;color:#ffffff;font-size:13px;font-family:sans-serif;\">Reset safety relays</button></foreignObject></g><g id=\"HXB_int_reset\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_int_reset_r\" x=\"564\" y=\"470\" width=\"190\" height=\"40\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_int_reset\" x=\"564\" y=\"470\" width=\"190\" height=\"40\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_int_reset\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#1565c0;color:#ffffff;font-size:13px;font-family:sans-serif;\">Reset interlocks</button></foreignObject></g><g id=\"VAL_seq_start_step\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"13\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_seq_start_step_t\" x=\"24\" y=\"534\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"13\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><text id=\"ov_seq_start_l\" x=\"44\" y=\"534\" font-family=\"sans-serif\" font-size=\"13\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">SEQ_START step</text><g id=\"VAL_seq_stop_step\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"13\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_seq_stop_step_t\" x=\"204\" y=\"534\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"13\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><text id=\"ov_seq_stop_l\" x=\"224\" y=\"534\" font-family=\"sans-serif\" font-size=\"13\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">SEQ_STOP step</text><circle id=\"SHE_seq_complete\" cx=\"390\" cy=\"530\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_seq_complete_l\" x=\"402\" y=\"535\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Start complete</text><circle id=\"SHE_seq_faulted\" cx=\"570\" cy=\"530\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_seq_faulted_l\" x=\"582\" y=\"535\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Start faulted</text><g id=\"HXB_cv001_pullkey\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv001_pullkey_r\" x=\"24\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv001_pullkey\" x=\"24\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv001_pullkey\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV001 pull-key</button></foreignObject></g><g id=\"HXB_cv001_estop\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv001_estop_r\" x=\"144\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv001_estop\" x=\"144\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv001_estop\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV001 e-stop</button></foreignObject></g><g id=\"HXB_cv002_pullkey\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv002_pullkey_r\" x=\"269\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv002_pullkey\" x=\"269\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv002_pullkey\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV002 pull-key</button></foreignObject></g><g id=\"HXB_cv002_estop\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv002_estop_r\" x=\"389\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv002_estop\" x=\"389\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv002_estop\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV002 e-stop</button></foreignObject></g><g id=\"HXB_cv003_pullkey\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv003_pullkey_r\" x=\"514\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv003_pullkey\" x=\"514\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv003_pullkey\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV003 pull-key</button></foreignObject></g><g id=\"HXB_cv003_estop\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv003_estop_r\" x=\"634\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv003_estop\" x=\"634\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv003_estop\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV003 e-stop</button></foreignObject></g><text id=\"ov_toggle_note\" x=\"24\" y=\"620\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#546e7a\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Pull-key and e-stop buttons latch: red is actuated; press again to restore,</text><text id=\"ov_toggle_note2\" x=\"24\" y=\"636\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#546e7a\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">then reset the safety relays and the interlocks, and start the line.</text></g></svg>",
+        "property": {
+          "events": []
+        }
+      },
+      {
+        "id": "v_alarms",
+        "name": "Alarms",
+        "type": "svg",
+        "profile": {
+          "width": 1280,
+          "height": 720,
+          "bkcolor": "#eceff1ff",
+          "margin": 10,
+          "align": "topCenter",
+          "gridType": "fixed",
+          "viewRenderDelay": 0
+        },
+        "items": {
+          "OXC_alarms": {
+            "id": "OXC_alarms",
+            "type": "svg-ext-own_ctrl-table",
+            "name": "Current alarms",
+            "property": {
+              "id": null,
+              "type": "alarms",
+              "events": [],
+              "options": {
+                "paginator": {
+                  "show": false
+                },
+                "filter": {
+                  "show": false
+                },
+                "daterange": {
+                  "show": false
+                },
+                "realtime": false,
+                "lastRange": "last1h",
+                "gridColor": "#E0E0E0",
+                "header": {
+                  "show": true,
+                  "height": 32,
+                  "fontSize": 13,
+                  "background": "#ECEFF1",
+                  "color": "#37474F"
+                },
+                "row": {
+                  "height": 30,
+                  "fontSize": 13,
+                  "background": "#FFFFFF",
+                  "color": "#000000"
+                },
+                "selection": {
+                  "background": "#3059AF",
+                  "color": "#FFFFFF",
+                  "fontBold": true
+                },
+                "columns": [],
+                "alarmsColumns": [
+                  {
+                    "id": "ontime",
+                    "type": "label",
+                    "label": "Time",
+                    "align": "left",
+                    "width": 170
+                  },
+                  {
+                    "id": "text",
+                    "type": "label",
+                    "label": "Alarm",
+                    "align": "left",
+                    "width": 520
+                  },
+                  {
+                    "id": "type",
+                    "type": "label",
+                    "label": "Priority",
+                    "align": "left",
+                    "width": 110
+                  },
+                  {
+                    "id": "group",
+                    "type": "label",
+                    "label": "Group",
+                    "align": "left",
+                    "width": 140
+                  },
+                  {
+                    "id": "status",
+                    "type": "label",
+                    "label": "Status",
+                    "align": "left",
+                    "width": 150
+                  },
+                  {
+                    "id": "ack",
+                    "type": "label",
+                    "label": "Ack",
+                    "align": "left",
+                    "width": 80
+                  }
+                ],
+                "alarmFilter": {
+                  "filterA": [],
+                  "filterB": [],
+                  "filterC": []
+                },
+                "reportsColumns": [],
+                "reportFilter": {
+                  "filterA": []
+                },
+                "rows": []
+              }
+            },
+            "label": "HtmlTable",
+            "hide": false,
+            "lock": false
+          }
+        },
+        "variables": {},
+        "svgcontent": "<svg width=\"1280\" height=\"720\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\"><g><title>Layer 1</title><text id=\"al_title\" x=\"24\" y=\"40\" font-family=\"sans-serif\" font-size=\"24\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Alarms</text><text id=\"al_sub\" x=\"24\" y=\"64\" font-family=\"sans-serif\" font-size=\"13\" font-weight=\"normal\" fill=\"#546e7a\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Current alarms: motor current Hi/HiHi (the sample's ALM_ blocks) and interlock trips</text><g id=\"OXC_alarms\" type=\"svg-ext-own_ctrl-table\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"right\" xml:space=\"preserve\"><rect id=\"OXC_alarms_r\" x=\"24\" y=\"90\" width=\"1232\" height=\"600\" stroke-width=\"0\" fill=\"none\"/><foreignObject id=\"H-OXC_alarms\" x=\"24\" y=\"90\" width=\"1232\" height=\"600\"><div xmlns=\"http://www.w3.org/1999/xhtml\" id=\"D-OXC_alarms\" style=\"width:100%;height:100%;\"></div></foreignObject></g></g></svg>",
+        "property": {
+          "events": []
+        }
+      },
+      {
+        "id": "v_trends",
+        "name": "Trends",
+        "type": "svg",
+        "profile": {
+          "width": 1280,
+          "height": 720,
+          "bkcolor": "#eceff1ff",
+          "margin": 10,
+          "align": "topCenter",
+          "gridType": "fixed",
+          "viewRenderDelay": 0
+        },
+        "items": {
+          "HXC_c_speed": {
+            "id": "HXC_c_speed",
+            "type": "svg-ext-html_chart",
+            "name": "Belt speed (m/s)",
+            "property": {
+              "id": "c_speed",
+              "type": "realtime1",
+              "options": {
+                "title": "Belt speed (m/s)",
+                "fontFamily": "sans-serif",
+                "legendFontSize": 12,
+                "colorBackground": "rgba(255,255,255,1)",
+                "legendBackground": "rgba(255,255,255,0)",
+                "titleHeight": 20,
+                "axisLabelFontSize": 12,
+                "labelsDivWidth": 0,
+                "axisLineColor": "rgba(0,0,0,1)",
+                "axisLabelColor": "rgba(0,0,0,1)",
+                "legendMode": "always",
+                "series": [],
+                "width": 1232,
+                "height": 290,
+                "decimalsPrecision": 2,
+                "realtime": 10,
+                "dateFormat": "YYYY_MM_DD",
+                "timeFormat": "hh_mm_ss",
+                "lastRange": "last8h",
+                "gridLineColor": "rgba(0,0,0,0.2)"
+              },
+              "events": []
+            },
+            "label": "HtmlChart",
+            "hide": false,
+            "lock": false
+          },
+          "HXC_c_current": {
+            "id": "HXC_c_current",
+            "type": "svg-ext-html_chart",
+            "name": "Motor current (A)",
+            "property": {
+              "id": "c_current",
+              "type": "realtime1",
+              "options": {
+                "title": "Motor current (A)",
+                "fontFamily": "sans-serif",
+                "legendFontSize": 12,
+                "colorBackground": "rgba(255,255,255,1)",
+                "legendBackground": "rgba(255,255,255,0)",
+                "titleHeight": 20,
+                "axisLabelFontSize": 12,
+                "labelsDivWidth": 0,
+                "axisLineColor": "rgba(0,0,0,1)",
+                "axisLabelColor": "rgba(0,0,0,1)",
+                "legendMode": "always",
+                "series": [],
+                "width": 1232,
+                "height": 290,
+                "decimalsPrecision": 2,
+                "realtime": 10,
+                "dateFormat": "YYYY_MM_DD",
+                "timeFormat": "hh_mm_ss",
+                "lastRange": "last8h",
+                "gridLineColor": "rgba(0,0,0,0.2)"
+              },
+              "events": []
+            },
+            "label": "HtmlChart",
+            "hide": false,
+            "lock": false
+          }
+        },
+        "variables": {},
+        "svgcontent": "<svg width=\"1280\" height=\"720\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\"><g><title>Layer 1</title><text id=\"tr_title\" x=\"24\" y=\"40\" font-family=\"sans-serif\" font-size=\"24\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Trends</text><text id=\"tr_sub\" x=\"24\" y=\"64\" font-family=\"sans-serif\" font-size=\"13\" font-weight=\"normal\" fill=\"#546e7a\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">The last ten minutes, live</text><g id=\"HXC_c_speed\" type=\"svg-ext-html_chart\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"right\" xml:space=\"preserve\"><rect id=\"HXC_c_speed_r\" x=\"24\" y=\"90\" width=\"1232\" height=\"290\" stroke-width=\"0\" fill=\"none\"/><foreignObject id=\"H-HXC_c_speed\" x=\"24\" y=\"90\" width=\"1232\" height=\"290\"><div xmlns=\"http://www.w3.org/1999/xhtml\" id=\"D-HXC_c_speed\" style=\"width:100%;height:100%;\"></div></foreignObject></g><g id=\"HXC_c_current\" type=\"svg-ext-html_chart\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"right\" xml:space=\"preserve\"><rect id=\"HXC_c_current_r\" x=\"24\" y=\"400\" width=\"1232\" height=\"290\" stroke-width=\"0\" fill=\"none\"/><foreignObject id=\"H-HXC_c_current\" x=\"24\" y=\"400\" width=\"1232\" height=\"290\"><div xmlns=\"http://www.w3.org/1999/xhtml\" id=\"D-HXC_c_current\" style=\"width:100%;height:100%;\"></div></foreignObject></g></g></svg>",
+        "property": {
+          "events": []
+        }
+      }
+    ],
+    "layout": {
+      "autoresize": false,
+      "start": "v_overview",
+      "showdev": true,
+      "inputdialog": "false",
+      "hidenavigation": false,
+      "theme": "",
+      "zoom": "enabled",
+      "navigation": {
+        "mode": "fix",
+        "type": "block",
+        "bkcolor": "#263238",
+        "fgcolor": "#ffffff",
+        "items": [
+          {
+            "text": "Overview",
+            "view": "v_overview",
+            "icon": "home",
+            "link": ""
+          },
+          {
+            "text": "Alarms",
+            "view": "v_alarms",
+            "icon": "notifications",
+            "link": ""
+          },
+          {
+            "text": "Trends",
+            "view": "v_trends",
+            "icon": "show_chart",
+            "link": ""
+          }
+        ]
+      },
+      "header": {
+        "title": "DSE mine conveyors",
+        "alarms": "fix",
+        "infos": "",
+        "bkcolor": "#ffffff",
+        "fgcolor": "#000000",
+        "height": 46,
+        "buttonHeight": 36,
+        "fontSize": 13,
+        "items": [],
+        "itemsAnchor": "left"
+      }
+    }
+  },
+  "charts": [
+    {
+      "id": "c_speed",
+      "name": "Belt speed (m/s)",
+      "lines": [
+        {
+          "device": "DSE",
+          "id": "t_CV001.Speed",
+          "name": "CV001.Speed",
+          "label": "CV001 m/s",
+          "color": "#1565c0",
+          "yaxis": 1,
+          "lineInterpolation": 0,
+          "lineWidth": 2,
+          "spanGaps": true
+        },
+        {
+          "device": "DSE",
+          "id": "t_CV002.Speed",
+          "name": "CV002.Speed",
+          "label": "CV002 m/s",
+          "color": "#2e7d32",
+          "yaxis": 1,
+          "lineInterpolation": 0,
+          "lineWidth": 2,
+          "spanGaps": true
+        },
+        {
+          "device": "DSE",
+          "id": "t_CV003.Speed",
+          "name": "CV003.Speed",
+          "label": "CV003 m/s",
+          "color": "#ef6c00",
+          "yaxis": 1,
+          "lineInterpolation": 0,
+          "lineWidth": 2,
+          "spanGaps": true
+        }
+      ]
+    },
+    {
+      "id": "c_current",
+      "name": "Motor current (A)",
+      "lines": [
+        {
+          "device": "DSE",
+          "id": "t_CV001.Current",
+          "name": "CV001.Current",
+          "label": "CV001 A",
+          "color": "#1565c0",
+          "yaxis": 1,
+          "lineInterpolation": 0,
+          "lineWidth": 2,
+          "spanGaps": true
+        },
+        {
+          "device": "DSE",
+          "id": "t_CV002.Current",
+          "name": "CV002.Current",
+          "label": "CV002 A",
+          "color": "#2e7d32",
+          "yaxis": 1,
+          "lineInterpolation": 0,
+          "lineWidth": 2,
+          "spanGaps": true
+        },
+        {
+          "device": "DSE",
+          "id": "t_CV003.Current",
+          "name": "CV003.Current",
+          "label": "CV003 A",
+          "color": "#ef6c00",
+          "yaxis": 1,
+          "lineInterpolation": 0,
+          "lineWidth": 2,
+          "spanGaps": true
+        }
+      ]
+    }
+  ],
+  "graphs": [],
+  "alarms": [
+    {
+      "name": "ALM_CV001.Hi",
+      "property": {
+        "variableId": "t_ALM_CV001.Hi.Active",
+        "permission": null
+      },
+      "highhigh": {
+        "enabled": false
+      },
+      "high": {
+        "enabled": true,
+        "checkdelay": 1,
+        "min": 1,
+        "max": 1,
+        "timedelay": 0,
+        "text": "CV001 motor current Hi",
+        "group": "Current",
+        "ackmode": "ackactive",
+        "bkcolor": "#ffe0b2",
+        "color": "#000000"
+      },
+      "low": {
+        "enabled": false
+      },
+      "info": {
+        "enabled": false
+      },
+      "actions": {
+        "enabled": false,
+        "values": []
+      }
+    },
+    {
+      "name": "ALM_CV001.HiHi",
+      "property": {
+        "variableId": "t_ALM_CV001.HiHi.Active",
+        "permission": null
+      },
+      "highhigh": {
+        "enabled": true,
+        "checkdelay": 1,
+        "min": 1,
+        "max": 1,
+        "timedelay": 0,
+        "text": "CV001 motor current HiHi",
+        "group": "Current",
+        "ackmode": "ackactive",
+        "bkcolor": "#ffcdd2",
+        "color": "#000000"
+      },
+      "high": {
+        "enabled": false
+      },
+      "low": {
+        "enabled": false
+      },
+      "info": {
+        "enabled": false
+      },
+      "actions": {
+        "enabled": false,
+        "values": []
+      }
+    },
+    {
+      "name": "ALM_CV002.Hi",
+      "property": {
+        "variableId": "t_ALM_CV002.Hi.Active",
+        "permission": null
+      },
+      "highhigh": {
+        "enabled": false
+      },
+      "high": {
+        "enabled": true,
+        "checkdelay": 1,
+        "min": 1,
+        "max": 1,
+        "timedelay": 0,
+        "text": "CV002 motor current Hi",
+        "group": "Current",
+        "ackmode": "ackactive",
+        "bkcolor": "#ffe0b2",
+        "color": "#000000"
+      },
+      "low": {
+        "enabled": false
+      },
+      "info": {
+        "enabled": false
+      },
+      "actions": {
+        "enabled": false,
+        "values": []
+      }
+    },
+    {
+      "name": "ALM_CV002.HiHi",
+      "property": {
+        "variableId": "t_ALM_CV002.HiHi.Active",
+        "permission": null
+      },
+      "highhigh": {
+        "enabled": true,
+        "checkdelay": 1,
+        "min": 1,
+        "max": 1,
+        "timedelay": 0,
+        "text": "CV002 motor current HiHi",
+        "group": "Current",
+        "ackmode": "ackactive",
+        "bkcolor": "#ffcdd2",
+        "color": "#000000"
+      },
+      "high": {
+        "enabled": false
+      },
+      "low": {
+        "enabled": false
+      },
+      "info": {
+        "enabled": false
+      },
+      "actions": {
+        "enabled": false,
+        "values": []
+      }
+    },
+    {
+      "name": "ALM_CV003.Hi",
+      "property": {
+        "variableId": "t_ALM_CV003.Hi.Active",
+        "permission": null
+      },
+      "highhigh": {
+        "enabled": false
+      },
+      "high": {
+        "enabled": true,
+        "checkdelay": 1,
+        "min": 1,
+        "max": 1,
+        "timedelay": 0,
+        "text": "CV003 motor current Hi",
+        "group": "Current",
+        "ackmode": "ackactive",
+        "bkcolor": "#ffe0b2",
+        "color": "#000000"
+      },
+      "low": {
+        "enabled": false
+      },
+      "info": {
+        "enabled": false
+      },
+      "actions": {
+        "enabled": false,
+        "values": []
+      }
+    },
+    {
+      "name": "ALM_CV003.HiHi",
+      "property": {
+        "variableId": "t_ALM_CV003.HiHi.Active",
+        "permission": null
+      },
+      "highhigh": {
+        "enabled": true,
+        "checkdelay": 1,
+        "min": 1,
+        "max": 1,
+        "timedelay": 0,
+        "text": "CV003 motor current HiHi",
+        "group": "Current",
+        "ackmode": "ackactive",
+        "bkcolor": "#ffcdd2",
+        "color": "#000000"
+      },
+      "high": {
+        "enabled": false
+      },
+      "low": {
+        "enabled": false
+      },
+      "info": {
+        "enabled": false
+      },
+      "actions": {
+        "enabled": false,
+        "values": []
+      }
+    },
+    {
+      "name": "INT_CV001.Tripped",
+      "property": {
+        "variableId": "t_INT_CV001.Tripped",
+        "permission": null
+      },
+      "highhigh": {
+        "enabled": false
+      },
+      "high": {
+        "enabled": true,
+        "checkdelay": 1,
+        "min": 1,
+        "max": 1,
+        "timedelay": 0,
+        "text": "INT_CV001 tripped",
+        "group": "Interlock",
+        "ackmode": "ackactive",
+        "bkcolor": "#ffe0b2",
+        "color": "#000000"
+      },
+      "low": {
+        "enabled": false
+      },
+      "info": {
+        "enabled": false
+      },
+      "actions": {
+        "enabled": false,
+        "values": []
+      }
+    },
+    {
+      "name": "INT_CV002.Tripped",
+      "property": {
+        "variableId": "t_INT_CV002.Tripped",
+        "permission": null
+      },
+      "highhigh": {
+        "enabled": false
+      },
+      "high": {
+        "enabled": true,
+        "checkdelay": 1,
+        "min": 1,
+        "max": 1,
+        "timedelay": 0,
+        "text": "INT_CV002 tripped",
+        "group": "Interlock",
+        "ackmode": "ackactive",
+        "bkcolor": "#ffe0b2",
+        "color": "#000000"
+      },
+      "low": {
+        "enabled": false
+      },
+      "info": {
+        "enabled": false
+      },
+      "actions": {
+        "enabled": false,
+        "values": []
+      }
+    },
+    {
+      "name": "INT_CV003.Tripped",
+      "property": {
+        "variableId": "t_INT_CV003.Tripped",
+        "permission": null
+      },
+      "highhigh": {
+        "enabled": false
+      },
+      "high": {
+        "enabled": true,
+        "checkdelay": 1,
+        "min": 1,
+        "max": 1,
+        "timedelay": 0,
+        "text": "INT_CV003 tripped",
+        "group": "Interlock",
+        "ackmode": "ackactive",
+        "bkcolor": "#ffe0b2",
+        "color": "#000000"
+      },
+      "low": {
+        "enabled": false
+      },
+      "info": {
+        "enabled": false
+      },
+      "actions": {
+        "enabled": false,
+        "values": []
+      }
+    },
+    {
+      "name": "INT_FEED.Tripped",
+      "property": {
+        "variableId": "t_INT_FEED.Tripped",
+        "permission": null
+      },
+      "highhigh": {
+        "enabled": false
+      },
+      "high": {
+        "enabled": true,
+        "checkdelay": 1,
+        "min": 1,
+        "max": 1,
+        "timedelay": 0,
+        "text": "INT_FEED tripped",
+        "group": "Interlock",
+        "ackmode": "ackactive",
+        "bkcolor": "#ffe0b2",
+        "color": "#000000"
+      },
+      "low": {
+        "enabled": false
+      },
+      "info": {
+        "enabled": false
+      },
+      "actions": {
+        "enabled": false,
+        "values": []
+      }
+    }
+  ],
+  "notifications": [],
+  "scripts": [
+    {
+      "id": "s_pulse",
+      "name": "pulse",
+      "code": "const hold = ms => new Promise(resolve => setTimeout(resolve, ms));\nfor (const tag of tags.split(',')) {\n    await $setTag(tag, true);\n    await hold(500);\n    await $setTag(tag, false);\n}",
+      "sync": false,
+      "mode": "SERVER",
+      "parameters": [
+        {
+          "name": "tags",
+          "type": "value"
+        }
+      ],
+      "permission": null
+    }
+  ],
+  "reports": [],
+  "texts": [],
+  "recipes": []
+}

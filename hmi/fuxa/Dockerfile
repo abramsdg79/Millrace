@@ -1,0 +1,17 @@
+# The dse command line in a container: built from this repository's source
+# with the .NET SDK, run on the .NET runtime, with the samples beside it.
+# Build context: the repository root (see docker-compose.yml).
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0.401-noble@sha256:e70cdb7f80b0348f5cb85f19a8f670fca061f033d57eed12fa003d58b0e06317 AS build
+WORKDIR /src
+COPY Directory.Build.props ./
+COPY src/ src/
+RUN dotnet publish src/Dse.Cli/Dse.Cli.csproj -c Release -o /app --nologo
+
+FROM mcr.microsoft.com/dotnet/runtime:10.0.12-noble@sha256:b89586dc17781f25531909993658aa8161205ae38b8cec8847df4a8221a403d5
+WORKDIR /dse
+COPY --from=build /app /app
+COPY samples/ samples/
+EXPOSE 5020
+ENTRYPOINT ["/app/dse"]
+CMD ["serve", "samples/mine-conveyors/plant.json", "--port", "5020"]
