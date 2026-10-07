@@ -4,7 +4,8 @@ using Dse.Core.Catalogue;
 namespace Dse.Cli;
 
 /// <summary>What a command runs with.</summary>
-internal sealed class CliContext(ParsedCommandLine commandLine, ComponentCatalogue catalogue, TextWriter stdout, TextWriter stderr)
+internal sealed class CliContext(
+    ParsedCommandLine commandLine, ComponentCatalogue catalogue, TextWriter stdout, TextWriter stderr, CancellationToken cancellation = default)
 {
     public ParsedCommandLine CommandLine { get; } = commandLine;
 
@@ -13,6 +14,9 @@ internal sealed class CliContext(ParsedCommandLine commandLine, ComponentCatalog
     public TextWriter Out { get; } = stdout;
 
     public TextWriter Err { get; } = stderr;
+
+    /// <summary>Cancelled when the caller wants a long-running command to stop, as Ctrl+C does.</summary>
+    public CancellationToken Cancellation { get; } = cancellation;
 
     public bool Json => CommandLine.Single(CommandTable.Format) == "json";
 

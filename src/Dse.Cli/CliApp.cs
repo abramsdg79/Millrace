@@ -8,7 +8,14 @@ namespace Dse.Cli;
 /// <summary>The whole CLI as a function of its arguments and two streams, so tests run it in-process.</summary>
 public static class CliApp
 {
-    public static int Run(string[] args, TextWriter stdout, TextWriter stderr)
+    public static int Run(string[] args, TextWriter stdout, TextWriter stderr) =>
+        Run(args, stdout, stderr, CancellationToken.None);
+
+    /// <summary>
+    /// As <see cref="Run(string[], TextWriter, TextWriter)"/>; <paramref name="cancellation"/>
+    /// stops a long-running command (<c>dse serve</c>) as Ctrl+C does, so a test can.
+    /// </summary>
+    public static int Run(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken cancellation)
     {
         ArgumentNullException.ThrowIfNull(args);
         ArgumentNullException.ThrowIfNull(stdout);
@@ -40,14 +47,32 @@ public static class CliApp
             return ExitCodes.Unreadable;
         }
 
-        return parsed.Command!.Run(new CliContext(parsed, builder.Build(), stdout, stderr));
+        return parsed.Command!.Run(new CliContext(parsed, builder.Build(), stdout, stderr, cancellation));
     }
 
     private static string? OptionValueProblem(ParsedCommandLine parsed)
     {
-        if (parsed.Single(CommandTable.Format) is { } format && format is not ("text" or "json"))
+        CommandSpec command = parsed.Command!;
+        if (command.Options.Contains(CommandTable.Format) && parsed.Single(CommandTable.Format) is { } format && format is not ("text" or "json"))
         {
             return $"'--format {format}' is not a format. Use text or json.";
+        }
+
+        if (command.Options.Contains(CommandTable.MapFormat) && parsed.Single(CommandTable.MapFormat) is { } mapFormat && mapFormat is not ("text" or "csv" or "fuxa"))
+        {
+            return $"'--format {mapFormat}' is not a map format. Use text, csv or fuxa.";
+        }
+
+        if (parsed.Single(CommandTable.Port) is { } port
+            && !(int.TryParse(port, NumberStyles.None, CultureInfo.InvariantCulture, out int number) && number <= 65535))
+        {
+            return $"'--port {port}' is not a port. Give a whole number from 0 to 65535, such as 5020.";
+        }
+
+        if (parsed.Single(CommandTable.Speed) is { } speed
+            && !(double.TryParse(speed, NumberStyles.Float, CultureInfo.InvariantCulture, out double factor) && double.IsFinite(factor) && factor > 0.0))
+        {
+            return $"'--speed {speed}' is not a speed. Give a factor greater than zero, such as 10 or 0.5.";
         }
 
         if (parsed.Single(CommandTable.TimeStep) is { } step

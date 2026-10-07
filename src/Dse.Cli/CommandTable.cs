@@ -26,6 +26,16 @@ internal static class CommandTable
     public static readonly OptionSpec Expect = new(
         "--expect", "golden.log", "Compare the event log with this file; exit 4 if they differ.");
 
+    public static readonly OptionSpec Scenario = new(
+        "--scenario", "scenario.json", "Schedule this scenario's timeline and use its seed, start time and time step. It must name the same plant.");
+
+    public static readonly OptionSpec Port = new("--port", "n", "Serve Modbus TCP on this port; 0 lets the system choose a free one. Default: 5020.");
+
+    public static readonly OptionSpec Speed = new("--speed", "x", "Run this many times faster than real time, such as 10 or 0.5. Default: 1.");
+
+    public static readonly OptionSpec MapFormat = new(
+        "--format", "text|csv|fuxa", "How to print the map: a table, CSV, or the tags object of a FUXA Modbus device. Default: text.");
+
     public static IReadOnlyList<CommandSpec> All { get; } =
     [
         new(["catalog", "export"], null, "Print every component, block, transform, transition, hold and material type as JSON.", [Out, Assembly], Commands.CatalogExport.Run),
@@ -33,6 +43,8 @@ internal static class CommandTable
         new(["validate"], "plant.json", "Load a plant and report every error, each with its fix.", [Format, TimeStep, Assembly], Commands.Validate.Run),
         new(["tags"], "plant.json", "Load and build a plant, then list its tags: name, kind, access, unit, range, description and claimant.", [Format, TimeStep, Assembly], Commands.Tags.Run),
         new(["run"], "scenario.json", "Run a scenario against its plant and print the event log.", [Expect, Out, Format, Assembly], Commands.RunScenario.Run),
+        new(["serve"], "plant.json", "Run a plant in real time and serve its tags over Modbus TCP until Ctrl+C.", [Scenario, Port, Speed, Assembly], Commands.Serve.Run),
+        new(["modbus-map"], "plant.json", "Print the plant's Modbus register map: area, address, type and tag of every tag.", [MapFormat, Out, Assembly], Commands.ModbusMap.Run),
     ];
 
     public static string GeneralHelp()
@@ -48,7 +60,7 @@ internal static class CommandTable
         lines.Add("Run `dse <command> --help` for a command's options.");
         lines.Add(string.Empty);
         lines.Add("Exit codes: 0 success; 1 the plant or scenario has errors; 2 usage error; " +
-                  "3 a file or assembly could not be read; 4 the event log differs from --expect.");
+                  "3 a file or assembly could not be read, or the port could not be opened; 4 the event log differs from --expect.");
         return string.Join('\n', lines) + "\n";
     }
 

@@ -20,6 +20,27 @@ public static class ScenarioRunner
     /// <summary>Loads the plant, binds every action, and runs only if nothing is wrong.</summary>
     public static ScenarioRunResult Run(Scenario scenario, string plantJson, ComponentCatalogue catalogue)
     {
+        ScenarioBinding binding = Bind(scenario, plantJson, catalogue);
+        if (binding.Simulation is not { } simulation)
+        {
+            return new ScenarioRunResult(binding.Diagnostics, null, null);
+        }
+
+        simulation.RunFor(scenario.Duration);
+        return new ScenarioRunResult(
+            [],
+            simulation.Events,
+            new RunSummary(simulation.Clock.TickCount, simulation.Events.Records.Count, scenario.Timeline.Count));
+    }
+
+    /// <summary>
+    /// Loads the plant and schedules every action, without ticking: the
+    /// simulation a host runs for as long as it likes (plan 8's
+    /// <c>dse serve</c>). Null, with every reason, when anything is wrong —
+    /// exactly the diagnostics <see cref="Run"/> reports.
+    /// </summary>
+    public static ScenarioBinding Bind(Scenario scenario, string plantJson, ComponentCatalogue catalogue)
+    {
         ArgumentNullException.ThrowIfNull(scenario);
         ArgumentNullException.ThrowIfNull(plantJson);
         ArgumentNullException.ThrowIfNull(catalogue);
@@ -27,19 +48,18 @@ public static class ScenarioRunner
         LoadResult load = PlantLoader.Load(plantJson, catalogue, scenario.ToLoadOptions());
         if (!load.IsValid)
         {
-            return new ScenarioRunResult(PlantDiagnostics(scenario, load), null, null);
+            return new ScenarioBinding(PlantDiagnostics(scenario, load), null);
         }
 
         TimeSpan step = load.Options!.TimeStep;
         if (step.Ticks <= 0)
         {
-            return new ScenarioRunResult(
+            return new ScenarioBinding(
                 [ScenarioDiagnostics.Error(
                     ScenarioDiagnostics.BadValue,
                     "$.timeStepMs",
                     "\"timeStepMs\" must be at least one tick (0.0001 ms).",
                     "Use the simulation step in milliseconds, such as 10.")],
-                null,
                 null);
         }
 
@@ -56,16 +76,7 @@ public static class ScenarioRunner
             Schedule(simulation, scenario, i, step, diagnostics);
         }
 
-        if (diagnostics.Count > 0)
-        {
-            return new ScenarioRunResult(diagnostics, null, null);
-        }
-
-        simulation.RunFor(scenario.Duration);
-        return new ScenarioRunResult(
-            [],
-            simulation.Events,
-            new RunSummary(simulation.Clock.TickCount, simulation.Events.Records.Count, scenario.Timeline.Count));
+        return diagnostics.Count > 0 ? new ScenarioBinding(diagnostics, null) : new ScenarioBinding([], simulation);
     }
 
     /// <summary>One line naming the plant, then the plant's own diagnostics unchanged: their codes, their paths, their fixes.</summary>

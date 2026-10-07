@@ -10,7 +10,7 @@ public static class ExitCodes
     /// <summary>The command line itself is wrong.</summary>
     public const int Usage = 2;
 
-    /// <summary>A file or an assembly could not be read, written or loaded.</summary>
+    /// <summary>A file or an assembly could not be read, written or loaded, or <c>dse serve</c> could not open its port.</summary>
     public const int Unreadable = 3;
 
     /// <summary>The scenario ran, and its event log differs from the one <c>--expect</c> named.</summary>

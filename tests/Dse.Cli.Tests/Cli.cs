@@ -21,11 +21,14 @@ internal static class Cli
         return Path.Combine(tests, project, "bin", configuration, tfm, project + ".dll");
     }
 
-    public static CliRun Run(params string[] args)
+    public static CliRun Run(params string[] args) => Run(CancellationToken.None, args);
+
+    /// <summary>Runs with a cancellation token, which stops <c>dse serve</c> as Ctrl+C does.</summary>
+    public static CliRun Run(CancellationToken cancellation, params string[] args)
     {
         using var stdout = new StringWriter { NewLine = "\n" };
         using var stderr = new StringWriter { NewLine = "\n" };
-        int exit = CliApp.Run(args, stdout, stderr);
+        int exit = CliApp.Run(args, stdout, stderr, cancellation);
         return new CliRun(exit, stdout.ToString(), stderr.ToString());
     }
 }
