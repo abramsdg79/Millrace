@@ -62,6 +62,7 @@ public sealed class MotorStarter : ComponentBase, IFaultTarget, ITagProvider
         ],
     };
 
+    private readonly int _thermalDecimals;
     private bool _tripped;
     private bool _closed;
     private bool _wasReset;
@@ -79,6 +80,7 @@ public sealed class MotorStarter : ComponentBase, IFaultTarget, ITagProvider
 
         TripLevel = tripLevel;
         ResetLevel = resetLevel;
+        _thermalDecimals = Math.Min(Math.Max(3, ThresholdText.Decimals(tripLevel) + 1), 6);
 
         Command = AddInput<bool>("Command");
         SafetyOk = AddInput<bool>("SafetyOk", defaultValue: true);
@@ -137,7 +139,7 @@ public sealed class MotorStarter : ComponentBase, IFaultTarget, ITagProvider
         {
             _tripped = true;
             ctx.Log(Id, "OVERLOAD_TRIP", string.Create(CultureInfo.InvariantCulture,
-                $"Thermal state {thermal:F3} reached the trip level {TripLevel}."));
+                $"Thermal state {ThresholdText.NotBelow(thermal, TripLevel, _thermalDecimals)} reached the trip level {TripLevel}."));
         }
         else if (_tripped && resetEdge && thermal < ResetLevel)
         {

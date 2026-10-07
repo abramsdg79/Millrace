@@ -18,9 +18,9 @@ public class MotorStarterTests
     private sealed record Rig(Simulation Sim, MotorStarter Starter, Switch Command, Switch Safety, Setpoint Thermal, Switch Reset);
 
     /// <summary>The starter and its drivers; the permit is wired only when a test passes one, so it reads its default otherwise.</summary>
-    private static Rig Build(Switch? permit = null)
+    private static Rig Build(Switch? permit = null, double tripLevel = 1.1)
     {
-        var starter = new MotorStarter("K1");
+        var starter = new MotorStarter("K1", tripLevel);
         var command = new Switch("Cmd");
         var safety = new Switch("Safe", true);
         var thermal = new Setpoint("Theta", 0.5);
@@ -153,6 +153,24 @@ public class MotorStarterTests
     public void TheOverloadTripMessagePrintsTheThermalStateToThreeDecimals(double thermal, string message)
     {
         Rig rig = Build();
+        rig.Command.Value = true;
+        rig.Sim.Tick();
+
+        rig.Thermal.Value = thermal;
+        rig.Sim.Tick();
+
+        Assert.Equal(message, Assert.Single(rig.Sim.Events.Records, r => r.Code == "OVERLOAD_TRIP").Message);
+    }
+
+    [Theory]
+    [InlineData(1.125, 1.12504, "Thermal state 1.1250 reached the trip level 1.125.")]
+    [InlineData(1.1234, 1.12344, "Thermal state 1.12344 reached the trip level 1.1234.")]
+    [InlineData(1.1234, 1.1234, "Thermal state 1.12340 reached the trip level 1.1234.")]
+    [InlineData(1.1234561, 1.1234562, "Thermal state 1.123457 reached the trip level 1.1234561.")]
+    [InlineData(1.1234561, 1.1234561, "Thermal state 1.123457 reached the trip level 1.1234561.")]
+    public void TheOverloadTripMessageNeverReadsBelowTheTripLevel(double tripLevel, double thermal, string message)
+    {
+        Rig rig = Build(tripLevel: tripLevel);
         rig.Command.Value = true;
         rig.Sim.Tick();
 

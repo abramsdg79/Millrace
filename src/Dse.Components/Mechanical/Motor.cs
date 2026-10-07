@@ -150,8 +150,9 @@ public sealed class Motor : ComponentBase, IFaultTarget
 
             if (stalled && !_stalled)
             {
-                ctx.Log(Id, "STALLED", string.Create(CultureInfo.InvariantCulture,
-                    $"Torque demand {demand:F0} N·m exceeds breakdown torque {_rating.BreakdownTorqueMultiple * ratedTorque:F0} N·m."));
+                string breakdown = (_rating.BreakdownTorqueMultiple * ratedTorque).ToString("F0", CultureInfo.InvariantCulture);
+                ctx.Log(Id, "STALLED",
+                    $"Torque demand {ThresholdText.Exceeding(demand, breakdown, 0)} N·m exceeds breakdown torque {breakdown} N·m.");
             }
 
             _stalled = stalled;

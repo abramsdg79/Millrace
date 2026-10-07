@@ -14,10 +14,10 @@ public class MotorTests
 
     private sealed class Rig
     {
-        public Rig(double dt = 0.1)
+        public Rig(double dt = 0.1, MotorRating? rating = null)
         {
             Dt = dt;
-            Motor = new Motor("M", Rating);
+            Motor = new Motor("M", rating ?? Rating);
             Motor.Initialize(TestContexts.Init(Motor.Id, dt: dt));
             Energised = new OutputPort<bool>("Out", "Run");
             Energised.ConnectTo(Motor.Energised);
@@ -231,5 +231,21 @@ public class MotorTests
         Assert.Equal(
             ["Contactor closed.", "Reached 142.9 rad/s.", "Torque demand 13 N·m exceeds breakdown torque 12 N·m."],
             rig.Log.Records.Select(r => r.Message));
+    }
+
+    [Theory]
+    [InlineData(2.44, 12.3, "Torque demand 13 N·m exceeds breakdown torque 12 N·m.")]
+    [InlineData(2.52, 12.7, "Torque demand 14 N·m exceeds breakdown torque 13 N·m.")]
+    [InlineData(2.5, 14.2, "Torque demand 15 N·m exceeds breakdown torque 12 N·m.")]
+    [InlineData(2.5, 1e30, "Torque demand 1000000000000000019884624838656 N·m exceeds breakdown torque 12 N·m.")]
+    public void AStallJustAboveTheBreakdownTorqueNeverReadsAtOrBelowIt(double breakdownMultiple, double demand, string message)
+    {
+        var rig = new Rig(rating: Rating with { BreakdownTorqueMultiple = breakdownMultiple });
+        rig.Energised.Value = true;
+        rig.Run(10.0);
+        rig.Demand.Value = demand;
+        rig.Run(1.0);
+
+        Assert.Equal(message, Assert.Single(rig.Log.Records, r => r.Code == "STALLED").Message);
     }
 }
