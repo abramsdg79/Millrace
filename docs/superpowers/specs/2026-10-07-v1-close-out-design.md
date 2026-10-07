@@ -30,8 +30,11 @@ R184–R193), where the code or a measured run forced a choice:
   `STALLED` prints a demand too large for `decimal` (or non-finite) as plain
   `F0`, as before.
 - **The release adds `ReleaseTests` (R191)**, two facts pinning the version,
-  the changelog's links and the README's commands; the SDK's default
-  version was already 1.0.0, so no assembly's version changes.
+  the changelog's links and the README's commands; every assembly except
+  `Dse.Cli` was already 1.0.0 by the SDK default, and `Dse.Cli`'s own 0.1.0
+  override was removed, so the `dse` tool and its package move from 0.1.0
+  to 1.0.0. `Directory.Build.props` is now the single source, and
+  `ReleaseTests` fails if a project under `src/` sets its own version.
 - **"The merge commit" (criterion 6) reads "`master`'s head after the
   fast-forward" (R192)**: the repository integrates by fast-forward, so no
   merge commit exists; the tag goes on the commit the merge leaves at the

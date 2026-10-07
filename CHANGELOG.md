@@ -45,7 +45,7 @@ with both reference samples.
   holds `for-seconds`, `temperature-at-least`, `temperature-at-most`,
   `state-at-least` and `all`.
 
-### Io (`Dse.Io.Abstractions`, `Dse.Core.Io`)
+### Io (`Dse.Io.Abstractions`; the `Dse.Core.Io` namespace)
 
 - A declared, printable tag directory with units, ranges and per-tag quality.
 - A lock-free, double-buffered image any thread may read; writes queued from
