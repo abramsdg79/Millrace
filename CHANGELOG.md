@@ -3,6 +3,13 @@
 All notable changes to Dse are recorded here. Versions follow
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+DSE's first external consumer: a SCADA watching and operating a simulated
+plant over Modbus TCP
+([design](docs/superpowers/specs/2026-10-07-modbus-fuxa-hmi-design.md),
+[plan 8](docs/superpowers/plans/2026-10-07-modbus-fuxa-hmi.md)).
+
 ## 1.0.0 — 2026-10-07
 
 The first release: every item of the v1 scope (§17 of the

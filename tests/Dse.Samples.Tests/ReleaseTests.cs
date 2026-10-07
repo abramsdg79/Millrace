@@ -35,7 +35,10 @@ public partial class ReleaseTests
 
         Assert.StartsWith("# Changelog\n", changelog, StringComparison.Ordinal);
         Assert.Single(ReleaseHeading().Matches(changelog));
-        Assert.Single(changelog.Split('\n'), l => l.StartsWith("## ", StringComparison.Ordinal));
+        string[] headings = changelog.Split('\n').Where(l => l.StartsWith("## ", StringComparison.Ordinal)).ToArray();
+        string[] expected = headings.Contains("## Unreleased") ? ["## Unreleased", headings[^1]] : [headings[^1]];
+        Assert.Equal(expected, headings);
+        Assert.Matches(ReleaseHeading(), headings[^1]);
         string[] areas = changelog.Split('\n').Where(l => l.StartsWith("### ", StringComparison.Ordinal)).Select(l => l[4..].Split(' ')[0]).ToArray();
         Assert.All(["Core", "Components", "Io", "Realtime", "Control", "Scenarios", "Configuration", "Cli", "Samples"], area => Assert.Contains(area, areas));
 
