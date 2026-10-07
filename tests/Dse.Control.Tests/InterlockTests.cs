@@ -146,7 +146,8 @@ public class InterlockTests
 
         Assert.True(scan.Bool("Tripped"));
         Assert.Equal(1L, scan.Int64("FirstOut"));
-        Assert.Equal("INTERLOCK_TRIP", scan.Codes());
+        Assert.Equal("INTERLOCK_TRIP,RESET_REFUSED", scan.Codes());
+        Assert.Equal("Reset refused: PERM01.Ok is not normal.", scan.Events[^1].Message);
     }
 
     [Fact]
@@ -266,7 +267,7 @@ public class InterlockTests
         Assert.Empty(scan.LastWrites);
 
         Assert.True(scan.Bool("Tripped"));
-        Assert.Equal("INTERLOCK_TRIP", scan.Codes());
+        Assert.Equal("INTERLOCK_TRIP,RESET_REFUSED,RESET_REFUSED", scan.Codes());
     }
 
     [Fact]
@@ -321,5 +322,65 @@ public class InterlockTests
 
         Assert.Equal("resetWrites", error.ParamName);
         Assert.Contains("as a Double on trip and as a Bool on reset", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ARefusedResetNamesTheFirstAbnormalConditionInDeclaredOrderNotTheFirstOut()
+    {
+        Scan scan = Healthy().Once();
+        scan.Set("PERM01.Ok", false).Once();                  // trips on condition 1
+        scan.Set("CV001.Tripped", true).Once();               // condition 0 goes abnormal too
+
+        scan.Command("Reset", true).Once();
+
+        Assert.Equal(1L, scan.Int64("FirstOut"));
+        BlockEvent refused = Assert.Single(scan.LastEvents);
+        Assert.Equal("RESET_REFUSED", refused.Code);
+        Assert.Equal("Reset refused: CV001.Tripped is not normal.", refused.Message);
+        Assert.Empty(scan.LastWrites);
+    }
+
+    [Fact]
+    public void AResetEdgeOnAnUntrippedInterlockLogsNothing()
+    {
+        Scan scan = Healthy().Once();
+
+        scan.Command("Reset", true).Once();
+        scan.Command("Reset", false).Once();
+        scan.Command("Reset", true).Once();
+
+        Assert.True(scan.Bool("Ok"));
+        Assert.Empty(scan.Events);
+        Assert.Empty(scan.LastWrites);
+    }
+
+    [Fact]
+    public void AResetEdgeOnTheTripScanIsNotARefusal()
+    {
+        Scan scan = HealthyWithPermit().Once();
+
+        scan.Set("CV001.Tripped", true).Command("Reset", true).Once();
+
+        BlockEvent raised = Assert.Single(scan.LastEvents);
+        Assert.Equal("INTERLOCK_TRIP", raised.Code);
+        Assert.Equal(new[] { ("CV001.Start", false), ("CV001.Permit", false) }, scan.LastWrites.Select(w => (w.Key, w.Value.AsBool)));
+
+        scan.Times(3);                                        // still held high, still abnormal: no edge, nothing more
+        Assert.Equal("INTERLOCK_TRIP", scan.Codes());
+    }
+
+    [Fact]
+    public void AResetRefusedWhileAbnormalIsAcceptedOnTheNextEdgeOnceNormal()
+    {
+        Scan scan = HealthyWithPermit().Once();
+        scan.Set("CV001.Tripped", true).Once();
+
+        scan.Command("Reset", true).Once();                  // refused
+        scan.Set("CV001.Tripped", false).Command("Reset", false).Once();
+        scan.Command("Reset", true).Once();                  // accepted
+
+        Assert.False(scan.Bool("Tripped"));
+        Assert.Equal("INTERLOCK_TRIP,RESET_REFUSED,INTERLOCK_RESET", scan.Codes());
+        Assert.Equal(new[] { ("CV001.Permit", true) }, scan.LastWrites.Select(w => (w.Key, w.Value.AsBool)));
     }
 }

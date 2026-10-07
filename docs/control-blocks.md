@@ -336,14 +336,20 @@ The conditions that **stop** a running thing. Any abnormal condition latches
 trip scan only**, so the event log carries one `WRITE` record, not one every
 scan. The latch clears on a rising edge of the `Reset` command while every
 condition is normal, and on nothing else. The scan that clears it sends the
-reset writes, once; a refused reset sends nothing. Within each list a tag may
-appear once. A tag may be in both lists, with the same kind; the block then has
-one write pin for it. `Writes` lists the trip tags first, in order, then any tag
-only the reset writes — and the host sends one scan's writes in that pin order,
-so the reset above logs `CV001.Start` before `CV001.Permit`.
+reset writes, once; a refused reset sends nothing and logs why (below).
+Within each list a tag may appear once. A tag may be in both lists, with the
+same kind; the block then has one write pin for it. `Writes` lists the trip
+tags first, in order, then any tag only the reset writes — and the host sends
+one scan's writes in that pin order, so the reset above logs `CV001.Start`
+before `CV001.Permit`.
 
-Events: `INTERLOCK_TRIP` — `CV001.Tripped abnormal.` — and `INTERLOCK_RESET` —
-`Reset with all conditions normal.`
+Events: `INTERLOCK_TRIP` — `CV001.Tripped abnormal.` — `INTERLOCK_RESET` —
+`Reset with all conditions normal.` — and `RESET_REFUSED` —
+`Reset refused: PERM01.Ok is not normal.` — on a rising edge of `Reset` while
+the interlock is tripped and a condition is still abnormal. It names the first
+abnormal condition in declared order, which need not be `FirstOut`. A rising
+edge while the interlock is not tripped, or on the scan that trips it, logs
+nothing.
 
 ### Holding a device off: the run permit
 

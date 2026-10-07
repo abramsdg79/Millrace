@@ -61,4 +61,5 @@
 06:08:51.700  INT_BAY  INTERLOCK_TRIP  Bay.Full abnormal.
 06:08:51.800  Billets.Enabled  WRITE  Set to false by INT_BAY.
 06:10:00.000  INT_BAY.Reset  WRITE  Set to true.
+06:10:00.100  INT_BAY  RESET_REFUSED  Reset refused: Bay.Full is not normal.
 06:10:01.000  INT_BAY.Reset  WRITE  Set to false.

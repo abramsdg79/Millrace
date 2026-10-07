@@ -151,6 +151,7 @@ public static class WheelLineStories
                 E("INT_BAY", "INTERLOCK_TRIP", "Bay.Full abnormal."),
                 E("Billets.Enabled", "WRITE", "Set to false by INT_BAY."),
                 E("INT_BAY.Reset", "WRITE", "Set to true."),
+                E("INT_BAY", "RESET_REFUSED", "Reset refused: Bay.Full is not normal."),
                 E("INT_BAY.Reset", "WRITE", "Set to false."),
             ],
             [

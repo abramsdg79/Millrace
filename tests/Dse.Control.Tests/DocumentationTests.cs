@@ -17,7 +17,8 @@ public partial class DocumentationTests
                  {
                      "Timer", "Permissive", "Interlock", "Alarm", "Sequencer",
                      "PERMISSIVE_LOST", "PERMISSIVE_OK",
-                     "INTERLOCK_TRIP", "INTERLOCK_RESET",
+                     "INTERLOCK_TRIP", "INTERLOCK_RESET", "RESET_REFUSED",
+                     "Reset refused: PERM01.Ok is not normal.",
                      "ALARM_RAISED", "ALARM_CLEARED", "ALARM_ACKED",
                      "STEP_ENTERED", "SEQUENCE_COMPLETE", "SEQUENCE_FAULTED", "SEQUENCE_ABORTED",
                      "DSE013", "DSE014", "DSE015",

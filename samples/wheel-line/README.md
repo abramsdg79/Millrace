@@ -302,12 +302,16 @@ every condition is normal, and the bay is still full.
 06:08:51.700  INT_BAY  INTERLOCK_TRIP  Bay.Full abnormal.
 06:08:51.800  Billets.Enabled  WRITE  Set to false by INT_BAY.
 06:10:00.000  INT_BAY.Reset  WRITE  Set to true.
+06:10:00.100  INT_BAY  RESET_REFUSED  Reset refused: Bay.Full is not normal.
+06:10:01.000  INT_BAY.Reset  WRITE  Set to false.
 ```
 
-A refused reset logs nothing: the proof is that neither `INTERLOCK_RESET` nor a
-`Billets.Enabled … Set to true` line follows the write at 06:10:00.000. The
-false write a second later, at 06:10:01.000, releases the momentary reset
-button; the interlock resets on a rising edge.
+The interlock refuses the reset on the scan after the write and says why:
+`RESET_REFUSED` names the first of its conditions, in the order they are
+declared, that is still not normal. Neither `INTERLOCK_RESET` nor a
+`Billets.Enabled … Set to true` line follows. The false write a second later
+releases the momentary reset button; the interlock resets only on a rising
+edge, so the operator must press it again once the bay is emptied.
 
 The scenario ends with the line held. A real reject cradle is emptied by a
 crane or a forklift, after which the reset is accepted and writes

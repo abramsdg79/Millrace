@@ -7,8 +7,11 @@ namespace Dse.Control;
 /// <c>Tripped</c>, captures <c>FirstOut</c> and sends the trip writes — on the
 /// trip scan only (R71). The latch clears on a rising edge of <c>Reset</c> while
 /// every condition is normal, and on nothing else; the scan that clears it sends
-/// the reset writes, once. A tag may be in both lists: that is how an interlock
-/// holds a device's run permit off while it is tripped (R122).
+/// the reset writes, once. A rising edge that finds it tripped with a condition
+/// still abnormal is refused: no write, and <c>RESET_REFUSED</c> names the first
+/// abnormal condition in declared order (plan 7, R184). A tag may be in both
+/// lists: that is how an interlock holds a device's run permit off while it is
+/// tripped (R122).
 /// </summary>
 public sealed class Interlock : IScanBlock
 {
@@ -166,6 +169,12 @@ public sealed class Interlock : IScanBlock
             {
                 outputs.Write(_resetWriteIndex[i], _resetWrites[i].Value);
             }
+        }
+        else if (_tripped && resetEdge)
+        {
+            // Tripped before this scan (the trip branch above did not run) and a
+            // condition still abnormal, so `first` is set.
+            outputs.Raise("RESET_REFUSED", $"Reset refused: {_conditions[first].Tag} is not normal.");
         }
 
         outputs.Set(0, TagValue.Bool(!_tripped));
