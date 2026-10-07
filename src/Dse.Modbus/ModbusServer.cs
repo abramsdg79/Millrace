@@ -30,7 +30,7 @@ public sealed class ModbusServer : IAsyncDisposable
     private Task? _accepting;
     private int _open;
     private long _requests;
-    private bool _disposed;
+    private int _disposed;
 
     /// <summary>Creates a server; <see cref="Start"/> opens it.</summary>
     /// <param name="map">The register map.</param>
@@ -65,7 +65,7 @@ public sealed class ModbusServer : IAsyncDisposable
     public IPEndPoint Start(IPEndPoint endpoint)
     {
         ArgumentNullException.ThrowIfNull(endpoint);
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         if (_listener is not null)
         {
             throw new InvalidOperationException("The server has already been started.");
@@ -91,12 +91,11 @@ public sealed class ModbusServer : IAsyncDisposable
     /// <summary>Stops accepting, closes every connection and waits for them to finish.</summary>
     public async ValueTask DisposeAsync()
     {
-        if (_disposed)
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
         {
             return;
         }
 
-        _disposed = true;
         await _stop.CancelAsync().ConfigureAwait(false);
         _listener?.Stop();
         if (_accepting is not null)
@@ -174,6 +173,10 @@ public sealed class ModbusServer : IAsyncDisposable
         catch (Exception ex) when (ex is EndOfStreamException or IOException or SocketException or OperationCanceledException or ObjectDisposedException)
         {
             // The client went away, or the server is stopping: either way this connection is done.
+        }
+        catch (Exception)
+        {
+            // Anything else a request provokes ends only its own connection.
         }
         finally
         {

@@ -98,7 +98,7 @@ public class ServerTests
         const int clients = 8;
         const int rounds = 100;
 
-        Task[] work = Enumerable.Range(0, clients).Select(c => Task.Run(() =>
+        Task[] work = Enumerable.Range(0, clients).Select(c => Task.Factory.StartNew(() =>
         {
             using ModbusClient client = rig.Connect();
             client.Unit = (byte)(c + 1);
@@ -107,7 +107,7 @@ public class ServerTests
                 Assert.Equal(1.95f, ModbusClient.Float(client.ReadInputRegisters(2, 2), 0));
                 client.WriteCoil(c % 2, r % 2 == 0);
             }
-        })).ToArray();
+        }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default)).ToArray();
 
         await Task.WhenAll(work).WaitAsync(Patience);
         Assert.Equal(clients * rounds, rig.Writer.Writes.Length);
@@ -121,13 +121,13 @@ public class ServerTests
         await using Rig rig = Rig.Start();
         rig.Image = Consistent(0);                            // every image the client can see is consistent, the first too
         using var stop = new CancellationTokenSource();
-        Task publisher = Task.Run(() =>
+        Task publisher = Task.Factory.StartNew(() =>
         {
             for (long n = 1; !stop.IsCancellationRequested; n++)
             {
                 rig.Image = Consistent(n);
             }
-        });
+        }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
         using ModbusClient client = rig.Connect();
         for (int i = 0; i < 500; i++)
