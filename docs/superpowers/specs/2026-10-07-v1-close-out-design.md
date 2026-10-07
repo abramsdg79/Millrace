@@ -6,6 +6,36 @@ Every item of main spec §17 (v1 scope) is merged, the two reference samples
 included (plans 6a and 6b.2). This plan folds in the follow-ups those samples
 surfaced and cuts the `v1.0.0` release.
 
+**Amended 2026-10-07 by the plan**
+(`docs/superpowers/plans/2026-10-07-v1-close-out.md`, rulings
+R184–R193), where the code or a measured run forced a choice:
+
+- **A reset edge on the scan that trips the interlock is not a refusal
+  (R184)**: only an edge that finds it already latched with a condition
+  abnormal logs `RESET_REFUSED`, once per edge. The condition named is the
+  first abnormal one in declared order, not necessarily `FirstOut`.
+- **Only `item-process-unit` has the wall time (R186)**: `bulk-process-unit`
+  has no slow-cycle fault, so its hold time is its wall time. "Differs"
+  means the two `F2` texts differ.
+- **`OVERLOAD_TRIP` never reads below the trip level (R188)**, rather than
+  always rounding up past it: rounding up moved the chute-blockage golden
+  (`1.100` → `1.101`), which criterion 3 says must not move. The decimals
+  are `max(3, d + 1)`, at most 6, as specified; the text is stepped up only
+  when it would read below the level.
+- **`STALLED` also reads above the breakdown's text (R189)**: when the
+  breakdown torque's `F0` text rounds up to the demand's ceiling, the
+  demand prints one more.
+- **R188 and R189 supersede 6e R148** for `OVERLOAD_TRIP` and `STALLED`:
+  those components now direct their rounding too; the alarm is unchanged.
+  `STALLED` prints a demand too large for `decimal` (or non-finite) as plain
+  `F0`, as before.
+- **The release adds `ReleaseTests` (R191)**, two facts pinning the version,
+  the changelog's links and the README's commands; the SDK's default
+  version was already 1.0.0, so no assembly's version changes.
+- **"The merge commit" (criterion 6) reads "`master`'s head after the
+  fast-forward" (R192)**: the repository integrates by fast-forward, so no
+  merge commit exists; the tag goes on the commit the merge leaves at the
+  head of `master`.
 ## 1. Scope
 
 No new features and no change to any computed value. Four small follow-ups —
