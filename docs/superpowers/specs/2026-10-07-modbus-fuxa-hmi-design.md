@@ -5,6 +5,43 @@ Date: 2026-10-07. Addendum to
 taking up §18's deferred Modbus TCP adapter on top of the real-time layer of
 §10. Builds on v1.0.0.
 
+**Amended 2026-10-07 by the plan**
+(`docs/superpowers/plans/2026-10-07-modbus-fuxa-hmi.md`, rulings
+R194–R210), where the code, a measured run or the pinned FUXA forced a
+choice:
+
+- **FUXA 1.3.4, with its Modbus driver added (R204)**: the newest image tag
+  is 1.3.4, and the image ships without `modbus-serial`, which FUXA
+  installs as a plugin at run time. The `fuxa` service is built from
+  `frangoteam/fuxa:1.3.4` (pinned by digest) plus `modbus-serial@8.0.19`.
+- **The views are generated, then verified in FUXA (R205)**: written from
+  FUXA's widget structures by a committed generator,
+  `hmi/fuxa/generate-project.py`, posted to a running FUXA and checked in a
+  browser; the committed JSON is the generator's output, and the generator
+  is its source.
+- **Criterion 6's screenshot and start-button press are a manual
+  Playwright step in Task 5**: `smoke-check.sh` presses Start through
+  `POST /api/runscript` (the button's script) and takes no screenshot.
+- **FC6 always answers 02 (R197)**: every holding register is half of a
+  two-register value. Reads may start mid-value; writes may not. A refused
+  multi-value write writes nothing.
+- **A bad frame closes its connection (R198)**: protocol id other than 0,
+  or a length outside 2–254.
+- **Push-buttons pulse (R206)**: the sample's commands are rising edges
+  scanned every 100–200 ms, so buttons run a FUXA server script that holds
+  each tag true for 0.5 s; Start and Stop reset their sequencer first.
+  Pull-keys and e-stops are toggles. "Interlock and safety resets" are two
+  plant-wide buttons.
+- **`dse serve` (R199, R200)**: `--port 0` picks a free port; a port that
+  cannot be opened exits 3; a scenario must name the plant served; SIGINT
+  and SIGTERM stop it with exit 0. `dse serve` also takes `--assembly`.
+  `ScenarioRunner.Bind` is added to `Dse.Scenarios` for it.
+- **`fuxa-init` loads the project only into a FUXA that does not have it
+  (R208)**, so editor changes survive a restart; `docker compose down -v`
+  resets.
+- **The changelog's "Unreleased" entry also fixes `master` (R194)**:
+  `ReleaseTests` requires every spec and plan to be linked, and the plan 8
+  spec was not.
 ## 1. Scope
 
 The first external consumer of DSE: a real SCADA watching and operating a
