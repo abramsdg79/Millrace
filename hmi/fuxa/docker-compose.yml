@@ -13,7 +13,7 @@ services:
     image: dse-hmi/dse:local
     command: ["serve", "samples/mine-conveyors/plant.json", "--port", "5020"]
     ports:
-      - "5020:5020"
+      - "127.0.0.1:5020:5020"
 
   fuxa:
     build:
@@ -23,7 +23,7 @@ services:
     depends_on:
       - dse
     ports:
-      - "1881:1881"
+      - "127.0.0.1:1881:1881"
     volumes:
       - fuxa-appdata:/usr/src/app/FUXA/server/_appdata
       - fuxa-db:/usr/src/app/FUXA/server/_db

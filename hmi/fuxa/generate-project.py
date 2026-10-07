@@ -244,7 +244,7 @@ for intl in ["INT_CV001", "INT_CV002", "INT_CV003", "INT_FEED"]:
 # ---------------------------------------------------------------- Trends
 tr = View("v_trends", "Trends", 1280, 720)
 tr.text("tr_title", 24, 40, "Trends", size=24, weight="bold")
-tr.text("tr_sub", 24, 64, "The last ten minutes, live", size=13, fill="#546e7a")
+tr.text("tr_sub", 24, 64, "Live since this view opened — ten minutes at most", size=13, fill="#546e7a")
 colors = {"CV001": "#1565c0", "CV002": "#2e7d32", "CV003": "#ef6c00"}
 charts = []
 for i, (cid, title, field, unit) in enumerate([("c_speed", "Belt speed (m/s)", "Speed", "m/s"),

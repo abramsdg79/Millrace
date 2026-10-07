@@ -25,8 +25,8 @@ a few minutes; later starts take seconds. Three services start:
 
 | service | what it does |
 |---|---|
-| `dse` | `dse serve samples/mine-conveyors/plant.json --port 5020`: the plant, in real time, on port 5020 |
-| `fuxa` | FUXA 1.3.4 with its Modbus driver, on port 1881 |
+| `dse` | `dse serve samples/mine-conveyors/plant.json --port 5020`: the plant, in real time, on port 5020 (localhost only) |
+| `fuxa` | FUXA 1.3.4 with its Modbus driver, on port 1881 (localhost only) |
 | `fuxa-init` | waits for FUXA, loads `mine-conveyors.fuxap.json` into it on the first start, and exits |
 
 Stop with Ctrl+C, or `docker compose down` from another terminal. The plant
@@ -58,8 +58,12 @@ sample's `ALM_CVn` blocks, with their deadband and 3 s on-delay; FUXA raises
 on the blocks' `Active` tags) and each interlock's trip. The bell in the
 header counts them; acknowledge a row with its tick.
 
-**Trends** draws the three belts' speeds and motor currents, live, over the
-last ten minutes.
+**Trends** draws the three belts' speeds and motor currents, live since the
+view opened, ten minutes at most. The charts are drawn in the browser from the
+values FUXA reads, with no stored history: they start empty each time you open
+the view, and become a rolling ten-minute window once it has been open that
+long. Until you hover a chart, its legend shows `--` for each line and a time
+of 1970 (FUXA's legend shows the values under the pointer).
 
 ## The buttons
 
@@ -242,7 +246,14 @@ value, or one outside the tag's range, answers 03; any other function, 01.
 
 - **A local demo.** FUXA runs with authentication off and DSE's Modbus server
   has none either: anyone who can reach ports 1881 and 5020 can operate the
-  plant. Do not expose them beyond your machine.
+  plant. So `docker-compose.yml` publishes both on 127.0.0.1 only: the
+  browser and any Modbus tool on this machine reach them, and FUXA reaches
+  `dse:5020` over the compose network. Docker's port rules bypass the host's
+  firewall, so to open either port to your network you must do it
+  deliberately: change its bind address in `ports` (`"127.0.0.1:1881:1881"`
+  to `"1881:1881"`, or to one interface's address), and only on a network
+  where everyone who can reach it may start, stop and trip the line and
+  rewrite the HMI.
 - **Edits stay in FUXA's volume.** Whatever you change in FUXA's editor
   (<http://localhost:1881/editor>) is kept in the `fuxa-appdata` volume, and
   `fuxa-init` does not overwrite a project FUXA already has. The committed
