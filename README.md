@@ -11,56 +11,51 @@ causally through the plant.
 
 ## Status
 
-Under construction. This repository contains the simulation core
-(deterministic clock, per-component random streams, typed signal ports with
-latched inputs, composites, topological resolution with algebraic-loop
-detection, validation, telemetry, an ordered event log, a runner), the
-material layer (bulk and discrete payloads, typed flow ports, offer/accept
-transport, cell-based and position-based belts, residence transforms, a
-per-tick mass conservation audit), the fault channel, and the first component
-library: sources, sinks, a transfer chute, a former, bulk and item process
-units, a reject gate, three transforms, an instrument base with the full
-sensor-fault vocabulary, seven instruments, a motor with an I²t thermal model,
-a drivetrain, a safety circuit, a starter, and a `Conveyor` composite that
-trips its own overload when the belt downstream of it blocks — plus the I/O
-and real-time layers. A component catalogue, declarative JSON plants with a
-generated JSON Schema, and a `dse` command line sit on top.
-
-It also contains the I/O layer (a declared, printable tag directory with
-units, ranges and per-tag quality; a lock-free double-buffered image any thread
-may read; queued writes that land at phase 1 of the next tick; one immutable
-`TickFrame` per tick) and the in-process real-time layer (`Dse.Realtime`: a
-ring-buffered hub, a live state engine for late joiners, subscriptions with
-prefix filters, deadbands, decimation and declared backpressure, and a
-validated command bus), which references the I/O contract only.
-
-Scenarios are files too: a plant, the engine overrides, a duration and a
-timeline of writes and fault injections, replayed by `dse run` against a
-committed golden event log, and recordable from a live run.
-
-On top of that sits the control layer: a scan-block contract in
-`Dse.Io.Abstractions`, a host in `Dse.Core` that scans each block at its own
-period through the event queue and publishes its outputs as ordinary tags, and
-`Dse.Control` — a timer, a permissive, an interlock, an alarm, a sequencer and
-a coil, which reference the I/O contract alone. Blocks are declared in a plant
-file's `controllers` section — `Dse.Control.Catalogue` registers them — or
-attached in code.
+**Version 1.0.0.** Everything in the v1 scope of the
+[design](docs/superpowers/specs/2026-09-02-industrial-process-simulation-engine-design.md)
+is in: the deterministic core and material layer, a library of thirty
+component types, the I/O and real-time layers, six control blocks, scenarios
+replayed against golden event logs, JSON plants with a generated schema, the
+`dse` command line, and two reference samples. The [changelog](CHANGELOG.md)
+lists what each project contains and links every spec and plan.
 
 The first reference sample, `samples/mine-conveyors/`, is three conveyors, a
 feeder and a stockpile with a sequenced start and stop, cascade interlocks,
-permissives and alarms, and nine scenarios — a normal start and stop, a
-pull-key, an e-stop, an overload, a blocked chute, a failed zero-speed switch,
-a welded contactor, a starved feed and a start written while the line is
-tripped — each with its golden log. It is data only: no C#. The second sample,
+permissives and alarms, and nine scenarios. The second sample,
 `samples/wheel-line/`, is a forging cell of discrete items — a billet saw, a
 furnace, a measuring station with a pyrometer and a reject kicker, a belt and a
-press — whose PLC rejects an over-soaked billet through an alarm and a coil,
-with six scenarios: a normal run, a slow press, a stuck kicker, a press jam, a
-low furnace zone and a pyrometer failed high. It is data only too.
+press — whose PLC rejects an over-soaked billet, with six scenarios. Both are
+data only: no C#.
 
-See `docs/superpowers/specs/` for the design, `docs/superpowers/plans/` for the
-implementation plans, `docs/architecture.md` for how the engine works, and
-`docs/control-blocks.md` for the control layer.
+## Getting started
+
+You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0);
+nothing else. From the repository root:
+
+```bash
+dotnet build Dse.sln
+dotnet test Dse.sln
+```
+
+The tests run every sample scenario against its golden log. To run one
+yourself, through the `dse` command line, and check it against its golden:
+
+```bash
+dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/pull-key.json --expect samples/mine-conveyors/expected/pull-key.log
+dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/slow-press.json --expect samples/wheel-line/expected/slow-press.log
+```
+
+Each prints `Matched <golden> (<n> events).` and exits 0; it exits 4 if the
+log has changed. Leave out `--expect …` to print the event log itself.
+
+Where to read next: the [mine-conveyor sample](samples/mine-conveyors/README.md)
+and the [wheel-line sample](samples/wheel-line/README.md) tell each scenario's
+story; [architecture](docs/architecture.md) explains the tick, the port model
+and the determinism rules; [scenarios](docs/scenarios.md),
+[control blocks](docs/control-blocks.md) and
+[authoring a component](docs/authoring-a-component.md) show how to write your
+own. The design specs are in `docs/superpowers/specs/` and the implementation
+plans in `docs/superpowers/plans/`.
 
 ## Command line
 
@@ -130,13 +125,6 @@ See the [mine-conveyor sample](samples/mine-conveyors/README.md), the
 [authoring a component](docs/authoring-a-component.md), the
 [configuration diagnostics](docs/configuration-diagnostics.md) and the
 [scenario diagnostics](docs/scenario-diagnostics.md).
-
-## Build and test
-
-```bash
-dotnet build
-dotnet test
-```
 
 ## Licence
 
