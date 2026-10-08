@@ -39,9 +39,13 @@ To check the stack from a terminal instead of a browser, with it running:
 ./smoke-check.sh
 ```
 
-It waits for FUXA to read CV001's speed, presses **Start line** through
-FUXA's API, and prints `PASS: CV001.Speed = … m/s after the start sequence.`
-once the belt is up to speed (exit 0), or what failed (exit 1).
+It waits for FUXA to read a live CV001 speed, presses **Start line** through
+FUXA's API until the start sequence is running, and prints
+`PASS: CV001.Speed = … m/s after the start sequence.` once the belt is up to
+speed (exit 0), or what failed (exit 1). It can run straight after
+`docker compose up -d`: loading the project restarts FUXA's runtime, and the
+first press after that restart is often lost, so the script checks and
+presses again.
 
 ## The screens
 
