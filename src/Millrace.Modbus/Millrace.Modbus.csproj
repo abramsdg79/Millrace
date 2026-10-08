@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Millrace.Io.Abstractions\Millrace.Io.Abstractions.csproj" />
+    <ProjectReference Include="..\Millrace.Realtime\Millrace.Realtime.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Millrace.Modbus.Tests" />
+  </ItemGroup>
+
+</Project>

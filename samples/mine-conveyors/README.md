@@ -4,7 +4,7 @@ A reference sample: three belt conveyors in series carrying ore from a feeder to
 a stockpile, with the PLC logic a real line would have — a sequenced start, a
 sequenced stop, cascade interlocks, permissives and current alarms — declared in
 one plant file, and nine scenarios that break it in nine ways. There is no C#
-here. Everything is data the `dse` command line runs.
+here. Everything is data the `millrace` command line runs.
 
 ```
 Feed ──▶ CV001 (60 m) ──▶ CH1 ──▶ CV002 (40 m) ──▶ CH2 ──▶ CV003 (30 m) ──▶ Stockpile
@@ -55,7 +55,7 @@ relay and its `Permit` all allow it; the feeder makes ore only while `Enabled`
 and `Permit` are both true. So while an interlock is tripped, no write of
 `Start` or `Enabled`, from anywhere, starts its device. Nor can anything else
 give the permit back: each interlock claims its device's permit
-(`"claims": [ "CV001.Permit" ]`), so `dse tags` lists `CVn.Permit` and
+(`"claims": [ "CV001.Permit" ]`), so `millrace tags` lists `CVn.Permit` and
 `Feed.Permit` as `ReadOnly … claimed by INT_…`, and a write from an HMI, a
 scenario or another block is refused — as an HMI has no write access to a PLC
 program's permit bit. The reset that gives the permit back also writes the
@@ -107,9 +107,9 @@ Each runs in well under a second.
 From the repository root:
 
 ```bash
-dotnet run --project src/Dse.Cli -- validate samples/mine-conveyors/plant.json
-dotnet run --project src/Dse.Cli -- tags samples/mine-conveyors/plant.json
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/pull-key.json
+dotnet run --project src/Millrace.Cli -- validate samples/mine-conveyors/plant.json
+dotnet run --project src/Millrace.Cli -- tags samples/mine-conveyors/plant.json
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/pull-key.json
 ```
 
 Add `--expect samples/mine-conveyors/expected/<name>.log` to check a run against
@@ -146,7 +146,7 @@ planned. Between `SEQUENCE_COMPLETE` and `SEQ_STOP` nothing
 trips, and no alarm raises in the whole run.
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/normal-start-stop.json --expect samples/mine-conveyors/expected/normal-start-stop.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/normal-start-stop.json --expect samples/mine-conveyors/expected/normal-start-stop.log
 ```
 
 ## 2. Pull-key
@@ -174,7 +174,7 @@ carries on and runs empty.
 ```
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/pull-key.json --expect samples/mine-conveyors/expected/pull-key.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/pull-key.json --expect samples/mine-conveyors/expected/pull-key.log
 ```
 
 ## 3. Emergency stop
@@ -195,7 +195,7 @@ are downstream and keep running.
 ```
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/e-stop.json --expect samples/mine-conveyors/expected/e-stop.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/e-stop.json --expect samples/mine-conveyors/expected/e-stop.log
 ```
 
 ## 4. Motor overload
@@ -221,7 +221,7 @@ zero.
 ```
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/overload.json --expect samples/mine-conveyors/expected/overload.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/overload.json --expect samples/mine-conveyors/expected/overload.log
 ```
 
 ## 5. Chute blockage
@@ -250,7 +250,7 @@ auxiliary contact.
 ```
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/chute-blockage.json --expect samples/mine-conveyors/expected/chute-blockage.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/chute-blockage.json --expect samples/mine-conveyors/expected/chute-blockage.log
 ```
 
 ## 6. Failed zero-speed switch
@@ -273,7 +273,7 @@ price of an interlock that reads the instrument.
 ```
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/failed-zero-speed.json --expect samples/mine-conveyors/expected/failed-zero-speed.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/failed-zero-speed.json --expect samples/mine-conveyors/expected/failed-zero-speed.log
 ```
 
 ## 7. Welded contactor
@@ -314,7 +314,7 @@ never reports it stopped — so `INT_CV002`, which reads both, never trips on
 CV003.
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/welded-contactor.json --expect samples/mine-conveyors/expected/welded-contactor.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/welded-contactor.json --expect samples/mine-conveyors/expected/welded-contactor.log
 ```
 
 ## 8. Feed starve
@@ -332,7 +332,7 @@ CV002 at 133.7 s, CV003 at 153.7 s. The sample's tests check that order from
 the scales' values, and check that nothing trips, stops or alarms.
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/feed-starve.json --expect samples/mine-conveyors/expected/feed-starve.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/feed-starve.json --expect samples/mine-conveyors/expected/feed-starve.log
 ```
 
 ## 9. A start while the line is tripped
@@ -380,7 +380,7 @@ stays empty from 100 s to the end. Before the permit existed, the writes at
 stopped CV002 — and, left alone, would have filled CH1 at 114.26 s.
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/start-while-tripped.json --expect samples/mine-conveyors/expected/start-while-tripped.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/start-while-tripped.json --expect samples/mine-conveyors/expected/start-while-tripped.log
 ```
 
 ## What this demo line leaves out on purpose

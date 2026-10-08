@@ -1,7 +1,7 @@
 """Writes the FUXA project hmi/fuxa/mine-conveyors.fuxap.json, its source (plan 8).
 
 From the repository root:
-    dotnet run --project src/Dse.Cli -- modbus-map samples/mine-conveyors/plant.json --format fuxa --out <tags.json>
+    dotnet run --project src/Millrace.Cli -- modbus-map samples/mine-conveyors/plant.json --format fuxa --out <tags.json>
     python3 -I hmi/fuxa/generate-project.py <tags.json> hmi/fuxa/mine-conveyors.fuxap.json
 The output is a pure function of the tags: same tags, same bytes. Change the
 views, alarms, charts or script here, not in the JSON: regenerating replaces it.
@@ -13,7 +13,7 @@ from xml.sax.saxutils import escape
 tags = json.load(open(sys.argv[1]))
 out = sys.argv[2]
 
-DEV = "dse"
+DEV = "millrace"
 
 
 def t(name):
@@ -120,7 +120,7 @@ GREY, GREEN, RED, AMBER, DARK = "#9e9e9e", "#2e7d32", "#c62828", "#f9a825", "#37
 # ---------------------------------------------------------------- Overview
 ov = View("v_overview", "Overview", 1280, 720)
 ov.text("ov_title", 24, 40, "Mine conveyors — overview", size=24, weight="bold")
-ov.text("ov_sub", 24, 64, "Simulated by DSE over Modbus TCP · belt green running, grey stopped, red tripped", size=13,
+ov.text("ov_sub", 24, 64, "Simulated by Millrace over Modbus TCP · belt green running, grey stopped, red tripped", size=13,
         fill="#546e7a")
 
 # Ore source (feeder hopper)
@@ -250,7 +250,7 @@ charts = []
 for i, (cid, title, field, unit) in enumerate([("c_speed", "Belt speed (m/s)", "Speed", "m/s"),
                                                 ("c_current", "Motor current (A)", "Current", "A")]):
     charts.append({"id": cid, "name": title, "lines": [
-        {"device": "DSE", "id": t(f"{cv}.{field}"), "name": f"{cv}.{field}", "label": f"{cv} {unit}",
+        {"device": "Millrace", "id": t(f"{cv}.{field}"), "name": f"{cv}.{field}", "label": f"{cv} {unit}",
          "color": colors[cv], "yaxis": 1, "lineInterpolation": 0, "lineWidth": 2, "spanGaps": True}
         for cv in ["CV001", "CV002", "CV003"]]})
     opts = {"title": title, "fontFamily": "sans-serif", "legendFontSize": 12, "colorBackground": "rgba(255,255,255,1)",
@@ -263,8 +263,8 @@ for i, (cid, title, field, unit) in enumerate([("c_speed", "Belt speed (m/s)", "
                {"id": cid, "type": "realtime1", "options": opts, "events": []}, "HtmlChart", title)
 
 # ---------------------------------------------------------------- project
-device = {"id": DEV, "name": "DSE", "type": "ModbusTCP", "enabled": True, "polling": 200,
-          "property": {"address": "dse:5020", "port": None, "slot": None, "rack": None, "slaveid": "1",
+device = {"id": DEV, "name": "Millrace", "type": "ModbusTCP", "enabled": True, "polling": 200,
+          "property": {"address": "millrace:5020", "port": None, "slot": None, "rack": None, "slaveid": "1",
                        "baudrate": None, "databits": None, "stopbits": None, "parity": None,
                        "connectionOption": "TcpPort", "delay": 10, "socketReuse": None, "forceFC16": False},
           "tags": tags}
@@ -276,7 +276,7 @@ script_code = ("const hold = ms => new Promise(resolve => setTimeout(resolve, ms
                "}")
 project = {
     "version": "1.01",
-    "name": "DSE mine conveyors",
+    "name": "Millrace mine conveyors",
     "server": {"id": "0", "name": "FUXA Server", "type": "FuxaServer", "property": {}, "enabled": True, "tags": {}},
     "devices": {DEV: device},
     "hmi": {"views": [ov.to_json(), al.to_json(), tr.to_json()],
@@ -288,7 +288,7 @@ project = {
                                                  "link": ""},
                                                 {"text": "Trends", "view": "v_trends", "icon": "show_chart",
                                                  "link": ""}]},
-                       "header": {"title": "DSE mine conveyors", "alarms": "fix", "infos": "", "bkcolor": "#ffffff",
+                       "header": {"title": "Millrace mine conveyors", "alarms": "fix", "infos": "", "bkcolor": "#ffffff",
                                   "fgcolor": "#000000", "height": 46, "buttonHeight": 36, "fontSize": 13,
                                   "items": [], "itemsAnchor": "left"}}},
     "charts": charts, "graphs": [], "alarms": alarms, "notifications": [],

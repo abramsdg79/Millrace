@@ -1,11 +1,11 @@
 # Control blocks
 
 A control block is a PLC rung: a small, stateful, pure function of the tags it
-reads, scanned at its own period, whose outputs are ordinary tags. `Dse.Control`
+reads, scanned at its own period, whose outputs are ordinary tags. `Millrace.Control`
 carries six of them — a timer, a permissive, an interlock, an alarm, a
-sequencer and a coil — and `Dse.Core` carries the host that scans them.
+sequencer and a coil — and `Millrace.Core` carries the host that scans them.
 
-`Dse.Control` references `Dse.Io.Abstractions` and nothing else. A block cannot
+`Millrace.Control` references `Millrace.Io.Abstractions` and nothing else. A block cannot
 see a `Simulation`, a directory, a binding, a clock or an event log, which is
 why a block's unit tests need none of them.
 
@@ -64,17 +64,17 @@ builder.AddScanBlock(new Interlock(
 ```
 
 That is the code form. A plant file declares the same block under
-`controllers` — see *In the plant file* below — and `dse validate`, `dse tags`
-and `dse run` handle it with no C#.
+`controllers` — see *In the plant file* below — and `millrace validate`, `millrace tags`
+and `millrace run` handle it with no C#.
 
 `Build()` checks every block:
 
 | code | check |
 |---|---|
-| DSE013 | `ScanPeriod` is a positive whole number of time steps. |
-| DSE014 | Every `Inputs` and `Writes` entry names a tag the plant has, with the same kind; every `Writes` entry is read-write. |
-| DSE015 | The block id is unique across components and blocks, and no owned tag name collides with an existing tag. |
-| DSE016 | Every claim names a read-write tag in the block's `Writes`, once; no two blocks claim one tag; no other block's `Writes` names a claimed tag. |
+| MR013 | `ScanPeriod` is a positive whole number of time steps. |
+| MR014 | Every `Inputs` and `Writes` entry names a tag the plant has, with the same kind; every `Writes` entry is read-write. |
+| MR015 | The block id is unique across components and blocks, and no owned tag name collides with an existing tag. |
+| MR016 | Every claim names a read-write tag in the block's `Writes`, once; no two blocks claim one tag; no other block's `Writes` names a claimed tag. |
 
 `Inputs` and `Writes` are resolved against the plant's tags **and every block's
 owned tags**, whichever order the blocks were added, so an interlock may list
@@ -113,12 +113,12 @@ value before it builds any block, and reports every mistake at its path:
 
 | code | check |
 |---|---|
-| DSE113 | The tag exists; the fix names the nearest one. |
-| DSE114 | The tag is of a kind the block can use, and the value fits the tag. |
-| DSE115 | A tag the block commands is read-write — not a measured value, another block's output, or an input a signal link drives. |
+| MR113 | The tag exists; the fix names the nearest one. |
+| MR114 | The tag is of a kind the block can use, and the value fits the tag. |
+| MR115 | A tag the block commands is read-write — not a measured value, another block's output, or an input a signal link drives. |
 
 Block types come from the catalogue: `ControlModule`, in
-`Dse.Control.Catalogue`, registers the six below, and `dse catalog export`
+`Millrace.Control.Catalogue`, registers the six below, and `millrace catalog export`
 lists them under `"blocks"`. A module loaded with `--assembly` may register
 more.
 
@@ -149,16 +149,16 @@ builder.AddScanBlock(interlock, ["CV001.Permit"]);
 The claimant's own writes land and log exactly as before — `Set to true by
 INT01.` Every other writer is refused before anything is queued. The directory
 publishes the tag `ReadOnly` with `ClaimedBy` set to the block's id, and
-`dse tags` prints it as `CV001.Permit  Bool  ReadOnly  …  claimed by INT01`, so an
+`millrace tags` prints it as `CV001.Permit  Bool  ReadOnly  …  claimed by INT01`, so an
 OPC UA server or an HMI generator sees an ordinary read-only tag. `TagImage.Write`,
 `Simulation.WriteAt` and `WriteIn` throw
 `Tag 'CV001.Permit' is claimed by INT01; only that block writes it.`; the
 realtime `CommandBus` answers `ReadOnly`; a scenario that writes it does not bind
-(`DSE206`, naming the claimant). Another block whose writes name a claimed tag
+(`MR206`, naming the claimant). Another block whose writes name a claimed tag
 fails validation, like a PLC's duplicate-coil check. There is no force or
 override. A claim must name a read-write tag the block commands — not a measured
 value, another block's output, or an input a signal link drives — and each tag
-has one claimant; every breach is `DSE016`, reported in a plant file at the
+has one claimant; every breach is `MR016`, reported in a plant file at the
 `claims` entry it is about. A block may claim another block's command (a
 sequence that alone resets an interlock), or its own.
 
@@ -209,7 +209,7 @@ mistake worth checking for.
 
 ### The worked example
 
-`tests/Dse.Control.Tests/Golden/conveyor-control.log` is a permissive, an
+`tests/Millrace.Control.Tests/Golden/conveyor-control.log` is a permissive, an
 interlock, a current alarm and a start-up sequencer running the conveyor plant
 for two simulated minutes, with a thermal-overload fault injected at 40 s. Its
 tick at 40.000-40.110 s is the clearest illustration of the timing rule end to
@@ -225,8 +225,8 @@ that lands the tick after that:
 A write a block issues is logged with its origin — `Set to false by INT01.` —
 and every other write keeps the plain `Set to false.`, so the log tells a
 block's command from an operator's. The example is also a plant file,
-`tests/Dse.Configuration.Tests/Plants/valid/conveyor-control.json`; with the
-scenario `tests/Dse.Cli.Tests/Scenarios/conveyor-control.json`, `dse run`
+`tests/Millrace.Configuration.Tests/Plants/valid/conveyor-control.json`; with the
+scenario `tests/Millrace.Cli.Tests/Scenarios/conveyor-control.json`, `millrace run`
 reproduces this golden byte for byte.
 
 The example deliberately has no interlock between the feed and the belt: once
@@ -550,7 +550,7 @@ can pass the hot billet and reject the good one behind it.
 ## Writing your own
 
 Implement `IScanBlock`. Validate constructor parameters with `ArgumentException`
-as a component does; `TagNameRules` (in `Dse.Io.Abstractions`) is public, so a
+as a component does; `TagNameRules` (in `Millrace.Io.Abstractions`) is public, so a
 block may check an id or a pin name against the same rules `TagRef` and
 `TagSpec` already enforce on every pin, rather than duplicating them. Build the
 pin lists once, in the constructor, and never change them. Keep state in
@@ -558,7 +558,7 @@ fields, set every output on every scan (or deliberately do not, and document
 that it holds), and make every event message a sentence ending in a full stop —
 the event log is a golden-file format, and its bytes are a contract.
 
-`tests/Dse.Control.Tests/Scan.cs` shows the pattern for a pure test: values in,
+`tests/Millrace.Control.Tests/Scan.cs` shows the pattern for a pure test: values in,
 published values, writes and events out, no `Simulation`.
 
 ## What is not here

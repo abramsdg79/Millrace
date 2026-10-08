@@ -1,10 +1,10 @@
 using System.Runtime.CompilerServices;
 
-namespace Dse.Tests.Shared;
+namespace Millrace.Tests.Shared;
 
 /// <summary>
 /// Compares text with a committed file beside the calling test. Set the
-/// environment variable DSE_UPDATE_GOLDEN=1 to write the file instead (R42);
+/// environment variable MILLRACE_UPDATE_GOLDEN=1 to write the file instead (R42);
 /// read what it wrote before committing it.
 /// </summary>
 internal static class Golden
@@ -14,14 +14,14 @@ internal static class Golden
         string path = Path.Combine(Path.GetDirectoryName(callerFile)!, relativePath);
         string normalised = actual.ReplaceLineEndings("\n");
 
-        if (Environment.GetEnvironmentVariable("DSE_UPDATE_GOLDEN") == "1")
+        if (Environment.GetEnvironmentVariable("MILLRACE_UPDATE_GOLDEN") == "1")
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             File.WriteAllText(path, normalised);
             return;
         }
 
-        Xunit.Assert.True(File.Exists(path), $"Golden file '{path}' does not exist. Run the test once with DSE_UPDATE_GOLDEN=1, read the file, commit it.");
+        Xunit.Assert.True(File.Exists(path), $"Golden file '{path}' does not exist. Run the test once with MILLRACE_UPDATE_GOLDEN=1, read the file, commit it.");
         string expected = File.ReadAllText(path).ReplaceLineEndings("\n");
         if (!string.Equals(expected, normalised, StringComparison.Ordinal))
         {

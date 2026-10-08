@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\Golden.cs" Link="Shared\Golden.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Millrace.Configuration.Tests\Plants\valid\*.json"
+          Link="Plants\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Millrace.Control\Millrace.Control.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Control.Catalogue\Millrace.Control.Catalogue.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Core\Millrace.Core.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Components\Millrace.Components.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Configuration\Millrace.Configuration.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Realtime\Millrace.Realtime.csproj" />
+  </ItemGroup>
+
+</Project>

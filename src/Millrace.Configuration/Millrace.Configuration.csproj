@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Millrace.Core\Millrace.Core.csproj" />
+    <ProjectReference Include="..\Millrace.Components\Millrace.Components.csproj" />
+    <ProjectReference Include="..\Millrace.Control.Catalogue\Millrace.Control.Catalogue.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Millrace.Configuration.Tests" />
+  </ItemGroup>
+</Project>

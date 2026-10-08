@@ -1,16 +1,16 @@
-# The mine-conveyor sample as a SCADA would see it: DSE serves the plant over
+# The mine-conveyor sample as a SCADA would see it: Millrace serves the plant over
 # Modbus TCP, FUXA polls it and shows the HMI on http://localhost:1881, and a
 # one-shot container loads the HMI project into FUXA on its first start.
 # Run from this folder: docker compose up --build
 
-name: dse-hmi
+name: millrace-hmi
 
 services:
-  dse:
+  millrace:
     build:
       context: ../..
       dockerfile: hmi/fuxa/Dockerfile
-    image: dse-hmi/dse:local
+    image: millrace-hmi/millrace:local
     command: ["serve", "samples/mine-conveyors/plant.json", "--port", "5020", "--bind", "0.0.0.0"]
     ports:
       - "127.0.0.1:5020:5020"
@@ -19,9 +19,9 @@ services:
     build:
       context: .
       dockerfile: fuxa.Dockerfile
-    image: dse-hmi/fuxa:1.3.4-modbus
+    image: millrace-hmi/fuxa:1.3.4-modbus
     depends_on:
-      - dse
+      - millrace
     ports:
       - "127.0.0.1:1881:1881"
     volumes:
@@ -44,8 +44,8 @@ services:
           if [ "$$tries" -ge 120 ]; then echo "FUXA did not answer within 120 s." >&2; exit 1; fi
           sleep 1
         done
-        if curl -fsS http://fuxa:1881/api/project | grep -q '"address":"dse:5020"'; then
-          echo "FUXA already has the DSE project; leaving it as it is."
+        if curl -fsS http://fuxa:1881/api/project | grep -q '"address":"millrace:5020"'; then
+          echo "FUXA already has the Millrace project; leaving it as it is."
           exit 0
         fi
         curl -fsS -X POST -H 'Content-Type: application/json' \

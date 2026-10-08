@@ -4,7 +4,7 @@ The second reference sample: a forging cell that heats steel billets in a
 furnace, checks each one's temperature at the furnace exit, carries the good
 ones on a belt to a press and forges each into a wheel. Six scenarios break it
 in six ways. As in `samples/mine-conveyors/`, there is no C# here: everything is
-data the `dse` command line runs.
+data the `millrace` command line runs.
 
 It is a different domain on purpose. The mine conveyors move bulk ore; here
 each billet is an item with its own id, mass and temperature, the press changes
@@ -78,13 +78,13 @@ All five scan every 100 ms.
 
 **The reject is the PLC's decision.** The pyrometer measures, the alarm
 decides, the coil drives the kicker. The coil claims `GATE.Reject`, so nothing
-else — no HMI, no scenario — can write it: `dse tags` lists it `ReadOnly …
+else — no HMI, no scenario — can write it: `millrace tags` lists it `ReadOnly …
 claimed by COIL_REJECT`. `INT_BAY` stops the saw when the reject cradle is full
 and claims `Billets.Enabled` the same way.
 
 **Why the queue alarm watches a hot-metal detector.** An `alarm` watches a
-Double tag, and a belt's `ItemCount` is an Int64 — `dse validate` refuses an
-alarm on it (`DSE114`). Lines detect a queue the way this one does: a
+Double tag, and a belt's `ItemCount` is an Int64 — `millrace validate` refuses an
+alarm on it (`MR114`). Lines detect a queue the way this one does: a
 hot-metal detector at the queue-full position. Blanks stand 2 m apart from the
 head, so a blank standing at 4 m means at least four are queued. A blank
 passing at belt speed is in its view for under half a second, and the 5 s lag
@@ -145,9 +145,9 @@ lands at 06:18:36.000 (*N*), `HiHi` raises at *N* + 2, the coil's write lands at
 From the repository root:
 
 ```bash
-dotnet run --project src/Dse.Cli -- validate samples/wheel-line/plant.json
-dotnet run --project src/Dse.Cli -- tags samples/wheel-line/plant.json
-dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/slow-press.json
+dotnet run --project src/Millrace.Cli -- validate samples/wheel-line/plant.json
+dotnet run --project src/Millrace.Cli -- tags samples/wheel-line/plant.json
+dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/slow-press.json
 ```
 
 Add `--expect samples/wheel-line/expected/<name>.log` to check a run against
@@ -167,7 +167,7 @@ and `Reject` is never written again after the first scan.
 06:11:51.800  PRESS  IDLE  Batch discharged; ready for the next.
 ```
 
-`dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/normal-run.json --expect samples/wheel-line/expected/normal-run.log`
+`dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/normal-run.json --expect samples/wheel-line/expected/normal-run.log`
 
 ## 2. Slow press
 
@@ -208,7 +208,7 @@ clears, and the line runs normally until the saw stops at 2100 s.
 Only billet 13 is rejected. The rejection itself makes room: the next billet
 reaches the gate at its target and waits there, good, for the belt.
 
-`dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/slow-press.json --expect samples/wheel-line/expected/slow-press.log`
+`dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/slow-press.json --expect samples/wheel-line/expected/slow-press.log`
 
 ## 3. Stuck kicker
 
@@ -234,7 +234,7 @@ station proves the kick — a sensor on the reject chute, or the gate's own
 sample deliberately has no such check, so the failure shows; the tests follow
 billets 13 and 14 by id into the `Wheels` sink.
 
-`dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/stuck-kicker.json --expect samples/wheel-line/expected/stuck-kicker.log`
+`dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/stuck-kicker.json --expect samples/wheel-line/expected/stuck-kicker.log`
 
 ## 4. Press jam
 
@@ -263,7 +263,7 @@ gate, no over-soaked billet can reach the pyrometer, so rejects cannot
 accumulate during a jam; the full bay and `INT_BAY` are shown by scenario 6,
 where they can.
 
-`dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/press-jam.json --expect samples/wheel-line/expected/press-jam.log`
+`dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/press-jam.json --expect samples/wheel-line/expected/press-jam.log`
 
 ## 5. Zone low
 
@@ -281,7 +281,7 @@ reaches the gate.
 06:05:51.800  PRESS  IDLE  Batch discharged; ready for the next.
 ```
 
-`dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/zone-low.json --expect samples/wheel-line/expected/zone-low.log`
+`dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/zone-low.json --expect samples/wheel-line/expected/zone-low.log`
 
 ## 6. Pyrometer fails high
 
@@ -321,7 +321,7 @@ crane or a forklift, after which the reset is accepted and writes
 `Billets.Enabled` true; an `item-sink` cannot be emptied, so no scenario can
 show that recovery.
 
-`dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/pyro-fail-high.json --expect samples/wheel-line/expected/pyro-fail-high.log`
+`dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/pyro-fail-high.json --expect samples/wheel-line/expected/pyro-fail-high.log`
 
 ## Known limits
 

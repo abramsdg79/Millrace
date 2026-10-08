@@ -1,6 +1,6 @@
 {
   "version": "1.01",
-  "name": "DSE mine conveyors",
+  "name": "Millrace mine conveyors",
   "server": {
     "id": "0",
     "name": "FUXA Server",
@@ -10,14 +10,14 @@
     "tags": {}
   },
   "devices": {
-    "dse": {
-      "id": "dse",
-      "name": "DSE",
+    "millrace": {
+      "id": "millrace",
+      "name": "Millrace",
       "type": "ModbusTCP",
       "enabled": true,
       "polling": 200,
       "property": {
-        "address": "dse:5020",
+        "address": "millrace:5020",
         "port": null,
         "slot": null,
         "rack": null,
@@ -1050,7 +1050,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_Feed.Enabled",
               "variable": "t_Feed.Enabled",
               "ranges": [
@@ -1081,7 +1081,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_INT_FEED.Ok",
               "variable": "t_INT_FEED.Ok",
               "ranges": [
@@ -1112,7 +1112,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_Feed.HopperMass",
               "variable": "t_Feed.HopperMass",
               "ranges": [
@@ -1138,7 +1138,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV001.Contactor",
               "variable": "t_CV001.Contactor",
               "ranges": [
@@ -1171,7 +1171,7 @@
               "actions": [
                 {
                   "variableId": "t_INT_CV001.Tripped",
-                  "variableSrc": "dse",
+                  "variableSrc": "millrace",
                   "variable": "t_INT_CV001.Tripped",
                   "bitmask": 0,
                   "range": {
@@ -1183,7 +1183,7 @@
                 },
                 {
                   "variableId": "t_INT_CV001.Tripped",
-                  "variableSrc": "dse",
+                  "variableSrc": "millrace",
                   "variable": "t_INT_CV001.Tripped",
                   "bitmask": 0,
                   "range": {
@@ -1194,7 +1194,7 @@
                   "options": {}
                 }
               ],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_INT_CV001.Tripped",
               "variable": "t_INT_CV001.Tripped",
               "ranges": []
@@ -1210,7 +1210,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV001.Speed",
               "variable": "t_CV001.Speed",
               "ranges": [
@@ -1236,7 +1236,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV001.TonnesPerHour",
               "variable": "t_CV001.TonnesPerHour",
               "ranges": [
@@ -1262,7 +1262,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV001.Current",
               "variable": "t_CV001.Current",
               "ranges": [
@@ -1288,7 +1288,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV001.Contactor",
               "variable": "t_CV001.Contactor",
               "ranges": [
@@ -1319,7 +1319,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV001.SafetyOk",
               "variable": "t_CV001.SafetyOk",
               "ranges": [
@@ -1350,7 +1350,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV001.Stopped",
               "variable": "t_CV001.Stopped",
               "ranges": [
@@ -1381,7 +1381,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_INT_CV001.Ok",
               "variable": "t_INT_CV001.Ok",
               "ranges": [
@@ -1412,7 +1412,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV002.Contactor",
               "variable": "t_CV002.Contactor",
               "ranges": [
@@ -1445,7 +1445,7 @@
               "actions": [
                 {
                   "variableId": "t_INT_CV002.Tripped",
-                  "variableSrc": "dse",
+                  "variableSrc": "millrace",
                   "variable": "t_INT_CV002.Tripped",
                   "bitmask": 0,
                   "range": {
@@ -1457,7 +1457,7 @@
                 },
                 {
                   "variableId": "t_INT_CV002.Tripped",
-                  "variableSrc": "dse",
+                  "variableSrc": "millrace",
                   "variable": "t_INT_CV002.Tripped",
                   "bitmask": 0,
                   "range": {
@@ -1468,7 +1468,7 @@
                   "options": {}
                 }
               ],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_INT_CV002.Tripped",
               "variable": "t_INT_CV002.Tripped",
               "ranges": []
@@ -1484,7 +1484,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV002.Speed",
               "variable": "t_CV002.Speed",
               "ranges": [
@@ -1510,7 +1510,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV002.TonnesPerHour",
               "variable": "t_CV002.TonnesPerHour",
               "ranges": [
@@ -1536,7 +1536,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV002.Current",
               "variable": "t_CV002.Current",
               "ranges": [
@@ -1562,7 +1562,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV002.Contactor",
               "variable": "t_CV002.Contactor",
               "ranges": [
@@ -1593,7 +1593,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV002.SafetyOk",
               "variable": "t_CV002.SafetyOk",
               "ranges": [
@@ -1624,7 +1624,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV002.Stopped",
               "variable": "t_CV002.Stopped",
               "ranges": [
@@ -1655,7 +1655,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_INT_CV002.Ok",
               "variable": "t_INT_CV002.Ok",
               "ranges": [
@@ -1686,7 +1686,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV003.Contactor",
               "variable": "t_CV003.Contactor",
               "ranges": [
@@ -1719,7 +1719,7 @@
               "actions": [
                 {
                   "variableId": "t_INT_CV003.Tripped",
-                  "variableSrc": "dse",
+                  "variableSrc": "millrace",
                   "variable": "t_INT_CV003.Tripped",
                   "bitmask": 0,
                   "range": {
@@ -1731,7 +1731,7 @@
                 },
                 {
                   "variableId": "t_INT_CV003.Tripped",
-                  "variableSrc": "dse",
+                  "variableSrc": "millrace",
                   "variable": "t_INT_CV003.Tripped",
                   "bitmask": 0,
                   "range": {
@@ -1742,7 +1742,7 @@
                   "options": {}
                 }
               ],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_INT_CV003.Tripped",
               "variable": "t_INT_CV003.Tripped",
               "ranges": []
@@ -1758,7 +1758,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV003.Speed",
               "variable": "t_CV003.Speed",
               "ranges": [
@@ -1784,7 +1784,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV003.TonnesPerHour",
               "variable": "t_CV003.TonnesPerHour",
               "ranges": [
@@ -1810,7 +1810,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV003.Current",
               "variable": "t_CV003.Current",
               "ranges": [
@@ -1836,7 +1836,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV003.Contactor",
               "variable": "t_CV003.Contactor",
               "ranges": [
@@ -1867,7 +1867,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV003.SafetyOk",
               "variable": "t_CV003.SafetyOk",
               "ranges": [
@@ -1898,7 +1898,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV003.Stopped",
               "variable": "t_CV003.Stopped",
               "ranges": [
@@ -1929,7 +1929,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_INT_CV003.Ok",
               "variable": "t_INT_CV003.Ok",
               "ranges": [
@@ -1960,7 +1960,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_Stockpile.Rate",
               "variable": "t_Stockpile.Rate",
               "ranges": [
@@ -2102,7 +2102,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_SEQ_START.Step",
               "variable": "t_SEQ_START.Step",
               "ranges": [
@@ -2127,7 +2127,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_SEQ_STOP.Step",
               "variable": "t_SEQ_STOP.Step",
               "ranges": [
@@ -2152,7 +2152,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_SEQ_START.Complete",
               "variable": "t_SEQ_START.Complete",
               "ranges": [
@@ -2183,7 +2183,7 @@
             "property": {
               "events": [],
               "actions": [],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_SEQ_START.Faulted",
               "variable": "t_SEQ_START.Faulted",
               "ranges": [
@@ -2242,7 +2242,7 @@
                   "stroke": "#ffffff"
                 }
               ],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV001.PullKey1",
               "variable": "t_CV001.PullKey1"
             },
@@ -2285,7 +2285,7 @@
                   "stroke": "#ffffff"
                 }
               ],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV001.EStop",
               "variable": "t_CV001.EStop"
             },
@@ -2328,7 +2328,7 @@
                   "stroke": "#ffffff"
                 }
               ],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV002.PullKey1",
               "variable": "t_CV002.PullKey1"
             },
@@ -2371,7 +2371,7 @@
                   "stroke": "#ffffff"
                 }
               ],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV002.EStop",
               "variable": "t_CV002.EStop"
             },
@@ -2414,7 +2414,7 @@
                   "stroke": "#ffffff"
                 }
               ],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV003.PullKey1",
               "variable": "t_CV003.PullKey1"
             },
@@ -2457,7 +2457,7 @@
                   "stroke": "#ffffff"
                 }
               ],
-              "variableSrc": "dse",
+              "variableSrc": "millrace",
               "variableId": "t_CV003.EStop",
               "variable": "t_CV003.EStop"
             },
@@ -2467,7 +2467,7 @@
           }
         },
         "variables": {},
-        "svgcontent": "<svg width=\"1280\" height=\"720\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\"><g><title>Layer 1</title><text id=\"ov_title\" x=\"24\" y=\"40\" font-family=\"sans-serif\" font-size=\"24\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Mine conveyors — overview</text><text id=\"ov_sub\" x=\"24\" y=\"64\" font-family=\"sans-serif\" font-size=\"13\" font-weight=\"normal\" fill=\"#546e7a\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Simulated by DSE over Modbus TCP · belt green running, grey stopped, red tripped</text><polygon id=\"ov_hopper\" points=\"30,100 130,100 110,150 50,150\" fill=\"#8d6e63\" stroke=\"#4e342e\" stroke-width=\"2\"/><text id=\"ov_hopper_l\" x=\"30\" y=\"92\" font-family=\"sans-serif\" font-size=\"14\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Ore feed</text><circle id=\"SHE_feed_enabled\" cx=\"40\" cy=\"172\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_feed_enabled_l\" x=\"52\" y=\"177\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Enabled</text><circle id=\"SHE_feed_ok\" cx=\"40\" cy=\"194\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_feed_ok_l\" x=\"52\" y=\"199\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">INT_FEED Ok</text><g id=\"VAL_feed_mass\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"13\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_feed_mass_t\" x=\"40\" y=\"222\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"13\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><text id=\"ov_cv001_name\" x=\"200\" y=\"148\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">CV001</text><rect id=\"SHE_cv001_belt\" x=\"140\" y=\"160\" width=\"380\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"2\"/><rect id=\"SHE_cv001_trip\" x=\"140\" y=\"160\" width=\"380\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"2\"/><circle id=\"ov_cv001_tail\" cx=\"151\" cy=\"171\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><circle id=\"ov_cv001_head\" cx=\"509\" cy=\"171\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><g id=\"VAL_cv001_speed\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv001_speed_t\" x=\"140\" y=\"204\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv001_load\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv001_load_t\" x=\"250\" y=\"204\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv001_current\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv001_current_t\" x=\"360\" y=\"204\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><circle id=\"SHE_cv001_contactor\" cx=\"146\" cy=\"224\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv001_contactor_l\" x=\"158\" y=\"229\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Contactor</text><circle id=\"SHE_cv001_safety\" cx=\"246\" cy=\"224\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv001_safety_l\" x=\"258\" y=\"229\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Safety relay</text><circle id=\"SHE_cv001_zero\" cx=\"356\" cy=\"224\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv001_zero_l\" x=\"368\" y=\"229\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Zero speed</text><circle id=\"SHE_cv001_intok\" cx=\"146\" cy=\"246\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv001_intok_l\" x=\"158\" y=\"251\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">INT_CV001 Ok</text><polygon id=\"ov_ch1\" points=\"490,164 540,164 524,280 506,280\" fill=\"#b0bec5\" stroke=\"#37474f\" stroke-width=\"2\"/><text id=\"ov_ch1_l\" x=\"546\" y=\"200\" font-family=\"sans-serif\" font-size=\"13\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">CH1</text><text id=\"ov_cv002_name\" x=\"560\" y=\"278\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">CV002</text><rect id=\"SHE_cv002_belt\" x=\"500\" y=\"290\" width=\"360\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"2\"/><rect id=\"SHE_cv002_trip\" x=\"500\" y=\"290\" width=\"360\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"2\"/><circle id=\"ov_cv002_tail\" cx=\"511\" cy=\"301\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><circle id=\"ov_cv002_head\" cx=\"849\" cy=\"301\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><g id=\"VAL_cv002_speed\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv002_speed_t\" x=\"500\" y=\"334\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv002_load\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv002_load_t\" x=\"610\" y=\"334\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv002_current\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv002_current_t\" x=\"720\" y=\"334\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><circle id=\"SHE_cv002_contactor\" cx=\"506\" cy=\"354\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv002_contactor_l\" x=\"518\" y=\"359\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Contactor</text><circle id=\"SHE_cv002_safety\" cx=\"606\" cy=\"354\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv002_safety_l\" x=\"618\" y=\"359\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Safety relay</text><circle id=\"SHE_cv002_zero\" cx=\"716\" cy=\"354\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv002_zero_l\" x=\"728\" y=\"359\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Zero speed</text><circle id=\"SHE_cv002_intok\" cx=\"506\" cy=\"376\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv002_intok_l\" x=\"518\" y=\"381\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">INT_CV002 Ok</text><polygon id=\"ov_ch2\" points=\"830,294 880,294 864,410 846,410\" fill=\"#b0bec5\" stroke=\"#37474f\" stroke-width=\"2\"/><text id=\"ov_ch2_l\" x=\"886\" y=\"330\" font-family=\"sans-serif\" font-size=\"13\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">CH2</text><text id=\"ov_cv003_name\" x=\"900\" y=\"408\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">CV003</text><rect id=\"SHE_cv003_belt\" x=\"840\" y=\"420\" width=\"300\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"2\"/><rect id=\"SHE_cv003_trip\" x=\"840\" y=\"420\" width=\"300\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"2\"/><circle id=\"ov_cv003_tail\" cx=\"851\" cy=\"431\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><circle id=\"ov_cv003_head\" cx=\"1129\" cy=\"431\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><g id=\"VAL_cv003_speed\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv003_speed_t\" x=\"840\" y=\"464\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv003_load\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv003_load_t\" x=\"950\" y=\"464\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv003_current\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv003_current_t\" x=\"1060\" y=\"464\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><circle id=\"SHE_cv003_contactor\" cx=\"846\" cy=\"484\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv003_contactor_l\" x=\"858\" y=\"489\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Contactor</text><circle id=\"SHE_cv003_safety\" cx=\"946\" cy=\"484\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv003_safety_l\" x=\"958\" y=\"489\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Safety relay</text><circle id=\"SHE_cv003_zero\" cx=\"1056\" cy=\"484\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv003_zero_l\" x=\"1068\" y=\"489\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Zero speed</text><circle id=\"SHE_cv003_intok\" cx=\"846\" cy=\"506\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv003_intok_l\" x=\"858\" y=\"511\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">INT_CV003 Ok</text><polygon id=\"ov_pile\" points=\"1120,560 1250,560 1185,470\" fill=\"#8d6e63\" stroke=\"#4e342e\" stroke-width=\"2\"/><text id=\"ov_pile_l\" x=\"1120\" y=\"584\" font-family=\"sans-serif\" font-size=\"14\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Stockpile</text><g id=\"VAL_pile_rate\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"13\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_pile_rate_t\" x=\"1120\" y=\"604\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"13\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><rect id=\"ov_panel\" x=\"16\" y=\"440\" width=\"760\" height=\"232\" rx=\"6\" fill=\"#ffffff\" stroke=\"#b0bec5\"/><text id=\"ov_panel_l\" x=\"24\" y=\"460\" font-family=\"sans-serif\" font-size=\"15\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Operator</text><g id=\"HXB_start\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_start_r\" x=\"24\" y=\"470\" width=\"170\" height=\"40\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_start\" x=\"24\" y=\"470\" width=\"170\" height=\"40\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_start\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#2e7d32;color:#ffffff;font-size:13px;font-family:sans-serif;\">Start line</button></foreignObject></g><g id=\"HXB_stop\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_stop_r\" x=\"204\" y=\"470\" width=\"170\" height=\"40\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_stop\" x=\"204\" y=\"470\" width=\"170\" height=\"40\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_stop\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#ef6c00;color:#ffffff;font-size:13px;font-family:sans-serif;\">Stop line</button></foreignObject></g><g id=\"HXB_safety_reset\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_safety_reset_r\" x=\"384\" y=\"470\" width=\"170\" height=\"40\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_safety_reset\" x=\"384\" y=\"470\" width=\"170\" height=\"40\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_safety_reset\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#1565c0;color:#ffffff;font-size:13px;font-family:sans-serif;\">Reset safety relays</button></foreignObject></g><g id=\"HXB_int_reset\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_int_reset_r\" x=\"564\" y=\"470\" width=\"190\" height=\"40\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_int_reset\" x=\"564\" y=\"470\" width=\"190\" height=\"40\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_int_reset\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#1565c0;color:#ffffff;font-size:13px;font-family:sans-serif;\">Reset interlocks</button></foreignObject></g><g id=\"VAL_seq_start_step\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"13\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_seq_start_step_t\" x=\"24\" y=\"534\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"13\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><text id=\"ov_seq_start_l\" x=\"44\" y=\"534\" font-family=\"sans-serif\" font-size=\"13\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">SEQ_START step</text><g id=\"VAL_seq_stop_step\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"13\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_seq_stop_step_t\" x=\"204\" y=\"534\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"13\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><text id=\"ov_seq_stop_l\" x=\"224\" y=\"534\" font-family=\"sans-serif\" font-size=\"13\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">SEQ_STOP step</text><circle id=\"SHE_seq_complete\" cx=\"390\" cy=\"530\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_seq_complete_l\" x=\"402\" y=\"535\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Start complete</text><circle id=\"SHE_seq_faulted\" cx=\"570\" cy=\"530\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_seq_faulted_l\" x=\"582\" y=\"535\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Start faulted</text><g id=\"HXB_cv001_pullkey\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv001_pullkey_r\" x=\"24\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv001_pullkey\" x=\"24\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv001_pullkey\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV001 pull-key</button></foreignObject></g><g id=\"HXB_cv001_estop\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv001_estop_r\" x=\"144\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv001_estop\" x=\"144\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv001_estop\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV001 e-stop</button></foreignObject></g><g id=\"HXB_cv002_pullkey\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv002_pullkey_r\" x=\"269\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv002_pullkey\" x=\"269\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv002_pullkey\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV002 pull-key</button></foreignObject></g><g id=\"HXB_cv002_estop\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv002_estop_r\" x=\"389\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv002_estop\" x=\"389\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv002_estop\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV002 e-stop</button></foreignObject></g><g id=\"HXB_cv003_pullkey\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv003_pullkey_r\" x=\"514\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv003_pullkey\" x=\"514\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv003_pullkey\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV003 pull-key</button></foreignObject></g><g id=\"HXB_cv003_estop\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv003_estop_r\" x=\"634\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv003_estop\" x=\"634\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv003_estop\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV003 e-stop</button></foreignObject></g><text id=\"ov_toggle_note\" x=\"24\" y=\"620\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#546e7a\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Pull-key and e-stop buttons latch: red is actuated; press again to restore,</text><text id=\"ov_toggle_note2\" x=\"24\" y=\"636\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#546e7a\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">then reset the safety relays and the interlocks, and start the line.</text></g></svg>",
+        "svgcontent": "<svg width=\"1280\" height=\"720\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\"><g><title>Layer 1</title><text id=\"ov_title\" x=\"24\" y=\"40\" font-family=\"sans-serif\" font-size=\"24\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Mine conveyors — overview</text><text id=\"ov_sub\" x=\"24\" y=\"64\" font-family=\"sans-serif\" font-size=\"13\" font-weight=\"normal\" fill=\"#546e7a\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Simulated by Millrace over Modbus TCP · belt green running, grey stopped, red tripped</text><polygon id=\"ov_hopper\" points=\"30,100 130,100 110,150 50,150\" fill=\"#8d6e63\" stroke=\"#4e342e\" stroke-width=\"2\"/><text id=\"ov_hopper_l\" x=\"30\" y=\"92\" font-family=\"sans-serif\" font-size=\"14\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Ore feed</text><circle id=\"SHE_feed_enabled\" cx=\"40\" cy=\"172\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_feed_enabled_l\" x=\"52\" y=\"177\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Enabled</text><circle id=\"SHE_feed_ok\" cx=\"40\" cy=\"194\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_feed_ok_l\" x=\"52\" y=\"199\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">INT_FEED Ok</text><g id=\"VAL_feed_mass\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"13\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_feed_mass_t\" x=\"40\" y=\"222\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"13\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><text id=\"ov_cv001_name\" x=\"200\" y=\"148\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">CV001</text><rect id=\"SHE_cv001_belt\" x=\"140\" y=\"160\" width=\"380\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"2\"/><rect id=\"SHE_cv001_trip\" x=\"140\" y=\"160\" width=\"380\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"2\"/><circle id=\"ov_cv001_tail\" cx=\"151\" cy=\"171\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><circle id=\"ov_cv001_head\" cx=\"509\" cy=\"171\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><g id=\"VAL_cv001_speed\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv001_speed_t\" x=\"140\" y=\"204\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv001_load\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv001_load_t\" x=\"250\" y=\"204\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv001_current\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv001_current_t\" x=\"360\" y=\"204\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><circle id=\"SHE_cv001_contactor\" cx=\"146\" cy=\"224\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv001_contactor_l\" x=\"158\" y=\"229\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Contactor</text><circle id=\"SHE_cv001_safety\" cx=\"246\" cy=\"224\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv001_safety_l\" x=\"258\" y=\"229\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Safety relay</text><circle id=\"SHE_cv001_zero\" cx=\"356\" cy=\"224\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv001_zero_l\" x=\"368\" y=\"229\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Zero speed</text><circle id=\"SHE_cv001_intok\" cx=\"146\" cy=\"246\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv001_intok_l\" x=\"158\" y=\"251\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">INT_CV001 Ok</text><polygon id=\"ov_ch1\" points=\"490,164 540,164 524,280 506,280\" fill=\"#b0bec5\" stroke=\"#37474f\" stroke-width=\"2\"/><text id=\"ov_ch1_l\" x=\"546\" y=\"200\" font-family=\"sans-serif\" font-size=\"13\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">CH1</text><text id=\"ov_cv002_name\" x=\"560\" y=\"278\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">CV002</text><rect id=\"SHE_cv002_belt\" x=\"500\" y=\"290\" width=\"360\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"2\"/><rect id=\"SHE_cv002_trip\" x=\"500\" y=\"290\" width=\"360\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"2\"/><circle id=\"ov_cv002_tail\" cx=\"511\" cy=\"301\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><circle id=\"ov_cv002_head\" cx=\"849\" cy=\"301\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><g id=\"VAL_cv002_speed\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv002_speed_t\" x=\"500\" y=\"334\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv002_load\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv002_load_t\" x=\"610\" y=\"334\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv002_current\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv002_current_t\" x=\"720\" y=\"334\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><circle id=\"SHE_cv002_contactor\" cx=\"506\" cy=\"354\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv002_contactor_l\" x=\"518\" y=\"359\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Contactor</text><circle id=\"SHE_cv002_safety\" cx=\"606\" cy=\"354\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv002_safety_l\" x=\"618\" y=\"359\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Safety relay</text><circle id=\"SHE_cv002_zero\" cx=\"716\" cy=\"354\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv002_zero_l\" x=\"728\" y=\"359\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Zero speed</text><circle id=\"SHE_cv002_intok\" cx=\"506\" cy=\"376\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv002_intok_l\" x=\"518\" y=\"381\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">INT_CV002 Ok</text><polygon id=\"ov_ch2\" points=\"830,294 880,294 864,410 846,410\" fill=\"#b0bec5\" stroke=\"#37474f\" stroke-width=\"2\"/><text id=\"ov_ch2_l\" x=\"886\" y=\"330\" font-family=\"sans-serif\" font-size=\"13\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">CH2</text><text id=\"ov_cv003_name\" x=\"900\" y=\"408\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">CV003</text><rect id=\"SHE_cv003_belt\" x=\"840\" y=\"420\" width=\"300\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"2\"/><rect id=\"SHE_cv003_trip\" x=\"840\" y=\"420\" width=\"300\" height=\"22\" rx=\"11\" ry=\"11\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"2\"/><circle id=\"ov_cv003_tail\" cx=\"851\" cy=\"431\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><circle id=\"ov_cv003_head\" cx=\"1129\" cy=\"431\" r=\"5\" fill=\"#eceff1\" stroke=\"#37474f\"/><g id=\"VAL_cv003_speed\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv003_speed_t\" x=\"840\" y=\"464\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv003_load\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv003_load_t\" x=\"950\" y=\"464\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><g id=\"VAL_cv003_current\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"14\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_cv003_current_t\" x=\"1060\" y=\"464\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"14\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><circle id=\"SHE_cv003_contactor\" cx=\"846\" cy=\"484\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv003_contactor_l\" x=\"858\" y=\"489\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Contactor</text><circle id=\"SHE_cv003_safety\" cx=\"946\" cy=\"484\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv003_safety_l\" x=\"958\" y=\"489\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Safety relay</text><circle id=\"SHE_cv003_zero\" cx=\"1056\" cy=\"484\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv003_zero_l\" x=\"1068\" y=\"489\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Zero speed</text><circle id=\"SHE_cv003_intok\" cx=\"846\" cy=\"506\" r=\"7\" fill=\"#c62828\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_cv003_intok_l\" x=\"858\" y=\"511\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">INT_CV003 Ok</text><polygon id=\"ov_pile\" points=\"1120,560 1250,560 1185,470\" fill=\"#8d6e63\" stroke=\"#4e342e\" stroke-width=\"2\"/><text id=\"ov_pile_l\" x=\"1120\" y=\"584\" font-family=\"sans-serif\" font-size=\"14\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Stockpile</text><g id=\"VAL_pile_rate\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"13\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_pile_rate_t\" x=\"1120\" y=\"604\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"13\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><rect id=\"ov_panel\" x=\"16\" y=\"440\" width=\"760\" height=\"232\" rx=\"6\" fill=\"#ffffff\" stroke=\"#b0bec5\"/><text id=\"ov_panel_l\" x=\"24\" y=\"460\" font-family=\"sans-serif\" font-size=\"15\" font-weight=\"bold\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Operator</text><g id=\"HXB_start\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_start_r\" x=\"24\" y=\"470\" width=\"170\" height=\"40\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_start\" x=\"24\" y=\"470\" width=\"170\" height=\"40\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_start\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#2e7d32;color:#ffffff;font-size:13px;font-family:sans-serif;\">Start line</button></foreignObject></g><g id=\"HXB_stop\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_stop_r\" x=\"204\" y=\"470\" width=\"170\" height=\"40\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_stop\" x=\"204\" y=\"470\" width=\"170\" height=\"40\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_stop\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#ef6c00;color:#ffffff;font-size:13px;font-family:sans-serif;\">Stop line</button></foreignObject></g><g id=\"HXB_safety_reset\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_safety_reset_r\" x=\"384\" y=\"470\" width=\"170\" height=\"40\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_safety_reset\" x=\"384\" y=\"470\" width=\"170\" height=\"40\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_safety_reset\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#1565c0;color:#ffffff;font-size:13px;font-family:sans-serif;\">Reset safety relays</button></foreignObject></g><g id=\"HXB_int_reset\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_int_reset_r\" x=\"564\" y=\"470\" width=\"190\" height=\"40\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_int_reset\" x=\"564\" y=\"470\" width=\"190\" height=\"40\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_int_reset\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#1565c0;color:#ffffff;font-size:13px;font-family:sans-serif;\">Reset interlocks</button></foreignObject></g><g id=\"VAL_seq_start_step\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"13\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_seq_start_step_t\" x=\"24\" y=\"534\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"13\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><text id=\"ov_seq_start_l\" x=\"44\" y=\"534\" font-family=\"sans-serif\" font-size=\"13\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">SEQ_START step</text><g id=\"VAL_seq_stop_step\" type=\"svg-ext-value\" fill=\"#0d47a1\" stroke=\"#0d47a1\" font-size=\"13\" stroke-width=\"0\" font-family=\"sans-serif\" text-anchor=\"start\"><text id=\"VAL_seq_stop_step_t\" x=\"204\" y=\"534\" fill=\"#0d47a1\" stroke=\"#0d47a1\" stroke-width=\"0\" font-size=\"13\" font-family=\"sans-serif\" text-anchor=\"start\" xml:space=\"preserve\">##.##</text></g><text id=\"ov_seq_stop_l\" x=\"224\" y=\"534\" font-family=\"sans-serif\" font-size=\"13\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">SEQ_STOP step</text><circle id=\"SHE_seq_complete\" cx=\"390\" cy=\"530\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_seq_complete_l\" x=\"402\" y=\"535\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Start complete</text><circle id=\"SHE_seq_faulted\" cx=\"570\" cy=\"530\" r=\"7\" fill=\"#9e9e9e\" stroke=\"#37474f\" stroke-width=\"1\"/><text id=\"SHE_seq_faulted_l\" x=\"582\" y=\"535\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#263238\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Start faulted</text><g id=\"HXB_cv001_pullkey\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv001_pullkey_r\" x=\"24\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv001_pullkey\" x=\"24\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv001_pullkey\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV001 pull-key</button></foreignObject></g><g id=\"HXB_cv001_estop\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv001_estop_r\" x=\"144\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv001_estop\" x=\"144\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv001_estop\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV001 e-stop</button></foreignObject></g><g id=\"HXB_cv002_pullkey\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv002_pullkey_r\" x=\"269\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv002_pullkey\" x=\"269\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv002_pullkey\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV002 pull-key</button></foreignObject></g><g id=\"HXB_cv002_estop\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv002_estop_r\" x=\"389\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv002_estop\" x=\"389\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv002_estop\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV002 e-stop</button></foreignObject></g><g id=\"HXB_cv003_pullkey\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv003_pullkey_r\" x=\"514\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv003_pullkey\" x=\"514\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv003_pullkey\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV003 pull-key</button></foreignObject></g><g id=\"HXB_cv003_estop\" type=\"svg-ext-html_button\" fill=\"rgba(0,0,0,0)\" stroke=\"rgba(0,0,0,0)\" xml:space=\"preserve\"><rect id=\"HXB_cv003_estop_r\" x=\"634\" y=\"560\" width=\"115\" height=\"36\" stroke-width=\"0\"/><foreignObject id=\"H-HXB_cv003_estop\" x=\"634\" y=\"560\" width=\"115\" height=\"36\"><button xmlns=\"http://www.w3.org/1999/xhtml\" id=\"B-HXB_cv003_estop\" class=\"md-btn  md-btn-raised\" style=\"width:calc(100% - 6px);height:calc(100% - 6px);text-align:center;background-color:#546e7a;color:#ffffff;font-size:13px;font-family:sans-serif;\">CV003 e-stop</button></foreignObject></g><text id=\"ov_toggle_note\" x=\"24\" y=\"620\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#546e7a\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">Pull-key and e-stop buttons latch: red is actuated; press again to restore,</text><text id=\"ov_toggle_note2\" x=\"24\" y=\"636\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"normal\" fill=\"#546e7a\" stroke-width=\"0\" text-anchor=\"start\" xml:space=\"preserve\">then reset the safety relays and the interlocks, and start the line.</text></g></svg>",
         "property": {
           "events": []
         }
@@ -2720,7 +2720,7 @@
         ]
       },
       "header": {
-        "title": "DSE mine conveyors",
+        "title": "Millrace mine conveyors",
         "alarms": "fix",
         "infos": "",
         "bkcolor": "#ffffff",
@@ -2739,7 +2739,7 @@
       "name": "Belt speed (m/s)",
       "lines": [
         {
-          "device": "DSE",
+          "device": "Millrace",
           "id": "t_CV001.Speed",
           "name": "CV001.Speed",
           "label": "CV001 m/s",
@@ -2750,7 +2750,7 @@
           "spanGaps": true
         },
         {
-          "device": "DSE",
+          "device": "Millrace",
           "id": "t_CV002.Speed",
           "name": "CV002.Speed",
           "label": "CV002 m/s",
@@ -2761,7 +2761,7 @@
           "spanGaps": true
         },
         {
-          "device": "DSE",
+          "device": "Millrace",
           "id": "t_CV003.Speed",
           "name": "CV003.Speed",
           "label": "CV003 m/s",
@@ -2778,7 +2778,7 @@
       "name": "Motor current (A)",
       "lines": [
         {
-          "device": "DSE",
+          "device": "Millrace",
           "id": "t_CV001.Current",
           "name": "CV001.Current",
           "label": "CV001 A",
@@ -2789,7 +2789,7 @@
           "spanGaps": true
         },
         {
-          "device": "DSE",
+          "device": "Millrace",
           "id": "t_CV002.Current",
           "name": "CV002.Current",
           "label": "CV002 A",
@@ -2800,7 +2800,7 @@
           "spanGaps": true
         },
         {
-          "device": "DSE",
+          "device": "Millrace",
           "id": "t_CV003.Current",
           "name": "CV003.Current",
           "label": "CV003 A",

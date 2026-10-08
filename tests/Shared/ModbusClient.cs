@@ -2,7 +2,7 @@ using System.Buffers.Binary;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Dse.Tests.Shared;
+namespace Millrace.Tests.Shared;
 
 /// <summary>
 /// A minimal, blocking Modbus TCP master for tests: it frames a PDU in an

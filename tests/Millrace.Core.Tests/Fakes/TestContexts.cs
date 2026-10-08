@@ -1,0 +1,29 @@
+using Millrace.Core.Contexts;
+using Millrace.Core.Flow;
+using Millrace.Core.Logging;
+using Millrace.Core.Randomness;
+using Millrace.Core.Telemetry;
+
+namespace Millrace.Core.Tests.Fakes;
+
+/// <summary>Builds the contexts a component needs when a test drives it without a Simulation.</summary>
+public static class TestContexts
+{
+    public static readonly DateTimeOffset Start = new(2026, 1, 1, 6, 0, 0, TimeSpan.Zero);
+
+    public static InitContext Init(
+        string componentId,
+        double dt = 0.01,
+        TelemetryRegistry? telemetry = null,
+        ItemIdSequence? items = null) =>
+        new(
+            new DeterministicRandom(1UL),
+            telemetry ?? new TelemetryRegistry(),
+            items ?? new ItemIdSequence(),
+            componentId,
+            Start,
+            dt);
+
+    public static TickContext Tick(long tick, double dt = 0.01, EventLog? log = null) =>
+        new(tick, dt, Start + TimeSpan.FromSeconds(tick * dt), log ?? new EventLog());
+}

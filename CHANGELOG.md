@@ -1,16 +1,16 @@
 # Changelog
 
-All notable changes to Dse are recorded here. Versions follow
+All notable changes to Millrace are recorded here. Versions follow
 [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
-DSE's first external consumer: a SCADA watching and operating a simulated
+Millrace's first external consumer: a SCADA watching and operating a simulated
 plant over Modbus TCP
 ([design](docs/superpowers/specs/2026-10-07-modbus-fuxa-hmi-design.md),
 [plan 8](docs/superpowers/plans/2026-10-07-modbus-fuxa-hmi.md)).
 
-### Modbus (`Dse.Modbus`)
+### Modbus (`Millrace.Modbus`)
 
 - A register map built from a plant's tag directory, in directory order: a
   read-write Bool is a coil, a read-only one a discrete input; a Double is a
@@ -20,21 +20,21 @@ plant over Modbus TCP
 - A Modbus TCP server, with no external package: function codes 1, 2, 3, 4,
   5, 6, 15 and 16; exceptions 01, 02 and 03; any unit id; several clients at
   once. Reads come from the published tag image; writes go through
-  `Dse.Realtime`'s `CommandBus` and land at phase 1 of the next tick.
+  `Millrace.Realtime`'s `CommandBus` and land at phase 1 of the next tick.
 
-### Scenarios (`Dse.Scenarios`)
+### Scenarios (`Millrace.Scenarios`)
 
 - `ScenarioRunner.Bind` loads a scenario's plant and schedules its timeline
   without running it, for a host that ticks the simulation itself.
 
-### Cli (`dse`)
+### Cli (`millrace`)
 
-- `dse serve <plant.json> [--scenario <file>] [--port <n>] [--bind <address>] [--speed <x>]`
+- `millrace serve <plant.json> [--scenario <file>] [--port <n>] [--bind <address>] [--speed <x>]`
   runs a plant paced to the wall clock and serves it over Modbus TCP until
   Ctrl+C. It listens on 127.0.0.1 unless `--bind` says otherwise (Modbus has
   no authentication); `--speed` must be at least 0.001; `--scenario` runs its
   timeline but ignores the scenario's duration. Exit 3 now also covers a port that cannot be opened.
-- `dse modbus-map <plant.json> [--format text|csv|fuxa]` prints the register
+- `millrace modbus-map <plant.json> [--format text|csv|fuxa]` prints the register
   map, or the tags of a FUXA Modbus device.
 
 ### HMI (`hmi/fuxa/`)
@@ -50,7 +50,7 @@ The first release: every item of the v1 scope (§17 of the
 [design](docs/superpowers/specs/2026-09-02-industrial-process-simulation-engine-design.md)),
 with both reference samples.
 
-### Core (`Dse.Core`)
+### Core (`Millrace.Core`)
 
 - A deterministic clock and a five-phase tick: queued writes and scheduled
   events, the signal graph, material flow, the published I/O image, the tick
@@ -66,7 +66,7 @@ with both reference samples.
   event log, the component catalogue, and a host that scans control blocks at
   their own period and publishes their outputs as tags.
 
-### Components (`Dse.Components`)
+### Components (`Millrace.Components`)
 
 - Material: `bulk-source`, `bulk-sink`, `item-source`, `item-sink`,
   `transfer-chute`, `former`, `bulk-belt`, `discrete-belt`, `bulk-process-unit`,
@@ -86,7 +86,7 @@ with both reference samples.
   holds `for-seconds`, `temperature-at-least`, `temperature-at-most`,
   `state-at-least` and `all`.
 
-### Io (`Dse.Io.Abstractions`; the `Dse.Core.Io` namespace)
+### Io (`Millrace.Io.Abstractions`; the `Millrace.Core.Io` namespace)
 
 - A declared, printable tag directory with units, ranges and per-tag quality.
 - A lock-free, double-buffered image any thread may read; writes queued from
@@ -94,13 +94,13 @@ with both reference samples.
 - One immutable `TickFrame` per tick, with its dirty mask; a tag a control
   block claims can be written by that block only.
 
-### Realtime (`Dse.Realtime`)
+### Realtime (`Millrace.Realtime`)
 
 - A ring-buffered hub, a live state engine for late joiners, subscriptions
   with prefix filters, deadbands, decimation and declared backpressure, and a
   validated command bus. It references the I/O contract only.
 
-### Control (`Dse.Control`, `Dse.Control.Catalogue`)
+### Control (`Millrace.Control`, `Millrace.Control.Catalogue`)
 
 - `timer`, `permissive`, `interlock` (trip and reset writes, the run-permit
   pattern), `alarm` (limits with deadbands, on-delays and acknowledgement),
@@ -110,23 +110,23 @@ with both reference samples.
 - An interlock logs `RESET_REFUSED`, naming the first condition that is still
   not normal, when it refuses a reset.
 
-### Scenarios (`Dse.Scenarios`)
+### Scenarios (`Millrace.Scenarios`)
 
 - A scenario file: a plant, engine overrides, a duration and a timeline of
   writes, fault injections and clears, each landing on the tick it names.
 - Golden event logs, compared line for line, and a recorder that turns a live
   run into a scenario that replays it byte for byte.
 
-### Configuration (`Dse.Configuration`)
+### Configuration (`Millrace.Configuration`)
 
 - Declarative JSON plants — materials, components, flow links, a tags
   envelope and controllers — loaded through the catalogue, with a JSON Schema
   generated from it.
-- Every mistake reported at once, each with a code — `DSE0xx` from the
-  engine, `DSE1xx` from the loader, `DSE2xx` from a scenario — a JSON path and
+- Every mistake reported at once, each with a code — `MR0xx` from the
+  engine, `MR1xx` from the loader, `MR2xx` from a scenario — a JSON path and
   its fix.
 
-### Cli (`dse`)
+### Cli (`millrace`)
 
 - `catalog export`, `schema export`, `validate`, `tags` and `run` (with
   `--expect`, `--out`, `--format json` and `--assembly`), and exit codes a

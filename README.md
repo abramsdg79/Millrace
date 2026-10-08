@@ -1,4 +1,4 @@
-# Dse — Deterministic Industrial Process Simulation Engine
+# Millrace — Deterministic Industrial Process Simulation Engine
 
 A deterministic, composable simulation engine for real-world industrial
 processes, written in .NET. Build virtual plants from reusable machines,
@@ -16,7 +16,7 @@ causally through the plant.
 is in: the deterministic core and material layer, a library of thirty
 component types, the I/O and real-time layers, six control blocks, scenarios
 replayed against golden event logs, JSON plants with a generated schema, the
-`dse` command line, and two reference samples. The [changelog](CHANGELOG.md)
+`millrace` command line, and two reference samples. The [changelog](CHANGELOG.md)
 lists what each project contains and links every spec and plan.
 
 The first reference sample, `samples/mine-conveyors/`, is three conveyors, a
@@ -27,7 +27,7 @@ furnace, a measuring station with a pyrometer and a reject kicker, a belt and a
 press — whose PLC rejects an over-soaked billet, with six scenarios. Both are
 data only: no C#.
 
-**Since 1.0.0 (unreleased):** DSE's first external consumer. `dse serve` runs a
+**Since 1.0.0 (unreleased):** Millrace's first external consumer. `millrace serve` runs a
 plant in real time and serves its tags over Modbus TCP, and `hmi/fuxa/` puts
 the mine-conveyor sample in the FUXA web SCADA with one `docker compose up` —
 see [A SCADA on the sample](#a-scada-on-the-sample) and the
@@ -40,16 +40,16 @@ nothing else ([Docker](https://docs.docker.com/get-docker/) only for the FUXA
 HMI). From the repository root:
 
 ```bash
-dotnet build Dse.sln
-dotnet test Dse.sln
+dotnet build Millrace.sln
+dotnet test Millrace.sln
 ```
 
 The tests run every sample scenario against its golden log. To run one
-yourself, through the `dse` command line, and check it against its golden:
+yourself, through the `millrace` command line, and check it against its golden:
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/pull-key.json --expect samples/mine-conveyors/expected/pull-key.log
-dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/slow-press.json --expect samples/wheel-line/expected/slow-press.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/pull-key.json --expect samples/mine-conveyors/expected/pull-key.log
+dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/slow-press.json --expect samples/wheel-line/expected/slow-press.log
 ```
 
 Each prints `Matched <golden> (<n> events).` and exits 0; it exits 4 if the
@@ -68,37 +68,37 @@ plans in `docs/superpowers/plans/`.
 
 | project | what it holds |
 |---|---|
-| `Dse.Core` | the clock, the five-phase tick, ports, signals, material flow, faults, the catalogue and the event log |
-| `Dse.Components` | the thirty component types: machines, instrumentation, process and discrete-item components |
-| `Dse.Io.Abstractions` | the I/O boundary: the tag directory, tag readers and writers, and the scan-block interface |
-| `Dse.Control` | the six PLC-style control blocks; `Dse.Control.Catalogue` registers them |
-| `Dse.Configuration` | loading JSON plants, the generated schema and the configuration diagnostics |
-| `Dse.Scenarios` | scenarios: timelines of writes and faults, replayed against golden logs |
-| `Dse.Realtime` | wall-clock pacing and the command bus that queues outside writes |
-| `Dse.Modbus` | the Modbus register map and a Modbus TCP server, with no external package |
-| `Dse.Cli` | the `dse` command line |
+| `Millrace.Core` | the clock, the five-phase tick, ports, signals, material flow, faults, the catalogue and the event log |
+| `Millrace.Components` | the thirty component types: machines, instrumentation, process and discrete-item components |
+| `Millrace.Io.Abstractions` | the I/O boundary: the tag directory, tag readers and writers, and the scan-block interface |
+| `Millrace.Control` | the six PLC-style control blocks; `Millrace.Control.Catalogue` registers them |
+| `Millrace.Configuration` | loading JSON plants, the generated schema and the configuration diagnostics |
+| `Millrace.Scenarios` | scenarios: timelines of writes and faults, replayed against golden logs |
+| `Millrace.Realtime` | wall-clock pacing and the command bus that queues outside writes |
+| `Millrace.Modbus` | the Modbus register map and a Modbus TCP server, with no external package |
+| `Millrace.Cli` | the `millrace` command line |
 
-Each has a test project under `tests/`; `Dse.Samples.Tests` runs both samples.
+Each has a test project under `tests/`; `Millrace.Samples.Tests` runs both samples.
 
 ## Command line
 
 ```bash
-dotnet run --project src/Dse.Cli -- catalog export            # every component, block, transform, transition, hold and material, as JSON
-dotnet run --project src/Dse.Cli -- schema export --out dse-plant.schema.json
-dotnet run --project src/Dse.Cli -- validate plant.json       # every error, each with its fix; exit 1 if any
-dotnet run --project src/Dse.Cli -- tags plant.json           # the tag directory a SCADA would see
-dotnet run --project src/Dse.Cli -- run scenario.json --expect golden.log  # replay a scenario; exit 4 if the log changed
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/pull-key.json  # the sample: a pull-key stops the line
-dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/slow-press.json      # the second: a slow press over-soaks a billet and the PLC rejects it
-dotnet run --project src/Dse.Cli -- modbus-map plant.json     # the Modbus register map dse serve serves
-dotnet run --project src/Dse.Cli -- serve samples/mine-conveyors/plant.json  # run it in real time on Modbus TCP port 5020 until Ctrl+C (localhost only; --bind 0.0.0.0 opens it to the network)
+dotnet run --project src/Millrace.Cli -- catalog export            # every component, block, transform, transition, hold and material, as JSON
+dotnet run --project src/Millrace.Cli -- schema export --out millrace-plant.schema.json
+dotnet run --project src/Millrace.Cli -- validate plant.json       # every error, each with its fix; exit 1 if any
+dotnet run --project src/Millrace.Cli -- tags plant.json           # the tag directory a SCADA would see
+dotnet run --project src/Millrace.Cli -- run scenario.json --expect golden.log  # replay a scenario; exit 4 if the log changed
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/pull-key.json  # the sample: a pull-key stops the line
+dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/slow-press.json      # the second: a slow press over-soaks a billet and the PLC rejects it
+dotnet run --project src/Millrace.Cli -- modbus-map plant.json     # the Modbus register map millrace serve serves
+dotnet run --project src/Millrace.Cli -- serve samples/mine-conveyors/plant.json  # run it in real time on Modbus TCP port 5020 until Ctrl+C (localhost only; --bind 0.0.0.0 opens it to the network)
 ```
 
 Add `--assembly path/to/YourModule.dll` to any command to include your own
 components; add `--format json` to `validate` and `tags` for machine-readable
 output. `modbus-map` takes `--format text|csv|fuxa`; `serve` takes
 `--scenario <file>` (run its timeline, ignoring its duration), `--port <n>`,
-`--bind <address>` and `--speed <x>`. `dse <command> --help` lists a
+`--bind <address>` and `--speed <x>`. `millrace <command> --help` lists a
 command's options.
 
 Exit codes: 0 success; 1 the plant or scenario has errors; 2 usage error; 3 a
@@ -162,7 +162,7 @@ See the [mine-conveyor sample](samples/mine-conveyors/README.md), the
 
 ## A SCADA on the sample
 
-`dse serve` runs a plant in real time and serves its tags over Modbus TCP, so a
+`millrace serve` runs a plant in real time and serves its tags over Modbus TCP, so a
 real SCADA can watch and operate it. `hmi/fuxa/` puts the mine-conveyor sample
 in the open-source web SCADA FUXA — an overview mimic, alarms and trends, with
 start, stop, reset, pull-key and e-stop buttons — with one command:

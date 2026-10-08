@@ -3,9 +3,9 @@
 The framework's job is to make the plumbing free, so that the physics of your
 domain is the only real work. This is the plumbing, in the order you will meet
 it. The worked example is
-[`HysteresisSwitch`](../tests/Dse.Cli.Tests.SampleModule/HysteresisSwitch.cs);
+[`HysteresisSwitch`](../tests/Millrace.Cli.Tests.SampleModule/HysteresisSwitch.cs);
 its numbered comments illustrate the sections below. For a component with faults,
-telemetry and material, read [`TransferChute`](../src/Dse.Components/Flow/TransferChute.cs).
+telemetry and material, read [`TransferChute`](../src/Millrace.Components/Flow/TransferChute.cs).
 
 ## 1. Decide what it is
 
@@ -43,7 +43,7 @@ passes that test, it is deterministic.
 
 Validate every argument in the constructor and throw `ArgumentException` (or
 `ArgumentOutOfRangeException`) with a message that says what to change. For a
-plant loaded from JSON that message is shown to the author as `DSE111`, so write
+plant loaded from JSON that message is shown to the author as `MR111`, so write
 it for someone who has never seen your source.
 
 ## 4. Declare ports once, in the constructor
@@ -51,14 +51,14 @@ it for someone who has never seen your source.
 ```csharp
 Value = AddInput<double>("Value");                       // optional, defaults to 0
 Permit = AddInput<bool>("Permit", defaultValue: true);   // optional, defaults to true
-Feed = AddInput<double>("Feed", required: true);         // DSE002 if nothing drives it
+Feed = AddInput<double>("Feed", required: true);         // MR002 if nothing drives it
 Load = AddInput<double>("Load", latched: true);          // reads last tick's value; creates no ordering edge
 On = AddOutput<bool>("On");
 ```
 
 The graph is immutable after `Build()`. If your component reads an input and
 that input depends, this same tick, on your own output, you have an algebraic
-loop (`DSE003`). Break it where the physics allows a tick of delay: declare the
+loop (`MR003`). Break it where the physics allows a tick of delay: declare the
 input `latched`, or return `false` from `HasDirectFeedthrough` if *none* of your
 outputs depend on this tick's inputs.
 
@@ -147,7 +147,7 @@ public sealed class MyModule : ICatalogueModule
 }
 ```
 
-Public, concrete, parameterless: that is what `dse --assembly` looks for. In
+Public, concrete, parameterless: that is what `millrace --assembly` looks for. In
 code, compose catalogues explicitly:
 `new CatalogueBuilder().Add<ComponentsModule>().Add<MyModule>().Build()`.
 
@@ -171,16 +171,16 @@ public void EveryDescriptorMatchesWhatItBuilds()
 every difference between what the descriptor says and what the instance has:
 ports, flow ports, faults, tags, telemetry, capabilities. A fixture supplies
 required parameters, materials to name and stand-in nodes to reference. When it
-is quiet, `dse catalog export --assembly yours.dll` describes your component
-truthfully, `dse schema export` validates plants that use it, and
-`dse validate` loads them.
+is quiet, `millrace catalog export --assembly yours.dll` describes your component
+truthfully, `millrace schema export` validates plants that use it, and
+`millrace validate` loads them.
 
 Then test the physics — that part is yours.
 
 ## 11. Registering a block
 
 A control block is registered the same way, with a `BlockDescriptor` instead of
-a `ComponentDescriptor`. `tests/Dse.Cli.Tests.SampleModule/Latch.cs` is the
+a `ComponentDescriptor`. `tests/Millrace.Cli.Tests.SampleModule/Latch.cs` is the
 worked example:
 
 ```csharp
@@ -205,7 +205,7 @@ public static BlockDescriptor Descriptor { get; } = new(
 - **The factory** takes the id, the scan period and the resolved parameters,
   and must build a block with exactly that id and scan period. The tags in
   `OwnedTags` must match the block's `Outputs` (read-only) and `Commands`
-  (read-write), or the loader reports DSE111 naming the module.
+  (read-write), or the loader reports MR111 naming the module.
 - **`Param.Tag(name, description, kind, writes)`** is a tag name the loader
   resolves: give `kind` when the block needs one, and `writes: true` when the
   block commands the tag. **`Param.Value(name, description, tagParameter)`** is

@@ -114,7 +114,7 @@ state array sized by its material's schema.
 `BulkBelt` is an array of cells. Each tick a fraction `v·dt/cellSize` of every
 cell moves to its neighbour, resolved from the head backwards so a blocked
 discharge builds load along the belt; validation refuses `cellSize <
-maxSpeed·dt` (`DSE006`). A cell never exceeds `maxLinearDensity·cellSize`, so
+maxSpeed·dt` (`MR006`). A cell never exceeds `maxLinearDensity·cellSize`, so
 the inlet accepts only the room in the first cell. Because of that cap,
 `PeakLinearDensity` can never reach or exceed `MaxLinearDensity`; an overload
 detector watching it must trigger on `>=`, or better, on `Load` driving
@@ -160,9 +160,9 @@ Every tick the engine sums each node's `MassHeld`, `MassCreated` and
 (relative to the mass sourced). A node that injects mass reports it in
 `MassCreated`; a node that removes it — a sink, a declared loss — reports it in
 `MassDestroyed`. Anything else is a bug, and the audit finds it on the tick it
-happens. Validation also rejects recirculation loops (`DSE005`), inlets fed
-from outside the plant (`DSE007`) and flow ports whose owner lacks the
-producer/consumer contract (`DSE008`).
+happens. Validation also rejects recirculation loops (`MR005`), inlets fed
+from outside the plant (`MR007`) and flow ports whose owner lacks the
+producer/consumer contract (`MR008`).
 
 Two more rules for flow-node authors, both consequences of the phase
 structure. **Material changes only in `Advance`.** A source creates mass, a
@@ -240,7 +240,7 @@ SCADA that could read true motor current would not need the current sensor.
 A writable tag drives an `InputPort` from outside. If the plant already wires
 an output into that input, the declared tag degrades to read-only (the tag
 observes the command instead of issuing it); an explicit `Bind` of a writable
-tag on a driven input is validation error `DSE010`.
+tag on a driven input is validation error `MR010`.
 
 `Simulation.IO` is the image. Reads (`Read`, `ReadDouble`, `Handle<T>` …) see
 the snapshot published at the last tick's phase 4, from any thread, without a
@@ -266,7 +266,7 @@ affect the run.
 
 ## The real-time boundary
 
-`Dse.Realtime` references only `Dse.Io.Abstractions`. It cannot see the model,
+`Millrace.Realtime` references only `Millrace.Io.Abstractions`. It cannot see the model,
 which is what makes a protocol adapter a genuine bolt-on.
 
 `RealtimeHub` is the frame sink. `Publish` is a single-producer enqueue into a
@@ -293,8 +293,8 @@ optional `ICommandRecorder`, which is where a scenario recorder attaches.
 
 ## Modbus TCP
 
-`Dse.Modbus` is the first protocol adapter built on that boundary. It
-references `Dse.Io.Abstractions` and `Dse.Realtime` only, and no package.
+`Millrace.Modbus` is the first protocol adapter built on that boundary. It
+references `Millrace.Io.Abstractions` and `Millrace.Realtime` only, and no package.
 `RegisterMap.Build` turns a tag directory into a register map, in directory
 order: a read-write Bool is a coil and a read-only one a discrete input; a
 Double is a big-endian Float32 and an Int64 a saturating big-endian Int32,
@@ -308,7 +308,7 @@ the published image — `Simulation.IO.Snapshot` — and reads it once per
 request, so every value in a response belongs to one tick; it is given a
 `CommandBus` for writes, which therefore land at phase 1 of the next tick like
 any other external write. A multi-value write is validated whole before any of
-it is queued. `dse serve` puts the two together: it ticks the simulation on
+it is queued. `millrace serve` puts the two together: it ticks the simulation on
 its own thread with `SimulationRunner` in real time (or `--speed` times it),
 while the server answers on the thread pool. It listens on 127.0.0.1 unless
 `--bind` names another address, because the protocol has no authentication
@@ -339,7 +339,7 @@ wire, build — and stops at the end of the first stage that reported an error,
 having collected every error of that stage. It resolves ports against the live
 instances, not against descriptors, so what it wires is what exists. The last
 stage is `SimulationBuilder.Validate()`: a plant loaded from JSON passes exactly
-the checks a plant built in code passes, and `DSE001`–`DSE011` mean the same in
+the checks a plant built in code passes, and `MR001`–`MR011` mean the same in
 both. The loader returns the builder unbuilt, so a caller can still set a frame
 sink or decide not to build.
 
@@ -356,17 +356,17 @@ A plant's **controllers** are read in the structure stage like components and
 resolved in the build stage, after the plant alone has passed `Validate()`. The tag table is
 `SimulationBuilder.PlantTags()` — the directory `Build()` would publish, R23
 downgrades included — plus every controller's declared owned tags, so every tag
-and value is checked (`DSE113`–`DSE115`) before any block is built; the blocks
-are then added in file order and pass `Validate()`'s `DSE013`–`DSE016` like a
+and value is checked (`MR113`–`MR115`) before any block is built; the blocks
+are then added in file order and pass `Validate()`'s `MR013`–`MR016` like a
 block attached in code. Block descriptors live beside component and object
-descriptors in the catalogue; `ControlModule`, in `Dse.Control.Catalogue`,
+descriptors in the catalogue; `ControlModule`, in `Millrace.Control.Catalogue`,
 registers the six shipped ones.
 
 ## Scenarios and replay
 
 A scenario is a JSON file: a plant to run, the three engine overrides, a
-duration, and a timeline of writes, fault injections and clearances. `Dse.Scenarios`
-sees `Dse.Core` and `Dse.Configuration` and nothing else.
+duration, and a timeline of writes, fault injections and clearances. `Millrace.Scenarios`
+sees `Millrace.Core` and `Millrace.Configuration` and nothing else.
 
     ScenarioLoader.Parse   structural: shape, types, ranges — no plant, no file system
     ScenarioRunner.Run     load the plant, bind every action, then and only then tick
@@ -375,14 +375,14 @@ sees `Dse.Core` and `Dse.Configuration` and nothing else.
     ScenarioRecorder       a live run, as a scenario
 
 The two passes are the point. Everything that can be known without a plant is
-`DSE200`–`DSE204`; everything that needs one is `DSE205` (the plant has its own
-errors, which follow unchanged) and `DSE206` (this action names something the
+`MR200`–`MR204`; everything that needs one is `MR205` (the plant has its own
+errors, which follow unchanged) and `MR206` (this action names something the
 plant does not have). Both run to completion and collect every problem, and
 `RunFor` is not called if there is a single one — **a bad scenario never
 produces a partial log**.
 
 The event log is the regression artifact, and `EventLog.ToText()` is its format
-by contract. `dse run --expect golden.log` exits 4, not 1, when the two differ:
+by contract. `millrace run --expect golden.log` exits 4, not 1, when the two differ:
 "the configuration is broken" and "the behaviour changed" are different
 questions, and a script should not have to guess which it got.
 
@@ -395,7 +395,7 @@ watches all three landing sites — the queued-write drain,
 `ApplyNow` and `FaultEvent.Apply` — for external actions, so a recording
 captures actions by where they took effect, not by where they came from. A
 control block's write carries its origin: it is logged `by <block id>` and is
-not recorded, because a replay re-runs the block. `Dse.Realtime`'s
+not recorded, because a replay re-runs the block. `Millrace.Realtime`'s
 `ICommandRecorder` is a different thing and stays: it also sees commands the bus
 *rejected*, which is an audit trail, not a replay.
 
@@ -403,21 +403,21 @@ See [scenarios](scenarios.md) for the file format and the golden workflow.
 
 ## The control layer
 
-A control block is a PLC rung: `Dse.Control` holds six of them — a timer, a
+A control block is a PLC rung: `Millrace.Control` holds six of them — a timer, a
 permissive, an interlock, an alarm, a sequencer and a coil — and sees
-`Dse.Io.Abstractions` and nothing else. A block is a pure `IScanBlock`: values
+`Millrace.Io.Abstractions` and nothing else. A block is a pure `IScanBlock`: values
 and two elapsed times in, values, writes and events out. It never sees a
 `Simulation`, a directory, a binding, a clock or a log, which is why its unit
 tests need none of them.
 
-`SimulationBuilder.AddScanBlock` checks each block at `Build()` — `DSE013` for
-the period, `DSE014` for the pins, `DSE015` for the names, `DSE016` for its
+`SimulationBuilder.AddScanBlock` checks each block at `Build()` — `MR013` for
+the period, `MR014` for the pins, `MR015` for the names, `MR016` for its
 claims — and turns its declared outputs and commands into ordinary tags over
 ordinary ports: an output is an `OutputPort<T>` behind a read-only binding, a
-command an `InputPort<T>` behind a writable one. Nothing in `Dse.Realtime` or
+command an `InputPort<T>` behind a writable one. Nothing in `Millrace.Realtime` or
 the scenario recorder had to learn what a block is; `TagImage` learned only a
 write's origin, so the log attributes a block's write and the recorder skips
-it. A block added with claims (`AddScanBlock(block, claims)`, `DSE016`) is its
+it. A block added with claims (`AddScanBlock(block, claims)`, `MR016`) is its
 claimed tags' only writer: the binding stays writable, the directory publishes
 the tag `ReadOnly` with `ClaimedBy` set, and `TagImage` refuses a write whose
 origin is not the claimant — so every consumer that already honours `ReadOnly`
@@ -434,8 +434,8 @@ adds nothing to the directory, which is why the four scenario goldens of plan 5b
 are byte-identical across this change.
 
 Blocks are declared in a plant file's `controllers` section or attached in
-code. `Dse.Control.Catalogue` — which sees `Dse.Core` and `Dse.Control` —
-registers them in the catalogue through `ControlModule`, so `Dse.Control` itself
+code. `Millrace.Control.Catalogue` — which sees `Millrace.Core` and `Millrace.Control` —
+registers them in the catalogue through `ControlModule`, so `Millrace.Control` itself
 still sees the I/O contract alone.
 
 See [control blocks](control-blocks.md) for each block's pins, parameters and

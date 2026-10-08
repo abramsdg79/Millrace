@@ -1,20 +1,20 @@
 # The mine conveyors in FUXA
 
 The [mine-conveyor sample](../../samples/mine-conveyors/README.md) as an
-operator sees it: DSE runs the plant in real time and serves its tags over
+operator sees it: Millrace runs the plant in real time and serves its tags over
 Modbus TCP, and [FUXA](https://github.com/frangoteam/FUXA), an open-source web
 SCADA, polls them and shows an overview mimic, the alarms and the trends. You
 start the line, stop it, pull a pull-key or press an e-stop from the browser,
 and watch the plant's PLC logic answer.
 
 ```
-dse  ──Modbus TCP :5020──▶  FUXA  ──HTTP :1881──▶  your browser
+millrace  ──Modbus TCP :5020──▶  FUXA  ──HTTP :1881──▶  your browser
 ```
 
 ## Run it
 
 You need [Docker](https://docs.docker.com/get-docker/) with Compose v2;
-nothing else (the images build DSE from this repository). From this folder:
+nothing else (the images build Millrace from this repository). From this folder:
 
 ```bash
 docker compose up --build
@@ -25,12 +25,12 @@ a few minutes; later starts take seconds. Three services start:
 
 | service | what it does |
 |---|---|
-| `dse` | `dse serve samples/mine-conveyors/plant.json --port 5020 --bind 0.0.0.0`: the plant, in real time, on port 5020 (`--bind 0.0.0.0` listens on all of the container's interfaces; the published port is localhost only. Outside a container `dse serve` defaults to `--bind 127.0.0.1`) |
+| `millrace` | `millrace serve samples/mine-conveyors/plant.json --port 5020 --bind 0.0.0.0`: the plant, in real time, on port 5020 (`--bind 0.0.0.0` listens on all of the container's interfaces; the published port is localhost only. Outside a container `millrace serve` defaults to `--bind 127.0.0.1`) |
 | `fuxa` | FUXA 1.3.4 with its Modbus driver, on port 1881 (localhost only) |
 | `fuxa-init` | waits for FUXA, loads `mine-conveyors.fuxap.json` into it on the first start, and exits |
 
 Stop with Ctrl+C, or `docker compose down` from another terminal. The plant
-starts cold every time `dse` starts: every belt stopped and every interlock
+starts cold every time `millrace` starts: every belt stopped and every interlock
 tripped, as at power-up.
 
 To check the stack from a terminal instead of a browser, with it running:
@@ -58,7 +58,7 @@ sample's `ALM_CVn` blocks, with their deadband and 3 s on-delay; FUXA raises
 on the blocks' `Active` tags) and each interlock's trip. The bell in the
 header counts them; acknowledge a row with its tick. The tick acknowledges FUXA's own alarm only:
 the plant's alarm blocks (the `ALM_CVn.Ack` coil) are not wired to a button,
-so `ALM_CVn.*.Acked` stays false in DSE.
+so `ALM_CVn.*.Acked` stays false in Millrace.
 
 **Trends** draws the three belts' speeds and motor currents, live since the
 view opened, ten minutes at most. The charts are drawn in the browser from the
@@ -94,21 +94,21 @@ line — or just press **Start line**, which resets both on its way.
 Faults — an overload, a blocked chute, a welded contactor — are not tags, so
 the HMI cannot inject them. To watch one, replay a scenario's timeline: in
 `docker-compose.yml`, add `"--scenario",
-"samples/mine-conveyors/scenarios/chute-blockage.json"` to the `dse` service's
+"samples/mine-conveyors/scenarios/chute-blockage.json"` to the `millrace` service's
 `command`, then `docker compose up`. The scenario starts the line at 1 s and
 blocks CH1 at 80 s; CV001's `Hi` alarm raises at about 1 min 53 s, `HiHi`
 about 16 s later, and the overload trips at about 3 min 10 s.
 
 ## Register map
 
-`dse serve` maps the plant's tags in their directory order: a read-write Bool
+`millrace serve` maps the plant's tags in their directory order: a read-write Bool
 is a coil, a read-only one a discrete input; a Double is a big-endian Float32
 in two registers and an Int64 a big-endian Int32 in two registers (clamped to
 the Int32 range), holding when read-write, input when read-only. A tag a
 block claims, such as `CV001.Permit`, is read-only. Any unit id is answered.
 `address` is 1-based, as FUXA and most SCADAs show it; `offset` is what goes
 on the wire. This is the output of
-`dotnet run --project src/Dse.Cli -- modbus-map samples/mine-conveyors/plant.json`
+`dotnet run --project src/Millrace.Cli -- modbus-map samples/mine-conveyors/plant.json`
 (`--format csv` for a spreadsheet, `--format fuxa` for the FUXA device's
 tags):
 
@@ -246,11 +246,11 @@ value, or one outside the tag's range, answers 03; any other function, 01.
 
 ## Limits
 
-- **A local demo.** FUXA runs with authentication off and DSE's Modbus server
+- **A local demo.** FUXA runs with authentication off and Millrace's Modbus server
   has none either: anyone who can reach ports 1881 and 5020 can operate the
   plant. So `docker-compose.yml` publishes both on 127.0.0.1 only: the
   browser and any Modbus tool on this machine reach them, and FUXA reaches
-  `dse:5020` over the compose network. Docker's port rules bypass the host's
+  `millrace:5020` over the compose network. Docker's port rules bypass the host's
   firewall, so to open either port to your network you must do it
   deliberately: change its bind address in `ports` (`"127.0.0.1:1881:1881"`
   to `"1881:1881"`, or to one interface's address), and only on a network
@@ -264,9 +264,9 @@ value, or one outside the tag's range, answers 03; any other function, 01.
   generator; a project exported from the editor and committed as is would be
   lost at the next regeneration. To go back to the committed project,
   `docker compose down -v` and start again.
-- **Real time, not replay.** Under `dse serve` the plant runs on the wall
+- **Real time, not replay.** Under `millrace serve` the plant runs on the wall
   clock and the operator's writes land whenever they arrive, so a session is
-  not reproducible tick for tick the way `dse run` is.
+  not reproducible tick for tick the way `millrace run` is.
 - **One plant.** The wheel-line HMI is a follow-up.
 
 ## Changing the project
@@ -275,13 +275,13 @@ value, or one outside the tag's range, answers 03; any other function, 01.
 `generate-project.py`, then, from the repository root:
 
 ```bash
-dotnet run --project src/Dse.Cli -- modbus-map samples/mine-conveyors/plant.json --format fuxa --out fuxa-tags.json
+dotnet run --project src/Millrace.Cli -- modbus-map samples/mine-conveyors/plant.json --format fuxa --out fuxa-tags.json
 python3 -I hmi/fuxa/generate-project.py fuxa-tags.json hmi/fuxa/mine-conveyors.fuxap.json
 rm fuxa-tags.json
 ```
 
 Regenerate the same way when the plant's tags change: the tests fail until
-the project's device tags equal `dse modbus-map … --format fuxa` again.
+the project's device tags equal `millrace modbus-map … --format fuxa` again.
 
 ## Cleaning up
 
@@ -298,9 +298,9 @@ builder prune` removes it.
 | file | what it is |
 |---|---|
 | `docker-compose.yml` | the three services |
-| `Dockerfile` | the `dse` image: the .NET SDK builds `src/Dse.Cli`, the .NET runtime runs it, with `samples/` |
+| `Dockerfile` | the `millrace` image: the .NET SDK builds `src/Millrace.Cli`, the .NET runtime runs it, with `samples/` |
 | `Dockerfile.dockerignore` | sends only `Directory.Build.props`, `src/` and `samples/` to that build |
 | `fuxa.Dockerfile` | `frangoteam/fuxa:1.3.4` with the `modbus-serial` 8.0.19 driver installed |
 | `generate-project.py` | writes `mine-conveyors.fuxap.json` from the register map: its source |
-| `mine-conveyors.fuxap.json` | the FUXA project: the `DSE` Modbus device, the three views, the alarms, the trend charts and the `pulse` script |
+| `mine-conveyors.fuxap.json` | the FUXA project: the `Millrace` Modbus device, the three views, the alarms, the trend charts and the `pulse` script |
 | `smoke-check.sh` | the scripted check above |

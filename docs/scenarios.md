@@ -3,17 +3,17 @@
 A scenario is a JSON file that says which plant to run, how the engine is set
 up, how long to run, and what happens while it runs. It is the unit of
 regression testing: run one twice and the event log is byte-identical; commit
-that log and `dse run --expect` tells you the day the behaviour changes.
+that log and `millrace run --expect` tells you the day the behaviour changes.
 
 ```bash
-dse run scenario.json                              # print the event log
-dse run scenario.json --out golden.log             # make or remake a golden
-dse run scenario.json --expect golden.log          # exit 0 if unchanged, 4 if not
-dse run scenario.json --format json                # the same run, as records
-dse serve plant.json --scenario scenario.json      # the same timeline in real time, served over Modbus TCP
+millrace run scenario.json                              # print the event log
+millrace run scenario.json --out golden.log             # make or remake a golden
+millrace run scenario.json --expect golden.log          # exit 0 if unchanged, 4 if not
+millrace run scenario.json --format json                # the same run, as records
+millrace serve plant.json --scenario scenario.json      # the same timeline in real time, served over Modbus TCP
 ```
 
-`dse serve --scenario` schedules the timeline and uses the seed, start time and
+`millrace serve --scenario` schedules the timeline and uses the seed, start time and
 time step, but ignores `duration`: it runs until stopped.
 
 ## The file
@@ -60,9 +60,9 @@ An action has an `at` and exactly one of three shapes.
 | fault | `fault` (component id), `id` (fault id), `args` (optional object of numbers) | Inject the fault. An argument the descriptor declares and the file omits takes the descriptor's default. |
 | clear | `clear` (component id), `id` | Clear the fault. |
 
-Tag names are the directory's names, exactly as `dse tags <plant>` prints them
+Tag names are the directory's names, exactly as `millrace tags <plant>` prints them
 (`CV001.Start`, `FEED.Rate`). Component ids for faults are the flattened leaf
-ids (`CV001.Motor`), and `dse catalog export` lists each type's fault ids and
+ids (`CV001.Motor`), and `millrace catalog export` lists each type's fault ids and
 arguments.
 
 A value's JSON type must fit the tag's kind:
@@ -86,7 +86,7 @@ during the phase-1 event drain of the tick it named.
 Two constraints follow, both checked before tick 0:
 
 - **`at` must fall exactly on a tick.** At a 10 ms step, `60.5` is fine and
-  `60.005` is `DSE203`, which names the step and the offending time.
+  `60.005` is `MR203`, which names the step and the offending time.
 - **`at` must be less than `duration`.** `duration: 120` at 10 ms runs ticks
   0 to 11999; an action at 120 s would land on tick 12000, which never runs.
 
@@ -95,10 +95,10 @@ external writer queued lands first, then the scenario's actions in order.
 
 ## The golden workflow
 
-1. Write the scenario and run it: `dse run s.json`. Look at the log.
-2. When it says what you meant, save it: `dse run s.json --out s.log`.
+1. Write the scenario and run it: `millrace run s.json`. Look at the log.
+2. When it says what you meant, save it: `millrace run s.json --out s.log`.
 3. Commit both files. The log is the assertion.
-4. Later, `dse run s.json --expect s.log`. Exit 0 means nothing changed. Exit 4
+4. Later, `millrace run s.json --expect s.log`. Exit 0 means nothing changed. Exit 4
    means the behaviour changed: standard error names the first differing line
    with three lines of context from both logs, and the whole new log is written
    beside the golden as `s.log.actual`.

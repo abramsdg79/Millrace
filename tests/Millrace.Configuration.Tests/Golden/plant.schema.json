@@ -1,0 +1,2451 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Millrace plant",
+  "description": "Generated from the catalogue of modules: Millrace.Components, Millrace.Control. Do not edit; run `millrace schema export`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "components"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "defaults": {
+      "description": "Simulation options used when nothing overrides them. A scenario or the command line may.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "seed": {
+          "description": "Master seed; every random stream derives from it.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "timeStepMs": {
+          "description": "Simulation step in milliseconds.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "startTime": {
+          "description": "Simulation start, ISO 8601 with an offset.",
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "materials": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/envelope.material"
+      }
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/component.belt-friction"
+          },
+          {
+            "$ref": "#/$defs/component.belt-scale"
+          },
+          {
+            "$ref": "#/$defs/component.bulk-belt"
+          },
+          {
+            "$ref": "#/$defs/component.bulk-process-unit"
+          },
+          {
+            "$ref": "#/$defs/component.bulk-sink"
+          },
+          {
+            "$ref": "#/$defs/component.bulk-source"
+          },
+          {
+            "$ref": "#/$defs/component.conveyor"
+          },
+          {
+            "$ref": "#/$defs/component.current-sensor"
+          },
+          {
+            "$ref": "#/$defs/component.discrete-belt"
+          },
+          {
+            "$ref": "#/$defs/component.drive-pulley"
+          },
+          {
+            "$ref": "#/$defs/component.e-stop"
+          },
+          {
+            "$ref": "#/$defs/component.former"
+          },
+          {
+            "$ref": "#/$defs/component.gearbox"
+          },
+          {
+            "$ref": "#/$defs/component.item-process-unit"
+          },
+          {
+            "$ref": "#/$defs/component.item-sink"
+          },
+          {
+            "$ref": "#/$defs/component.item-source"
+          },
+          {
+            "$ref": "#/$defs/component.motor"
+          },
+          {
+            "$ref": "#/$defs/component.motor-starter"
+          },
+          {
+            "$ref": "#/$defs/component.part-counter"
+          },
+          {
+            "$ref": "#/$defs/component.pull-key"
+          },
+          {
+            "$ref": "#/$defs/component.pyrometer"
+          },
+          {
+            "$ref": "#/$defs/component.reject-gate"
+          },
+          {
+            "$ref": "#/$defs/component.safety-relay"
+          },
+          {
+            "$ref": "#/$defs/component.speed-sensor"
+          },
+          {
+            "$ref": "#/$defs/component.tail-pulley"
+          },
+          {
+            "$ref": "#/$defs/component.temperature-sensor"
+          },
+          {
+            "$ref": "#/$defs/component.transfer-chute"
+          },
+          {
+            "$ref": "#/$defs/component.unit-delay-bool"
+          },
+          {
+            "$ref": "#/$defs/component.unit-delay-double"
+          },
+          {
+            "$ref": "#/$defs/component.zero-speed-switch"
+          }
+        ]
+      }
+    },
+    "signals": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/envelope.link"
+      }
+    },
+    "flows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/envelope.link"
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/envelope.tag"
+      }
+    },
+    "controllers": {
+      "description": "Control blocks, scanned in the order listed: when two write one tag on one tick, the later wins.",
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/block.alarm"
+          },
+          {
+            "$ref": "#/$defs/block.coil"
+          },
+          {
+            "$ref": "#/$defs/block.interlock"
+          },
+          {
+            "$ref": "#/$defs/block.permissive"
+          },
+          {
+            "$ref": "#/$defs/block.sequencer"
+          },
+          {
+            "$ref": "#/$defs/block.timer"
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "block.alarm": {
+      "description": "An ISA-18.2 analog alarm over one Double tag: one to four limits, each with a deadband and an on-delay, acknowledged by Ack.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "scanPeriodMs",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique across the plant's components and controllers. No dot and no whitespace: it prefixes every tag the block owns, as in INT01.Ok.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "alarm"
+        },
+        "scanPeriodMs": {
+          "description": "How often the block scans, in milliseconds: a whole number of time steps, at most a day.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 86400000
+        },
+        "claims": {
+          "description": "Tags only this block may write, by full name: each a read-write tag the block commands. A client, a scenario or another block that writes one is refused.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "input",
+            "limits"
+          ],
+          "properties": {
+            "input": {
+              "description": "The Double tag watched. The full name of a Double tag. The schema cannot check that it exists; the loader does.",
+              "type": "string"
+            },
+            "limits": {
+              "description": "One to four limits, each kind at most once.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/group.AlarmLimit"
+              }
+            }
+          }
+        }
+      }
+    },
+    "block.coil": {
+      "description": "An output coil: drives a Bool tag true while a condition is at its normal value and false otherwise, writing on its first scan and on each change.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "scanPeriodMs",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique across the plant's components and controllers. No dot and no whitespace: it prefixes every tag the block owns, as in INT01.Ok.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "coil"
+        },
+        "scanPeriodMs": {
+          "description": "How often the block scans, in milliseconds: a whole number of time steps, at most a day.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 86400000
+        },
+        "claims": {
+          "description": "Tags only this block may write, by full name: each a read-write tag the block commands. A client, a scenario or another block that writes one is refused.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "condition",
+            "output"
+          ],
+          "properties": {
+            "condition": {
+              "description": "The Bool tag watched, and the value that energises the coil.",
+              "$ref": "#/$defs/group.Condition"
+            },
+            "output": {
+              "description": "The Bool tag the coil drives; claim it so nothing else writes it. The full name of a Bool tag the block commands, so it must be read-write. The schema cannot check that it exists; the loader does.",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "block.interlock": {
+      "description": "The conditions that stop a running thing: any abnormal condition latches Tripped and sends the trip writes once, until Reset.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "scanPeriodMs",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique across the plant's components and controllers. No dot and no whitespace: it prefixes every tag the block owns, as in INT01.Ok.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "interlock"
+        },
+        "scanPeriodMs": {
+          "description": "How often the block scans, in milliseconds: a whole number of time steps, at most a day.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 86400000
+        },
+        "claims": {
+          "description": "Tags only this block may write, by full name: each a read-write tag the block commands. A client, a scenario or another block that writes one is refused.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "conditions"
+          ],
+          "properties": {
+            "conditions": {
+              "description": "The Bool tags whose abnormal value trips the interlock, in report order.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/group.Condition"
+              }
+            },
+            "trip": {
+              "description": "What to command when the interlock trips, once, on the trip scan.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/group.BlockWrite"
+              }
+            },
+            "reset": {
+              "description": "What to command when a reset is accepted, once, on the reset scan.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/group.BlockWrite"
+              }
+            }
+          }
+        }
+      }
+    },
+    "block.permissive": {
+      "description": "The conditions something needs before it may start: Ok while every condition is normal, never latched.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "scanPeriodMs",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique across the plant's components and controllers. No dot and no whitespace: it prefixes every tag the block owns, as in INT01.Ok.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "permissive"
+        },
+        "scanPeriodMs": {
+          "description": "How often the block scans, in milliseconds: a whole number of time steps, at most a day.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 86400000
+        },
+        "claims": {
+          "description": "Tags only this block may write, by full name: each a read-write tag the block commands. A client, a scenario or another block that writes one is refused.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "conditions"
+          ],
+          "properties": {
+            "conditions": {
+              "description": "The Bool tags that must be normal, in report order.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/group.Condition"
+              }
+            }
+          }
+        }
+      }
+    },
+    "block.sequencer": {
+      "description": "A linear sequence of steps, each with entry writes, a transition and an optional timeout, run by Start, Hold, Resume, Abort and Reset.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "scanPeriodMs",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique across the plant's components and controllers. No dot and no whitespace: it prefixes every tag the block owns, as in INT01.Ok.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "sequencer"
+        },
+        "scanPeriodMs": {
+          "description": "How often the block scans, in milliseconds: a whole number of time steps, at most a day.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 86400000
+        },
+        "claims": {
+          "description": "Tags only this block may write, by full name: each a read-write tag the block commands. A client, a scenario or another block that writes one is refused.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "steps"
+          ],
+          "properties": {
+            "steps": {
+              "description": "The steps, in order. There is no branching and no parallel step.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/group.SequenceStep"
+              }
+            },
+            "abort": {
+              "description": "What to command on an Abort or a step timeout.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/group.BlockWrite"
+              }
+            }
+          }
+        }
+      }
+    },
+    "block.timer": {
+      "description": "An IEC 61131-3 timer over one Bool tag: on-delay (TON), off-delay (TOF) or pulse (TP).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "scanPeriodMs",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique across the plant's components and controllers. No dot and no whitespace: it prefixes every tag the block owns, as in INT01.Ok.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "timer"
+        },
+        "scanPeriodMs": {
+          "description": "How often the block scans, in milliseconds: a whole number of time steps, at most a day.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 86400000
+        },
+        "claims": {
+          "description": "Tags only this block may write, by full name: each a read-write tag the block commands. A client, a scenario or another block that writes one is refused.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "input",
+            "presetS"
+          ],
+          "properties": {
+            "mode": {
+              "description": "on-delay raises Q once the input has held true for the preset; off-delay holds Q for the preset after the input falls; pulse gives one preset-long pulse on a rising edge.",
+              "enum": [
+                "on-delay",
+                "off-delay",
+                "pulse"
+              ]
+            },
+            "input": {
+              "description": "The Bool tag timed. The full name of a Bool tag. The schema cannot check that it exists; the loader does.",
+              "type": "string"
+            },
+            "presetS": {
+              "description": "The delay or pulse length. Zero acts immediately. Unit: s.",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 31536000
+            }
+          }
+        }
+      }
+    },
+    "component.belt-friction": {
+      "description": "Rolling resistance of a loaded belt: force from carried mass, belt mass and added drag.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "belt-friction"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "emptyBeltMassKg"
+          ],
+          "properties": {
+            "emptyBeltMassKg": {
+              "description": "Mass of the moving belt and idlers with no load. Unit: kg.",
+              "type": "number",
+              "minimum": 0
+            },
+            "frictionCoefficient": {
+              "description": "Rolling resistance coefficient.",
+              "type": "number",
+              "minimum": 0,
+              "default": 0.03
+            }
+          }
+        }
+      }
+    },
+    "component.belt-scale": {
+      "description": "Weighs the material passing one point of a belt and reports a mass flow from the load there and the belt speed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "belt-scale"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "belt",
+            "positionM",
+            "spec"
+          ],
+          "properties": {
+            "belt": {
+              "description": "The belt weighed: a belt, or a conveyor that has one. The id of a component that supplies IMaterialObservable. The schema cannot check that it exists; the loader does.",
+              "type": "string"
+            },
+            "positionM": {
+              "description": "Distance of the weigh frame from the tail. Unit: m.",
+              "type": "number",
+              "minimum": 0
+            },
+            "spec": {
+              "description": "Unit, range, noise and lag.",
+              "$ref": "#/$defs/group.InstrumentSpec"
+            }
+          }
+        }
+      }
+    },
+    "component.bulk-belt": {
+      "description": "A spatially discretised belt for bulk material: what is loaded travels, and stops where it is when the belt stops.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "bulk-belt"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "lengthM",
+            "cellSizeM",
+            "maxSpeedMps",
+            "maxLinearDensityKgPerM"
+          ],
+          "properties": {
+            "lengthM": {
+              "description": "Belt length; must be a whole number of cells. Unit: m.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "cellSizeM": {
+              "description": "Length of one cell. The belt may not advance more than one cell per tick (MR006). Unit: m.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "maxSpeedMps": {
+              "description": "The fastest the belt will ever be driven. Unit: m/s.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "maxLinearDensityKgPerM": {
+              "description": "The most the belt can carry per metre. Unit: kg/m.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "transforms": {
+              "description": "Applied, in order, every tick to everything the belt carries.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/object.transform"
+              }
+            }
+          }
+        }
+      }
+    },
+    "component.bulk-process-unit": {
+      "description": "A batch unit for bulk material: fills to a recipe, holds until a condition is met while applying transforms, then discharges.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "bulk-process-unit"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "recipe",
+            "hold",
+            "output"
+          ],
+          "properties": {
+            "recipe": {
+              "description": "What one batch is made of.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/group.RecipeLine"
+              }
+            },
+            "hold": {
+              "description": "When the batch is done.",
+              "$ref": "#/$defs/object.hold"
+            },
+            "output": {
+              "description": "What the batch becomes. The name of a bulk material. The schema cannot check that it exists; the loader does.",
+              "type": "string"
+            },
+            "yield": {
+              "description": "Fraction of the batch mass that comes out.",
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1,
+              "default": 1
+            },
+            "transforms": {
+              "description": "Applied, in order, every tick while holding.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/object.transform"
+              }
+            }
+          }
+        }
+      }
+    },
+    "component.bulk-sink": {
+      "description": "Accepts bulk material and destroys it, up to an optional capacity.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "bulk-sink"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [],
+          "properties": {
+            "capacityKg": {
+              "description": "How much it will take. Omit for unlimited. Unit: kg.",
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "component.bulk-source": {
+      "description": "Creates bulk material at a commanded rate, from an optional finite hopper.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "bulk-source"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "material",
+            "rateKgPerS"
+          ],
+          "properties": {
+            "material": {
+              "description": "What it feeds; new material takes this material's defined properties. The name of a bulk material. The schema cannot check that it exists; the loader does.",
+              "type": "string"
+            },
+            "rateKgPerS": {
+              "description": "Feed rate when nothing drives the Rate input. Unit: kg/s.",
+              "type": "number",
+              "minimum": 0
+            },
+            "hopperCapacityKg": {
+              "description": "Hopper size. Omit for unlimited. Unit: kg.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "enabled": {
+              "description": "Whether the feeder runs before anything writes Enabled. A PLC output is off at power-up; set false to match.",
+              "type": "boolean",
+              "default": true
+            }
+          }
+        }
+      }
+    },
+    "component.conveyor": {
+      "description": "A complete belt conveyor: motor, gearbox, drive and tail pulleys, belt friction, belt, speed sensor, belt scale, current sensor, zero-speed switch, e-stop, pull-keys, safety relay and starter, wired and ready. Faults are injected on the leaves inside it, addressed as <id>.Motor, <id>.Drive, <id>.Scale and so on.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "conveyor"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "lengthM",
+            "cellSizeM",
+            "beltWidthM",
+            "angleOfReposeDeg",
+            "materialDensityKgM3",
+            "emptyBeltMassKg",
+            "frictionCoefficient",
+            "pulleyDiameterM",
+            "gearRatio",
+            "motor"
+          ],
+          "properties": {
+            "lengthM": {
+              "description": "Belt length; must be a whole number of cells. Unit: m.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "cellSizeM": {
+              "description": "Length of one belt cell. The belt may not advance more than one cell per tick (MR006). Unit: m.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "beltWidthM": {
+              "description": "Belt width; with the angle of repose and density it sets how much a metre of belt can carry. Unit: m.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "angleOfReposeDeg": {
+              "description": "Surcharge angle of the material on the belt. Unit: °.",
+              "type": "number",
+              "minimum": 0
+            },
+            "materialDensityKgM3": {
+              "description": "Bulk density used to size the belt's capacity. Unit: kg/m³.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "emptyBeltMassKg": {
+              "description": "Mass of the moving belt and idlers with no load. Unit: kg.",
+              "type": "number",
+              "minimum": 0
+            },
+            "frictionCoefficient": {
+              "description": "Rolling resistance coefficient.",
+              "type": "number",
+              "minimum": 0
+            },
+            "pulleyDiameterM": {
+              "description": "Drive pulley diameter. Unit: m.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "gearRatio": {
+              "description": "Motor speed over pulley speed.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "motor": {
+              "description": "The drive motor's rating.",
+              "$ref": "#/$defs/group.MotorRating"
+            },
+            "tailDragN": {
+              "description": "Tail pulley bearing drag. Unit: N.",
+              "type": "number",
+              "minimum": 0,
+              "default": 50
+            },
+            "pullKeys": {
+              "description": "Number of pull-wire switches along the belt. Unit: count.",
+              "type": "integer",
+              "minimum": 0,
+              "default": 2
+            },
+            "speedMarginFraction": {
+              "description": "How far the belt's declared maximum speed exceeds the no-load speed.",
+              "type": "number",
+              "minimum": 0,
+              "default": 0.1
+            }
+          }
+        }
+      }
+    },
+    "component.current-sensor": {
+      "description": "Measures a current signal.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "current-sensor"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "spec"
+          ],
+          "properties": {
+            "spec": {
+              "description": "Unit, range, noise and lag.",
+              "$ref": "#/$defs/group.InstrumentSpec"
+            }
+          }
+        }
+      }
+    },
+    "component.discrete-belt": {
+      "description": "A belt carrying individual items at tracked positions, with an optional minimum spacing.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "discrete-belt"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "lengthM",
+            "maxSpeedMps"
+          ],
+          "properties": {
+            "lengthM": {
+              "description": "Belt length. Unit: m.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "maxSpeedMps": {
+              "description": "The fastest the belt will ever be driven. Unit: m/s.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "minSpacingM": {
+              "description": "Closest two items may sit; must not exceed the length. Unit: m.",
+              "type": "number",
+              "minimum": 0,
+              "default": 0
+            },
+            "transforms": {
+              "description": "Applied, in order, every tick to everything the belt carries.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/object.transform"
+              }
+            }
+          }
+        }
+      }
+    },
+    "component.drive-pulley": {
+      "description": "Turns shaft speed into belt speed and belt force into a torque demand.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "drive-pulley"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "diameterM"
+          ],
+          "properties": {
+            "diameterM": {
+              "description": "Pulley diameter. Unit: m.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "bearingDragN": {
+              "description": "Constant drag from the bearings. Unit: N.",
+              "type": "number",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        }
+      }
+    },
+    "component.e-stop": {
+      "description": "An emergency-stop button in a safety loop: not OK while it is held actuated. The button itself does not latch; the safety relay it feeds does.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "e-stop"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [],
+          "properties": {}
+        }
+      }
+    },
+    "component.former": {
+      "description": "Turns bulk material into discrete pieces of a fixed mass, one per cycle. The only place material changes kind.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "former"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "input",
+            "output",
+            "pieceMassKg",
+            "cycleSeconds",
+            "hopperCapacityKg"
+          ],
+          "properties": {
+            "input": {
+              "description": "The bulk material consumed. The name of a bulk material. The schema cannot check that it exists; the loader does.",
+              "type": "string"
+            },
+            "output": {
+              "description": "The discrete material produced. The name of a discrete material. The schema cannot check that it exists; the loader does.",
+              "type": "string"
+            },
+            "pieceMassKg": {
+              "description": "Mass of one piece. Unit: kg.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "cycleSeconds": {
+              "description": "Time to form one piece. Unit: s.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "hopperCapacityKg": {
+              "description": "Bulk material the former can hold. Unit: kg.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "outputQueueCapacity": {
+              "description": "Pieces that may wait at the outlet. Omit for unlimited. Unit: count.",
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "component.gearbox": {
+      "description": "A fixed-ratio reducer: divides speed, multiplies torque demand back towards the motor, loses a fixed efficiency.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "gearbox"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "ratio"
+          ],
+          "properties": {
+            "ratio": {
+              "description": "Input speed over output speed.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "efficiency": {
+              "description": "Fraction of power transmitted.",
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1,
+              "default": 0.95
+            }
+          }
+        }
+      }
+    },
+    "component.item-process-unit": {
+      "description": "A batch unit for discrete items — a furnace, a press: takes a batch, holds it while applying transforms, discharges, optionally as a new material.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "item-process-unit"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "batchSize",
+            "hold"
+          ],
+          "properties": {
+            "batchSize": {
+              "description": "Items per batch. Unit: count.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "hold": {
+              "description": "When the batch is done.",
+              "$ref": "#/$defs/object.hold"
+            },
+            "output": {
+              "description": "What each item becomes. Omit to keep the material. The name of a discrete material. The schema cannot check that it exists; the loader does.",
+              "type": "string"
+            },
+            "yield": {
+              "description": "Fraction of each item's mass that comes out.",
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1,
+              "default": 1
+            },
+            "transforms": {
+              "description": "Applied, in order, every tick while holding.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/object.transform"
+              }
+            },
+            "heatWhileHeld": {
+              "description": "Apply the transforms on every tick the unit holds items — filling, processing and discharging — not only while processing, so a batch that cannot leave keeps heating.",
+              "type": "boolean",
+              "default": false
+            }
+          }
+        }
+      }
+    },
+    "component.item-sink": {
+      "description": "Accepts discrete items and destroys them, up to an optional capacity.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "item-sink"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [],
+          "properties": {
+            "capacity": {
+              "description": "How many items it will take. Omit for unlimited. Unit: count.",
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "component.item-source": {
+      "description": "Mints one discrete item at a fixed interval and queues it at the outlet.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "item-source"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "material",
+            "itemMassKg",
+            "intervalSeconds"
+          ],
+          "properties": {
+            "material": {
+              "description": "What each item is; new items take this material's defined properties. The name of a discrete material. The schema cannot check that it exists; the loader does.",
+              "type": "string"
+            },
+            "itemMassKg": {
+              "description": "Mass of one item. Unit: kg.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "intervalSeconds": {
+              "description": "Time between items. Unit: s.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "queueCapacity": {
+              "description": "Items that may wait at the outlet. Omit for unlimited. Unit: count.",
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "component.motor": {
+      "description": "An induction motor: first-order speed response, current from torque, an I²t thermal state and a breakdown stall.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "motor"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "rating"
+          ],
+          "properties": {
+            "rating": {
+              "description": "The nameplate and model constants.",
+              "$ref": "#/$defs/group.MotorRating"
+            }
+          }
+        }
+      }
+    },
+    "component.motor-starter": {
+      "description": "A direct-on-line starter with a thermal overload relay: closes on command when safe, trips on thermal state, resets on a rising edge.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "motor-starter"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [],
+          "properties": {
+            "tripLevel": {
+              "description": "Thermal state at which the overload relay trips.",
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "default": 1.1
+            },
+            "resetLevel": {
+              "description": "Thermal state below which a reset is accepted. Must be below tripLevel.",
+              "type": "number",
+              "default": 0.9
+            }
+          }
+        }
+      }
+    },
+    "component.part-counter": {
+      "description": "Counts items entering a window on a belt and reports whether one is in it now.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "part-counter"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "belt",
+            "positionM",
+            "windowM"
+          ],
+          "properties": {
+            "belt": {
+              "description": "The belt watched: a discrete belt, or a composite that has one. The id of a component that supplies IMaterialObservable. The schema cannot check that it exists; the loader does.",
+              "type": "string"
+            },
+            "positionM": {
+              "description": "Centre of the window, from the tail. Unit: m.",
+              "type": "number",
+              "minimum": 0
+            },
+            "windowM": {
+              "description": "Length of the window. Unit: m.",
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "component.pull-key": {
+      "description": "A pull-wire switch along a conveyor, in a safety loop.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "pull-key"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [],
+          "properties": {}
+        }
+      }
+    },
+    "component.pyrometer": {
+      "description": "Reads the temperature of whatever is in its window; reads the background when nothing is.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "pyrometer"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "target",
+            "positionM",
+            "windowM",
+            "spec"
+          ],
+          "properties": {
+            "target": {
+              "description": "What it looks at: a belt, a conveyor, a chute or a process unit. The id of a component that supplies IMaterialObservable. The schema cannot check that it exists; the loader does.",
+              "type": "string"
+            },
+            "positionM": {
+              "description": "Centre of the window, from the tail. Ignored when the target has no length (a chute or a process unit), which reports its whole contents. Unit: m.",
+              "type": "number",
+              "minimum": 0
+            },
+            "windowM": {
+              "description": "Length of the window. Ignored when the target has no length. Unit: m.",
+              "type": "number",
+              "minimum": 0
+            },
+            "spec": {
+              "description": "Unit, range, noise and lag.",
+              "$ref": "#/$defs/group.InstrumentSpec"
+            }
+          }
+        }
+      }
+    },
+    "component.reject-gate": {
+      "description": "A measuring station for discrete items: holds each for a dwell, then passes it on, or diverts it to the reject outlet while Reject is true.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "reject-gate"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "dwellSeconds"
+          ],
+          "properties": {
+            "dwellSeconds": {
+              "description": "How long each item stays on the station before it may leave. Unit: s.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          }
+        }
+      }
+    },
+    "component.safety-relay": {
+      "description": "Energises only while every channel is healthy; once dropped, stays dropped until a reset edge.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "safety-relay"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "channels"
+          ],
+          "properties": {
+            "channels": {
+              "description": "Number of monitored channels.",
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "component.speed-sensor": {
+      "description": "Measures a speed signal.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "speed-sensor"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "spec"
+          ],
+          "properties": {
+            "spec": {
+              "description": "Unit, range, noise and lag.",
+              "$ref": "#/$defs/group.InstrumentSpec"
+            }
+          }
+        }
+      }
+    },
+    "component.tail-pulley": {
+      "description": "The idle pulley at the tail: contributes bearing drag.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "tail-pulley"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "bearingDragN"
+          ],
+          "properties": {
+            "bearingDragN": {
+              "description": "Constant drag from the bearings. Unit: N.",
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "component.temperature-sensor": {
+      "description": "Measures a temperature signal.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "temperature-sensor"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "spec"
+          ],
+          "properties": {
+            "spec": {
+              "description": "Unit, range, noise and lag.",
+              "$ref": "#/$defs/group.InstrumentSpec"
+            }
+          }
+        }
+      }
+    },
+    "component.transfer-chute": {
+      "description": "A small buffer between two belts; backs material up when it is full or blocked.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "transfer-chute"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "capacityKg"
+          ],
+          "properties": {
+            "capacityKg": {
+              "description": "Mass the chute can hold. Unit: kg.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          }
+        }
+      }
+    },
+    "component.unit-delay-bool": {
+      "description": "Holds a boolean for one tick. Put one on a connection to break an algebraic loop.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "unit-delay-bool"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [],
+          "properties": {
+            "initialValue": {
+              "description": "The output on the first tick.",
+              "type": "boolean",
+              "default": false
+            }
+          }
+        }
+      }
+    },
+    "component.unit-delay-double": {
+      "description": "Holds a number for one tick. Put one on a connection to break an algebraic loop.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "unit-delay-double"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [],
+          "properties": {
+            "initialValue": {
+              "description": "The output on the first tick.",
+              "type": "number",
+              "default": 0
+            }
+          }
+        }
+      }
+    },
+    "component.zero-speed-switch": {
+      "description": "Asserts Stopped when the measured speed has stayed below a threshold for a delay.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique in the plant. No dot and no whitespace: a dot separates a component from its port in an address.",
+          "type": "string",
+          "pattern": "^[^.\\s]+$"
+        },
+        "type": {
+          "const": "zero-speed-switch"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "spec",
+            "thresholdSpeed",
+            "delaySeconds"
+          ],
+          "properties": {
+            "spec": {
+              "description": "Unit, range, noise and lag.",
+              "$ref": "#/$defs/group.InstrumentSpec"
+            },
+            "thresholdSpeed": {
+              "description": "Speed below which the watched machine counts as stopped, in the spec's unit.",
+              "type": "number",
+              "minimum": 0
+            },
+            "delaySeconds": {
+              "description": "How long the speed must stay below the threshold. Unit: s.",
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "envelope.link": {
+      "description": "A connection from one port to another.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from",
+        "to"
+      ],
+      "properties": {
+        "from": {
+          "description": "The driving port, as <component>.<port>.",
+          "type": "string"
+        },
+        "to": {
+          "description": "The driven port, as <component>.<port>.",
+          "type": "string"
+        }
+      }
+    },
+    "envelope.material": {
+      "description": "A material the plant's components can name.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "kind"
+      ],
+      "properties": {
+        "name": {
+          "description": "What components call it. Unique across the plant and the catalogue.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Whether it flows as bulk mass or as discrete items.",
+          "enum": [
+            "bulk",
+            "discrete"
+          ]
+        },
+        "states": {
+          "description": "Names of the per-material state values a transform can accumulate into.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "properties": {
+          "description": "The properties a source gives new material.",
+          "$ref": "#/$defs/group.MaterialProperties"
+        },
+        "description": {
+          "description": "For people.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "envelope.tag": {
+      "description": "A tag bound to a port, in addition to the tags components declare.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "port"
+      ],
+      "properties": {
+        "name": {
+          "description": "The tag name a client reads or writes.",
+          "type": "string"
+        },
+        "port": {
+          "description": "The port bound, as <component>.<port>.",
+          "type": "string"
+        },
+        "access": {
+          "description": "Whether a client may write it. Only an input can be written.",
+          "enum": [
+            "read",
+            "write"
+          ],
+          "default": "read"
+        },
+        "unit": {
+          "description": "Engineering unit.",
+          "type": "string",
+          "default": ""
+        },
+        "rangeLow": {
+          "description": "Bottom of the range. Give both ends or neither.",
+          "type": "number"
+        },
+        "rangeHigh": {
+          "description": "Top of the range. Give both ends or neither.",
+          "type": "number"
+        },
+        "description": {
+          "description": "A sentence fragment; becomes the tag's description.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "group.AlarmLimit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "value"
+      ],
+      "properties": {
+        "kind": {
+          "description": "Which limit. Configured limits must ascend lo-lo < lo < hi < hi-hi, each at most once.",
+          "enum": [
+            "lo-lo",
+            "lo",
+            "hi",
+            "hi-hi"
+          ]
+        },
+        "value": {
+          "description": "The limit, in the tag's engineering unit.",
+          "type": "number"
+        },
+        "deadband": {
+          "description": "How far back inside the limit the value must come before the alarm clears.",
+          "type": "number",
+          "minimum": 0,
+          "default": 0
+        },
+        "onDelayS": {
+          "description": "How long the value must stay across before the alarm raises. Unit: s.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 31536000,
+          "default": 0
+        }
+      }
+    },
+    "group.BlockWrite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tag",
+        "value"
+      ],
+      "properties": {
+        "tag": {
+          "description": "The tag commanded. The full name of a tag the block commands, so it must be read-write. The schema cannot check that it exists; the loader does.",
+          "type": "string"
+        },
+        "value": {
+          "description": "The value commanded. Converted to the kind of the tag named by 'tag'. The schema cannot check that it fits; the loader does.",
+          "type": [
+            "boolean",
+            "number"
+          ]
+        }
+      }
+    },
+    "group.Condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tag",
+        "normal"
+      ],
+      "properties": {
+        "tag": {
+          "description": "The Bool tag watched. The full name of a Bool tag. The schema cannot check that it exists; the loader does.",
+          "type": "string"
+        },
+        "normal": {
+          "description": "The value that means the condition is satisfied.",
+          "type": "boolean"
+        }
+      }
+    },
+    "group.InstrumentSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit",
+        "rangeLow",
+        "rangeHigh"
+      ],
+      "properties": {
+        "unit": {
+          "description": "Engineering unit of the reading; becomes the tag's unit.",
+          "type": "string"
+        },
+        "rangeLow": {
+          "description": "Bottom of the calibrated range. The reading clamps here.",
+          "type": "number"
+        },
+        "rangeHigh": {
+          "description": "Top of the calibrated range; must exceed rangeLow.",
+          "type": "number"
+        },
+        "noiseSigma": {
+          "description": "Standard deviation of Gaussian noise per tick, in the reading's unit.",
+          "type": "number",
+          "minimum": 0,
+          "default": 0
+        },
+        "lagSeconds": {
+          "description": "First-order response time constant. Unit: s.",
+          "type": "number",
+          "minimum": 0,
+          "default": 0
+        }
+      }
+    },
+    "group.MaterialProperties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "density": {
+          "description": "Bulk density. Unit: kg/m³.",
+          "type": "number",
+          "minimum": 0,
+          "default": 0
+        },
+        "moisture": {
+          "description": "Moisture as a mass fraction.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0
+        },
+        "temperature": {
+          "description": "Temperature of new material. Unit: °C.",
+          "type": "number",
+          "default": 20
+        }
+      }
+    },
+    "group.MotorRating": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ratedPowerW",
+        "ratedSpeedRadPerS",
+        "ratedCurrentA"
+      ],
+      "properties": {
+        "ratedPowerW": {
+          "description": "Nameplate power. Unit: W.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "ratedSpeedRadPerS": {
+          "description": "Shaft speed at rated load. Unit: rad/s.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "ratedCurrentA": {
+          "description": "Current at rated load. Unit: A.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "noLoadCurrentFraction": {
+          "description": "Current at zero torque, as a fraction of rated.",
+          "type": "number",
+          "minimum": 0,
+          "default": 0.3
+        },
+        "lockedRotorCurrentMultiple": {
+          "description": "Starting current, as a multiple of rated.",
+          "type": "number",
+          "minimum": 0,
+          "default": 6
+        },
+        "breakdownTorqueMultiple": {
+          "description": "Torque above which the motor stalls, as a multiple of rated.",
+          "type": "number",
+          "minimum": 0,
+          "default": 2.5
+        },
+        "accelerationTimeConstantS": {
+          "description": "First-order approach to target speed when energised. Unit: s.",
+          "type": "number",
+          "minimum": 0,
+          "default": 1
+        },
+        "coastTimeConstantS": {
+          "description": "First-order decay to rest when de-energised. Unit: s.",
+          "type": "number",
+          "minimum": 0,
+          "default": 3
+        },
+        "thermalTimeConstantS": {
+          "description": "Time constant of the I²t thermal state. Unit: s.",
+          "type": "number",
+          "minimum": 0,
+          "default": 60
+        },
+        "speedDroopFraction": {
+          "description": "Speed lost at rated torque, as a fraction of rated speed.",
+          "type": "number",
+          "minimum": 0,
+          "default": 0.03
+        }
+      }
+    },
+    "group.RecipeLine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "inlet",
+        "material",
+        "massKg"
+      ],
+      "properties": {
+        "inlet": {
+          "description": "Name of the inlet this ingredient arrives at; the unit gets one inlet per line.",
+          "type": "string"
+        },
+        "material": {
+          "description": "The ingredient. The name of a bulk material. The schema cannot check that it exists; the loader does.",
+          "type": "string"
+        },
+        "massKg": {
+          "description": "Mass of it per batch. Unit: kg.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "group.SequenceStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "transition"
+      ],
+      "properties": {
+        "name": {
+          "description": "A short phrase for the step's event message, without a full stop.",
+          "type": "string"
+        },
+        "writes": {
+          "description": "What to command on the scan that enters the step.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/group.BlockWrite"
+          }
+        },
+        "transition": {
+          "description": "What ends the step: when a tag compares as asked, or after a delay.",
+          "$ref": "#/$defs/object.transition"
+        },
+        "timeoutS": {
+          "description": "How long the step may run before the sequence faults and sends the abort writes. Omit for no limit. Unit: s.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 31536000
+        }
+      }
+    },
+    "object.hold": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/object.hold.all"
+        },
+        {
+          "$ref": "#/$defs/object.hold.for-seconds"
+        },
+        {
+          "$ref": "#/$defs/object.hold.state-at-least"
+        },
+        {
+          "$ref": "#/$defs/object.hold.temperature-at-least"
+        },
+        {
+          "$ref": "#/$defs/object.hold.temperature-at-most"
+        }
+      ]
+    },
+    "object.hold.all": {
+      "description": "Holds until every listed condition is satisfied.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "conditions"
+      ],
+      "properties": {
+        "type": {
+          "const": "all"
+        },
+        "conditions": {
+          "description": "The conditions, all of which must hold.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/object.hold"
+          }
+        }
+      }
+    },
+    "object.hold.for-seconds": {
+      "description": "Holds the batch for a fixed time.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "seconds"
+      ],
+      "properties": {
+        "type": {
+          "const": "for-seconds"
+        },
+        "seconds": {
+          "description": "How long to hold. Unit: s.",
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "object.hold.state-at-least": {
+      "description": "Holds until one of the material's states reaches a value.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "material",
+        "state",
+        "value"
+      ],
+      "properties": {
+        "type": {
+          "const": "state-at-least"
+        },
+        "material": {
+          "description": "The material whose state is watched. The name of a material. The schema cannot check that it exists; the loader does.",
+          "type": "string"
+        },
+        "state": {
+          "description": "The state watched. The name of a state of the material named by 'material'. The schema cannot check that it exists; the loader does.",
+          "type": "string"
+        },
+        "value": {
+          "description": "The value to reach.",
+          "type": "number"
+        }
+      }
+    },
+    "object.hold.temperature-at-least": {
+      "description": "Holds until the batch is at least this hot.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "celsius"
+      ],
+      "properties": {
+        "type": {
+          "const": "temperature-at-least"
+        },
+        "celsius": {
+          "description": "The temperature to reach. Unit: °C.",
+          "type": "number"
+        }
+      }
+    },
+    "object.hold.temperature-at-most": {
+      "description": "Holds until the batch has cooled to this.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "celsius"
+      ],
+      "properties": {
+        "type": {
+          "const": "temperature-at-most"
+        },
+        "celsius": {
+          "description": "The temperature to fall to. Unit: °C.",
+          "type": "number"
+        }
+      }
+    },
+    "object.transform": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/object.transform.moisture-loss"
+        },
+        {
+          "$ref": "#/$defs/object.transform.residence-accumulator"
+        },
+        {
+          "$ref": "#/$defs/object.transform.thermal-transfer"
+        }
+      ]
+    },
+    "object.transform.moisture-loss": {
+      "description": "Dries the material while it is hotter than a threshold, in proportion to the excess.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "ratePerDegreeSecond",
+        "thresholdTemperature"
+      ],
+      "properties": {
+        "type": {
+          "const": "moisture-loss"
+        },
+        "ratePerDegreeSecond": {
+          "description": "Moisture fraction lost per degree above the threshold, per second. Unit: 1/(°C·s).",
+          "type": "number",
+          "minimum": 0
+        },
+        "thresholdTemperature": {
+          "description": "Temperature above which drying happens. Unit: °C.",
+          "type": "number"
+        }
+      }
+    },
+    "object.transform.residence-accumulator": {
+      "description": "Accumulates, in one of the material's states, the seconds spent at or above a threshold temperature.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "material",
+        "state",
+        "thresholdTemperature"
+      ],
+      "properties": {
+        "type": {
+          "const": "residence-accumulator"
+        },
+        "material": {
+          "description": "The material whose state is accumulated. The name of a material. The schema cannot check that it exists; the loader does.",
+          "type": "string"
+        },
+        "state": {
+          "description": "The state that accumulates. The name of a state of the material named by 'material'. The schema cannot check that it exists; the loader does.",
+          "type": "string"
+        },
+        "thresholdTemperature": {
+          "description": "Temperature at or above which time counts. Unit: °C.",
+          "type": "number"
+        }
+      }
+    },
+    "object.transform.thermal-transfer": {
+      "description": "Moves the material's temperature towards ambient with a first-order time constant.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "timeConstantSeconds"
+      ],
+      "properties": {
+        "type": {
+          "const": "thermal-transfer"
+        },
+        "timeConstantSeconds": {
+          "description": "Time to close 63% of the gap to ambient. Zero snaps to ambient. Unit: s.",
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "object.transition": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/object.transition.after"
+        },
+        {
+          "$ref": "#/$defs/object.transition.when"
+        }
+      ]
+    },
+    "object.transition.after": {
+      "description": "Ends the step when its clock reaches a delay.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "delayS"
+      ],
+      "properties": {
+        "type": {
+          "const": "after"
+        },
+        "delayS": {
+          "description": "How long the step runs. Unit: s.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 31536000
+        }
+      }
+    },
+    "object.transition.when": {
+      "description": "Ends the step when a tag compares with a value as asked.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "tag",
+        "op",
+        "value"
+      ],
+      "properties": {
+        "type": {
+          "const": "when"
+        },
+        "tag": {
+          "description": "The tag compared. The full name of a tag. The schema cannot check that it exists; the loader does.",
+          "type": "string"
+        },
+        "op": {
+          "description": "How the tag is compared. A Bool tag allows only == and !=.",
+          "enum": [
+            "==",
+            "!=",
+            "<",
+            "<=",
+            ">",
+            ">="
+          ]
+        },
+        "value": {
+          "description": "What the tag is compared with. Converted to the kind of the tag named by 'tag'. The schema cannot check that it fits; the loader does.",
+          "type": [
+            "boolean",
+            "number"
+          ]
+        }
+      }
+    }
+  }
+}
