@@ -21,8 +21,11 @@ dotnet test Millrace.sln
 ```
 
 Warnings are errors (`Directory.Build.props`), so a build with a warning
-fails. There is no hosted CI, so run both commands before you open a pull
-request and say in it that they pass.
+fails. CI runs the same build and every test on each pull request
+([`.github/workflows/ci.yml`](.github/workflows/ci.yml)); run both commands
+before you push and a red CI run is unlikely. If you touch `hmi/fuxa/`, also
+run its smoke check with Docker, as its [README](hmi/fuxa/README.md)
+describes. CI does not run it.
 
 ## The rules that keep Millrace deterministic
 
