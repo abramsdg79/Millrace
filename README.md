@@ -175,6 +175,30 @@ docker compose up --build
 then open <http://localhost:1881>. See the [FUXA HMI](hmi/fuxa/README.md) for
 what each screen and button does, and the register map.
 
+## Contributing and security
+
+Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Millrace
+is a simulator, not for live plants or OT networks, and `millrace serve` has
+no authentication. [SECURITY.md](SECURITY.md) says what that means and how to
+report a vulnerability privately.
+
+## Acknowledgements
+
+- [FUXA](https://github.com/frangoteam/FUXA) by frangoteam (MIT) is the web
+  SCADA in `hmi/fuxa/`, with the
+  [modbus-serial](https://github.com/yaacov/node-modbus-serial) driver (ISC).
+  Both are pulled at build time; neither is redistributed here.
+- [JsonSchema.Net](https://github.com/json-everything/json-everything) (MIT)
+  validates plant files; [xUnit](https://xunit.net/) (Apache-2.0) runs the
+  tests.
+- The specs and plans in `docs/superpowers/` were written with the
+  [Superpowers](https://github.com/obra/superpowers) workflow (MIT), and
+  Millrace was built with [Claude Code](https://claude.com/claude-code); the
+  commits that Claude co-authored say so.
+- Modbus is a registered trademark of Schneider Electric USA, Inc. Millrace
+  implements the published Modbus TCP specification and is not affiliated
+  with or endorsed by Schneider Electric or the Modbus Organization.
+
 ## Licence
 
-MIT.
+MIT, © 2026 Creative Cod3 Pty Ltd. See [LICENSE](LICENSE).
