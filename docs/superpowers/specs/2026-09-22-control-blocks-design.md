@@ -2,9 +2,9 @@
 
 Date: 2026-09-22. Addendum to
 `2026-09-02-industrial-process-simulation-engine-design.md` (the "main spec"),
-refining its sections 4, 11 and 17 for `Dse.Control` and the scan host in
-`Dse.Core`. Builds on plans 5a (catalogue, configuration, CLI) and 5b
-(scenarios, replay, `dse run`), both merged.
+refining its sections 4, 11 and 17 for `Millrace.Control` and the scan host in
+`Millrace.Core`. Builds on plans 5a (catalogue, configuration, CLI) and 5b
+(scenarios, replay, `millrace run`), both merged.
 
 **Amended 2026-09-25 (6c).** The interlock gained optional reset writes, sent
 once on the scan that accepts a reset. With a device's `Permit` written false on
@@ -17,14 +17,14 @@ unchanged. See `2026-09-25-interlock-start-inhibit-design.md` and its plan
 
 **Plan 5c — this document.** The five control blocks the main spec names —
 interlock, permissive, sequencer, timer, alarm — as pure scan blocks in a new
-`Dse.Control` project; a scan host in `Dse.Core` that schedules each block's
+`Millrace.Control` project; a scan host in `Millrace.Core` that schedules each block's
 scans through the event queue at its own period; alarm state as tags the alarm
 block owns; and the two crash paths parked by plan 5b's final review.
 
 Blocks are **built and attached in code** in 5c. Describing them in the plant
 JSON (a `controllers` section, catalogue descriptors for blocks, a loader
 stage, schema and diagnostics) is a later plan: the block API gets a shakedown
-before it is frozen into a file format. `dse run` therefore cannot attach
+before it is frozen into a file format. `millrace run` therefore cannot attach
 blocks in 5c; the worked example's golden is a test golden, not a CLI one, and
 the documentation says so.
 
@@ -34,10 +34,10 @@ telemetry; `--speed`; scenario JSON Schema.
 
 ### Success criteria
 
-1. A block written against `Dse.Io.Abstractions` alone scans at its own period
+1. A block written against `Millrace.Io.Abstractions` alone scans at its own period
    through the event queue, reads the plant sampled and stale as a PLC would,
-   and its outputs are ordinary tags: visible in `dse tags`, `LiveState`, tick
-   frames and the scenario recorder with no change to `Dse.Realtime`.
+   and its outputs are ordinary tags: visible in `millrace tags`, `LiveState`, tick
+   frames and the scenario recorder with no change to `Millrace.Realtime`.
 2. Each block has a pure unit-test suite (records in, records out) that needs
    no `Simulation`, plus a host-level test over a real plant.
 3. The worked example — the conveyor plant with a permissive, an interlock, an
@@ -47,10 +47,10 @@ telemetry; `--speed`; scenario JSON Schema.
    faulting or completing; produced and read, never invented.
 4. A plant with no blocks behaves exactly as before: the 947 existing tests and
    the four 5b goldens are unchanged.
-5. Zero external package references anywhere under `src/`; `Dse.Control`
-   references only `Dse.Io.Abstractions`.
+5. Zero external package references anywhere under `src/`; `Millrace.Control`
+   references only `Millrace.Io.Abstractions`.
 
-## 2. The contract (`Dse.Io.Abstractions`)
+## 2. The contract (`Millrace.Io.Abstractions`)
 
 ```csharp
 public sealed record TagRef(string Name, TagKind Kind);
@@ -88,17 +88,17 @@ not set in a scan holds its previous value, as a PLC output does. Nothing on
 the scan path allocates once the host is initialised except a raised event's
 message string.
 
-## 3. The scan host (`Dse.Core`)
+## 3. The scan host (`Millrace.Core`)
 
 **`SimulationBuilder.AddScanBlock(IScanBlock block)`**, at build:
 
 | code | check |
 |---|---|
-| DSE013 | `ScanPeriod` is a positive whole number of steps. |
-| DSE014 | Every `Inputs` and `Writes` entry names a tag the directory holds, with the same kind; every `Writes` entry is read-write. |
-| DSE015 | The block id is unique across components and blocks, and no owned tag name collides with an existing tag. |
+| MR013 | `ScanPeriod` is a positive whole number of steps. |
+| MR014 | Every `Inputs` and `Writes` entry names a tag the directory holds, with the same kind; every `Writes` entry is read-write. |
+| MR015 | The block id is unique across components and blocks, and no owned tag name collides with an existing tag. |
 
-Messages are sentences with a fix, like the existing `DSE001`–`DSE011`. Owned
+Messages are sentences with a fix, like the existing `MR001`–`MR011`. Owned
 tags become directory entries: outputs `ReadOnly`, commands `ReadWrite`, with
 the block's unit and description. A command is therefore an ordinary tag write —
 from a `CommandBus`, a scenario `write`, `WriteAt` or a bound port — and the
@@ -124,7 +124,7 @@ publish.
 
 A plant with no blocks schedules nothing and adds nothing to the directory.
 
-## 4. The blocks (`Dse.Control`)
+## 4. The blocks (`Millrace.Control`)
 
 Each block is one class, a pure `IScanBlock` with constructor parameters
 validated with `ArgumentException` like a component. Owned tag names follow the
@@ -151,7 +151,7 @@ same thing.
 
 ### The worked example
 
-The `conveyor-line` plant (`tests/Dse.Configuration.Tests/Plants/valid/`) plus,
+The `conveyor-line` plant (`tests/Millrace.Configuration.Tests/Plants/valid/`) plus,
 in code:
 
 - **PERM01** — permissive on `CV001.SafetyOk` (normal true) and `Pile.Full`
@@ -180,8 +180,8 @@ whichever the run produces, read and reported, never invented.
 
 ## 6. Testing
 
-`Dse.Core.Tests`
-- `AddScanBlock` validation, one test per code (`DSE013`–`DSE015`).
+`Millrace.Core.Tests`
+- `AddScanBlock` validation, one test per code (`MR013`–`MR015`).
 - A stub block proving the timing rule tick-exactly: input as of *N−1*, output
   visible at *N+1*, a queued write landing at *N+1*, the period honoured, add
   order among equals; outputs held between scans; events logged under the block
@@ -190,7 +190,7 @@ whichever the run produces, read and reported, never invented.
 - Two same-seed runs with blocks are byte-identical (`DeterminismTests`
   pattern).
 
-`Dse.Control.Tests`
+`Millrace.Control.Tests`
 - Pure suites, one per block, no `Simulation`: timer TON/TOF/TP edges and the
   quantisation of `ET`; permissive first-out and recovery; interlock latch,
   reset only when healthy, first-out, trip writes; alarm raise, deadband,
@@ -207,20 +207,20 @@ whichever the run produces, read and reported, never invented.
   example, each block's pins, parameters and events, the composition rule, and
   the 5c limit: blocks are attached in code; plant-JSON wiring is a later plan.
 - `docs/architecture.md` — "The control layer".
-- `README.md` — status; `Dse.Control` in the module list.
-- `docs/configuration-diagnostics.md` — regenerated for `DSE013`–`DSE015`; the
-  trailer range `DSE001–DSE011` becomes `DSE001–DSE015` (and
+- `README.md` — status; `Millrace.Control` in the module list.
+- `docs/configuration-diagnostics.md` — regenerated for `MR013`–`MR015`; the
+  trailer range `MR001–MR011` becomes `MR001–MR015` (and
   `docs/scenario-diagnostics.md`'s trailer, if it quotes the range).
 
 ## 8. Parked crash paths from plan 5b — the plan's first task
 
 - `ScenarioLoader.ReadTimeStep`: `timeStepMs` beyond `TimeSpan.MaxValue`
-  (`1e30`) throws `OverflowException` → exit 134. Bound it: `DSE202`.
+  (`1e30`) throws `OverflowException` → exit 134. Bound it: `MR202`.
 - `StructureStage.ReadDefaults`: a plant `defaults.timeStepMs` that is positive
   but rounds to zero ticks passes the loader and aborts in `SimulationClock`
   at `Build()`; and `1e30` throws `OverflowException` out of the loader itself —
-  both live crashes in `dse validate` and `dse tags` on master. Guard both in
-  the loader: `DSE103`, with the "at least one tick (0.0001 ms)" wording plan
+  both live crashes in `millrace validate` and `millrace tags` on master. Guard both in
+  the loader: `MR103`, with the "at least one tick (0.0001 ms)" wording plan
   5b used for scenarios, and an upper bound.
 
 Both with tests that reproduce the crash from the shipped binary first.
@@ -229,10 +229,10 @@ Both with tests that reproduce the crash from the shipped binary first.
 
 | project | references | notes |
 |---|---|---|
-| `src/Dse.Io.Abstractions` | unchanged | gains the contract of section 2 |
-| `src/Dse.Core` | unchanged | gains `AddScanBlock`, the scan host, `DSE013`–`DSE015` |
-| `src/Dse.Control` | `Dse.Io.Abstractions` only | new; five blocks; no packages |
-| `tests/Dse.Control.Tests` | `Dse.Control`, `Dse.Core`, `Dse.Components`, `Dse.Configuration`, `tests/Shared` | pure suites, host tests, the worked-example golden (`Dse.Scenarios` is not referenced: the runner cannot attach a block in 5c) |
-| `Dse.Configuration`, `Dse.Scenarios`, `Dse.Cli`, `Dse.Realtime` | untouched apart from the section 8 fixes | |
+| `src/Millrace.Io.Abstractions` | unchanged | gains the contract of section 2 |
+| `src/Millrace.Core` | unchanged | gains `AddScanBlock`, the scan host, `MR013`–`MR015` |
+| `src/Millrace.Control` | `Millrace.Io.Abstractions` only | new; five blocks; no packages |
+| `tests/Millrace.Control.Tests` | `Millrace.Control`, `Millrace.Core`, `Millrace.Components`, `Millrace.Configuration`, `tests/Shared` | pure suites, host tests, the worked-example golden (`Millrace.Scenarios` is not referenced: the runner cannot attach a block in 5c) |
+| `Millrace.Configuration`, `Millrace.Scenarios`, `Millrace.Cli`, `Millrace.Realtime` | untouched apart from the section 8 fixes | |
 
 Global constraints from 5a and 5b apply unchanged.

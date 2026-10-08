@@ -8,15 +8,15 @@ starter's thermal state to three decimals, a process unit's hold time to
 0.01 s and batch mass to 0.1 kg, and an alarm's value to one more decimal than
 its limit, rounded away from the limit on a raise — regenerate every event-log
 golden once, checked mechanically to differ only in those numbers, and give
-the 6d `DSE016` "which the plant does not have" diagnostic a nearest-name
+the 6d `MR016` "which the plant does not have" diagnostic a nearest-name
 hint.
 
-**Architecture:** Display text only. Four `Dse.Components` message sites change
+**Architecture:** Display text only. Four `Millrace.Components` message sites change
 an interpolation hole to `F<n>` (`Motor`, `MotorStarter`, `BulkProcessUnit`,
-`ItemProcessUnit`). `Dse.Control.Alarm` gains one private static method,
+`ItemProcessUnit`). `Millrace.Control.Alarm` gains one private static method,
 `Display(value, limit, direction)`, that derives the decimals from the limit's
 shortest round-trip form and rounds up, down or to nearest; both alarm messages
-use it. `Dse.Core.SimulationBuilder.CheckClaims` builds the "does not have" fix
+use it. `Millrace.Core.SimulationBuilder.CheckClaims` builds the "does not have" fix
 through a static local function that asks `Suggest.Closest` first among the
 claiming block's `Writes` the plant has, then among every tag. No value that
 reaches the tag image, a frame or telemetry changes; no event fires at a
@@ -34,16 +34,16 @@ the claim diagnostics of `2026-09-30-block-claimed-tags-design.md` (6d).
 
 **Plan sequence:** This is plan 6e. Plans 1–5d, 6a, 6a.1, 6c and 6d are merged
 on `master`; this plan starts from `7041258` (the commit that added the 6e
-spec). Measured on that commit with `dotnet test Dse.sln`: **1408 tests**, all
-passing — 37 `Dse.Io.Abstractions` / 491 `Dse.Core` / 132 `Dse.Components` / 57
-`Dse.Realtime` / 229 `Dse.Configuration` / 167 `Dse.Scenarios` / 78 `Dse.Cli` /
-118 `Dse.Control` / 23 `Dse.Control.Catalogue` / 76 `Dse.Samples`. Release build
+spec). Measured on that commit with `dotnet test Millrace.sln`: **1408 tests**, all
+passing — 37 `Millrace.Io.Abstractions` / 491 `Millrace.Core` / 132 `Millrace.Components` / 57
+`Millrace.Realtime` / 229 `Millrace.Configuration` / 167 `Millrace.Scenarios` / 78 `Millrace.Cli` /
+118 `Millrace.Control` / 23 `Millrace.Control.Catalogue` / 76 `Millrace.Samples`. Release build
 `0 Warning(s)`, `0 Error(s)`.
 
 **Task shape.** Three tasks, sequential, each leaving the whole suite green:
 
-- **Task 1 — the `DSE016` hint.** No event log moves, so it goes first and
-  alone: Core, the plant-file split, and `dse validate` on the sample.
+- **Task 1 — the `MR016` hint.** No event log moves, so it goes first and
+  alone: Core, the plant-file split, and `millrace validate` on the sample.
 - **Task 2 — the alarm.** The one piece of real arithmetic (R145), reviewed by
   Opus. It moves two goldens (the alarm lines of `chute-blockage.log` and
   `conveyor-control.log`) and two README lines, and writes the criterion 6
@@ -60,14 +60,14 @@ message appears in (R152); otherwise the golden tests would fail between tasks.
 
 - **`src/` changes in exactly six files.** After Task 3,
   `git diff --stat 7041258 -- src/` lists exactly
-  `src/Dse.Components/Flow/BulkProcessUnit.cs`,
-  `src/Dse.Components/Flow/ItemProcessUnit.cs`,
-  `src/Dse.Components/Mechanical/Motor.cs`,
-  `src/Dse.Components/Mechanical/MotorStarter.cs`,
-  `src/Dse.Control/Alarm.cs` and
-  `src/Dse.Core/SimulationBuilder.cs`. No change under `src/Dse.Io.Abstractions`,
-  `src/Dse.Configuration`, `src/Dse.Scenarios`, `src/Dse.Cli`,
-  `src/Dse.Realtime` or `src/Dse.Control.Catalogue`; no public API changes.
+  `src/Millrace.Components/Flow/BulkProcessUnit.cs`,
+  `src/Millrace.Components/Flow/ItemProcessUnit.cs`,
+  `src/Millrace.Components/Mechanical/Motor.cs`,
+  `src/Millrace.Components/Mechanical/MotorStarter.cs`,
+  `src/Millrace.Control/Alarm.cs` and
+  `src/Millrace.Core/SimulationBuilder.cs`. No change under `src/Millrace.Io.Abstractions`,
+  `src/Millrace.Configuration`, `src/Millrace.Scenarios`, `src/Millrace.Cli`,
+  `src/Millrace.Realtime` or `src/Millrace.Control.Catalogue`; no public API changes.
   `git grep -n PackageReference -- 'src/*.csproj'` prints nothing.
 - **Display text only** (spec criterion 5). No computed value, tag value,
   frame, telemetry channel, event time or event order changes. The `WRITE` log
@@ -76,19 +76,19 @@ message appears in (R152); otherwise the golden tests would fail between tasks.
   zero-speed threshold and delay, a sequencer step timeout — print exactly as
   today (criterion 4, R143).
 - **Goldens change only in the formatted numbers** (criterion 6). Measured with
-  this plan's whole change applied, `DSE_UPDATE_GOLDEN=1 dotnet test Dse.sln` (in
+  this plan's whole change applied, `MILLRACE_UPDATE_GOLDEN=1 dotnet test Millrace.sln` (in
   a scratch copy — never in the repository) rewrites exactly eleven files: the
   nine `samples/mine-conveyors/expected/*.log`,
-  `tests/Dse.Control.Tests/Golden/conveyor-control.log` and
-  `tests/Dse.Scenarios.Tests/Golden/conveyor-start-and-fault.log`. The other
-  three `Dse.Scenarios.Tests` goldens, `plant.schema.json`,
+  `tests/Millrace.Control.Tests/Golden/conveyor-control.log` and
+  `tests/Millrace.Scenarios.Tests/Golden/conveyor-start-and-fault.log`. The other
+  three `Millrace.Scenarios.Tests` goldens, `plant.schema.json`,
   `control-catalogue.json`, the components export and both diagnostics pages do
   not move. Every regenerated log is checked by
   `.superpowers/sdd/6e/golden-shape.sh` (R151).
 - **Goldens are generated and read, never invented or hand-edited.** Regenerate
-  only with `DSE_UPDATE_GOLDEN=1` and the `--filter` the task names, then read
+  only with `MILLRACE_UPDATE_GOLDEN=1` and the `--filter` the task names, then read
   the whole `git diff` of each file that moved and quote it in the task report.
-  A `DSE_UPDATE_GOLDEN=1` run writes the source files but the tests that read
+  A `MILLRACE_UPDATE_GOLDEN=1` run writes the source files but the tests that read
   a *copy* in `bin/` (`SampleReadmeTests`, the CLI's linked control golden) see
   the old copy until the next build, so every regeneration is followed by a
   normal `dotnet test` (R152).
@@ -101,7 +101,7 @@ message appears in (R152); otherwise the golden tests would fail between tasks.
 - **Warnings are errors** (`Directory.Build.props`: `TreatWarningsAsErrors`,
   `EnforceCodeStyleInBuild`, `GenerateDocumentationFile`, `Nullable`). The
   Release build prints `0 Warning(s)` and `0 Error(s)` after every task:
-  `dotnet build Dse.sln -c Release --nologo`.
+  `dotnet build Millrace.sln -c Release --nologo`.
 - **xUnit analyzers run under warnings-as-errors:** prefer `Assert.Single`,
   `Assert.Contains`, `Assert.DoesNotContain`, `Assert.Empty`, `Assert.All`;
   never `Assert.True(x.Any())` or `Assert.Equal(1, x.Count())`.
@@ -109,8 +109,8 @@ message appears in (R152); otherwise the golden tests would fail between tasks.
   ones (`ARaisePrintsOneMoreDecimalThanTheLimitRoundedAwayFromIt`).
 - **Messages are verbatim.** Every message in this plan is asserted exactly
   somewhere; copy them byte for byte, including the em dash (`—`, U+2014) in
-  the `DSE016` hint and the `N·m` middle dot (U+00B7). Core messages read
-  "symptom. fix." — the loader splits a `DSE016` at the first `". "` after the
+  the `MR016` hint and the `N·m` middle dot (U+00B7). Core messages read
+  "symptom. fix." — the loader splits a `MR016` at the first `". "` after the
   quoted claim (6d R133); the hint adds no `". "` (a tag name holds no
   whitespace, `TagNameRules`).
 - **Report every measurement.** Where an expected value in this plan (a test
@@ -134,8 +134,8 @@ message appears in (R152); otherwise the golden tests would fail between tasks.
   whichever implementer model a task names. Never put it on the subject line.
   Write each message with the Write tool to `.superpowers/sdd/6e/msg-taskN.txt`
   and commit with `git commit -F`.
-- **Commands**, from the repository root: `dotnet build Dse.sln -c Release --nologo`
-  (expect `0 Warning(s)`, `0 Error(s)`) and `dotnet test Dse.sln --nologo`
+- **Commands**, from the repository root: `dotnet build Millrace.sln -c Release --nologo`
+  (expect `0 Warning(s)`, `0 Error(s)`) and `dotnet test Millrace.sln --nologo`
   (expect the task's total). `.superpowers/` is git-ignored; scratch work,
   commit messages and the check script go under `.superpowers/sdd/6e/` and are
   never added. Inside a worktree the harness refuses Bash text that mentions git
@@ -178,7 +178,7 @@ first. Each has its pinning test in the owning task.
 5. **A mistyped claim whose nearest name is ambiguous or is itself a mistake.**
    `V.Enable` is one edit from both `T.Enable` and `U.Enable`, and `T.Enable`
    sorts first; the block commands only `U.Enable`. And a block whose `Writes`
-   hold the same typo as its claim (`U.Enabel`, a `DSE014` too) must not be told
+   hold the same typo as its claim (`U.Enabel`, a `MR014` too) must not be told
    that its typo is "closest". Tests: Task 1,
    `ClaimValidationTests.TheBlocksOwnWritesAreSearchedBeforeEveryOtherTag` and
    `AWriteThePlantDoesNotHaveIsNeverTheHint`.
@@ -198,7 +198,7 @@ R154 gives the amendment note that records them in the spec.
 
 - **R143 — The spec's five sites are all the computed doubles (measured
   sweep).** Every event message in `src/` was read: each `ctx.Log` call
-  (`Dse.Components`, `TagImage`), each `outputs.Raise` (`Dse.Control`) and each
+  (`Millrace.Components`, `TagImage`), each `outputs.Raise` (`Millrace.Control`) and each
   direct `EventLog.Record` (`Simulation.FaultEvent`). Computed doubles are
   printed only by `Motor` `AT_SPEED` (`_speed`) and `STALLED` (`demand`, and the
   breakdown torque `BreakdownTorqueMultiple * ratedTorque`), `MotorStarter`
@@ -283,7 +283,7 @@ R154 gives the amendment note that records them in the spec.
   breakdown torque 12 N·m.` for 13 over 12.5. That is the spec's decision
   (criterion 1's table and "Shared helper? No"); it is recorded here so that a
   reviewer does not "fix" it.
-- **R149 — The `DSE016` hint: candidates, order and placement.** Measured:
+- **R149 — The `MR016` hint: candidates, order and placement.** Measured:
   `Suggest.Closest(given, candidates)` compares case-insensitively
   (`ToUpperInvariant`) by optimal-string-alignment distance, accepts a
   candidate within `max(2, given.Length / 3)`, and scans candidates **after
@@ -292,36 +292,36 @@ R154 gives the amendment note that records them in the spec.
   "First among the block's `Writes`, then among all plant tags" is therefore two
   calls, the second only when the first returns `null`. The first call's
   candidates are the block's `Writes` **that the plant has** (`byName`
-  contains them): a `Write` the plant does not have is already a `DSE014`, and
+  contains them): a `Write` the plant does not have is already a `MR014`, and
   offered as a candidate it would be the "closest" name to an identical typo in
   the claim (Review Focus 5; measured without the filter: `'U.Enabel' is
   closest`). "All plant tags" is every name in `CheckClaims`' `byName` — the
   directory's tags including block-owned outputs and commands. The fix becomes
-  `Check the name against 'dse tags' — '<closest>' is closest; a block claims a tag it commands.`;
+  `Check the name against 'millrace tags' — '<closest>' is closest; a block claims a tag it commands.`;
   with no candidate near enough it is exactly as today. An empty claim gets no
   hint (distance to every tag exceeds 2). It is built by a `static` local
   function `NearestFix` beside the existing `Claim` local function in
   `CheckClaims`. `BuildStage.Split` is unchanged: it cuts at the first `". "`
   after the quoted claim, which is still the end of the symptom, since the hint
   adds only an em dash, quotes and a semicolon and a tag name holds no
-  whitespace (measured through `dse validate`, Task 1).
+  whitespace (measured through `millrace validate`, Task 1).
 - **R150 — Existing tests that change, and where the plant-file tests live.**
   Measured by grep over `tests/` for every changed message and for
   `does not have`: two existing tests change, both because their near-miss
-  claim now earns a hint — `ClaimValidationTests.AClaimNamingNoTagIsDse016`
+  claim now earns a hint — `ClaimValidationTests.AClaimNamingNoTagIsMr016`
   (`U.Enabel` → `'U.Enable' is closest`) and
   `ClaimTests.TheMessageIsSplitIntoSymptomAndFix` (`FEED.Permt` and
   `FEED. Permit` → `'FEED.Permit' is closest`). Tests that compare only the
   symptom half (`AClaimIsMatchedOrdinallyAndExactly`,
   `ARepeatedClaimOnAMissingTagIsReportedOnceAtEachPosition`,
-  `AClaimCoreRefusesIsDse016AtTheClaim`) are unaffected. No existing test
+  `AClaimCoreRefusesIsMr016AtTheClaim`) are unaffected. No existing test
   asserts a changed component or alarm message except through substrings that
   still match (`Stories.cs` `"above 7.5."`/`"above 8.6."`,
   `MotorStarterTests` `Contains("1.1")`, `WorkedExampleTests`
   `StartsWith("HiHi:")`) or through the goldens. The spec's "through a plant
-  file, on the `Fix:` line of `dse validate`" test names the sample's
-  `cv003.permit`, so it lives in `Dse.Samples.Tests` (which runs the CLI
-  in-process and holds the sample), not `Dse.Cli.Tests`.
+  file, on the `Fix:` line of `millrace validate`" test names the sample's
+  `cv003.permit`, so it lives in `Millrace.Samples.Tests` (which runs the CLI
+  in-process and holds the sample), not `Millrace.Cli.Tests`.
 - **R151 — Criterion 6's check is a script, not a test.** The check compares
   each regenerated log with its *previous* version, which exists only in git
   history; a test would need the old text committed as fixtures that are dead
@@ -344,15 +344,15 @@ R154 gives the amendment note that records them in the spec.
   component change then moves all eleven logs (the same two again for their
   `AT_SPEED`/`OVERLOAD_TRIP` lines). Regeneration uses three filters, never a
   whole-solution update run in the repository:
-  `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Control.Tests --nologo --filter "FullyQualifiedName~Dse.Control.Tests.WorkedExampleTests"`,
-  `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"` and
-  `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Scenarios.Tests --nologo --filter "FullyQualifiedName~EveryValidScenarioRunsCleanAndMatchesItsGolden"`.
+  `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Control.Tests --nologo --filter "FullyQualifiedName~Millrace.Control.Tests.WorkedExampleTests"`,
+  `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"` and
+  `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Scenarios.Tests --nologo --filter "FullyQualifiedName~EveryValidScenarioRunsCleanAndMatchesItsGolden"`.
   Measured: during an update run `SampleReadmeTests` still reads the stale
   `bin/` copy of each golden and passes; only the following normal
   `dotnet test` exposes a stale README quote.
   A red run of a `Golden.Assert` test also leaves a git-ignored `.actual`
   file beside the golden (`tests/Shared/Golden.cs`); Task 2's deliberate red
-  run in Step 5 leaves `tests/Dse.Control.Tests/Golden/conveyor-control.log.actual`
+  run in Step 5 leaves `tests/Millrace.Control.Tests/Golden/conveyor-control.log.actual`
   with the old full-precision lines, so Task 2 Step 7 deletes it, and Task 3's
   decimal grep is restricted to `*.log`.
 - **R153 — Documentation scope.** Measured by grep over `README.md`,
@@ -366,7 +366,7 @@ R154 gives the amendment note that records them in the spec.
   quote was pinned by nothing, so Task 3 adds
   `DocumentationTests.EveryLogLineThePageQuotesIsAWholeLineOfTheWorkedExampleGolden`.
   Unchanged: `docs/control-blocks.md`'s `Alarm` event examples (R144),
-  `docs/configuration-diagnostics.md` (its `DSE016` summary still holds; no doc
+  `docs/configuration-diagnostics.md` (its `MR016` summary still holds; no doc
   quotes the fix text), the root `README.md` (no quoted event line), and the
   historical plans and specs under `docs/superpowers/` that quote old numbers
   (`2026-09-25-interlock-start-inhibit-design.md`, its plan, and this plan's
@@ -395,7 +395,7 @@ R154 gives the amendment note that records them in the spec.
   - **A negative zero prints as zero in both alarm messages (R146).**
   - **`F<n>` rounds an exact binary midpoint half to even (R147)**, e.g.
     `0.125` → `0.12`, and the 12.5 N·m breakdown torque of a small motor → `12`.
-  - **The `DSE016` hint searches only the block's `Writes` the plant has, then
+  - **The `MR016` hint searches only the block's `Writes` the plant has, then
     every tag (R149)**; `Suggest.Closest` sorts its candidates, so ties go to
     the ordinally first name within each set.
   - **Criterion 6's check is a script over git history (R151)**, not a test.
@@ -459,7 +459,7 @@ In each of the nine sample goldens (`chute-blockage`, `e-stop`,
 +06:02:07.990  CV001.Motor  AT_SPEED  Reached 144.5 rad/s.
 ```
 
-`tests/Dse.Control.Tests/Golden/conveyor-control.log`, lines 21–23 and 26
+`tests/Millrace.Control.Tests/Golden/conveyor-control.log`, lines 21–23 and 26
 (Task 2), 27 and 29 (Task 3):
 
 ```
@@ -477,7 +477,7 @@ In each of the nine sample goldens (`chute-blockage`, `e-stop`,
 +06:00:40.000  CV001.Starter  OVERLOAD_TRIP  Thermal state 1.180 reached the trip level 1.1.
 ```
 
-`tests/Dse.Scenarios.Tests/Golden/conveyor-start-and-fault.log`, lines 9 and 11:
+`tests/Millrace.Scenarios.Tests/Golden/conveyor-start-and-fault.log`, lines 9 and 11:
 
 ```
 -06:00:07.970  CV001.Motor  AT_SPEED  Reached 139.81136237898272 rad/s.
@@ -487,7 +487,7 @@ In each of the nine sample goldens (`chute-blockage`, `e-stop`,
 ```
 
 No golden holds a `STALLED` or `DISCHARGING` (hold satisfied) line; those two
-formats are pinned by unit tests only. The other three `Dse.Scenarios.Tests`
+formats are pinned by unit tests only. The other three `Millrace.Scenarios.Tests`
 goldens (`instrumented-belt-drift`, `item-line-blinded-counter`,
 `minimal-feed-throttled`) do not move.
 
@@ -504,25 +504,25 @@ OK  samples/mine-conveyors/expected/overload.log  104 lines, 4 changed
 OK  samples/mine-conveyors/expected/pull-key.log  99 lines, 3 changed
 OK  samples/mine-conveyors/expected/start-while-tripped.log  132 lines, 5 changed
 OK  samples/mine-conveyors/expected/welded-contactor.log  117 lines, 3 changed
-OK  tests/Dse.Control.Tests/Golden/conveyor-control.log  40 lines, 6 changed
-OK  tests/Dse.Scenarios.Tests/Golden/conveyor-start-and-fault.log  16 lines, 2 changed
+OK  tests/Millrace.Control.Tests/Golden/conveyor-control.log  40 lines, 6 changed
+OK  tests/Millrace.Scenarios.Tests/Golden/conveyor-start-and-fault.log  16 lines, 2 changed
 ```
 
-**`dse validate` on the sample with `INT_CV003`'s claim mistyped** (stderr,
+**`millrace validate` on the sample with `INT_CV003`'s claim mistyped** (stderr,
 exit 1; the plant file saved as `near.json`, `far.json`, `typo.json`):
 
 ```
-DSE016 $.controllers[3].claims[0]
+MR016 $.controllers[3].claims[0]
   Block 'INT_CV003' claims tag 'cv003.permit', which the plant does not have.
-  Fix: Check the name against 'dse tags' — 'CV003.Permit' is closest; a block claims a tag it commands.
+  Fix: Check the name against 'millrace tags' — 'CV003.Permit' is closest; a block claims a tag it commands.
 
 1 error in near.json
 ```
 
 ```
-DSE016 $.controllers[3].claims[0]
+MR016 $.controllers[3].claims[0]
   Block 'INT_CV003' claims tag 'Conveyor3.RunPermit', which the plant does not have.
-  Fix: Check the name against 'dse tags'; a block claims a tag it commands.
+  Fix: Check the name against 'millrace tags'; a block claims a tag it commands.
 
 1 error in far.json
 ```
@@ -543,27 +543,27 @@ whole hint.
 ## File structure
 
 ```
-src/Dse.Core/SimulationBuilder.cs                    using Dse.Core.Catalogue; DSE016 "does not have" fix via NearestFix (Task 1)
-tests/Dse.Core.Tests/ClaimValidationTests.cs         1 test changed; + 2 facts, + theory of 3, + theory of 2 (Task 1)
-tests/Dse.Configuration.Tests/ClaimTests.cs          1 test changed; + 1 fact (Task 1)
-tests/Dse.Samples.Tests/MineConveyorTests.cs         + theory of 2 (Task 1)
-src/Dse.Control/Alarm.cs                             both messages through Display(value, limit, direction) (Task 2)
-tests/Dse.Control.Tests/AlarmTests.cs                + theory of 14, + theory of 4 (Task 2)
-tests/Dse.Control.Tests/Golden/conveyor-control.log  regenerated (Tasks 2 and 3)
+src/Millrace.Core/SimulationBuilder.cs                    using Millrace.Core.Catalogue; MR016 "does not have" fix via NearestFix (Task 1)
+tests/Millrace.Core.Tests/ClaimValidationTests.cs         1 test changed; + 2 facts, + theory of 3, + theory of 2 (Task 1)
+tests/Millrace.Configuration.Tests/ClaimTests.cs          1 test changed; + 1 fact (Task 1)
+tests/Millrace.Samples.Tests/MineConveyorTests.cs         + theory of 2 (Task 1)
+src/Millrace.Control/Alarm.cs                             both messages through Display(value, limit, direction) (Task 2)
+tests/Millrace.Control.Tests/AlarmTests.cs                + theory of 14, + theory of 4 (Task 2)
+tests/Millrace.Control.Tests/Golden/conveyor-control.log  regenerated (Tasks 2 and 3)
 samples/mine-conveyors/expected/chute-blockage.log   regenerated (Tasks 2 and 3)
 samples/mine-conveyors/README.md                     two quoted lines (Task 2), two more (Task 3)
-src/Dse.Components/Mechanical/Motor.cs               AT_SPEED F1, STALLED F0 (Task 3)
-src/Dse.Components/Mechanical/MotorStarter.cs        OVERLOAD_TRIP F3 (Task 3)
-src/Dse.Components/Flow/BulkProcessUnit.cs           hold satisfied F2 / F1 (Task 3)
-src/Dse.Components/Flow/ItemProcessUnit.cs           hold satisfied F2 (Task 3)
-tests/Dse.Components.Tests/MotorTests.cs             + 1 fact (Task 3)
-tests/Dse.Components.Tests/MotorStarterTests.cs      + theory of 2 (Task 3)
-tests/Dse.Components.Tests/BulkProcessUnitTests.cs   + 1 fact (Task 3)
-tests/Dse.Components.Tests/ItemProcessUnitTests.cs   + 1 fact (Task 3)
+src/Millrace.Components/Mechanical/Motor.cs               AT_SPEED F1, STALLED F0 (Task 3)
+src/Millrace.Components/Mechanical/MotorStarter.cs        OVERLOAD_TRIP F3 (Task 3)
+src/Millrace.Components/Flow/BulkProcessUnit.cs           hold satisfied F2 / F1 (Task 3)
+src/Millrace.Components/Flow/ItemProcessUnit.cs           hold satisfied F2 (Task 3)
+tests/Millrace.Components.Tests/MotorTests.cs             + 1 fact (Task 3)
+tests/Millrace.Components.Tests/MotorStarterTests.cs      + theory of 2 (Task 3)
+tests/Millrace.Components.Tests/BulkProcessUnitTests.cs   + 1 fact (Task 3)
+tests/Millrace.Components.Tests/ItemProcessUnitTests.cs   + 1 fact (Task 3)
 samples/mine-conveyors/expected/*.log                the other eight regenerated (Task 3)
-tests/Dse.Scenarios.Tests/Golden/conveyor-start-and-fault.log   regenerated (Task 3)
+tests/Millrace.Scenarios.Tests/Golden/conveyor-start-and-fault.log   regenerated (Task 3)
 docs/control-blocks.md                               the worked example's OVERLOAD_TRIP line (Task 3)
-tests/Dse.Control.Tests/DocumentationTests.cs        partial; + 1 fact guarding the page's quoted log lines (Task 3)
+tests/Millrace.Control.Tests/DocumentationTests.cs        partial; + 1 fact guarding the page's quoted log lines (Task 3)
 .superpowers/sdd/6e/golden-shape.sh                  the criterion 6 check (Task 2; git-ignored, never added)
 ```
 
@@ -571,7 +571,7 @@ tests/Dse.Control.Tests/DocumentationTests.cs        partial; + 1 fact guarding 
 
 | # | Task | Implementer | Reviewer | Tests after |
 |---|---|---|---|---|
-| 1 | `DSE016` nearest-name hint (Core), through the loader and `dse validate` | sonnet | sonnet | 1418 |
+| 1 | `MR016` nearest-name hint (Core), through the loader and `millrace validate` | sonnet | sonnet | 1418 |
 | 2 | `Alarm` display decimals and directed rounding; two goldens, two README lines; the criterion 6 script | sonnet | opus (rounding) | 1436 |
 | 3 | Component formats; all eleven goldens; README and control-blocks quotes and their guard | sonnet | sonnet | 1442 |
 
@@ -582,42 +582,42 @@ Task 3's golden regeneration and check script build on Task 2's.
 
 ---
 
-### Task 1: The `DSE016` "does not have" diagnostic names the nearest tag
+### Task 1: The `MR016` "does not have" diagnostic names the nearest tag
 
 **Model:** implementer sonnet; reviewer sonnet.
 
 **Files:**
-- Modify: `src/Dse.Core/SimulationBuilder.cs` (a `using`; the "does not have" branch of `CheckClaims`; a new local function)
-- Test: `tests/Dse.Core.Tests/ClaimValidationTests.cs` (1 changed, 7 added)
-- Test: `tests/Dse.Configuration.Tests/ClaimTests.cs` (1 changed, 1 added)
-- Test: `tests/Dse.Samples.Tests/MineConveyorTests.cs` (2 added)
+- Modify: `src/Millrace.Core/SimulationBuilder.cs` (a `using`; the "does not have" branch of `CheckClaims`; a new local function)
+- Test: `tests/Millrace.Core.Tests/ClaimValidationTests.cs` (1 changed, 7 added)
+- Test: `tests/Millrace.Configuration.Tests/ClaimTests.cs` (1 changed, 1 added)
+- Test: `tests/Millrace.Samples.Tests/MineConveyorTests.cs` (2 added)
 
 **Interfaces:**
-- Consumes: `Dse.Core.Catalogue.Suggest.Closest(string given, IEnumerable<string> candidates)`
+- Consumes: `Millrace.Core.Catalogue.Suggest.Closest(string given, IEnumerable<string> candidates)`
   (public, unchanged); `IScanBlock.Writes` (`IReadOnlyList<TagRef>`);
   `CheckClaims`' `byName` (`Dictionary<string, TagBinding>`, every tag in the
   directory, ordinal).
 - Produces: in `CheckClaims`, `static string NearestFix(IScanBlock block, string claim, Dictionary<string, TagBinding> byName)`
-  (a local function); the `DSE016` message
-  `Block '<id>' claims tag '<claim>', which the plant does not have. Check the name against 'dse tags' — '<closest>' is closest; a block claims a tag it commands.`
+  (a local function); the `MR016` message
+  `Block '<id>' claims tag '<claim>', which the plant does not have. Check the name against 'millrace tags' — '<closest>' is closest; a block claims a tag it commands.`
   when a name is near enough, else exactly the 6d text
-  `Block '<id>' claims tag '<claim>', which the plant does not have. Check the name against 'dse tags'; a block claims a tag it commands.`
-  No other `DSE016` message changes.
+  `Block '<id>' claims tag '<claim>', which the plant does not have. Check the name against 'millrace tags'; a block claims a tag it commands.`
+  No other `MR016` message changes.
 
 - [ ] **Step 1: Write the failing Core tests**
 
-In `tests/Dse.Core.Tests/ClaimValidationTests.cs`, in
-`AClaimNamingNoTagIsDse016`, replace
+In `tests/Millrace.Core.Tests/ClaimValidationTests.cs`, in
+`AClaimNamingNoTagIsMr016`, replace
 
 ```csharp
-            "Block 'A' claims tag 'U.Enabel', which the plant does not have. Check the name against 'dse tags'; a block claims " +
+            "Block 'A' claims tag 'U.Enabel', which the plant does not have. Check the name against 'millrace tags'; a block claims " +
             "a tag it commands.",
 ```
 
 with
 
 ```csharp
-            "Block 'A' claims tag 'U.Enabel', which the plant does not have. Check the name against 'dse tags' — 'U.Enable' is " +
+            "Block 'A' claims tag 'U.Enabel', which the plant does not have. Check the name against 'millrace tags' — 'U.Enable' is " +
             "closest; a block claims a tag it commands.",
 ```
 
@@ -625,7 +625,7 @@ Then insert, immediately before
 
 ```csharp
     [Fact]
-    public void AClaimOnAReadOnlyTagIsDse016()
+    public void AClaimOnAReadOnlyTagIsMr016()
 ```
 
 the following (the plant's tags are `A.Cmd`, `T.Enable`, `T.Output`,
@@ -639,10 +639,10 @@ the following (the plant's tags are `A.Cmd`, `T.Enable`, `T.Output`,
     [InlineData("U.Setpont", "U.Setpoint")]
     public void AClaimNearATagIsHintedWithTheNearestName(string claim, string closest)
     {
-        ValidationError error = OnlyDse016(Plant().AddScanBlock(Block("A"), [claim]));
+        ValidationError error = OnlyMr016(Plant().AddScanBlock(Block("A"), [claim]));
 
         Assert.Equal(
-            $"Block 'A' claims tag '{claim}', which the plant does not have. Check the name against 'dse tags' — '{closest}' is " +
+            $"Block 'A' claims tag '{claim}', which the plant does not have. Check the name against 'millrace tags' — '{closest}' is " +
             "closest; a block claims a tag it commands.",
             error.Message);
     }
@@ -652,10 +652,10 @@ the following (the plant's tags are `A.Cmd`, `T.Enable`, `T.Output`,
     [InlineData("")]
     public void AClaimNearNoTagKeepsThePlainFix(string claim)
     {
-        ValidationError error = OnlyDse016(Plant().AddScanBlock(Block("A"), [claim]));
+        ValidationError error = OnlyMr016(Plant().AddScanBlock(Block("A"), [claim]));
 
         Assert.Equal(
-            $"Block 'A' claims tag '{claim}', which the plant does not have. Check the name against 'dse tags'; a block claims " +
+            $"Block 'A' claims tag '{claim}', which the plant does not have. Check the name against 'millrace tags'; a block claims " +
             "a tag it commands.",
             error.Message);
     }
@@ -664,7 +664,7 @@ the following (the plant's tags are `A.Cmd`, `T.Enable`, `T.Output`,
     public void TheBlocksOwnWritesAreSearchedBeforeEveryOtherTag()
     {
         // 'T.Enable' is as near to 'V.Enable' as 'U.Enable' and sorts first; the block commands only U.Enable.
-        ValidationError error = OnlyDse016(Plant().AddScanBlock(Block("A"), ["V.Enable"]));
+        ValidationError error = OnlyMr016(Plant().AddScanBlock(Block("A"), ["V.Enable"]));
 
         Assert.Contains("— 'U.Enable' is closest;", error.Message, StringComparison.Ordinal);
     }
@@ -674,9 +674,9 @@ the following (the plant's tags are `A.Cmd`, `T.Enable`, `T.Output`,
     {
         ValidationResult result = Plant().AddScanBlock(Block("A").MayWrite("U.Enabel"), ["U.Enabel"]).Validate();
 
-        ValidationError claim = Assert.Single(result.Errors, e => e.Code == "DSE016");
+        ValidationError claim = Assert.Single(result.Errors, e => e.Code == "MR016");
         Assert.Contains("— 'U.Enable' is closest;", claim.Message, StringComparison.Ordinal);
-        Assert.Single(result.Errors, e => e.Code == "DSE014");
+        Assert.Single(result.Errors, e => e.Code == "MR014");
     }
 
 ```
@@ -686,10 +686,10 @@ over the threshold of 3 — so the hint comes from the second search.)
 
 - [ ] **Step 2: Write the failing plant-file tests**
 
-In `tests/Dse.Configuration.Tests/ClaimTests.cs`, replace
+In `tests/Millrace.Configuration.Tests/ClaimTests.cs`, replace
 
 ```csharp
-        Assert.Equal("Check the name against 'dse tags'; a block claims a tag it commands.", d.Fix);
+        Assert.Equal("Check the name against 'millrace tags'; a block claims a tag it commands.", d.Fix);
         Assert.Equal(d.Fix, spaced.Fix);
     }
 ```
@@ -697,7 +697,7 @@ In `tests/Dse.Configuration.Tests/ClaimTests.cs`, replace
 with
 
 ```csharp
-        Assert.Equal("Check the name against 'dse tags' — 'FEED.Permit' is closest; a block claims a tag it commands.", d.Fix);
+        Assert.Equal("Check the name against 'millrace tags' — 'FEED.Permit' is closest; a block claims a tag it commands.", d.Fix);
         Assert.Equal(d.Fix, spaced.Fix);
         Assert.Equal("Block 'INT01' claims tag 'FEED. Permit', which the plant does not have.", spaced.Message);
     }
@@ -707,13 +707,13 @@ with
     {
         ConfigDiagnostic d = Plants.Only(Plant(Claiming(Int01, """[ "Silo9.RunPermit" ]""")));
 
-        Assert.Equal(("DSE016", "$.controllers[0].claims[0]"), (d.Code, d.Path));
+        Assert.Equal(("MR016", "$.controllers[0].claims[0]"), (d.Code, d.Path));
         Assert.Equal("Block 'INT01' claims tag 'Silo9.RunPermit', which the plant does not have.", d.Message);
-        Assert.Equal("Check the name against 'dse tags'; a block claims a tag it commands.", d.Fix);
+        Assert.Equal("Check the name against 'millrace tags'; a block claims a tag it commands.", d.Fix);
     }
 ```
 
-In `tests/Dse.Samples.Tests/MineConveyorTests.cs`, insert immediately before
+In `tests/Millrace.Samples.Tests/MineConveyorTests.cs`, insert immediately before
 
 ```csharp
     [Fact]
@@ -724,14 +724,14 @@ the following:
 
 ```csharp
     [Theory]
-    [InlineData("cv003.permit", "Check the name against 'dse tags' — 'CV003.Permit' is closest; a block claims a tag it commands.")]
-    [InlineData("Conveyor3.RunPermit", "Check the name against 'dse tags'; a block claims a tag it commands.")]
-    public void DseValidateNamesTheNearestTagOnTheFixLineOfAMistypedClaim(string claim, string fix)
+    [InlineData("cv003.permit", "Check the name against 'millrace tags' — 'CV003.Permit' is closest; a block claims a tag it commands.")]
+    [InlineData("Conveyor3.RunPermit", "Check the name against 'millrace tags'; a block claims a tag it commands.")]
+    public void MillraceValidateNamesTheNearestTagOnTheFixLineOfAMistypedClaim(string claim, string fix)
     {
         string plant = File.ReadAllText(Sample.Plant);
         string mistyped = plant.Replace("\"claims\": [ \"CV003.Permit\" ]", $"\"claims\": [ \"{claim}\" ]", StringComparison.Ordinal);
         Assert.NotEqual(plant, mistyped);
-        string path = Path.Combine(Path.GetTempPath(), $"dse-sample-{Guid.NewGuid():N}.json");
+        string path = Path.Combine(Path.GetTempPath(), $"millrace-sample-{Guid.NewGuid():N}.json");
         File.WriteAllText(path, mistyped);
         try
         {
@@ -740,7 +740,7 @@ the following:
             Assert.Equal(ExitCodes.PlantInvalid, run.ExitCode);
             Assert.Empty(run.Out);
             Assert.StartsWith(
-                $"DSE016 $.controllers[3].claims[0]\n  Block 'INT_CV003' claims tag '{claim}', which the plant does not have.\n  Fix: {fix}\n",
+                $"MR016 $.controllers[3].claims[0]\n  Block 'INT_CV003' claims tag '{claim}', which the plant does not have.\n  Fix: {fix}\n",
                 run.Err,
                 StringComparison.Ordinal);
             Assert.EndsWith($"1 error in {Path.GetFileName(path)}\n", run.Err, StringComparison.Ordinal);
@@ -758,34 +758,34 @@ measured.)
 
 - [ ] **Step 3: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo --filter "FullyQualifiedName~Dse.Core.Tests.ClaimValidationTests"`
-Expected: FAIL — 6 failed, 23 passed, 29 total: `AClaimNamingNoTagIsDse016`,
+Run: `dotnet test tests/Millrace.Core.Tests --nologo --filter "FullyQualifiedName~Millrace.Core.Tests.ClaimValidationTests"`
+Expected: FAIL — 6 failed, 23 passed, 29 total: `AClaimNamingNoTagIsMr016`,
 the three `AClaimNearATagIsHintedWithTheNearestName` rows,
 `TheBlocksOwnWritesAreSearchedBeforeEveryOtherTag` and
 `AWriteThePlantDoesNotHaveIsNeverTheHint` (each message lacks the hint). Both
 `AClaimNearNoTagKeepsThePlainFix` rows pass already.
 
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo --filter "FullyQualifiedName~Dse.Configuration.Tests.ClaimTests"`
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo --filter "FullyQualifiedName~Millrace.Configuration.Tests.ClaimTests"`
 Expected: FAIL — 1 failed (`TheMessageIsSplitIntoSymptomAndFix`), 13 passed.
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~Dse.Samples.Tests.MineConveyorTests.DseValidate"`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~Millrace.Samples.Tests.MineConveyorTests.MillraceValidate"`
 Expected: FAIL — 1 failed (the `cv003.permit` row), 1 passed.
 
 - [ ] **Step 4: Build the hint**
 
-In `src/Dse.Core/SimulationBuilder.cs`, replace
+In `src/Millrace.Core/SimulationBuilder.cs`, replace
 
 ```csharp
 using System.Globalization;
-using Dse.Core.Control;
+using Millrace.Core.Control;
 ```
 
 with
 
 ```csharp
 using System.Globalization;
-using Dse.Core.Catalogue;
-using Dse.Core.Control;
+using Millrace.Core.Catalogue;
+using Millrace.Core.Control;
 ```
 
 In `CheckClaims`, replace
@@ -794,7 +794,7 @@ In `CheckClaims`, replace
                 else if (!byName.TryGetValue(claim, out TagBinding? binding))
                 {
                     error = Claim(
-                        block.Id, claim, j, "which the plant does not have. Check the name against 'dse tags'; a block claims a tag it commands.");
+                        block.Id, claim, j, "which the plant does not have. Check the name against 'millrace tags'; a block claims a tag it commands.");
                 }
 ```
 
@@ -827,8 +827,8 @@ with
             string? closest = Suggest.Closest(claim, block.Writes.Select(w => w.Name).Where(byName.ContainsKey))
                 ?? Suggest.Closest(claim, byName.Keys);
             return closest is null
-                ? "Check the name against 'dse tags'; a block claims a tag it commands."
-                : $"Check the name against 'dse tags' — '{closest}' is closest; a block claims a tag it commands.";
+                ? "Check the name against 'millrace tags'; a block claims a tag it commands."
+                : $"Check the name against 'millrace tags' — '{closest}' is closest; a block claims a tag it commands.";
         }
 
         static ValidationError Claim(string blockId, string claim, int index, string rest) =>
@@ -836,18 +836,18 @@ with
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo --filter "FullyQualifiedName~Dse.Core.Tests.ClaimValidationTests"` — expect PASS, 29.
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo --filter "FullyQualifiedName~Dse.Configuration.Tests.ClaimTests"` — expect PASS, 14.
-Run: `dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~Dse.Samples.Tests.MineConveyorTests.DseValidate"` — expect PASS, 2.
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1418**: 37 / 498 / 132 / 57 /
+Run: `dotnet test tests/Millrace.Core.Tests --nologo --filter "FullyQualifiedName~Millrace.Core.Tests.ClaimValidationTests"` — expect PASS, 29.
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo --filter "FullyQualifiedName~Millrace.Configuration.Tests.ClaimTests"` — expect PASS, 14.
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~Millrace.Samples.Tests.MineConveyorTests.MillraceValidate"` — expect PASS, 2.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1418**: 37 / 498 / 132 / 57 /
 230 / 167 / 78 / 118 / 23 / 78.
 Run: `git status --short` — expect exactly the four files of this task.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Core/SimulationBuilder.cs tests/Dse.Core.Tests/ClaimValidationTests.cs tests/Dse.Configuration.Tests/ClaimTests.cs tests/Dse.Samples.Tests/MineConveyorTests.cs
+git add src/Millrace.Core/SimulationBuilder.cs tests/Millrace.Core.Tests/ClaimValidationTests.cs tests/Millrace.Configuration.Tests/ClaimTests.cs tests/Millrace.Samples.Tests/MineConveyorTests.cs
 git commit -F .superpowers/sdd/6e/msg-task1.txt
 ```
 
@@ -856,10 +856,10 @@ with `.superpowers/sdd/6e/msg-task1.txt` (written with the Write tool) holding:
 ```
 feat(core): hint the nearest tag when a claim names none
 
-The DSE016 raised for a claim that names no tag now suggests the nearest
+The MR016 raised for a claim that names no tag now suggests the nearest
 name, as other unknown-name diagnostics do: Suggest.Closest over the
 claiming block's writes the plant has, then over every tag, so
-"cv003.permit" reads "Check the name against 'dse tags' — 'CV003.Permit'
+"cv003.permit" reads "Check the name against 'millrace tags' — 'CV003.Permit'
 is closest; a block claims a tag it commands." A claim near no tag keeps
 the plain fix. Matching stays ordinal and exact; the hint only suggests,
 and the loader's split after the quoted claim is unchanged.
@@ -877,18 +877,18 @@ line and the trailer.
 **Model:** implementer sonnet; reviewer **opus** (the directed rounding, R145).
 
 **Files:**
-- Modify: `src/Dse.Control/Alarm.cs` (both messages; new private static `Display`)
-- Test: `tests/Dse.Control.Tests/AlarmTests.cs` (+ theory of 14, + theory of 4)
-- Regenerate: `tests/Dse.Control.Tests/Golden/conveyor-control.log`, `samples/mine-conveyors/expected/chute-blockage.log`
+- Modify: `src/Millrace.Control/Alarm.cs` (both messages; new private static `Display`)
+- Test: `tests/Millrace.Control.Tests/AlarmTests.cs` (+ theory of 14, + theory of 4)
+- Regenerate: `tests/Millrace.Control.Tests/Golden/conveyor-control.log`, `samples/mine-conveyors/expected/chute-blockage.log`
 - Modify: `samples/mine-conveyors/README.md` (two quoted lines)
 - Create (git-ignored, never added): `.superpowers/sdd/6e/golden-shape.sh`
 
 **Interfaces:**
 - Consumes: `AlarmLimit.Value`, `AlarmLimitKind` (unchanged); the test
-  harness `Scan` (`tests/Dse.Control.Tests/Scan.cs`) and `AlarmTests`' private
+  harness `Scan` (`tests/Millrace.Control.Tests/Scan.cs`) and `AlarmTests`' private
   `Make`/`Limit` helpers.
 - Produces: `private static string Display(double value, double limit, int direction)`
-  on `Dse.Control.Alarm` — `direction` +1 rounds up (Hi, HiHi raise), −1 down
+  on `Millrace.Control.Alarm` — `direction` +1 rounds up (Hi, HiHi raise), −1 down
   (Lo, LoLo raise), 0 to nearest (clear); decimals `min(d + 1, 6)` with *d* from
   the limit's `"R"` form including its exponent (R144); a negative zero prints
   without its sign (R146). `ALARM_RAISED` reads
@@ -897,7 +897,7 @@ line and the trailer.
 
 - [ ] **Step 1: Write the failing tests**
 
-In `tests/Dse.Control.Tests/AlarmTests.cs`, replace the end of the class
+In `tests/Millrace.Control.Tests/AlarmTests.cs`, replace the end of the class
 
 ```csharp
         Assert.Equal("ALARM_RAISED,ALARM_ACKED,ALARM_CLEARED", scan.Codes());
@@ -969,7 +969,7 @@ clear rows raise first at `limit + 1`.
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo --filter "FullyQualifiedName~Dse.Control.Tests.AlarmTests"`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo --filter "FullyQualifiedName~Millrace.Control.Tests.AlarmTests"`
 Expected: FAIL — 16 failed, 27 passed, 43 total. The two rows that already
 pass are `Hi 7.5 / 7.71` and `Lo 4.4 / 4.35` (today's full-precision text is
 already `7.71` and `4.35`); every other new row fails on the message (e.g.
@@ -978,7 +978,7 @@ already `7.71` and `4.35`); every other new row fails on the message (e.g.
 
 - [ ] **Step 3: Implement `Display`**
 
-In `src/Dse.Control/Alarm.cs`, replace
+In `src/Millrace.Control/Alarm.cs`, replace
 
 ```csharp
                         outputs.Raise("ALARM_RAISED", string.Create(CultureInfo.InvariantCulture,
@@ -1066,27 +1066,27 @@ or to a `(decimal)value` conversion — R145 measures why both are wrong, and th
 
 - [ ] **Step 4: Run the alarm tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo --filter "FullyQualifiedName~Dse.Control.Tests.AlarmTests"`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo --filter "FullyQualifiedName~Millrace.Control.Tests.AlarmTests"`
 Expected: PASS, 43.
 
 - [ ] **Step 5: See which goldens are now stale**
 
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet test Millrace.sln --nologo`
 Expected: FAIL in exactly these (report the measured list if it differs):
-`Dse.Control.Tests.WorkedExampleTests.TheWorkedExampleMatchesItsGolden` and
+`Millrace.Control.Tests.WorkedExampleTests.TheWorkedExampleMatchesItsGolden` and
 `TheJsonWorkedExampleWritesTheCodeBuiltEventLogByteForByte`;
-`Dse.Cli.Tests.RunCommandTests.TheWorkedExampleRunsFromItsFilesAndMatchesTheControlGolden`;
-`Dse.Samples.Tests.MineConveyorTests.EveryScenarioMatchesItsGolden(name: "chute-blockage")`.
+`Millrace.Cli.Tests.RunCommandTests.TheWorkedExampleRunsFromItsFilesAndMatchesTheControlGolden`;
+`Millrace.Samples.Tests.MineConveyorTests.EveryScenarioMatchesItsGolden(name: "chute-blockage")`.
 (Only `chute-blockage` has an alarm event among the sample goldens; no
-`Dse.Scenarios.Tests` golden has one.)
+`Millrace.Scenarios.Tests` golden has one.)
 
 - [ ] **Step 6: Regenerate the two goldens and read them**
 
 Run, one at a time:
 
 ```bash
-DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Control.Tests --nologo --filter "FullyQualifiedName~Dse.Control.Tests.WorkedExampleTests"
-DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"
+MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Control.Tests --nologo --filter "FullyQualifiedName~Millrace.Control.Tests.WorkedExampleTests"
+MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"
 ```
 
 Then `git status --short` — expect, besides this task's two source files,
@@ -1094,11 +1094,11 @@ exactly two logs:
 
 ```
  M samples/mine-conveyors/expected/chute-blockage.log
- M tests/Dse.Control.Tests/Golden/conveyor-control.log
+ M tests/Millrace.Control.Tests/Golden/conveyor-control.log
 ```
 
 Read `git diff -- samples/mine-conveyors/expected/chute-blockage.log` and
-`git diff -- tests/Dse.Control.Tests/Golden/conveyor-control.log` in full and
+`git diff -- tests/Millrace.Control.Tests/Golden/conveyor-control.log` in full and
 quote them in the report. Expected changed lines, and nothing else:
 
 ```
@@ -1129,12 +1129,12 @@ limit, R145.)
 - [ ] **Step 7: Remove the stray `.actual` file**
 
 Step 5's red run made `tests/Shared/Golden.cs` write the new output beside
-the control golden as `tests/Dse.Control.Tests/Golden/conveyor-control.log.actual`
+the control golden as `tests/Millrace.Control.Tests/Golden/conveyor-control.log.actual`
 (git-ignored, so `git status` does not show it). It holds the old
 full-precision lines and would trip Task 3's decimal grep. Run:
 
 ```bash
-rm -f tests/Dse.Control.Tests/Golden/conveyor-control.log.actual
+rm -f tests/Millrace.Control.Tests/Golden/conveyor-control.log.actual
 ```
 
 - [ ] **Step 8: Write and run the criterion 6 check**
@@ -1193,14 +1193,14 @@ Expected (exit 0):
 
 ```
 OK  samples/mine-conveyors/expected/chute-blockage.log  95 lines, 4 changed
-OK  tests/Dse.Control.Tests/Golden/conveyor-control.log  40 lines, 4 changed
+OK  tests/Millrace.Control.Tests/Golden/conveyor-control.log  40 lines, 4 changed
 ```
 
 Quote the output in the report.
 
 - [ ] **Step 9: Bring the README's quotes to the regenerated golden**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo`
 Expected: FAIL — 1 failed:
 `SampleReadmeTests.EveryQuotedLineIsAWholeLineOfItsGolden(name: "chute-blockage")`
 (the README still quotes the two old `ALARM_RAISED` lines; the build has now
@@ -1222,9 +1222,9 @@ with
 
 - [ ] **Step 10: Run everything**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo` — expect PASS, 78.
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1436**: 37 / 498 / 132 / 57 /
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo` — expect PASS, 78.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1436**: 37 / 498 / 132 / 57 /
 230 / 167 / 78 / 136 / 23 / 78.
 Run: `git status --short` — expect exactly the five files of Step 11
 (`.superpowers/` is ignored).
@@ -1232,7 +1232,7 @@ Run: `git status --short` — expect exactly the five files of Step 11
 - [ ] **Step 11: Commit**
 
 ```bash
-git add src/Dse.Control/Alarm.cs tests/Dse.Control.Tests/AlarmTests.cs tests/Dse.Control.Tests/Golden/conveyor-control.log samples/mine-conveyors/expected/chute-blockage.log samples/mine-conveyors/README.md
+git add src/Millrace.Control/Alarm.cs tests/Millrace.Control.Tests/AlarmTests.cs tests/Millrace.Control.Tests/Golden/conveyor-control.log samples/mine-conveyors/expected/chute-blockage.log samples/mine-conveyors/README.md
 git commit -F .superpowers/sdd/6e/msg-task2.txt
 ```
 
@@ -1268,13 +1268,13 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 `git diff` of the eleven logs and the check script's output).
 
 **Files:**
-- Modify: `src/Dse.Components/Mechanical/Motor.cs` (`AT_SPEED`, `STALLED`)
-- Modify: `src/Dse.Components/Mechanical/MotorStarter.cs` (`OVERLOAD_TRIP`)
-- Modify: `src/Dse.Components/Flow/BulkProcessUnit.cs` (hold satisfied)
-- Modify: `src/Dse.Components/Flow/ItemProcessUnit.cs` (hold satisfied)
-- Test: `tests/Dse.Components.Tests/MotorTests.cs`, `MotorStarterTests.cs`, `BulkProcessUnitTests.cs`, `ItemProcessUnitTests.cs` (+5 in all)
-- Test: `tests/Dse.Control.Tests/DocumentationTests.cs` (made `partial`; +1 fact)
-- Regenerate: all nine `samples/mine-conveyors/expected/*.log`, `tests/Dse.Control.Tests/Golden/conveyor-control.log`, `tests/Dse.Scenarios.Tests/Golden/conveyor-start-and-fault.log`
+- Modify: `src/Millrace.Components/Mechanical/Motor.cs` (`AT_SPEED`, `STALLED`)
+- Modify: `src/Millrace.Components/Mechanical/MotorStarter.cs` (`OVERLOAD_TRIP`)
+- Modify: `src/Millrace.Components/Flow/BulkProcessUnit.cs` (hold satisfied)
+- Modify: `src/Millrace.Components/Flow/ItemProcessUnit.cs` (hold satisfied)
+- Test: `tests/Millrace.Components.Tests/MotorTests.cs`, `MotorStarterTests.cs`, `BulkProcessUnitTests.cs`, `ItemProcessUnitTests.cs` (+5 in all)
+- Test: `tests/Millrace.Control.Tests/DocumentationTests.cs` (made `partial`; +1 fact)
+- Regenerate: all nine `samples/mine-conveyors/expected/*.log`, `tests/Millrace.Control.Tests/Golden/conveyor-control.log`, `tests/Millrace.Scenarios.Tests/Golden/conveyor-start-and-fault.log`
 - Modify: `samples/mine-conveyors/README.md` (two quoted lines), `docs/control-blocks.md` (one quoted line)
 
 **Interfaces:**
@@ -1290,7 +1290,7 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 
 - [ ] **Step 1: Write the failing tests**
 
-In `tests/Dse.Components.Tests/MotorTests.cs`, replace the end of the class
+In `tests/Millrace.Components.Tests/MotorTests.cs`, replace the end of the class
 
 ```csharp
         Assert.Equal(["bearing-friction", "thermal-bias"], motor.SupportedFaults.Select(f => f.Id));
@@ -1322,7 +1322,7 @@ with
 }
 ```
 
-In `tests/Dse.Components.Tests/MotorStarterTests.cs`, replace the end of the
+In `tests/Millrace.Components.Tests/MotorStarterTests.cs`, replace the end of the
 class
 
 ```csharp
@@ -1357,7 +1357,7 @@ with
 (The second row is the chute-blockage golden's trip value; the trip level is
 configured and prints as today.)
 
-In `tests/Dse.Components.Tests/BulkProcessUnitTests.cs`, replace the end of the
+In `tests/Millrace.Components.Tests/BulkProcessUnitTests.cs`, replace the end of the
 class
 
 ```csharp
@@ -1388,7 +1388,7 @@ with
 }
 ```
 
-In `tests/Dse.Components.Tests/ItemProcessUnitTests.cs`, replace the end of the
+In `tests/Millrace.Components.Tests/ItemProcessUnitTests.cs`, replace the end of the
 class
 
 ```csharp
@@ -1419,7 +1419,7 @@ with
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --nologo --filter "FullyQualifiedName~Dse.Components.Tests.MotorTests|FullyQualifiedName~Dse.Components.Tests.MotorStarterTests|FullyQualifiedName~Dse.Components.Tests.BulkProcessUnitTests|FullyQualifiedName~Dse.Components.Tests.ItemProcessUnitTests"`
+Run: `dotnet test tests/Millrace.Components.Tests --nologo --filter "FullyQualifiedName~Millrace.Components.Tests.MotorTests|FullyQualifiedName~Millrace.Components.Tests.MotorStarterTests|FullyQualifiedName~Millrace.Components.Tests.BulkProcessUnitTests|FullyQualifiedName~Millrace.Components.Tests.ItemProcessUnitTests"`
 Expected: FAIL — 5 failed, 33 passed, 38 total: the five new tests (today's
 texts are `Reached 142.93480695413064 rad/s.`, `… breakdown torque 12.5 N·m.`,
 `Thermal state 1.23456 …`, `Thermal state 1.1000357303409216 …`,
@@ -1428,7 +1428,7 @@ texts are `Reached 142.93480695413064 rad/s.`, `… breakdown torque 12.5 N·m.`
 
 - [ ] **Step 3: Change the four formats**
 
-In `src/Dse.Components/Mechanical/Motor.cs`, replace
+In `src/Millrace.Components/Mechanical/Motor.cs`, replace
 
 ```csharp
                     $"Torque demand {demand} N·m exceeds breakdown torque {_rating.BreakdownTorqueMultiple * ratedTorque} N·m."));
@@ -1452,7 +1452,7 @@ with
                 ctx.Log(Id, "AT_SPEED", string.Create(CultureInfo.InvariantCulture, $"Reached {_speed:F1} rad/s."));
 ```
 
-In `src/Dse.Components/Mechanical/MotorStarter.cs`, replace
+In `src/Millrace.Components/Mechanical/MotorStarter.cs`, replace
 
 ```csharp
                 $"Thermal state {thermal} reached the trip level {TripLevel}."));
@@ -1464,7 +1464,7 @@ with
                 $"Thermal state {thermal:F3} reached the trip level {TripLevel}."));
 ```
 
-In `src/Dse.Components/Flow/BulkProcessUnit.cs`, replace
+In `src/Millrace.Components/Flow/BulkProcessUnit.cs`, replace
 
 ```csharp
             string.Create(CultureInfo.InvariantCulture, $"Hold satisfied after {_elapsed} s; discharging {_batch.Mass} kg of {_output}."),
@@ -1476,7 +1476,7 @@ with
             string.Create(CultureInfo.InvariantCulture, $"Hold satisfied after {_elapsed:F2} s; discharging {_batch.Mass:F1} kg of {_output}."),
 ```
 
-In `src/Dse.Components/Flow/ItemProcessUnit.cs`, replace
+In `src/Millrace.Components/Flow/ItemProcessUnit.cs`, replace
 
 ```csharp
             string.Create(CultureInfo.InvariantCulture, $"Hold satisfied after {_elapsed} s; discharging {_items.Count} items."),
@@ -1494,16 +1494,16 @@ so the `:Fn` holes are invariant.)
 - [ ] **Step 4: Run the component tests to verify they pass**
 
 Run the Step 2 command — expect PASS, 38.
-Run: `dotnet test tests/Dse.Components.Tests --nologo` — expect PASS, 137.
+Run: `dotnet test tests/Millrace.Components.Tests --nologo` — expect PASS, 137.
 
 - [ ] **Step 5: Add the guard on the control-blocks page's quoted log lines**
 
-In `tests/Dse.Control.Tests/DocumentationTests.cs`, replace
+In `tests/Millrace.Control.Tests/DocumentationTests.cs`, replace
 
 ```csharp
 using System.Runtime.CompilerServices;
 
-namespace Dse.Control.Tests;
+namespace Millrace.Control.Tests;
 
 public class DocumentationTests
 {
@@ -1515,7 +1515,7 @@ with
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
-namespace Dse.Control.Tests;
+namespace Millrace.Control.Tests;
 
 public partial class DocumentationTests
 {
@@ -1559,7 +1559,7 @@ with
 (The page's only lines that start with a log time are the worked example's
 three, `docs/control-blocks.md` lines 220–222.)
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo --filter "FullyQualifiedName~Dse.Control.Tests.DocumentationTests"`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo --filter "FullyQualifiedName~Millrace.Control.Tests.DocumentationTests"`
 Expected: PASS, 5 — the golden has not been regenerated yet, so the page and
 the golden still agree. The guard goes red in Step 7.
 
@@ -1568,9 +1568,9 @@ the golden still agree. The guard goes red in Step 7.
 Run, one at a time:
 
 ```bash
-DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Control.Tests --nologo --filter "FullyQualifiedName~Dse.Control.Tests.WorkedExampleTests"
-DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"
-DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Scenarios.Tests --nologo --filter "FullyQualifiedName~EveryValidScenarioRunsCleanAndMatchesItsGolden"
+MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Control.Tests --nologo --filter "FullyQualifiedName~Millrace.Control.Tests.WorkedExampleTests"
+MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"
+MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Scenarios.Tests --nologo --filter "FullyQualifiedName~EveryValidScenarioRunsCleanAndMatchesItsGolden"
 ```
 
 Then `git status --short -- '*.log'` — expect exactly eleven:
@@ -1585,8 +1585,8 @@ Then `git status --short -- '*.log'` — expect exactly eleven:
  M samples/mine-conveyors/expected/pull-key.log
  M samples/mine-conveyors/expected/start-while-tripped.log
  M samples/mine-conveyors/expected/welded-contactor.log
- M tests/Dse.Control.Tests/Golden/conveyor-control.log
- M tests/Dse.Scenarios.Tests/Golden/conveyor-start-and-fault.log
+ M tests/Millrace.Control.Tests/Golden/conveyor-control.log
+ M tests/Millrace.Scenarios.Tests/Golden/conveyor-start-and-fault.log
 ```
 
 Read `git diff -U0 -- '*.log'` in full and quote it in the report. Against
@@ -1613,19 +1613,19 @@ OK  samples/mine-conveyors/expected/overload.log  104 lines, 4 changed
 OK  samples/mine-conveyors/expected/pull-key.log  99 lines, 3 changed
 OK  samples/mine-conveyors/expected/start-while-tripped.log  132 lines, 5 changed
 OK  samples/mine-conveyors/expected/welded-contactor.log  117 lines, 3 changed
-OK  tests/Dse.Control.Tests/Golden/conveyor-control.log  40 lines, 6 changed
-OK  tests/Dse.Scenarios.Tests/Golden/conveyor-start-and-fault.log  16 lines, 2 changed
+OK  tests/Millrace.Control.Tests/Golden/conveyor-control.log  40 lines, 6 changed
+OK  tests/Millrace.Scenarios.Tests/Golden/conveyor-start-and-fault.log  16 lines, 2 changed
 ```
 
 Quote the output in the report. Also run
-`grep -rnE --include='*.log' '[0-9]\.[0-9]{4,}' samples/mine-conveyors/expected tests/Dse.Control.Tests/Golden tests/Dse.Scenarios.Tests/Golden`
+`grep -rnE --include='*.log' '[0-9]\.[0-9]{4,}' samples/mine-conveyors/expected tests/Millrace.Control.Tests/Golden tests/Millrace.Scenarios.Tests/Golden`
 — expect no output (exit status 1): no event log holds a number with four or
 more decimals (R143).
 
 - [ ] **Step 7: Bring the quotes to the regenerated goldens**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo` and
-`dotnet test tests/Dse.Control.Tests --nologo`.
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo` and
+`dotnet test tests/Millrace.Control.Tests --nologo`.
 Expected: FAIL — `SampleReadmeTests.EveryQuotedLineIsAWholeLineOfItsGolden`
 rows `overload` and `chute-blockage`, and
 `DocumentationTests.EveryLogLineThePageQuotesIsAWholeLineOfTheWorkedExampleGolden`
@@ -1672,10 +1672,10 @@ either document changes.
 
 - [ ] **Step 8: Run everything**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo` — expect PASS, 78.
-Run: `dotnet test tests/Dse.Control.Tests --nologo` — expect PASS, 137.
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1442**: 37 / 498 / 137 / 57 /
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo` — expect PASS, 78.
+Run: `dotnet test tests/Millrace.Control.Tests --nologo` — expect PASS, 137.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1442**: 37 / 498 / 137 / 57 /
 230 / 167 / 78 / 137 / 23 / 78.
 Run: `git diff --stat 7041258 -- src/` — expect exactly the six files of the
 Global Constraints.
@@ -1684,7 +1684,7 @@ Run: `git status --short` — expect exactly the twenty-two files of Step 9.
 - [ ] **Step 9: Commit**
 
 ```bash
-git add src/Dse.Components/Mechanical/Motor.cs src/Dse.Components/Mechanical/MotorStarter.cs src/Dse.Components/Flow/BulkProcessUnit.cs src/Dse.Components/Flow/ItemProcessUnit.cs tests/Dse.Components.Tests/MotorTests.cs tests/Dse.Components.Tests/MotorStarterTests.cs tests/Dse.Components.Tests/BulkProcessUnitTests.cs tests/Dse.Components.Tests/ItemProcessUnitTests.cs tests/Dse.Control.Tests/DocumentationTests.cs tests/Dse.Control.Tests/Golden/conveyor-control.log tests/Dse.Scenarios.Tests/Golden/conveyor-start-and-fault.log samples/mine-conveyors/expected/chute-blockage.log samples/mine-conveyors/expected/e-stop.log samples/mine-conveyors/expected/failed-zero-speed.log samples/mine-conveyors/expected/feed-starve.log samples/mine-conveyors/expected/normal-start-stop.log samples/mine-conveyors/expected/overload.log samples/mine-conveyors/expected/pull-key.log samples/mine-conveyors/expected/start-while-tripped.log samples/mine-conveyors/expected/welded-contactor.log samples/mine-conveyors/README.md docs/control-blocks.md
+git add src/Millrace.Components/Mechanical/Motor.cs src/Millrace.Components/Mechanical/MotorStarter.cs src/Millrace.Components/Flow/BulkProcessUnit.cs src/Millrace.Components/Flow/ItemProcessUnit.cs tests/Millrace.Components.Tests/MotorTests.cs tests/Millrace.Components.Tests/MotorStarterTests.cs tests/Millrace.Components.Tests/BulkProcessUnitTests.cs tests/Millrace.Components.Tests/ItemProcessUnitTests.cs tests/Millrace.Control.Tests/DocumentationTests.cs tests/Millrace.Control.Tests/Golden/conveyor-control.log tests/Millrace.Scenarios.Tests/Golden/conveyor-start-and-fault.log samples/mine-conveyors/expected/chute-blockage.log samples/mine-conveyors/expected/e-stop.log samples/mine-conveyors/expected/failed-zero-speed.log samples/mine-conveyors/expected/feed-starve.log samples/mine-conveyors/expected/normal-start-stop.log samples/mine-conveyors/expected/overload.log samples/mine-conveyors/expected/pull-key.log samples/mine-conveyors/expected/start-while-tripped.log samples/mine-conveyors/expected/welded-contactor.log samples/mine-conveyors/README.md docs/control-blocks.md
 git commit -F .superpowers/sdd/6e/msg-task3.txt
 ```
 
@@ -1730,8 +1730,8 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 | 4. configured values print as today | 2, 3 | every new message assertion includes the limit / trip level as today (`above 1E-05.`, `the trip level 1.1.`); existing `AlarmTests` unchanged (R144); `golden-shape.sh`'s per-file "N changed" counts plus the read `git diff -U0` (only the five sites' lines move; every `ZERO_SPEED`, `SEQUENCE_*` line is untouched) |
 | 5. `WRITE`, tag values, frames, telemetry, other messages unchanged | 2, 3 | `golden-shape.sh`'s per-file "N changed" counts plus the read `git diff -U0` (only the five sites' lines move; all 422 `WRITE` lines in the eleven checked logs untouched); every existing test, unchanged but two (R150) |
 | 6. every event log regenerated and checked mechanically | 2, 3 | `.superpowers/sdd/6e/golden-shape.sh 7041258` (output quoted); `EveryScenarioMatchesItsGolden`, `EveryScenarioReplaysByteForByteFromARecording`, `WorkedExampleTests.TheWorkedExampleMatchesItsGolden`, `TheJsonWorkedExampleWritesTheCodeBuiltEventLogByteForByte`, `RunCommandTests.TheWorkedExampleRunsFromItsFilesAndMatchesTheControlGolden`, `CorpusTests.EveryValidScenarioRunsCleanAndMatchesItsGolden` |
-| 7. `DSE016` hint: Writes first, then all tags; plain fix otherwise; matching unchanged | 1 | `ClaimValidationTests.AClaimNamingNoTagIsDse016`, `AClaimNearATagIsHintedWithTheNearestName` (3 rows), `AClaimNearNoTagKeepsThePlainFix` (2 rows), `TheBlocksOwnWritesAreSearchedBeforeEveryOtherTag`, `AWriteThePlantDoesNotHaveIsNeverTheHint`, `AClaimIsMatchedOrdinallyAndExactly` (unchanged) |
-| §4 the split still holds; the hint on `dse validate`'s `Fix:` line; a far-off claim gets none | 1 | `ClaimTests.TheMessageIsSplitIntoSymptomAndFix`, `AClaimNearNoTagKeepsThePlainFix`; `MineConveyorTests.DseValidateNamesTheNearestTagOnTheFixLineOfAMistypedClaim` (2 rows) |
+| 7. `MR016` hint: Writes first, then all tags; plain fix otherwise; matching unchanged | 1 | `ClaimValidationTests.AClaimNamingNoTagIsMr016`, `AClaimNearATagIsHintedWithTheNearestName` (3 rows), `AClaimNearNoTagKeepsThePlainFix` (2 rows), `TheBlocksOwnWritesAreSearchedBeforeEveryOtherTag`, `AWriteThePlantDoesNotHaveIsNeverTheHint`, `AClaimIsMatchedOrdinallyAndExactly` (unchanged) |
+| §4 the split still holds; the hint on `millrace validate`'s `Fix:` line; a far-off claim gets none | 1 | `ClaimTests.TheMessageIsSplitIntoSymptomAndFix`, `AClaimNearNoTagKeepsThePlainFix`; `MineConveyorTests.MillraceValidateNamesTheNearestTagOnTheFixLineOfAMistypedClaim` (2 rows) |
 | §3 one private static method; Hi and Lo just past, whole-number limit, 6-decimal cap, a clear | 2 | `Alarm.Display`; `AlarmTests` theories above |
 | §5 README and doc quotes follow; their tests | 2, 3 | `SampleReadmeTests.EveryQuotedLineIsAWholeLineOfItsGolden`; `DocumentationTests.EveryLogLineThePageQuotesIsAWholeLineOfTheWorkedExampleGolden` |
 | §5 diagnostics reference unchanged | 1 | `DiagnosticsReferenceTests.TheCommittedReferencePageIsCurrent` (unchanged, passes) |
@@ -1751,7 +1751,7 @@ Baseline on `7041258` (measured): 1408 = 37 + 491 + 132 + 57 + 229 + 167 + 78 +
 Final: **1442** = 37 Io.Abstractions / 498 Core / 137 Components / 57 Realtime /
 230 Configuration / 167 Scenarios / 78 Cli / 137 Control / 23 Control.Catalogue /
 78 Samples (measured in the scratch run). Existing tests changed: two
-(`ClaimValidationTests.AClaimNamingNoTagIsDse016`,
+(`ClaimValidationTests.AClaimNamingNoTagIsMr016`,
 `ClaimTests.TheMessageIsSplitIntoSymptomAndFix`, R150); no existing test is
 removed or renamed. Goldens regenerated: eleven event logs (two of them in
 both Tasks 2 and 3); no other golden moves.

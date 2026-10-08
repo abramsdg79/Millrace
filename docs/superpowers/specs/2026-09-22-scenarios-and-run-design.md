@@ -1,9 +1,9 @@
-# Scenarios, Replay and `dse run` — Design (plan 5b)
+# Scenarios, Replay and `millrace run` — Design (plan 5b)
 
 Date: 2026-09-22. Addendum to
 `2026-09-02-industrial-process-simulation-engine-design.md` (the "main spec"),
-refining its sections 4, 13, 14 and 17 for `Dse.Scenarios`, two small seams in
-`Dse.Core`, and the `dse run` command. Builds on plan 5a
+refining its sections 4, 13, 14 and 17 for `Millrace.Scenarios`, two small seams in
+`Millrace.Core`, and the `millrace run` command. Builds on plan 5a
 (`2026-09-20-catalogue-configuration-cli-design.md`), which is merged.
 
 ## 1. Scope
@@ -12,12 +12,12 @@ Plan 5b, as left by 5a, held three things. It is split again.
 
 **Plan 5b — this document.** Scenario definition as JSON, replay of a scenario
 against a plant, golden event logs as the regression artifact, an in-process
-recorder proven by a record-and-replay round trip, and `dse run`.
+recorder proven by a record-and-replay round trip, and `millrace run`.
 
-**Plan 5c — a later document.** `Dse.Control` (interlock, permissive,
+**Plan 5c — a later document.** `Millrace.Control` (interlock, permissive,
 sequencer, timer, alarm; scan periods scheduled through the event queue) and
 the questions that belong with it: alarm state in `LiveState`, and whether
-`Dse.Core` grows a periodic-event helper or the blocks self-reschedule.
+`Millrace.Core` grows a periodic-event helper or the blocks self-reschedule.
 Scenarios do not need the control blocks; the golden logs this plan produces
 are the harness the blocks will be tested against.
 
@@ -28,7 +28,7 @@ simulation rather than `ICommandRecorder` on the command bus (section 6).
 
 Still parked with no consumer: dispatcher failure observability, frame pooling,
 CSV telemetry export (main spec 13; arrives with the reference samples that
-need a curve), paced execution of `dse run` (`SimulationRunner` already has the
+need a curve), paced execution of `millrace run` (`SimulationRunner` already has the
 modes; a `--speed` option is added when something live watches the run), a
 JSON Schema for scenario files (the format is fixed, not catalogue-driven; a
 hand-written schema can ship with the samples).
@@ -37,7 +37,7 @@ hand-written schema can ship with the samples).
 
 1. A scenario file over an existing valid plant runs from the command line and
    prints the event log; running it twice gives byte-identical logs.
-2. `dse run --expect` distinguishes "the configuration is broken" (exit 1)
+2. `millrace run --expect` distinguishes "the configuration is broken" (exit 1)
    from "the behaviour changed" (exit 4), and says where the log diverged.
 3. Every way a scenario can be wrong is reported before tick 0, with a code, a
    JSON path and a fix; a bad scenario never produces a partial log.
@@ -81,7 +81,7 @@ An action has `at` (seconds from start) and exactly one of:
 Rules for `at`:
 
 - It must fall exactly on a tick: `60.5` is fine at 10 ms, `60.005` is
-  `DSE203` naming the step.
+  `MR203` naming the step.
 - It must satisfy `at < duration`. `RunFor(120 s)` at 10 ms runs ticks
   0…11999; an action at 120 s would land on tick 12000, which never runs.
 - **`at` is the tick at which the plant sees it**, for writes and faults
@@ -91,7 +91,7 @@ Rules for `at`:
 
 Component ids are the flattened leaf ids the fault API takes today
 (`CV001.Motor`); tag names are the directory's names (`CV001.Start`), as
-`dse tags` lists them.
+`millrace tags` lists them.
 
 Deliberately absent: a `$schema` key, assertions or expectations inside the
 file (the golden log is the assertion), an inline plant, a `comment` field
@@ -117,14 +117,14 @@ absolute plant path.
 
 **Plant load** — the caller reads the plant text; `ScenarioRunner` calls
 `PlantLoader.Load(plantJson, catalogue, options)` with `LoadOptions` built from
-the overrides. If the plant is invalid, the run reports one `DSE205` line
+the overrides. If the plant is invalid, the run reports one `MR205` line
 naming the plant path and then the plant's own diagnostics unchanged — their
 codes, their paths, their fixes.
 
 **Scheduling with checks** — for each action in order: `at` is on a tick (the
 real step is known now), `at < duration`; then `Simulation.WriteAt`,
 `InjectFaultAt` or `ClearFaultAt`, each of which resolves its names at schedule
-time and throws on a bad one. The runner turns each throw into a `DSE206` with
+time and throws on a bad one. The runner turns each throw into a `MR206` with
 the action's JSON path (`timeline[1].fault`), collects every diagnostic rather
 than stopping at the first, and refuses to run if there are any.
 
@@ -135,22 +135,22 @@ sentence, an optional second, every sentence ending in a full stop).
 
 | code | title | when |
 |---|---|---|
-| DSE200 | Scenario is not valid JSON | Parse failure; message carries the parser's position. |
-| DSE201 | Unknown key | A key the format does not define; the fix names the nearest known key when one is close. |
-| DSE202 | Value missing, of the wrong type, or out of range | `plant` absent, `duration ≤ 0`, `seed` negative, `startTime` without an offset, a non-numeric `arg`, a `value` that is not a JSON bool or number. |
-| DSE203 | Time is not on a tick, or not before the end | `at` or `duration` not a multiple of the step; `at ≥ duration`. The message states the step and the offending time. |
-| DSE204 | Action is malformed | None or more than one of `write`/`fault`/`clear`; `value` missing on a write; `id` missing on a fault or clear; `args` on a clear. |
-| DSE205 | Plant file is invalid | Wrapper line with the plant path; the plant's diagnostics follow. (An unreadable plant file is the CLI's exit 3, not a diagnostic.) |
-| DSE206 | Action does not bind to the plant | Unknown tag, read-only tag, value kind does not match the tag, unknown component, unknown fault id, undeclared fault argument. The message says which; the fix points at `dse tags` or the catalogue. |
+| MR200 | Scenario is not valid JSON | Parse failure; message carries the parser's position. |
+| MR201 | Unknown key | A key the format does not define; the fix names the nearest known key when one is close. |
+| MR202 | Value missing, of the wrong type, or out of range | `plant` absent, `duration ≤ 0`, `seed` negative, `startTime` without an offset, a non-numeric `arg`, a `value` that is not a JSON bool or number. |
+| MR203 | Time is not on a tick, or not before the end | `at` or `duration` not a multiple of the step; `at ≥ duration`. The message states the step and the offending time. |
+| MR204 | Action is malformed | None or more than one of `write`/`fault`/`clear`; `value` missing on a write; `id` missing on a fault or clear; `args` on a clear. |
+| MR205 | Plant file is invalid | Wrapper line with the plant path; the plant's diagnostics follow. (An unreadable plant file is the CLI's exit 3, not a diagnostic.) |
+| MR206 | Action does not bind to the plant | Unknown tag, read-only tag, value kind does not match the tag, unknown component, unknown fault id, undeclared fault argument. The message says which; the fix points at `millrace tags` or the catalogue. |
 
 `ScenarioDiagnostics.All` lists them. `DiagnosticsReference.Render` becomes
 `Render(string title, IReadOnlyList<DiagnosticInfo> codes, string? introduction
 = null, string? trailer = null)` — the configuration page's plant-specific
-introduction and its `DSE001–DSE011` trailer become arguments, so that page
+introduction and its `MR001–MR011` trailer become arguments, so that page
 stays byte-identical (its golden test is the check), and
 `docs/scenario-diagnostics.md` is generated beside it and pinned by a golden
-test. `Dse.Configuration` cannot
-see `Dse.Scenarios`, so two pages are cleaner than one page that knows both.
+test. `Millrace.Configuration` cannot
+see `Millrace.Scenarios`, so two pages are cleaner than one page that knows both.
 
 ## 4. Running
 
@@ -176,9 +176,9 @@ the two line counts. No unified diff in v1: "here is where it diverged, and
 the full actual log is in a file" is the honest, reviewable version, and it is
 exactly what `tests/Shared/Golden.cs` already does.
 
-## 5. `dse run`
+## 5. `millrace run`
 
-`dse run <scenario.json> [--expect <golden.log>] [--out <file>]
+`millrace run <scenario.json> [--expect <golden.log>] [--out <file>]
 [--format text|json] [--assembly <path>]...`
 
 | case | stdout | stderr | exit |
@@ -198,7 +198,7 @@ configuration is broken" from "the behaviour changed".
 `--expect`), "diagnostics" }` — structured records rather than the text, for
 tooling. Text is the default.
 
-There is no `--update`. `dse run s.json --out golden.log` is how a golden is
+There is no `--update`. `millrace run s.json --out golden.log` is how a golden is
 made or remade, on purpose, and the change is reviewed in version control.
 
 The command reuses `PlantFile`'s reading and diagnostic rendering; `CliContext`
@@ -207,7 +207,7 @@ over a plant that uses a plugin's component type runs.
 
 ## 6. Engine seams
 
-The only changes to `Dse.Core`.
+The only changes to `Millrace.Core`.
 
 ### 6.1 `Simulation.WriteAt`
 
@@ -275,7 +275,7 @@ adapter.
 
 ## 8. Testing
 
-`Dse.Core.Tests`
+`Millrace.Core.Tests`
 - `WriteAt` rejects an unknown, a read-only and a kind-mismatched tag at
   schedule time; lands on the named tick with a `WRITE` record; lands after a
   queued write on the same tick; interleaves with a fault in sequence order.
@@ -284,14 +284,14 @@ adapter.
 - `IActionRecorder` receives a queued write, a `WriteAt`, a fault and a clear,
   each with its landing tick; a second attach throws.
 
-`Dse.Scenarios.Tests`
+`Millrace.Scenarios.Tests`
 - A scenario corpus like the plant corpus: `Scenarios/valid/*.json` over the
   existing valid plants (`minimal`, `conveyor-line`, `instrumented-belt`,
   `item-line`), each with a committed `Golden/<name>.log` pinned by
-  `Golden.Assert`; `Scenarios/invalid/DSE20x-*.json`, one per code, asserting
+  `Golden.Assert`; `Scenarios/invalid/MR20x-*.json`, one per code, asserting
   code and JSON path.
 - Runner rules: `at == duration`, off-tick `at`, off-tick `duration`, an
-  invalid plant passing its diagnostics through behind `DSE205`, several
+  invalid plant passing its diagnostics through behind `MR205`, several
   diagnostics collected in one run.
 - `GoldenLog.Compare`: identical, first divergence with context, `\r\n` and
   trailing-newline normalisation, a shorter and a longer actual.
@@ -303,7 +303,7 @@ adapter.
   byte-identical.
 - `docs/scenario-diagnostics.md` golden.
 
-`Dse.Cli.Tests`
+`Millrace.Cli.Tests`
 - Every row of section 5's table; exit 4 writes the `.actual` file; the
   `--format json` shape; `--assembly` reaching a scenario over the sample
   plugin's plant.
@@ -315,17 +315,17 @@ adapter.
 - `docs/architecture.md` — a "Scenarios and replay" section; and the stale
   "not yet implemented" text for tick phases 4 and 5 is corrected (both have
   shipped since plan 4).
-- `README.md` — `dse run` in the quick start; status paragraph.
+- `README.md` — `millrace run` in the quick start; status paragraph.
 - `docs/scenario-diagnostics.md` — generated.
 
 ## 10. Layout
 
 | project | references | notes |
 |---|---|---|
-| `src/Dse.Core` | unchanged | gains `WriteAt`/`WriteIn`, `IActionRecorder`, `AttachActionRecorder`, `TagImage.ApplyNow` |
-| `src/Dse.Scenarios` | `Dse.Core`, `Dse.Configuration` | new; no `Dse.Components`, no packages. The main spec's layout table said `Dse.Core` only — it predates the loader. |
-| `src/Dse.Cli` | + `Dse.Scenarios` | `run` command, exit code 4 |
-| `tests/Dse.Scenarios.Tests` | `Dse.Scenarios`, `Dse.Components`, `Dse.Realtime`, `tests/Shared` | corpus, goldens, round trip (`Dse.Realtime` for the `CommandBus` that drives the recorded run) |
+| `src/Millrace.Core` | unchanged | gains `WriteAt`/`WriteIn`, `IActionRecorder`, `AttachActionRecorder`, `TagImage.ApplyNow` |
+| `src/Millrace.Scenarios` | `Millrace.Core`, `Millrace.Configuration` | new; no `Millrace.Components`, no packages. The main spec's layout table said `Millrace.Core` only — it predates the loader. |
+| `src/Millrace.Cli` | + `Millrace.Scenarios` | `run` command, exit code 4 |
+| `tests/Millrace.Scenarios.Tests` | `Millrace.Scenarios`, `Millrace.Components`, `Millrace.Realtime`, `tests/Shared` | corpus, goldens, round trip (`Millrace.Realtime` for the `CommandBus` that drives the recorded run) |
 
 Global constraints from 5a apply unchanged: net10.0, warnings as errors,
 `InvariantCulture`, no Dictionary/HashSet order reaching an output,

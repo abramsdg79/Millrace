@@ -3,7 +3,7 @@
 Date: 2026-09-25. Addendum to
 `2026-09-02-industrial-process-simulation-engine-design.md` (the "main spec"),
 refining its section 15.1. Builds on plans 5a–5d, all merged: the catalogue and
-plant JSON (5a), scenarios, replay and `dse run --expect` (5b), the control blocks
+plant JSON (5a), scenarios, replay and `millrace run --expect` (5b), the control blocks
 (5c) and controllers in the plant file (5d).
 
 **Amended 2026-09-25 by the plan**
@@ -21,7 +21,7 @@ nothing clearing it (R108); the overload scenario's `thermal-bias` is 1.0
 (R109); the blocked chute stops CV001 through its own overload relay (R110); no
 current alarm raises on the start inrush (R111); `bulk-source` gains an optional
 `enabled` parameter so the feeder starts off, as a PLC output does — the one
-`src/` change (R112); goldens are compared and remade through `dse run`, not
+`src/` change (R112); goldens are compared and remade through `millrace run`, not
 `tests/Shared/Golden.cs` (R113); the samples test project pins JsonSchema.Net
 8.0.5 itself (R114); an absence may carry an end point (R115). The sections
 below read as amended.
@@ -78,10 +78,10 @@ reunification stays parked); a C# sample project; the deferred minors of plan 5d
 
 ### Success criteria
 
-1. `dse validate samples/mine-conveyors/plant.json` reports no diagnostics, and
+1. `millrace validate samples/mine-conveyors/plant.json` reports no diagnostics, and
    the generated plant schema accepts the file (main spec 16).
-2. All eight scenarios run through `dse run <scenario> --expect <golden>`,
-   in-process, in `tests/Dse.Samples.Tests`, and match.
+2. All eight scenarios run through `millrace run <scenario> --expect <golden>`,
+   in-process, in `tests/Millrace.Samples.Tests`, and match.
 3. Each scenario's causal chain holds as an ordered subsequence of its event log,
    and each stated absence holds.
 4. Each scenario, recorded with `ScenarioRecorder` and replayed, reproduces its
@@ -102,20 +102,20 @@ samples/mine-conveyors/
   plant.json            the plant and its controllers
   scenarios/            one JSON file per scenario (section 5)
   expected/             one golden event log per scenario
-tests/Dse.Samples.Tests/
-  Dse.Samples.Tests.csproj
+tests/Millrace.Samples.Tests/
+  Millrace.Samples.Tests.csproj
   MineConveyorTests.cs  golden, chain, absence and replay per scenario
   CausalChain.cs        the ordered-subsequence and absence helper
   SampleReadmeTests.cs  quoted log lines exist in the goldens
 ```
 
-`Dse.Samples.Tests` references `Dse.Cli` (to run `dse run` in-process through
-`CliApp.Run`), `Dse.Scenarios`, `Dse.Configuration`, `Dse.Control.Catalogue` and
-`Dse.Components`, and JsonSchema.Net 8.0.5 (pinned, test-only); it also holds
+`Millrace.Samples.Tests` references `Millrace.Cli` (to run `millrace run` in-process through
+`CliApp.Run`), `Millrace.Scenarios`, `Millrace.Configuration`, `Millrace.Control.Catalogue` and
+`Millrace.Components`, and JsonSchema.Net 8.0.5 (pinned, test-only); it also holds
 `Cli.cs`, `Sample.cs`, `Stories.cs`, `StateChain.cs` and the helpers' own tests.
-Goldens are compared through `dse run --expect` and remade through `dse run
---out` when `DSE_UPDATE_GOLDEN=1`, so `tests/Shared` is not linked. It is added
-to `Dse.sln`.
+Goldens are compared through `millrace run --expect` and remade through `millrace run
+--out` when `MILLRACE_UPDATE_GOLDEN=1`, so `tests/Shared` is not linked. It is added
+to `Millrace.sln`.
 The sample's files are copied to the test output so the tests read them by
 relative path, as the CLI tests read theirs.
 
@@ -128,7 +128,7 @@ one plant-local ore material.
 **Sizing: realistic in kind, modest in size.** Belts in the tens to low hundreds
 of metres, motor ratings, gear ratios and pulley sizes consistent with them, and
 cell sizes chosen so that each scenario runs in a few seconds of wall time and no
-`DSE006` (CFL) fires. It is a demonstration line, not a sized design; the README
+`MR006` (CFL) fires. It is a demonstration line, not a sized design; the README
 says so. The plan writer settles the numbers on a scratch run and reports the
 measured start inrush, running current, time to 90 % speed and overload trip
 time for each conveyor.
@@ -218,15 +218,15 @@ adjusted — or the discrepancy is ruled on — never invented.
 | `feed-starve` | `Feed` `starve` | by state: the belt-scale values (`CVn.TonnesPerHour`, sampled every 100 ms) each above 200 t/h at the fault (CV003's is still rising, 268 t/h), then fall to near zero (≤ 5 t/h, and stay there) in transport order CV001 → CV002 → CV003 | no `INTERLOCK_TRIP`, no `ALARM_RAISED`, no conveyor stops after start-up |
 
 Fault ids and tag names above are the catalogue's as of 5d; the plan confirms each
-against `dse tags` and the catalogue export.
+against `millrace tags` and the catalogue export.
 
 ## 6. Tests
 
-`Dse.Samples.Tests`:
+`Millrace.Samples.Tests`:
 
-- **`dse validate`** on the plant: exit 0, no diagnostics; the schema accepts it
+- **`millrace validate`** on the plant: exit 0, no diagnostics; the schema accepts it
   (JsonSchema.Net 8.0.5 stays pinned, test-only; this project references it).
-- Per scenario, a theory row running `dse run <scenario> --expect <golden>`
+- Per scenario, a theory row running `millrace run <scenario> --expect <golden>`
   in-process through `CliApp.Run`: exit 0.
 - Per scenario, the chain and absences of section 5 over the run's event log,
   through `CausalChain`: an ordered-subsequence matcher over `(source, code,
@@ -243,7 +243,7 @@ against `dse tags` and the catalogue export.
 - The README's quoted log lines each appear verbatim in the golden the README
   names for them.
 
-Goldens are generated with `DSE_UPDATE_GOLDEN=1` (through `dse run --out`), **read in full**, and checked
+Goldens are generated with `MILLRACE_UPDATE_GOLDEN=1` (through `millrace run --out`), **read in full**, and checked
 against section 5 before commit; the plan's task report quotes the lines that
 carry each chain.
 
@@ -259,7 +259,7 @@ carry each chain.
 - Main spec 15.1 amended: "speed change" is the start, stop and trip transients
   and speed sag under load, the drives being direct-on-line; the sample is a data
   folder under `samples/mine-conveyors/`, not a C# project, and the main spec's
-  project list (which names `samples/Dse.Samples.MineConveyors`) is amended to
+  project list (which names `samples/Millrace.Samples.MineConveyors`) is amended to
   match. 15.2 gains a note that the wheel
   line is plan 6b.
 - `README.md` — status; the sample in the quick start.

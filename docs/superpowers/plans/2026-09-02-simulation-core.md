@@ -26,7 +26,7 @@ reference samples. Nothing in this plan may reference those subsystems.
 ## Global Constraints
 
 - Target framework `net10.0` for every project.
-- `Dse.Core` and `Dse.Io.Abstractions` have **zero external runtime package
+- `Millrace.Core` and `Millrace.Io.Abstractions` have **zero external runtime package
   references**. Test projects may reference test packages.
 - `Nullable` enabled, `TreatWarningsAsErrors` true, deterministic builds.
 - **Never use `System.Random`** — its algorithm is not contractually stable
@@ -37,21 +37,21 @@ reference samples. Nothing in this plan may reference those subsystems.
   order is not part of the contract. Resolve to arrays at build time.
 - All formatting and parsing uses `CultureInfo.InvariantCulture`.
 - Licence: MIT.
-- Namespace root: `Dse`.
+- Namespace root: `Millrace`.
 
 ## File Structure
 
 ```
 Directory.Build.props                       shared build settings for all projects
-Dse.sln
+Millrace.sln
 LICENSE                                     MIT
 .github/workflows/ci.yml                    build + test on push
 
-src/Dse.Io.Abstractions/
+src/Millrace.Io.Abstractions/
   Placeholder.cs                            (populated by plan 4; project exists now
                                              so the dependency graph is fixed early)
 
-src/Dse.Core/
+src/Millrace.Core/
   Randomness/Hash64.cs                      stable 64-bit string hash + mixer
   Randomness/DeterministicRandom.cs         SplitMix64 stream, uniform + gaussian
   Time/SimulationClock.cs                   tick count, derived simulation time
@@ -81,7 +81,7 @@ src/Dse.Core/
   SimulationBuilder.cs                      add, validate, build
   SimulationRunner.cs                       execution modes and pacing
 
-tests/Dse.Core.Tests/
+tests/Millrace.Core.Tests/
   (one test file per source area, named <Area>Tests.cs)
   Fakes/ConstantSource.cs                   test-only components
   Fakes/Gain.cs
@@ -90,7 +90,7 @@ tests/Dse.Core.Tests/
   Fakes/Recorder.cs
 ```
 
-Test-only components live in `tests/`, never in `src/`. `Dse.Core` ships no
+Test-only components live in `tests/`, never in `src/`. `Millrace.Core` ships no
 industrial or example components — those arrive in plan 3.
 
 ---
@@ -99,17 +99,17 @@ industrial or example components — those arrive in plan 3.
 
 **Files:**
 - Create: `Directory.Build.props`
-- Create: `Dse.sln`
-- Create: `src/Dse.Io.Abstractions/Dse.Io.Abstractions.csproj`, `src/Dse.Io.Abstractions/Placeholder.cs`
-- Create: `src/Dse.Core/Dse.Core.csproj`
-- Create: `tests/Dse.Core.Tests/Dse.Core.Tests.csproj`
+- Create: `Millrace.sln`
+- Create: `src/Millrace.Io.Abstractions/Millrace.Io.Abstractions.csproj`, `src/Millrace.Io.Abstractions/Placeholder.cs`
+- Create: `src/Millrace.Core/Millrace.Core.csproj`
+- Create: `tests/Millrace.Core.Tests/Millrace.Core.Tests.csproj`
 - Create: `LICENSE`, `.github/workflows/ci.yml`
-- Test: `tests/Dse.Core.Tests/ScaffoldingTests.cs`
+- Test: `tests/Millrace.Core.Tests/ScaffoldingTests.cs`
 
 **Interfaces:**
 - Consumes: nothing.
 - Produces: a solution where `dotnet test` runs. Later tasks add files to
-  `src/Dse.Core` and `tests/Dse.Core.Tests` without touching project files.
+  `src/Millrace.Core` and `tests/Millrace.Core.Tests` without touching project files.
 
 - [ ] **Step 1: Create the projects with the SDK templates**
 
@@ -117,15 +117,15 @@ Use the templates rather than hand-written csproj files so package versions matc
 the installed SDK.
 
 ```bash
-cd /home/keeper/Work/Github/POCs/DSE
-dotnet new sln -n Dse
-dotnet new classlib -n Dse.Io.Abstractions -o src/Dse.Io.Abstractions -f net10.0
-dotnet new classlib -n Dse.Core -o src/Dse.Core -f net10.0
-dotnet new xunit -n Dse.Core.Tests -o tests/Dse.Core.Tests -f net10.0
-rm -f src/Dse.Io.Abstractions/Class1.cs src/Dse.Core/Class1.cs
-dotnet sln add src/Dse.Io.Abstractions src/Dse.Core tests/Dse.Core.Tests
-dotnet add src/Dse.Core reference src/Dse.Io.Abstractions
-dotnet add tests/Dse.Core.Tests reference src/Dse.Core
+# from the repository root
+dotnet new sln -n Millrace
+dotnet new classlib -n Millrace.Io.Abstractions -o src/Millrace.Io.Abstractions -f net10.0
+dotnet new classlib -n Millrace.Core -o src/Millrace.Core -f net10.0
+dotnet new xunit -n Millrace.Core.Tests -o tests/Millrace.Core.Tests -f net10.0
+rm -f src/Millrace.Io.Abstractions/Class1.cs src/Millrace.Core/Class1.cs
+dotnet sln add src/Millrace.Io.Abstractions src/Millrace.Core tests/Millrace.Core.Tests
+dotnet add src/Millrace.Core reference src/Millrace.Io.Abstractions
+dotnet add tests/Millrace.Core.Tests reference src/Millrace.Core
 ```
 
 - [ ] **Step 2: Add shared build settings**
@@ -154,10 +154,10 @@ harmless duplication and can be left alone.
 
 - [ ] **Step 3: Add the placeholder so the empty project compiles**
 
-`src/Dse.Io.Abstractions/Placeholder.cs`:
+`src/Millrace.Io.Abstractions/Placeholder.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// Reserved. The I/O contract lands in plan 4; this project exists now so the
@@ -171,31 +171,31 @@ internal static class Placeholder
 
 - [ ] **Step 4: Write the scaffolding test**
 
-`tests/Dse.Core.Tests/ScaffoldingTests.cs`:
+`tests/Millrace.Core.Tests/ScaffoldingTests.cs`:
 
 ```csharp
 using System.Reflection;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class ScaffoldingTests
 {
     [Fact]
     public void CoreAssemblyIsReferenceable()
     {
-        Assembly core = typeof(Dse.Io.Placeholder).Assembly;
-        Assert.Equal("Dse.Io.Abstractions", core.GetName().Name);
+        Assembly core = typeof(Millrace.Io.Placeholder).Assembly;
+        Assert.Equal("Millrace.Io.Abstractions", core.GetName().Name);
     }
 }
 ```
 
 `Placeholder` is `internal`, so add `InternalsVisibleTo` to
-`src/Dse.Io.Abstractions/Dse.Io.Abstractions.csproj` inside a new `ItemGroup`:
+`src/Millrace.Io.Abstractions/Millrace.Io.Abstractions.csproj` inside a new `ItemGroup`:
 
 ```xml
   <ItemGroup>
-    <InternalsVisibleTo Include="Dse.Core.Tests" />
+    <InternalsVisibleTo Include="Millrace.Core.Tests" />
   </ItemGroup>
 ```
 
@@ -206,7 +206,7 @@ Expected: PASS, 1 test.
 
 - [ ] **Step 6: Add the licence and CI workflow**
 
-`LICENSE`: the standard MIT licence text, copyright holder `Dse contributors`,
+`LICENSE`: the standard MIT licence text, copyright holder `Millrace contributors`,
 year `2026`.
 
 `.github/workflows/ci.yml`:
@@ -245,9 +245,9 @@ git commit -m "chore: scaffold solution, projects, CI and licence"
 ### Task 2: Deterministic hashing and RNG
 
 **Files:**
-- Create: `src/Dse.Core/Randomness/Hash64.cs`
-- Create: `src/Dse.Core/Randomness/DeterministicRandom.cs`
-- Test: `tests/Dse.Core.Tests/RandomnessTests.cs`
+- Create: `src/Millrace.Core/Randomness/Hash64.cs`
+- Create: `src/Millrace.Core/Randomness/DeterministicRandom.cs`
+- Test: `tests/Millrace.Core.Tests/RandomnessTests.cs`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -264,13 +264,13 @@ independently. They are the regression guard proving nobody swapped in
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/RandomnessTests.cs`:
+`tests/Millrace.Core.Tests/RandomnessTests.cs`:
 
 ```csharp
-using Dse.Core.Randomness;
+using Millrace.Core.Randomness;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class RandomnessTests
 {
@@ -351,16 +351,16 @@ public class RandomnessTests
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `dotnet test --filter FullyQualifiedName~RandomnessTests`
-Expected: FAIL — `Dse.Core.Randomness` does not exist.
+Expected: FAIL — `Millrace.Core.Randomness` does not exist.
 
 - [ ] **Step 3: Implement the hash**
 
-`src/Dse.Core/Randomness/Hash64.cs`:
+`src/Millrace.Core/Randomness/Hash64.cs`:
 
 ```csharp
 using System.Text;
 
-namespace Dse.Core.Randomness;
+namespace Millrace.Core.Randomness;
 
 /// <summary>
 /// Stable 64-bit hashing. Unlike <see cref="string.GetHashCode()"/> these values
@@ -408,10 +408,10 @@ public static class Hash64
 
 - [ ] **Step 4: Implement the generator**
 
-`src/Dse.Core/Randomness/DeterministicRandom.cs`:
+`src/Millrace.Core/Randomness/DeterministicRandom.cs`:
 
 ```csharp
-namespace Dse.Core.Randomness;
+namespace Millrace.Core.Randomness;
 
 /// <summary>
 /// SplitMix64. Small, fast, and — unlike <see cref="System.Random"/> — a fixed
@@ -474,7 +474,7 @@ Expected: PASS, 6 tests.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Core/Randomness tests/Dse.Core.Tests/RandomnessTests.cs
+git add src/Millrace.Core/Randomness tests/Millrace.Core.Tests/RandomnessTests.cs
 git commit -m "feat(core): add deterministic hashing and SplitMix64 generator"
 ```
 
@@ -483,9 +483,9 @@ git commit -m "feat(core): add deterministic hashing and SplitMix64 generator"
 ### Task 3: Simulation clock
 
 **Files:**
-- Create: `src/Dse.Core/Time/SimulationClock.cs`
-- Create: `src/Dse.Core/Time/SimulationOptions.cs`
-- Test: `tests/Dse.Core.Tests/SimulationClockTests.cs`
+- Create: `src/Millrace.Core/Time/SimulationClock.cs`
+- Create: `src/Millrace.Core/Time/SimulationOptions.cs`
+- Test: `tests/Millrace.Core.Tests/SimulationClockTests.cs`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -499,13 +499,13 @@ git commit -m "feat(core): add deterministic hashing and SplitMix64 generator"
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/SimulationClockTests.cs`:
+`tests/Millrace.Core.Tests/SimulationClockTests.cs`:
 
 ```csharp
-using Dse.Core.Time;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class SimulationClockTests
 {
@@ -580,14 +580,14 @@ public class SimulationClockTests
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `dotnet test --filter FullyQualifiedName~SimulationClockTests`
-Expected: FAIL — `Dse.Core.Time` does not exist.
+Expected: FAIL — `Millrace.Core.Time` does not exist.
 
 - [ ] **Step 3: Implement the clock and options**
 
-`src/Dse.Core/Time/SimulationClock.cs`:
+`src/Millrace.Core/Time/SimulationClock.cs`:
 
 ```csharp
-namespace Dse.Core.Time;
+namespace Millrace.Core.Time;
 
 /// <summary>
 /// Fixed-step simulation clock. Time is derived from the tick count by
@@ -626,10 +626,10 @@ public sealed class SimulationClock
 }
 ```
 
-`src/Dse.Core/Time/SimulationOptions.cs`:
+`src/Millrace.Core/Time/SimulationOptions.cs`:
 
 ```csharp
-namespace Dse.Core.Time;
+namespace Millrace.Core.Time;
 
 /// <summary>The complete set of inputs that determine a simulation's results.</summary>
 public sealed class SimulationOptions
@@ -652,7 +652,7 @@ Expected: PASS, 7 tests (the theory counts twice).
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Core/Time tests/Dse.Core.Tests/SimulationClockTests.cs
+git add src/Millrace.Core/Time tests/Millrace.Core.Tests/SimulationClockTests.cs
 git commit -m "feat(core): add fixed-step simulation clock and options"
 ```
 
@@ -661,9 +661,9 @@ git commit -m "feat(core): add fixed-step simulation clock and options"
 ### Task 4: Event queue
 
 **Files:**
-- Create: `src/Dse.Core/Events/ISimEvent.cs`
-- Create: `src/Dse.Core/Events/EventQueue.cs`
-- Test: `tests/Dse.Core.Tests/EventQueueTests.cs`
+- Create: `src/Millrace.Core/Events/ISimEvent.cs`
+- Create: `src/Millrace.Core/Events/EventQueue.cs`
+- Test: `tests/Millrace.Core.Tests/EventQueueTests.cs`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -679,13 +679,13 @@ serialisable scenario actions; `ISimEvent` is the seam that makes that additive.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/EventQueueTests.cs`:
+`tests/Millrace.Core.Tests/EventQueueTests.cs`:
 
 ```csharp
-using Dse.Core.Events;
+using Millrace.Core.Events;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class EventQueueTests
 {
@@ -778,14 +778,14 @@ public class EventQueueTests
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `dotnet test --filter FullyQualifiedName~EventQueueTests`
-Expected: FAIL — `Dse.Core.Events` does not exist.
+Expected: FAIL — `Millrace.Core.Events` does not exist.
 
 - [ ] **Step 3: Implement the event contract**
 
-`src/Dse.Core/Events/ISimEvent.cs`:
+`src/Millrace.Core/Events/ISimEvent.cs`:
 
 ```csharp
-namespace Dse.Core.Events;
+namespace Millrace.Core.Events;
 
 /// <summary>Something that happens at a specific tick.</summary>
 public interface ISimEvent
@@ -813,10 +813,10 @@ public readonly record struct ScheduledEvent(long DueTick, long Sequence, ISimEv
 
 - [ ] **Step 4: Implement the queue**
 
-`src/Dse.Core/Events/EventQueue.cs`:
+`src/Millrace.Core/Events/EventQueue.cs`:
 
 ```csharp
-namespace Dse.Core.Events;
+namespace Millrace.Core.Events;
 
 /// <summary>
 /// A binary min-heap ordered by (due tick, sequence). The sequence number is
@@ -922,7 +922,7 @@ Expected: PASS, 6 tests.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Core/Events tests/Dse.Core.Tests/EventQueueTests.cs
+git add src/Millrace.Core/Events tests/Millrace.Core.Tests/EventQueueTests.cs
 git commit -m "feat(core): add deterministically ordered event queue"
 ```
 
@@ -931,9 +931,9 @@ git commit -m "feat(core): add deterministically ordered event queue"
 ### Task 5: Telemetry registry
 
 **Files:**
-- Create: `src/Dse.Core/Telemetry/TelemetryRegistry.cs`
-- Create: `src/Dse.Core/Telemetry/TelemetryHandle.cs`
-- Test: `tests/Dse.Core.Tests/TelemetryTests.cs`
+- Create: `src/Millrace.Core/Telemetry/TelemetryRegistry.cs`
+- Create: `src/Millrace.Core/Telemetry/TelemetryHandle.cs`
+- Test: `tests/Millrace.Core.Tests/TelemetryTests.cs`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -949,13 +949,13 @@ free of sensor noise. Instruments come in plan 3 and are a different thing.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/TelemetryTests.cs`:
+`tests/Millrace.Core.Tests/TelemetryTests.cs`:
 
 ```csharp
-using Dse.Core.Telemetry;
+using Millrace.Core.Telemetry;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class TelemetryTests
 {
@@ -1016,14 +1016,14 @@ public class TelemetryTests
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `dotnet test --filter FullyQualifiedName~TelemetryTests`
-Expected: FAIL — `Dse.Core.Telemetry` does not exist.
+Expected: FAIL — `Millrace.Core.Telemetry` does not exist.
 
 - [ ] **Step 3: Implement the handle**
 
-`src/Dse.Core/Telemetry/TelemetryHandle.cs`:
+`src/Millrace.Core/Telemetry/TelemetryHandle.cs`:
 
 ```csharp
-namespace Dse.Core.Telemetry;
+namespace Millrace.Core.Telemetry;
 
 /// <summary>
 /// A write handle for one telemetry channel. Resolved once during Initialize so
@@ -1049,10 +1049,10 @@ handle without a null check on every tick.
 
 - [ ] **Step 4: Implement the registry**
 
-`src/Dse.Core/Telemetry/TelemetryRegistry.cs`:
+`src/Millrace.Core/Telemetry/TelemetryRegistry.cs`:
 
 ```csharp
-namespace Dse.Core.Telemetry;
+namespace Millrace.Core.Telemetry;
 
 public sealed record TelemetryChannel(string Key, string Unit);
 
@@ -1125,7 +1125,7 @@ Expected: PASS, 5 tests.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Core/Telemetry tests/Dse.Core.Tests/TelemetryTests.cs
+git add src/Millrace.Core/Telemetry tests/Millrace.Core.Tests/TelemetryTests.cs
 git commit -m "feat(core): add telemetry registry and write handles"
 ```
 
@@ -1134,9 +1134,9 @@ git commit -m "feat(core): add telemetry registry and write handles"
 ### Task 6: Event log
 
 **Files:**
-- Create: `src/Dse.Core/Logging/SimEventRecord.cs`
-- Create: `src/Dse.Core/Logging/EventLog.cs`
-- Test: `tests/Dse.Core.Tests/EventLogTests.cs`
+- Create: `src/Millrace.Core/Logging/SimEventRecord.cs`
+- Create: `src/Millrace.Core/Logging/EventLog.cs`
+- Test: `tests/Millrace.Core.Tests/EventLogTests.cs`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -1151,13 +1151,13 @@ contract: changing it invalidates every committed golden file.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/EventLogTests.cs`:
+`tests/Millrace.Core.Tests/EventLogTests.cs`:
 
 ```csharp
-using Dse.Core.Logging;
+using Millrace.Core.Logging;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class EventLogTests
 {
@@ -1212,14 +1212,14 @@ public class EventLogTests
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `dotnet test --filter FullyQualifiedName~EventLogTests`
-Expected: FAIL — `Dse.Core.Logging` does not exist.
+Expected: FAIL — `Millrace.Core.Logging` does not exist.
 
 - [ ] **Step 3: Implement the record and log**
 
-`src/Dse.Core/Logging/SimEventRecord.cs`:
+`src/Millrace.Core/Logging/SimEventRecord.cs`:
 
 ```csharp
-namespace Dse.Core.Logging;
+namespace Millrace.Core.Logging;
 
 /// <summary>One discrete thing that happened, at one tick.</summary>
 public sealed record SimEventRecord(
@@ -1230,13 +1230,13 @@ public sealed record SimEventRecord(
     string Message);
 ```
 
-`src/Dse.Core/Logging/EventLog.cs`:
+`src/Millrace.Core/Logging/EventLog.cs`:
 
 ```csharp
 using System.Globalization;
 using System.Text;
 
-namespace Dse.Core.Logging;
+namespace Millrace.Core.Logging;
 
 /// <summary>
 /// The ordered log of discrete events. This is the primary regression artifact:
@@ -1286,7 +1286,7 @@ Expected: PASS, 4 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Core/Logging tests/Dse.Core.Tests/EventLogTests.cs
+git add src/Millrace.Core/Logging tests/Millrace.Core.Tests/EventLogTests.cs
 git commit -m "feat(core): add ordered event log with stable text format"
 ```
 
@@ -1295,10 +1295,10 @@ git commit -m "feat(core): add ordered event log with stable text format"
 ### Task 7: Ports
 
 **Files:**
-- Create: `src/Dse.Core/Graph/Port.cs`
-- Create: `src/Dse.Core/Graph/OutputPort.cs`
-- Create: `src/Dse.Core/Graph/InputPort.cs`
-- Test: `tests/Dse.Core.Tests/PortTests.cs`
+- Create: `src/Millrace.Core/Graph/Port.cs`
+- Create: `src/Millrace.Core/Graph/OutputPort.cs`
+- Create: `src/Millrace.Core/Graph/InputPort.cs`
+- Test: `tests/Millrace.Core.Tests/PortTests.cs`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -1316,13 +1316,13 @@ the mistake is worth far more than a later error list.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/PortTests.cs`:
+`tests/Millrace.Core.Tests/PortTests.cs`:
 
 ```csharp
-using Dse.Core.Graph;
+using Millrace.Core.Graph;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class PortTests
 {
@@ -1409,14 +1409,14 @@ Step 3.
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `dotnet test --filter FullyQualifiedName~PortTests`
-Expected: FAIL — `Dse.Core.Graph` does not exist.
+Expected: FAIL — `Millrace.Core.Graph` does not exist.
 
 - [ ] **Step 3: Implement the port base**
 
-`src/Dse.Core/Graph/Port.cs`:
+`src/Millrace.Core/Graph/Port.cs`:
 
 ```csharp
-namespace Dse.Core.Graph;
+namespace Millrace.Core.Graph;
 
 /// <summary>A named connection point on a component.</summary>
 public abstract class Port
@@ -1446,20 +1446,20 @@ public abstract class Port
 }
 ```
 
-Add `InternalsVisibleTo` to `src/Dse.Core/Dse.Core.csproj`:
+Add `InternalsVisibleTo` to `src/Millrace.Core/Millrace.Core.csproj`:
 
 ```xml
   <ItemGroup>
-    <InternalsVisibleTo Include="Dse.Core.Tests" />
+    <InternalsVisibleTo Include="Millrace.Core.Tests" />
   </ItemGroup>
 ```
 
 - [ ] **Step 4: Implement the output port**
 
-`src/Dse.Core/Graph/OutputPort.cs`:
+`src/Millrace.Core/Graph/OutputPort.cs`:
 
 ```csharp
-namespace Dse.Core.Graph;
+namespace Millrace.Core.Graph;
 
 /// <summary>An output. May drive any number of inputs.</summary>
 public sealed class OutputPort<T> : Port
@@ -1486,10 +1486,10 @@ public sealed class OutputPort<T> : Port
 
 - [ ] **Step 5: Implement the input port**
 
-`src/Dse.Core/Graph/InputPort.cs`:
+`src/Millrace.Core/Graph/InputPort.cs`:
 
 ```csharp
-namespace Dse.Core.Graph;
+namespace Millrace.Core.Graph;
 
 /// <summary>
 /// An input. Exactly one source, because two sources is an undefined value.
@@ -1541,7 +1541,7 @@ Expected: PASS, 6 tests.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/Dse.Core/Graph src/Dse.Core/Dse.Core.csproj tests/Dse.Core.Tests/PortTests.cs
+git add src/Millrace.Core/Graph src/Millrace.Core/Millrace.Core.csproj tests/Millrace.Core.Tests/PortTests.cs
 git commit -m "feat(core): add typed signal ports with single-source inputs"
 ```
 
@@ -1550,14 +1550,14 @@ git commit -m "feat(core): add typed signal ports with single-source inputs"
 ### Task 8: Components and contexts
 
 **Files:**
-- Create: `src/Dse.Core/Graph/ISimNode.cs`
-- Create: `src/Dse.Core/Graph/ISimComponent.cs`
-- Create: `src/Dse.Core/Graph/IQualifiable.cs`
-- Create: `src/Dse.Core/Graph/ComponentBase.cs`
-- Create: `src/Dse.Core/Contexts/InitContext.cs`
-- Create: `src/Dse.Core/Contexts/TickContext.cs`
-- Create: `tests/Dse.Core.Tests/Fakes/ConstantSource.cs`, `Gain.cs`, `Integrator.cs`, `Recorder.cs`
-- Test: `tests/Dse.Core.Tests/ComponentTests.cs`
+- Create: `src/Millrace.Core/Graph/ISimNode.cs`
+- Create: `src/Millrace.Core/Graph/ISimComponent.cs`
+- Create: `src/Millrace.Core/Graph/IQualifiable.cs`
+- Create: `src/Millrace.Core/Graph/ComponentBase.cs`
+- Create: `src/Millrace.Core/Contexts/InitContext.cs`
+- Create: `src/Millrace.Core/Contexts/TickContext.cs`
+- Create: `tests/Millrace.Core.Tests/Fakes/ConstantSource.cs`, `Gain.cs`, `Integrator.cs`, `Recorder.cs`
+- Test: `tests/Millrace.Core.Tests/ComponentTests.cs`
 
 **Interfaces:**
 - Consumes: `Port`, `InputPort<T>`, `OutputPort<T>` (Task 7),
@@ -1583,18 +1583,18 @@ git commit -m "feat(core): add typed signal ports with single-source inputs"
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/ComponentTests.cs`:
+`tests/Millrace.Core.Tests/ComponentTests.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
-using Dse.Core.Logging;
-using Dse.Core.Randomness;
-using Dse.Core.Telemetry;
-using Dse.Core.Tests.Fakes;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
+using Millrace.Core.Logging;
+using Millrace.Core.Randomness;
+using Millrace.Core.Telemetry;
+using Millrace.Core.Tests.Fakes;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class ComponentTests
 {
@@ -1688,13 +1688,13 @@ public class ComponentTests
 
 - [ ] **Step 2: Write the test fakes**
 
-`tests/Dse.Core.Tests/Fakes/ConstantSource.cs`:
+`tests/Millrace.Core.Tests/Fakes/ConstantSource.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
 
-namespace Dse.Core.Tests.Fakes;
+namespace Millrace.Core.Tests.Fakes;
 
 /// <summary>Emits a fixed value every tick.</summary>
 public sealed class ConstantSource : ComponentBase
@@ -1714,14 +1714,14 @@ public sealed class ConstantSource : ComponentBase
 }
 ```
 
-`tests/Dse.Core.Tests/Fakes/Gain.cs`:
+`tests/Millrace.Core.Tests/Fakes/Gain.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
-using Dse.Core.Telemetry;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
+using Millrace.Core.Telemetry;
 
-namespace Dse.Core.Tests.Fakes;
+namespace Millrace.Core.Tests.Fakes;
 
 /// <summary>Multiplies its input by a constant and publishes the result as telemetry.</summary>
 public sealed class Gain : ComponentBase
@@ -1752,13 +1752,13 @@ public sealed class Gain : ComponentBase
 }
 ```
 
-`tests/Dse.Core.Tests/Fakes/Integrator.cs`:
+`tests/Millrace.Core.Tests/Fakes/Integrator.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
 
-namespace Dse.Core.Tests.Fakes;
+namespace Millrace.Core.Tests.Fakes;
 
 /// <summary>Rectangular integration of its input over simulation time.</summary>
 public sealed class Integrator : ComponentBase
@@ -1784,13 +1784,13 @@ public sealed class Integrator : ComponentBase
 }
 ```
 
-`tests/Dse.Core.Tests/Fakes/Recorder.cs`:
+`tests/Millrace.Core.Tests/Fakes/Recorder.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
 
-namespace Dse.Core.Tests.Fakes;
+namespace Millrace.Core.Tests.Fakes;
 
 /// <summary>Captures every value it sees, so a test can compare whole runs.</summary>
 public sealed class Recorder : ComponentBase
@@ -1815,10 +1815,10 @@ Expected: FAIL — `ComponentBase` does not exist.
 
 - [ ] **Step 4: Implement the node contracts**
 
-`src/Dse.Core/Graph/ISimNode.cs`:
+`src/Millrace.Core/Graph/ISimNode.cs`:
 
 ```csharp
-namespace Dse.Core.Graph;
+namespace Millrace.Core.Graph;
 
 /// <summary>Anything the builder accepts: a leaf component or a composite.</summary>
 public interface ISimNode
@@ -1827,12 +1827,12 @@ public interface ISimNode
 }
 ```
 
-`src/Dse.Core/Graph/ISimComponent.cs`:
+`src/Millrace.Core/Graph/ISimComponent.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
+using Millrace.Core.Contexts;
 
-namespace Dse.Core.Graph;
+namespace Millrace.Core.Graph;
 
 /// <summary>
 /// An evaluatable leaf. Reads its inputs, updates its own state, writes its
@@ -1856,10 +1856,10 @@ public interface ISimComponent : ISimNode
 }
 ```
 
-`src/Dse.Core/Graph/IQualifiable.cs`:
+`src/Millrace.Core/Graph/IQualifiable.cs`:
 
 ```csharp
-namespace Dse.Core.Graph;
+namespace Millrace.Core.Graph;
 
 /// <summary>Lets a composite prepend its id to everything it contains.</summary>
 internal interface IQualifiable
@@ -1870,12 +1870,12 @@ internal interface IQualifiable
 
 - [ ] **Step 5: Implement ComponentBase**
 
-`src/Dse.Core/Graph/ComponentBase.cs`:
+`src/Millrace.Core/Graph/ComponentBase.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
+using Millrace.Core.Contexts;
 
-namespace Dse.Core.Graph;
+namespace Millrace.Core.Graph;
 
 public abstract class ComponentBase : ISimComponent, IQualifiable
 {
@@ -1928,13 +1928,13 @@ public abstract class ComponentBase : ISimComponent, IQualifiable
 
 - [ ] **Step 6: Implement the contexts**
 
-`src/Dse.Core/Contexts/InitContext.cs`:
+`src/Millrace.Core/Contexts/InitContext.cs`:
 
 ```csharp
-using Dse.Core.Randomness;
-using Dse.Core.Telemetry;
+using Millrace.Core.Randomness;
+using Millrace.Core.Telemetry;
 
-namespace Dse.Core.Contexts;
+namespace Millrace.Core.Contexts;
 
 /// <summary>What a component is given once, before the first tick.</summary>
 public readonly struct InitContext
@@ -1973,12 +1973,12 @@ public readonly struct InitContext
 }
 ```
 
-`src/Dse.Core/Contexts/TickContext.cs`:
+`src/Millrace.Core/Contexts/TickContext.cs`:
 
 ```csharp
-using Dse.Core.Logging;
+using Millrace.Core.Logging;
 
-namespace Dse.Core.Contexts;
+namespace Millrace.Core.Contexts;
 
 /// <summary>What a component is given on every tick.</summary>
 public readonly struct TickContext
@@ -2016,7 +2016,7 @@ Expected: PASS, 7 tests.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/Dse.Core/Graph src/Dse.Core/Contexts tests/Dse.Core.Tests
+git add src/Millrace.Core/Graph src/Millrace.Core/Contexts tests/Millrace.Core.Tests
 git commit -m "feat(core): add component base, node contracts and tick contexts"
 ```
 
@@ -2025,9 +2025,9 @@ git commit -m "feat(core): add component base, node contracts and tick contexts"
 ### Task 9: Composite components
 
 **Files:**
-- Create: `src/Dse.Core/Graph/CompositeComponent.cs`
-- Create: `tests/Dse.Core.Tests/Fakes/TwoStage.cs`
-- Test: `tests/Dse.Core.Tests/CompositeComponentTests.cs`
+- Create: `src/Millrace.Core/Graph/CompositeComponent.cs`
+- Create: `tests/Millrace.Core.Tests/Fakes/TwoStage.cs`
+- Test: `tests/Millrace.Core.Tests/CompositeComponentTests.cs`
 
 **Interfaces:**
 - Consumes: `ISimNode`, `ISimComponent`, `IQualifiable`, `ComponentBase`, `Port` (Tasks 7-8).
@@ -2045,14 +2045,14 @@ anywhere in the engine.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/CompositeComponentTests.cs`:
+`tests/Millrace.Core.Tests/CompositeComponentTests.cs`:
 
 ```csharp
-using Dse.Core.Graph;
-using Dse.Core.Tests.Fakes;
+using Millrace.Core.Graph;
+using Millrace.Core.Tests.Fakes;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class CompositeComponentTests
 {
@@ -2123,12 +2123,12 @@ public class CompositeComponentTests
 }
 ```
 
-`tests/Dse.Core.Tests/Fakes/TwoStage.cs`:
+`tests/Millrace.Core.Tests/Fakes/TwoStage.cs`:
 
 ```csharp
-using Dse.Core.Graph;
+using Millrace.Core.Graph;
 
-namespace Dse.Core.Tests.Fakes;
+namespace Millrace.Core.Tests.Fakes;
 
 /// <summary>Two gains in series, exposed as a single composite.</summary>
 public sealed class TwoStage : CompositeComponent
@@ -2156,10 +2156,10 @@ Expected: FAIL — `CompositeComponent` does not exist.
 
 - [ ] **Step 3: Implement the composite**
 
-`src/Dse.Core/Graph/CompositeComponent.cs`:
+`src/Millrace.Core/Graph/CompositeComponent.cs`:
 
 ```csharp
-namespace Dse.Core.Graph;
+namespace Millrace.Core.Graph;
 
 /// <summary>
 /// A container of components. Composites never evaluate: at build time the tree
@@ -2272,7 +2272,7 @@ Expected: PASS, 6 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Core/Graph/CompositeComponent.cs tests/Dse.Core.Tests
+git add src/Millrace.Core/Graph/CompositeComponent.cs tests/Millrace.Core.Tests
 git commit -m "feat(core): add composite components with port aliases and flattening"
 ```
 
@@ -2281,8 +2281,8 @@ git commit -m "feat(core): add composite components with port aliases and flatte
 ### Task 10: Unit delay
 
 **Files:**
-- Create: `src/Dse.Core/Graph/UnitDelay.cs`
-- Test: `tests/Dse.Core.Tests/UnitDelayTests.cs`
+- Create: `src/Millrace.Core/Graph/UnitDelay.cs`
+- Test: `tests/Millrace.Core.Tests/UnitDelayTests.cs`
 
 **Interfaces:**
 - Consumes: `ComponentBase`, `InputPort<T>`, `OutputPort<T>`, `TickContext`.
@@ -2294,16 +2294,16 @@ git commit -m "feat(core): add composite components with port aliases and flatte
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/UnitDelayTests.cs`:
+`tests/Millrace.Core.Tests/UnitDelayTests.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
-using Dse.Core.Logging;
-using Dse.Core.Tests.Fakes;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
+using Millrace.Core.Logging;
+using Millrace.Core.Tests.Fakes;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class UnitDelayTests
 {
@@ -2364,12 +2364,12 @@ Expected: FAIL — `UnitDelay` does not exist.
 
 - [ ] **Step 3: Implement the delay**
 
-`src/Dse.Core/Graph/UnitDelay.cs`:
+`src/Millrace.Core/Graph/UnitDelay.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
+using Millrace.Core.Contexts;
 
-namespace Dse.Core.Graph;
+namespace Millrace.Core.Graph;
 
 /// <summary>
 /// Emits the previous tick's input. Because it declares no direct feedthrough it
@@ -2411,7 +2411,7 @@ Expected: PASS, 4 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Core/Graph/UnitDelay.cs tests/Dse.Core.Tests/UnitDelayTests.cs
+git add src/Millrace.Core/Graph/UnitDelay.cs tests/Millrace.Core.Tests/UnitDelayTests.cs
 git commit -m "feat(core): add unit delay for breaking algebraic loops"
 ```
 
@@ -2420,8 +2420,8 @@ git commit -m "feat(core): add unit delay for breaking algebraic loops"
 ### Task 11: Graph resolver
 
 **Files:**
-- Create: `src/Dse.Core/Graph/GraphResolver.cs`
-- Test: `tests/Dse.Core.Tests/GraphResolverTests.cs`
+- Create: `src/Millrace.Core/Graph/GraphResolver.cs`
+- Test: `tests/Millrace.Core.Tests/GraphResolverTests.cs`
 
 **Interfaces:**
 - Consumes: `ISimComponent`, `Port`, `InputPort<T>` (via `Port.SourcePort`).
@@ -2435,14 +2435,14 @@ registration index, so ordering is stable for a given plant.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/GraphResolverTests.cs`:
+`tests/Millrace.Core.Tests/GraphResolverTests.cs`:
 
 ```csharp
-using Dse.Core.Graph;
-using Dse.Core.Tests.Fakes;
+using Millrace.Core.Graph;
+using Millrace.Core.Tests.Fakes;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class GraphResolverTests
 {
@@ -2534,10 +2534,10 @@ Expected: FAIL — `GraphResolver` does not exist.
 
 - [ ] **Step 3: Implement the resolver**
 
-`src/Dse.Core/Graph/GraphResolver.cs`:
+`src/Millrace.Core/Graph/GraphResolver.cs`:
 
 ```csharp
-namespace Dse.Core.Graph;
+namespace Millrace.Core.Graph;
 
 /// <summary>
 /// Turns a wired component set into a fixed evaluation order. That order is the
@@ -2697,7 +2697,7 @@ Expected: PASS, 5 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Core/Graph/GraphResolver.cs tests/Dse.Core.Tests/GraphResolverTests.cs
+git add src/Millrace.Core/Graph/GraphResolver.cs tests/Millrace.Core.Tests/GraphResolverTests.cs
 git commit -m "feat(core): add topological graph resolver with cycle reporting"
 ```
 
@@ -2706,10 +2706,10 @@ git commit -m "feat(core): add topological graph resolver with cycle reporting"
 ### Task 12: Validation
 
 **Files:**
-- Create: `src/Dse.Core/Validation/ValidationError.cs`
-- Create: `src/Dse.Core/Validation/ValidationResult.cs`
-- Create: `src/Dse.Core/Validation/SimulationValidationException.cs`
-- Test: `tests/Dse.Core.Tests/ValidationTests.cs`
+- Create: `src/Millrace.Core/Validation/ValidationError.cs`
+- Create: `src/Millrace.Core/Validation/ValidationResult.cs`
+- Create: `src/Millrace.Core/Validation/SimulationValidationException.cs`
+- Test: `tests/Millrace.Core.Tests/ValidationTests.cs`
 
 **Interfaces:**
 - Consumes: nothing beyond BCL types.
@@ -2720,19 +2720,19 @@ git commit -m "feat(core): add topological graph resolver with cycle reporting"
     `static ValidationResult From(IEnumerable<ValidationError> errors)`, `string ToText()`
   - `sealed class SimulationValidationException : Exception` with `ValidationResult Result`
 
-Error codes used by Task 13: `DSE001` duplicate component id, `DSE002` required
-input unconnected, `DSE003` algebraic loop. Every message names the fix, not just
+Error codes used by Task 13: `MR001` duplicate component id, `MR002` required
+input unconnected, `MR003` algebraic loop. Every message names the fix, not just
 the symptom.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/ValidationTests.cs`:
+`tests/Millrace.Core.Tests/ValidationTests.cs`:
 
 ```csharp
-using Dse.Core.Validation;
+using Millrace.Core.Validation;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class ValidationTests
 {
@@ -2748,7 +2748,7 @@ public class ValidationTests
     {
         var result = ValidationResult.From(
         [
-            new ValidationError("DSE002", "Input 'G.In' is required but unconnected.", ["G"]),
+            new ValidationError("MR002", "Input 'G.In' is required but unconnected.", ["G"]),
         ]);
 
         Assert.False(result.IsValid);
@@ -2760,13 +2760,13 @@ public class ValidationTests
     {
         var result = ValidationResult.From(
         [
-            new ValidationError("DSE001", "first", ["A"]),
-            new ValidationError("DSE002", "second", ["B"]),
+            new ValidationError("MR001", "first", ["A"]),
+            new ValidationError("MR002", "second", ["B"]),
         ]);
 
         string expected =
-            "DSE001: first" + Environment.NewLine +
-            "DSE002: second" + Environment.NewLine;
+            "MR001: first" + Environment.NewLine +
+            "MR002: second" + Environment.NewLine;
 
         Assert.Equal(expected, result.ToText());
     }
@@ -2776,13 +2776,13 @@ public class ValidationTests
     {
         var result = ValidationResult.From(
         [
-            new ValidationError("DSE003", "Algebraic loop: A -> B -> A.", ["A", "B"]),
+            new ValidationError("MR003", "Algebraic loop: A -> B -> A.", ["A", "B"]),
         ]);
 
         var exception = new SimulationValidationException(result);
 
         Assert.Same(result, exception.Result);
-        Assert.Contains("DSE003", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("MR003", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -2797,14 +2797,14 @@ public class ValidationTests
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `dotnet test --filter FullyQualifiedName~ValidationTests`
-Expected: FAIL — `Dse.Core.Validation` does not exist.
+Expected: FAIL — `Millrace.Core.Validation` does not exist.
 
 - [ ] **Step 3: Implement the validation types**
 
-`src/Dse.Core/Validation/ValidationError.cs`:
+`src/Millrace.Core/Validation/ValidationError.cs`:
 
 ```csharp
-namespace Dse.Core.Validation;
+namespace Millrace.Core.Validation;
 
 /// <summary>
 /// One reason a plant cannot run. The message must state the fix, not only the
@@ -2816,12 +2816,12 @@ public sealed record ValidationError(
     IReadOnlyList<string> ComponentIds);
 ```
 
-`src/Dse.Core/Validation/ValidationResult.cs`:
+`src/Millrace.Core/Validation/ValidationResult.cs`:
 
 ```csharp
 using System.Text;
 
-namespace Dse.Core.Validation;
+namespace Millrace.Core.Validation;
 
 public sealed class ValidationResult
 {
@@ -2857,10 +2857,10 @@ public sealed class ValidationResult
 }
 ```
 
-`src/Dse.Core/Validation/SimulationValidationException.cs`:
+`src/Millrace.Core/Validation/SimulationValidationException.cs`:
 
 ```csharp
-namespace Dse.Core.Validation;
+namespace Millrace.Core.Validation;
 
 public sealed class SimulationValidationException : Exception
 {
@@ -2895,7 +2895,7 @@ Expected: PASS, 5 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Core/Validation tests/Dse.Core.Tests/ValidationTests.cs
+git add src/Millrace.Core/Validation tests/Millrace.Core.Tests/ValidationTests.cs
 git commit -m "feat(core): add validation results and exception"
 ```
 
@@ -2904,9 +2904,9 @@ git commit -m "feat(core): add validation results and exception"
 ### Task 13: Simulation and builder
 
 **Files:**
-- Create: `src/Dse.Core/Simulation.cs`
-- Create: `src/Dse.Core/SimulationBuilder.cs`
-- Test: `tests/Dse.Core.Tests/SimulationTests.cs`
+- Create: `src/Millrace.Core/Simulation.cs`
+- Create: `src/Millrace.Core/SimulationBuilder.cs`
+- Test: `tests/Millrace.Core.Tests/SimulationTests.cs`
 
 **Interfaces:**
 - Consumes: everything from Tasks 2-12.
@@ -2926,18 +2926,18 @@ no-op methods in this plan; plans 2 and 4 fill them in without restructuring.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/SimulationTests.cs`:
+`tests/Millrace.Core.Tests/SimulationTests.cs`:
 
 ```csharp
-using Dse.Core;
-using Dse.Core.Events;
-using Dse.Core.Graph;
-using Dse.Core.Time;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Validation;
+using Millrace.Core;
+using Millrace.Core.Events;
+using Millrace.Core.Graph;
+using Millrace.Core.Time;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Validation;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class SimulationTests
 {
@@ -3028,7 +3028,7 @@ public class SimulationTests
         ValidationResult result = builder.Validate();
 
         Assert.False(result.IsValid);
-        Assert.Equal("DSE001", result.Errors[0].Code);
+        Assert.Equal("MR001", result.Errors[0].Code);
     }
 
     [Fact]
@@ -3038,7 +3038,7 @@ public class SimulationTests
 
         ValidationResult result = builder.Validate();
 
-        Assert.Equal("DSE002", result.Errors[0].Code);
+        Assert.Equal("MR002", result.Errors[0].Code);
         Assert.Contains("N.In", result.Errors[0].Message, StringComparison.Ordinal);
     }
 
@@ -3052,7 +3052,7 @@ public class SimulationTests
 
         ValidationResult result = new SimulationBuilder(Options).Add(left).Add(right).Validate();
 
-        Assert.Equal("DSE003", result.Errors[0].Code);
+        Assert.Equal("MR003", result.Errors[0].Code);
         Assert.Contains("UnitDelay", result.Errors[0].Message, StringComparison.Ordinal);
     }
 
@@ -3063,7 +3063,7 @@ public class SimulationTests
 
         SimulationValidationException error =
             Assert.Throws<SimulationValidationException>(() => builder.Build());
-        Assert.Equal("DSE002", error.Result.Errors[0].Code);
+        Assert.Equal("MR002", error.Result.Errors[0].Code);
     }
 
     [Fact]
@@ -3124,18 +3124,18 @@ Expected: FAIL — `SimulationBuilder` does not exist.
 
 - [ ] **Step 3: Implement the simulation**
 
-`src/Dse.Core/Simulation.cs`:
+`src/Millrace.Core/Simulation.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Events;
-using Dse.Core.Graph;
-using Dse.Core.Logging;
-using Dse.Core.Randomness;
-using Dse.Core.Telemetry;
-using Dse.Core.Time;
+using Millrace.Core.Contexts;
+using Millrace.Core.Events;
+using Millrace.Core.Graph;
+using Millrace.Core.Logging;
+using Millrace.Core.Randomness;
+using Millrace.Core.Telemetry;
+using Millrace.Core.Time;
 
-namespace Dse.Core;
+namespace Millrace.Core;
 
 /// <summary>
 /// A validated, immutable plant plus its running state. The graph cannot change
@@ -3256,14 +3256,14 @@ public sealed class Simulation
 
 - [ ] **Step 4: Implement the builder**
 
-`src/Dse.Core/SimulationBuilder.cs`:
+`src/Millrace.Core/SimulationBuilder.cs`:
 
 ```csharp
-using Dse.Core.Graph;
-using Dse.Core.Time;
-using Dse.Core.Validation;
+using Millrace.Core.Graph;
+using Millrace.Core.Time;
+using Millrace.Core.Validation;
 
-namespace Dse.Core;
+namespace Millrace.Core;
 
 /// <summary>Collects nodes, flattens composites, validates, and produces a Simulation.</summary>
 public sealed class SimulationBuilder
@@ -3311,7 +3311,7 @@ public sealed class SimulationBuilder
             if (!seen.Add(component.Id))
             {
                 errors.Add(new ValidationError(
-                    "DSE001",
+                    "MR001",
                     $"Duplicate component id '{component.Id}'. Ids must be unique across the " +
                     $"whole plant; rename one of them or place it inside a composite.",
                     [component.Id]));
@@ -3325,7 +3325,7 @@ public sealed class SimulationBuilder
                 if (port.IsMissingRequiredConnection)
                 {
                     errors.Add(new ValidationError(
-                        "DSE002",
+                        "MR002",
                         $"Input '{port.QualifiedName}' is required but nothing drives it. " +
                         $"Connect an output to it, or declare the input optional with a default.",
                         [component.Id]));
@@ -3337,7 +3337,7 @@ public sealed class SimulationBuilder
         {
             string path = string.Join(" -> ", cycle.Append(cycle.Count > 0 ? cycle[0] : string.Empty));
             errors.Add(new ValidationError(
-                "DSE003",
+                "MR003",
                 $"Algebraic loop: {path}. Insert a UnitDelay on one connection in the cycle to " +
                 $"break it; one tick of lag is physically irrelevant and makes the solve order " +
                 $"unambiguous.",
@@ -3375,7 +3375,7 @@ Expected: PASS, all tests.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/Dse.Core/Simulation.cs src/Dse.Core/SimulationBuilder.cs tests/Dse.Core.Tests/SimulationTests.cs
+git add src/Millrace.Core/Simulation.cs src/Millrace.Core/SimulationBuilder.cs tests/Millrace.Core.Tests/SimulationTests.cs
 git commit -m "feat(core): add simulation lifecycle, tick phases and builder validation"
 ```
 
@@ -3384,8 +3384,8 @@ git commit -m "feat(core): add simulation lifecycle, tick phases and builder val
 ### Task 14: Per-component seeding is stable across plant edits
 
 **Files:**
-- Create: `tests/Dse.Core.Tests/Fakes/NoiseSource.cs`
-- Test: `tests/Dse.Core.Tests/SeedStabilityTests.cs`
+- Create: `tests/Millrace.Core.Tests/Fakes/NoiseSource.cs`
+- Test: `tests/Millrace.Core.Tests/SeedStabilityTests.cs`
 
 **Interfaces:**
 - Consumes: `Simulation`, `SimulationBuilder`, `InitContext.Random`.
@@ -3399,14 +3399,14 @@ breaks every saved scenario the moment a plant is edited.
 
 - [ ] **Step 1: Write the noise fake**
 
-`tests/Dse.Core.Tests/Fakes/NoiseSource.cs`:
+`tests/Millrace.Core.Tests/Fakes/NoiseSource.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
-using Dse.Core.Randomness;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
+using Millrace.Core.Randomness;
 
-namespace Dse.Core.Tests.Fakes;
+namespace Millrace.Core.Tests.Fakes;
 
 /// <summary>Emits one draw from its own random stream per tick.</summary>
 public sealed class NoiseSource : ComponentBase
@@ -3434,15 +3434,15 @@ public sealed class NoiseSource : ComponentBase
 
 - [ ] **Step 2: Write the failing tests**
 
-`tests/Dse.Core.Tests/SeedStabilityTests.cs`:
+`tests/Millrace.Core.Tests/SeedStabilityTests.cs`:
 
 ```csharp
-using Dse.Core;
-using Dse.Core.Time;
-using Dse.Core.Tests.Fakes;
+using Millrace.Core;
+using Millrace.Core.Time;
+using Millrace.Core.Tests.Fakes;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class SeedStabilityTests
 {
@@ -3523,7 +3523,7 @@ instead of deriving per component — fix it there, not in the test.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add tests/Dse.Core.Tests/Fakes/NoiseSource.cs tests/Dse.Core.Tests/SeedStabilityTests.cs
+git add tests/Millrace.Core.Tests/Fakes/NoiseSource.cs tests/Millrace.Core.Tests/SeedStabilityTests.cs
 git commit -m "test(core): lock in per-component seed stability across plant edits"
 ```
 
@@ -3532,8 +3532,8 @@ git commit -m "test(core): lock in per-component seed stability across plant edi
 ### Task 15: Runner and execution modes
 
 **Files:**
-- Create: `src/Dse.Core/SimulationRunner.cs`
-- Test: `tests/Dse.Core.Tests/SimulationRunnerTests.cs`
+- Create: `src/Millrace.Core/SimulationRunner.cs`
+- Test: `tests/Millrace.Core.Tests/SimulationRunnerTests.cs`
 
 **Interfaces:**
 - Consumes: `Simulation`, `SimulationClock`.
@@ -3548,16 +3548,16 @@ Paused and step-by-step are `Step` plus the caller's own loop rather than modes.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/SimulationRunnerTests.cs`:
+`tests/Millrace.Core.Tests/SimulationRunnerTests.cs`:
 
 ```csharp
 using System.Diagnostics;
-using Dse.Core;
-using Dse.Core.Time;
-using Dse.Core.Tests.Fakes;
+using Millrace.Core;
+using Millrace.Core.Time;
+using Millrace.Core.Tests.Fakes;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class SimulationRunnerTests
 {
@@ -3660,12 +3660,12 @@ Expected: FAIL — `SimulationRunner` does not exist.
 
 - [ ] **Step 3: Implement the runner**
 
-`src/Dse.Core/SimulationRunner.cs`:
+`src/Millrace.Core/SimulationRunner.cs`:
 
 ```csharp
 using System.Diagnostics;
 
-namespace Dse.Core;
+namespace Millrace.Core;
 
 public enum ExecutionMode
 {
@@ -3762,7 +3762,7 @@ Expected: PASS, 6 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Core/SimulationRunner.cs tests/Dse.Core.Tests/SimulationRunnerTests.cs
+git add src/Millrace.Core/SimulationRunner.cs tests/Millrace.Core.Tests/SimulationRunnerTests.cs
 git commit -m "feat(core): add simulation runner with real-time and scaled pacing"
 ```
 
@@ -3771,9 +3771,9 @@ git commit -m "feat(core): add simulation runner with real-time and scaled pacin
 ### Task 16: End-to-end determinism
 
 **Files:**
-- Create: `tests/Dse.Core.Tests/Fakes/Tripper.cs`
+- Create: `tests/Millrace.Core.Tests/Fakes/Tripper.cs`
 - Create: `docs/architecture.md`
-- Test: `tests/Dse.Core.Tests/DeterminismTests.cs`
+- Test: `tests/Millrace.Core.Tests/DeterminismTests.cs`
 - Modify: `README.md` (create if absent)
 
 **Interfaces:**
@@ -3791,13 +3791,13 @@ fail to compile, which is this task's red state.
 
 - [ ] **Step 2: Write the tripper fake**
 
-`tests/Dse.Core.Tests/Fakes/Tripper.cs`:
+`tests/Millrace.Core.Tests/Fakes/Tripper.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
 
-namespace Dse.Core.Tests.Fakes;
+namespace Millrace.Core.Tests.Fakes;
 
 /// <summary>Logs a one-shot event the first time its input exceeds a threshold.</summary>
 public sealed class Tripper : ComponentBase
@@ -3832,17 +3832,17 @@ public sealed class Tripper : ComponentBase
 
 The test file, written first:
 
-`tests/Dse.Core.Tests/DeterminismTests.cs`:
+`tests/Millrace.Core.Tests/DeterminismTests.cs`:
 
 ```csharp
-using Dse.Core;
-using Dse.Core.Events;
-using Dse.Core.Graph;
-using Dse.Core.Time;
-using Dse.Core.Tests.Fakes;
+using Millrace.Core;
+using Millrace.Core.Events;
+using Millrace.Core.Graph;
+using Millrace.Core.Time;
+using Millrace.Core.Tests.Fakes;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class DeterminismTests
 {
@@ -4080,7 +4080,7 @@ A controller must go through a sensor, and can be lied to.
 `README.md`:
 
 ```markdown
-# Dse — Deterministic Industrial Process Simulation Engine
+# Millrace — Deterministic Industrial Process Simulation Engine
 
 A deterministic, composable simulation engine for real-world industrial
 processes, written in .NET. Build virtual plants from reusable machines,
@@ -4124,7 +4124,7 @@ Expected: all tests PASS; Release build succeeds with 0 warnings.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add tests/Dse.Core.Tests docs/architecture.md README.md
+git add tests/Millrace.Core.Tests docs/architecture.md README.md
 git commit -m "test(core): add determinism acceptance test, architecture doc and README"
 ```
 
@@ -4134,7 +4134,7 @@ git commit -m "test(core): add determinism acceptance test, architecture doc and
 
 - `dotnet test` passes with every test above.
 - `dotnet build --configuration Release` produces zero warnings.
-- `Dse.Core` and `Dse.Io.Abstractions` have no external package references.
+- `Millrace.Core` and `Millrace.Io.Abstractions` have no external package references.
 - A plant containing a composite, a feedback loop, randomness and logged events
   runs twice with the same seed and produces identical samples, telemetry and
   event-log text.

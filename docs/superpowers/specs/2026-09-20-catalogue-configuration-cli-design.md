@@ -2,8 +2,8 @@
 
 Date: 2026-09-20. Addendum to
 `2026-09-02-industrial-process-simulation-engine-design.md` (the "main spec"),
-refining its sections 4, 14, 16 and 17 for the catalogue, `Dse.Configuration`
-and `Dse.Cli`.
+refining its sections 4, 14, 16 and 17 for the catalogue, `Millrace.Configuration`
+and `Millrace.Cli`.
 
 ## 1. Scope
 
@@ -13,9 +13,9 @@ The work originally parked as "plan 5" is split in two.
 with a loader and a generated JSON Schema, and the CLI commands that need no
 scenario: `catalog export`, `schema export`, `validate`, `tags`.
 
-**Plan 5b — a later document.** `Dse.Control` (interlock, permissive, sequencer,
-timer, alarm; scan scheduling), `Dse.Scenarios` (definition, recording, replay,
-golden logs) and `dse run`. These open questions belong to 5b and are *not*
+**Plan 5b — a later document.** `Millrace.Control` (interlock, permissive, sequencer,
+timer, alarm; scan scheduling), `Millrace.Scenarios` (definition, recording, replay,
+golden logs) and `millrace run`. These open questions belong to 5b and are *not*
 decided here: the `EventLog.ToText()` format, alarm state in `LiveState`,
 scenario recording through the `WRITE` records and `ICommandRecorder`,
 dispatcher failure observability.
@@ -38,7 +38,7 @@ listed in plan 4's final review.
 | Referencing a composite | By its id: `"belt": "CV001"` resolves to the conveyor's belt. |
 | Extra CLI commands | `schema export` and `tags`, beyond the main spec's three. |
 
-## 2. The catalogue — `Dse.Core/Catalogue`
+## 2. The catalogue — `Millrace.Core/Catalogue`
 
 ### 2.1 Shape
 
@@ -61,7 +61,7 @@ public interface ICatalogueModule
 }
 ```
 
-`Dse.Components` ships `ComponentsModule`. `Build()` fails if two entries of the
+`Millrace.Components` ships `ComponentsModule`. `Build()` fails if two entries of the
 same kind (or two objects in the same slot) share a type name, and the message
 names both modules.
 
@@ -149,8 +149,8 @@ diagnostic lists the components in the plant that would satisfy it.
 
 ### 2.5 Conformance
 
-Hand-written descriptors can drift from code. `Dse.Core.Testing` (a namespace in
-`Dse.Core`, no test-framework dependency) provides:
+Hand-written descriptors can drift from code. `Millrace.Core.Testing` (a namespace in
+`Millrace.Core`, no test-framework dependency) provides:
 
 ```csharp
 IReadOnlyList<string> CatalogueConformance.Check(Catalogue catalogue, ConformanceFixtures fixtures);
@@ -164,9 +164,9 @@ ports by name, direction and payload kind; faults by id and parameter names;
 declared tags by suffix, kind and access. It also builds every `ObjectDescriptor`
 and `MaterialDescriptor` once.
 
-Two tests in `Dse.Components.Tests` use it: the check returns no mismatches,
+Two tests in `Millrace.Components.Tests` use it: the check returns no mismatches,
 and a reflection sweep finds no concrete public `ISimNode`,
-`IMaterialTransform` or hold factory in `Dse.Components` without a descriptor.
+`IMaterialTransform` or hold factory in `Millrace.Components` without a descriptor.
 **Every concrete `ISimNode` gets a descriptor**, including `UnitDelay<T>`
 (registered per closed type, e.g. `unit-delay-bool`) and the leaves `Conveyor`
 flattens to. The helper is public so that sample and third-party modules run the
@@ -184,13 +184,13 @@ top-level `formatVersion: 1`. A golden file pins the export of
 Unit algebra or conversion (units are strings); units on runtime ports
 (`AddInput`/`AddOutput` are unchanged); per-entry versioning.
 
-## 3. Configuration — `Dse.Configuration`
+## 3. Configuration — `Millrace.Configuration`
 
 ### 3.1 The plant file
 
 ```json
 {
-  "$schema": "./dse-plant.schema.json",
+  "$schema": "./millrace-plant.schema.json",
   "defaults": { "seed": 1, "timeStepMs": 10, "startTime": "2026-01-01T06:00:00Z" },
   "materials": [
     { "name": "ore-wet", "kind": "bulk", "states": [],
@@ -249,17 +249,17 @@ end of the first stage that produced any:
 5. **Wire** — signals, flows, tag binds. Unknown component or port (with a
    nearest-name suggestion), wrong direction, payload-kind mismatch.
 6. **Build** — add everything to a `SimulationBuilder` and run `Validate()`. The
-   existing `DSE001`–`DSE011` errors pass through unchanged.
+   existing `MR001`–`MR011` errors pass through unchanged.
 
 ### 3.3 Diagnostics
 
-A new `DSE1xx` range. A `ConfigDiagnostic` has a code, a severity, a JSON path
+A new `MR1xx` range. A `ConfigDiagnostic` has a code, a severity, a JSON path
 (`$.components[3].parameters.motor.ratedPowerW`), a message, and a **fix** — a
 required constructor argument, so "errors that name the fix" is enforced by the
 type, not by convention.
 
 ```
-DSE104 $.components[2].parameters.belt
+MR104 $.components[2].parameters.belt
   'CV01' is not a component in this plant.
   Fix: use one of CV001, CV002, CV003 — 'CV001' is closest.
 ```
@@ -270,18 +270,18 @@ allocation, to be finalised in the plan:
 
 | Code | Meaning |
 |---|---|
-| DSE100 | JSON syntax error |
-| DSE101 | Unknown key |
-| DSE102 | Unknown component / object / material type |
-| DSE103 | Parameter missing, unknown, wrong JSON type, or out of range |
-| DSE104 | Reference to a component that does not exist |
-| DSE105 | Referenced component lacks the required capability |
-| DSE106 | Reference cycle |
-| DSE107 | Duplicate component id or material name |
-| DSE108 | Unknown port in a signal, flow or tag address |
-| DSE109 | Port direction or payload kind mismatch |
-| DSE110 | Unknown material state name |
-| DSE111 | Component constructor rejected its parameters |
+| MR100 | JSON syntax error |
+| MR101 | Unknown key |
+| MR102 | Unknown component / object / material type |
+| MR103 | Parameter missing, unknown, wrong JSON type, or out of range |
+| MR104 | Reference to a component that does not exist |
+| MR105 | Referenced component lacks the required capability |
+| MR106 | Reference cycle |
+| MR107 | Duplicate component id or material name |
+| MR108 | Unknown port in a signal, flow or tag address |
+| MR109 | Port direction or payload kind mismatch |
+| MR110 | Unknown material state name |
+| MR111 | Component constructor rejected its parameters |
 
 ### 3.4 Recipe and material mismatch — not in 5a
 
@@ -297,8 +297,8 @@ a rule for propagating that through belts and chutes, which is a change to the
 Core flow model with its own design questions (what does a chute fed by two
 materials declare?). Neither reference sample has a `BulkProcessUnit`, so
 nothing in v1 is blocked. The loader does catch the configuration-level half: a
-recipe line naming an unknown material is `DSE102`, and a non-bulk one surfaces
-the constructor's message as `DSE111`.
+recipe line naming an unknown material is `MR102`, and a non-bulk one surfaces
+the constructor's message as `MR111`.
 
 ### 3.5 Schema
 
@@ -319,13 +319,13 @@ Output is deterministic and pinned by a golden file for `ComponentsModule`.
 
 ### 3.6 Tests
 
-- **Fixture corpus** under `tests/Dse.Configuration.Tests/Plants/`:
+- **Fixture corpus** under `tests/Millrace.Configuration.Tests/Plants/`:
   `valid/*.json` load clean; each `invalid/<code>-<case>.json` yields exactly
   that code. One theory per directory.
 - **Schema agreement** (JsonSchema.Net, test-only): the schema is itself valid
   2020-12; it accepts every `valid/` fixture; it rejects every `invalid/` fixture
-  whose error is structural (DSE101–103); fixtures whose error is semantic
-  (DSE104+) are expected to *pass* the schema, and the test asserts that too, so
+  whose error is structural (MR101–103); fixtures whose error is semantic
+  (MR104+) are expected to *pass* the schema, and the test asserts that too, so
   the boundary between the two validators is documented by a test.
 - **Round trip** — the conveyor plant of `ConveyorRealtimeTests`, expressed as
   JSON, produces a byte-identical `EventLog.ToText()` to the code-built plant
@@ -339,24 +339,24 @@ Output is deterministic and pinned by a golden file for `ComponentsModule`.
 A plant writer (object → JSON); includes or multi-file plants; variable or
 environment substitution; YAML.
 
-## 4. CLI — `Dse.Cli`
+## 4. CLI — `Millrace.Cli`
 
 ### 4.1 Commands
 
 | Command | Does | stdout |
 |---|---|---|
-| `dse catalog export` | The catalogue as JSON (2.6) | the JSON |
-| `dse schema export` | The generated plant schema (3.5) | the JSON |
-| `dse validate <plant.json>` | The whole loader pipeline through `Validate()` | summary |
-| `dse tags <plant.json>` | Loads and builds the plant, prints its tag directory: name, kind, access, unit, range | the table |
+| `millrace catalog export` | The catalogue as JSON (2.6) | the JSON |
+| `millrace schema export` | The generated plant schema (3.5) | the JSON |
+| `millrace validate <plant.json>` | The whole loader pipeline through `Validate()` | summary |
+| `millrace tags <plant.json>` | Loads and builds the plant, prints its tag directory: name, kind, access, unit, range | the table |
 
-`dse run <scenario>` arrives with plan 5b.
+`millrace run <scenario>` arrives with plan 5b.
 
 Options: `--assembly <path>` (repeatable, all commands); `--out <file>`
 (payload to a file — accepted by `catalog export`, `schema export` and `run`
 only; `validate` and `tags` write to standard output, amended by plan 5d);
 `--format text|json` (`validate`, `tags`); `--time-step <ms>`
-(`validate`, `tags`). `dse`, `dse help` and `dse <command> --help` print help
+(`validate`, `tags`). `millrace`, `millrace help` and `millrace <command> --help` print help
 generated from one command table.
 
 On success `validate` prints components, flattened leaves, signal links, flow
@@ -378,7 +378,7 @@ and go to stdout.
 
 Each `--assembly` is loaded into one shared, non-collectible
 `AssemblyLoadContext` whose resolver returns the CLI's own copies of every
-`Dse.*` assembly, so `ICatalogueModule` has one type identity. Every public
+`Millrace.*` assembly, so `ICatalogueModule` has one type identity. Every public
 `ICatalogueModule` with a parameterless constructor is registered. An assembly
 with none is an exit-3 error saying so; a duplicate type name surfaces the
 catalogue's own error naming both modules.
@@ -388,24 +388,24 @@ catalogue's own error naming both modules.
 No argument-parsing package: a small hand-rolled parser keeps the zero-dependency
 rule. `Program.Main` calls `CliApp.Run(string[] args, TextWriter stdout, TextWriter stderr) → int`,
 so tests run in-process. The project sets `PackAsTool` with
-`ToolCommandName=dse`; nothing is published.
+`ToolCommandName=millrace`; nothing is published.
 
 ### 4.5 Tests
 
 In-process tests for every command, option, exit code and both formats. A
-fixture project, `tests/Dse.Cli.Tests.SampleModule`, holds one trivial component
+fixture project, `tests/Millrace.Cli.Tests.SampleModule`, holds one trivial component
 written by following the authoring recipe verbatim; its built DLL drives the
 `--assembly` tests: valid plugin, assembly with no module, duplicate type name,
 missing file.
 
 ### 4.6 Not included
 
-`dse run`; `dse init` or scaffolding; watch mode; coloured output.
+`millrace run`; `millrace init` or scaffolding; watch mode; coloured output.
 
 ## 5. Rollout, recipe and documentation
 
 **Descriptor rollout.** `ComponentsModule` registers every concrete node in
-`Dse.Components` and the Core nodes a plant can use (`UnitDelay<T>`, the belts),
+`Millrace.Components` and the Core nodes a plant can use (`UnitDelay<T>`, the belts),
 the three transforms, the five holds and the shipped materials. The conformance
 tests are written first, so each rollout task — mechanical; instruments; safety;
 flow; transforms, holds and materials; conveyor — starts red and ends green.
@@ -419,29 +419,29 @@ sample-module component is built from it and linked as the worked example.
 
 **Other documentation.** The architecture document gains a
 catalogue → schema → loader section; the README gains a CLI quick start; the
-generated `DSE1xx` reference page.
+generated `MR1xx` reference page.
 
 ## 6. Projects
 
 | New | Depends on |
 |---|---|
-| `src/Dse.Core/Catalogue/`, `src/Dse.Core/Testing/` (folders, not projects) | — |
-| `src/Dse.Configuration` | `Core`, `Components` |
-| `src/Dse.Cli` | `Core`, `Components`, `Configuration` |
-| `tests/Dse.Configuration.Tests` | + JsonSchema.Net |
-| `tests/Dse.Cli.Tests`, `tests/Dse.Cli.Tests.SampleModule` | |
+| `src/Millrace.Core/Catalogue/`, `src/Millrace.Core/Testing/` (folders, not projects) | — |
+| `src/Millrace.Configuration` | `Core`, `Components` |
+| `src/Millrace.Cli` | `Core`, `Components`, `Configuration` |
+| `tests/Millrace.Configuration.Tests` | + JsonSchema.Net |
+| `tests/Millrace.Cli.Tests`, `tests/Millrace.Cli.Tests.SampleModule` | |
 
-`Dse.Cli` gains references to `Dse.Scenarios`, `Dse.Control` and `Dse.Realtime`
+`Millrace.Cli` gains references to `Millrace.Scenarios`, `Millrace.Control` and `Millrace.Realtime`
 in plan 5b, when `run` needs them.
 
 ## 7. Success criteria
 
-- `dse catalog export` and `dse schema export` reproduce their golden files.
-- Every concrete node, transform and hold in `Dse.Components` has a descriptor,
+- `millrace catalog export` and `millrace schema export` reproduce their golden files.
+- Every concrete node, transform and hold in `Millrace.Components` has a descriptor,
   and conformance reports no mismatch.
 - The JSON conveyor plant and the code-built one produce byte-identical event
   logs.
-- Every `DSE1xx` code has an invalid fixture that produces exactly it, and every
+- Every `MR1xx` code has an invalid fixture that produces exactly it, and every
   diagnostic carries a fix.
 - The schema and the loader agree on the fixture corpus, with the structural /
   semantic boundary asserted.

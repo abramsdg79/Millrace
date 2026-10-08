@@ -2,19 +2,19 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship `Dse.Components` — the industrial object library — on top of the
+**Goal:** Ship `Millrace.Components` — the industrial object library — on top of the
 simulation core and material layer, plus the three Core seams it needs (latched
 inputs, material observation, the fault channel), so that a conveyor composed
 of a motor, gearbox, pulleys, belt, instruments, safety circuit and starter trips
 its own overload when the belt downstream of it blocks, with no code anywhere
 that says "if downstream stops, trip upstream".
 
-**Architecture:** Three small additions to `Dse.Core` come first: an input port
+**Architecture:** Three small additions to `Millrace.Core` come first: an input port
 may be *latched* (read one tick late, creating no ordering edge) so a reflected
 torque path needs no `UnitDelay`; a flow node may be *observable* so an
 instrument mounted on it can read its material during phase 2, when material is
 frozen; and a component may be a *fault target*, receiving faults through the
-event queue at phase 1 that change its state only. `Dse.Components` then adds
+event queue at phase 1 that change its state only. `Millrace.Components` then adds
 sources, sinks, a chute, a former, two process units, three transforms, an
 instrument base with the full sensor-fault vocabulary, six instruments, the
 motor with its I²t thermal model, the drivetrain, the safety circuit, the
@@ -36,10 +36,10 @@ exposes it as ordinary ports.
 
 ## Global Constraints
 
-- Target framework `net10.0` for every project. `Dse.Components` references
-  `Dse.Core` only. **Zero external runtime package references** in any shipping
+- Target framework `net10.0` for every project. `Millrace.Components` references
+  `Millrace.Core` only. **Zero external runtime package references** in any shipping
   project. Test projects may reference test packages (same versions as
-  `tests/Dse.Core.Tests/Dse.Core.Tests.csproj`).
+  `tests/Millrace.Core.Tests/Millrace.Core.Tests.csproj`).
 - `Nullable` enabled, `TreatWarningsAsErrors` true, `GenerateDocumentationFile`
   true (a `<see cref>` to a type that does not exist yet is a **build error**;
   reference only types that already exist when the file is compiled),
@@ -74,9 +74,9 @@ exposes it as ordinary ports.
   ending in a full stop, numbers formatted invariant.
 - Every port and every constructor parameter that carries a physical quantity
   states its unit in its XML doc: m, m/s, rad/s, N, N·m, A, kg, kg/s, kg/m, °C, s.
-- Licence: MIT. Namespace root `Dse`. Core additions live in `Dse.Core.Faults`,
-  `Dse.Core.Flow` and `Dse.Core.Graph`. Library namespaces:
-  `Dse.Components.Flow`, `.Transforms`, `.Instruments`, `.Mechanical`,
+- Licence: MIT. Namespace root `Millrace`. Core additions live in `Millrace.Core.Faults`,
+  `Millrace.Core.Flow` and `Millrace.Core.Graph`. Library namespaces:
+  `Millrace.Components.Flow`, `.Transforms`, `.Instruments`, `.Mechanical`,
   `.Safety`, `.Conveyors`.
 - Commit trailers: every commit message body ends with the two attribution
   lines the session specifies (`Co-Authored-By: …` and `Claude-Session: …`),
@@ -111,15 +111,15 @@ exposes it as ordinary ports.
 - **R18 — `BulkBelt` and `DiscreteBelt` keep their names.** The composite that
   derives capacity from width and angle of repose is `Conveyor`; the belts are
   belts.
-- **R19 — `Dse.Core` is not widened for the components tests.**
-  `Dse.Components.Tests` uses the public API (`SimulationBuilder`,
+- **R19 — `Millrace.Core` is not widened for the components tests.**
+  `Millrace.Components.Tests` uses the public API (`SimulationBuilder`,
   `Simulation.MassBalance`, `.Telemetry`, `.Events`) and its own fakes. The
   real sources and sinks in this plan replace the `Fakes.Flow` nodes it cannot
-  see. `Dse.Components` grants `InternalsVisibleTo` to `Dse.Components.Tests`.
+  see. `Millrace.Components` grants `InternalsVisibleTo` to `Millrace.Components.Tests`.
 
 ## Plan-1 and plan-2 facts this plan builds on
 
-- `ComponentBase` (`Dse.Core.Graph`): `Id`, `Ports`, protected `AddPort`,
+- `ComponentBase` (`Millrace.Core.Graph`): `Id`, `Ports`, protected `AddPort`,
   `AddInput<T>(name, defaultValue = default, required = false)`,
   `AddOutput<T>(name)`, virtual `HasDirectFeedthrough` (true), virtual
   `Initialize(in InitContext)`, abstract `Evaluate(in TickContext)`, virtual
@@ -128,7 +128,7 @@ exposes it as ordinary ports.
   source or the default; `ConnectFrom(OutputPort<T>)`. `OutputPort<T>.Value`
   is publicly settable, so a unit test drives an input by wiring a bare
   `new OutputPort<double>("Out", "SP")` to it. Inside a `Simulation` that is
-  rejected (`DSE004`), so simulation-level tests use the `Setpoint` and
+  rejected (`MR004`), so simulation-level tests use the `Setpoint` and
   `Switch` fakes this plan adds.
 - `Port`: `Name`, `OwnerId`, `QualifiedName`, abstract
   `IsMissingRequiredConnection`, `internal abstract Port? SourcePort`.
@@ -189,8 +189,8 @@ exposes it as ordinary ports.
   position measured from the tail).
 - `SimulationOptions`: `Seed`, `StartTime`, `TimeStep` (10 ms),
   `CheckConservation` (true), `ConservationTolerance` (1e-9).
-- `ValidationError(Code, Message, ComponentIds)`; codes `DSE001`–`DSE008` taken.
-- Core test fakes (not visible to `Dse.Components.Tests`): `ConstantSource`,
+- `ValidationError(Code, Message, ComponentIds)`; codes `MR001`–`MR008` taken.
+- Core test fakes (not visible to `Millrace.Components.Tests`): `ConstantSource`,
   `Gain`, `Integrator`, `NoiseSource`, `Recorder`, `Setpoint`, `Tripper`,
   `TwoStage`, `Fakes/Flow/*`, `TestContexts.Init(id, dt = 0.01, …)`,
   `TestContexts.Tick(tick, dt = 0.01, log = null)`.
@@ -198,7 +198,7 @@ exposes it as ordinary ports.
 ## File Structure
 
 ```
-src/Dse.Core/
+src/Millrace.Core/
   Graph/Port.cs                          (modified: CreatesOrderingEdge, Capture)
   Graph/InputPort.cs                     (modified: latched inputs)
   Graph/ComponentBase.cs                 (modified: latched list, Latch/OnLatch, AddInput latched:)
@@ -215,8 +215,8 @@ src/Dse.Core/
   Faults/IFaultTarget.cs                 SupportedFaults, ApplyFault, ClearFault
   Simulation.cs                          (modified: InjectFaultAt/In, ClearFaultAt/In, FaultsOf)
 
-src/Dse.Components/
-  Dse.Components.csproj
+src/Millrace.Components/
+  Millrace.Components.csproj
   Flow/BulkSource.cs                     rate-driven bulk source with hopper
   Flow/BulkSink.cs                       stockpile / loss sink, optional capacity
   Flow/ItemSource.cs                     interval-driven item source
@@ -258,12 +258,12 @@ src/Dse.Components/
   Conveyors/ConveyorOptions.cs
   Conveyors/Conveyor.cs                  the composite
 
-tests/Dse.Core.Tests/
+tests/Millrace.Core.Tests/
   LatchedInputTests.cs, ObservationTests.cs, FaultChannelTests.cs,
   Fakes/Reflector.cs, Fakes/Fuse.cs
 
-tests/Dse.Components.Tests/
-  Dse.Components.Tests.csproj
+tests/Millrace.Components.Tests/
+  Millrace.Components.Tests.csproj
   Fakes/TestContexts.cs, Fakes/Setpoint.cs, Fakes/Switch.cs, Fakes/ProbeInstrument.cs
   SourceSinkTests.cs, TransferChuteTests.cs, TransformTests.cs, FormerTests.cs,
   BulkProcessUnitTests.cs, ItemProcessUnitTests.cs, InstrumentBaseTests.cs,
@@ -276,13 +276,13 @@ tests/Dse.Components.Tests/
 ### Task 1: Latched inputs
 
 **Files:**
-- Modify: `src/Dse.Core/Graph/Port.cs`
-- Modify: `src/Dse.Core/Graph/InputPort.cs`
-- Modify: `src/Dse.Core/Graph/ComponentBase.cs`
-- Modify: `src/Dse.Core/Graph/UnitDelay.cs`
-- Modify: `src/Dse.Core/Graph/GraphResolver.cs:71-85`
-- Create: `tests/Dse.Core.Tests/Fakes/Reflector.cs`
-- Test: `tests/Dse.Core.Tests/LatchedInputTests.cs`
+- Modify: `src/Millrace.Core/Graph/Port.cs`
+- Modify: `src/Millrace.Core/Graph/InputPort.cs`
+- Modify: `src/Millrace.Core/Graph/ComponentBase.cs`
+- Modify: `src/Millrace.Core/Graph/UnitDelay.cs`
+- Modify: `src/Millrace.Core/Graph/GraphResolver.cs:71-85`
+- Create: `tests/Millrace.Core.Tests/Fakes/Reflector.cs`
+- Test: `tests/Millrace.Core.Tests/LatchedInputTests.cs`
 
 **Interfaces:**
 - Consumes: plan-1 port model.
@@ -308,13 +308,13 @@ it to capture, and subclasses that need the hook override `OnLatch`.
 
 - [ ] **Step 1: Write the fake and the failing tests**
 
-`tests/Dse.Core.Tests/Fakes/Reflector.cs`:
+`tests/Millrace.Core.Tests/Fakes/Reflector.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
 
-namespace Dse.Core.Tests.Fakes;
+namespace Millrace.Core.Tests.Fakes;
 
 /// <summary>
 /// A bidirectional element: a value passes forward live, and a value coming
@@ -351,17 +351,17 @@ public sealed class Reflector : ComponentBase
 }
 ```
 
-`tests/Dse.Core.Tests/LatchedInputTests.cs`:
+`tests/Millrace.Core.Tests/LatchedInputTests.cs`:
 
 ```csharp
-using Dse.Core;
-using Dse.Core.Graph;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Time;
-using Dse.Core.Validation;
+using Millrace.Core;
+using Millrace.Core.Graph;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Time;
+using Millrace.Core.Validation;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class LatchedInputTests
 {
@@ -432,7 +432,7 @@ public class LatchedInputTests
 
         ValidationResult result = new SimulationBuilder(Options()).Add(a).Add(b).Validate();
 
-        Assert.Contains(result.Errors, e => e.Code == "DSE003");
+        Assert.Contains(result.Errors, e => e.Code == "MR003");
     }
 
     [Fact]
@@ -467,7 +467,7 @@ public class LatchedInputTests
 
         ValidationResult result = new SimulationBuilder(Options()).Add(a).Validate();
 
-        Assert.Contains(result.Errors, e => e.Code == "DSE004");
+        Assert.Contains(result.Errors, e => e.Code == "MR004");
     }
 
     [Fact]
@@ -487,18 +487,18 @@ public class LatchedInputTests
 }
 ```
 
-`Gain` exists in `tests/Dse.Core.Tests/Fakes/Gain.cs` (`Gain(string id, double factor)`,
+`Gain` exists in `tests/Millrace.Core.Tests/Fakes/Gain.cs` (`Gain(string id, double factor)`,
 `In`, `Out`). Check its constructor before relying on the name of the factor
 parameter; only the port names matter here.
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Core.Tests --filter "FullyQualifiedName~LatchedInputTests"`
+Run: `dotnet test tests/Millrace.Core.Tests --filter "FullyQualifiedName~LatchedInputTests"`
 Expected: build error — `AddInput` has no `latched` parameter.
 
 - [ ] **Step 3: Implement**
 
-`src/Dse.Core/Graph/Port.cs` — add after `SourcePort`:
+`src/Millrace.Core/Graph/Port.cs` — add after `SourcePort`:
 
 ```csharp
     /// <summary>
@@ -514,7 +514,7 @@ Expected: build error — `AddInput` has no `latched` parameter.
     }
 ```
 
-`src/Dse.Core/Graph/InputPort.cs` — replace the class body:
+`src/Millrace.Core/Graph/InputPort.cs` — replace the class body:
 
 ```csharp
 /// <summary>
@@ -580,7 +580,7 @@ public sealed class InputPort<T> : Port
 }
 ```
 
-`src/Dse.Core/Graph/ComponentBase.cs` — add a field, extend `AddInput`, replace `Latch`:
+`src/Millrace.Core/Graph/ComponentBase.cs` — add a field, extend `AddInput`, replace `Latch`:
 
 ```csharp
     private readonly List<Port> _ports = [];
@@ -637,13 +637,13 @@ Replace `AddInput` and `Latch`:
     }
 ```
 
-`src/Dse.Core/Graph/UnitDelay.cs` — replace the `Latch` override:
+`src/Millrace.Core/Graph/UnitDelay.cs` — replace the `Latch` override:
 
 ```csharp
     protected override void OnLatch() => _held = In.Value;
 ```
 
-`src/Dse.Core/Graph/GraphResolver.cs` — in the port loop replace
+`src/Millrace.Core/Graph/GraphResolver.cs` — in the port loop replace
 
 ```csharp
                 Port? source = port.SourcePort;
@@ -666,7 +666,7 @@ with
 
 - [ ] **Step 4: Run the whole Core suite**
 
-Run: `dotnet test tests/Dse.Core.Tests`
+Run: `dotnet test tests/Millrace.Core.Tests`
 Expected: 204 existing tests still pass plus 7 new — 211. `UnitDelayTests`
 still calls `delay.Latch()` directly; that is now the sealed public method and
 behaves the same.
@@ -674,7 +674,7 @@ behaves the same.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Core/Graph tests/Dse.Core.Tests/Fakes/Reflector.cs tests/Dse.Core.Tests/LatchedInputTests.cs
+git add src/Millrace.Core/Graph tests/Millrace.Core.Tests/Fakes/Reflector.cs tests/Millrace.Core.Tests/LatchedInputTests.cs
 git commit -m "feat(core): add latched inputs that read one tick late and create no ordering edge"
 ```
 
@@ -683,11 +683,11 @@ git commit -m "feat(core): add latched inputs that read one tick late and create
 ### Task 2: Material observation and belt feedthrough
 
 **Files:**
-- Create: `src/Dse.Core/Flow/IMaterialObservable.cs`
-- Create: `src/Dse.Core/Flow/MaterialObservation.cs`
-- Modify: `src/Dse.Core/Flow/BulkBelt.cs`
-- Modify: `src/Dse.Core/Flow/DiscreteBelt.cs`
-- Test: `tests/Dse.Core.Tests/ObservationTests.cs`
+- Create: `src/Millrace.Core/Flow/IMaterialObservable.cs`
+- Create: `src/Millrace.Core/Flow/MaterialObservation.cs`
+- Modify: `src/Millrace.Core/Flow/BulkBelt.cs`
+- Modify: `src/Millrace.Core/Flow/DiscreteBelt.cs`
+- Test: `tests/Millrace.Core.Tests/ObservationTests.cs`
 
 **Interfaces:**
 - Consumes: `BulkBelt`, `DiscreteBelt`, `BulkLot`, `ItemInstance` (plan 2).
@@ -708,15 +708,15 @@ contents are frozen and the read is independent of evaluation order.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/ObservationTests.cs`:
+`tests/Millrace.Core.Tests/ObservationTests.cs`:
 
 ```csharp
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Tests.Fakes;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Tests.Fakes;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class ObservationTests
 {
@@ -776,15 +776,15 @@ public class ObservationTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Core.Tests --filter "FullyQualifiedName~ObservationTests"`
+Run: `dotnet test tests/Millrace.Core.Tests --filter "FullyQualifiedName~ObservationTests"`
 Expected: build error — `MaterialObservation` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/Dse.Core/Flow/MaterialObservation.cs`:
+`src/Millrace.Core/Flow/MaterialObservation.cs`:
 
 ```csharp
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>
 /// What an instrument sees when it looks at one point on a node. For bulk,
@@ -802,10 +802,10 @@ public readonly record struct MaterialObservation(
     long ItemId);
 ```
 
-`src/Dse.Core/Flow/IMaterialObservable.cs`:
+`src/Millrace.Core/Flow/IMaterialObservable.cs`:
 
 ```csharp
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>
 /// A node an instrument can be mounted on. Safe to call during phase 2 only:
@@ -825,7 +825,7 @@ public interface IMaterialObservable
 }
 ```
 
-`src/Dse.Core/Flow/BulkBelt.cs` — declare the interface, add the override and
+`src/Millrace.Core/Flow/BulkBelt.cs` — declare the interface, add the override and
 the method:
 
 ```csharp
@@ -854,7 +854,7 @@ public sealed class BulkBelt : FlowComponentBase, IBulkProducer, IBulkConsumer, 
     }
 ```
 
-`src/Dse.Core/Flow/DiscreteBelt.cs` — the same shape:
+`src/Millrace.Core/Flow/DiscreteBelt.cs` — the same shape:
 
 ```csharp
 public sealed class DiscreteBelt : FlowComponentBase, IItemProducer, IItemConsumer, IMaterialObservable
@@ -884,7 +884,7 @@ public sealed class DiscreteBelt : FlowComponentBase, IItemProducer, IItemConsum
 
 - [ ] **Step 4: Run the whole Core suite**
 
-Run: `dotnet test tests/Dse.Core.Tests`
+Run: `dotnet test tests/Millrace.Core.Tests`
 Expected: 214 pass. `FlowIntegrationTests` and `DiscreteBeltTests` still pass:
 belts read `Speed` in `Advance`, after the whole evaluate pass, so their
 placement in phase 2 never mattered.
@@ -892,7 +892,7 @@ placement in phase 2 never mattered.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Core/Flow tests/Dse.Core.Tests/ObservationTests.cs
+git add src/Millrace.Core/Flow tests/Millrace.Core.Tests/ObservationTests.cs
 git commit -m "feat(core): let instruments observe a node's material and drop belt feedthrough"
 ```
 
@@ -901,14 +901,14 @@ git commit -m "feat(core): let instruments observe a node's material and drop be
 ### Task 3: The fault channel
 
 **Files:**
-- Create: `src/Dse.Core/Faults/FaultArgument.cs`
-- Create: `src/Dse.Core/Faults/FaultArguments.cs`
-- Create: `src/Dse.Core/Faults/FaultParameter.cs`
-- Create: `src/Dse.Core/Faults/FaultDescriptor.cs`
-- Create: `src/Dse.Core/Faults/IFaultTarget.cs`
-- Modify: `src/Dse.Core/Simulation.cs`
-- Create: `tests/Dse.Core.Tests/Fakes/Fuse.cs`
-- Test: `tests/Dse.Core.Tests/FaultChannelTests.cs`
+- Create: `src/Millrace.Core/Faults/FaultArgument.cs`
+- Create: `src/Millrace.Core/Faults/FaultArguments.cs`
+- Create: `src/Millrace.Core/Faults/FaultParameter.cs`
+- Create: `src/Millrace.Core/Faults/FaultDescriptor.cs`
+- Create: `src/Millrace.Core/Faults/IFaultTarget.cs`
+- Modify: `src/Millrace.Core/Simulation.cs`
+- Create: `tests/Millrace.Core.Tests/Fakes/Fuse.cs`
+- Test: `tests/Millrace.Core.Tests/FaultChannelTests.cs`
 
 **Interfaces:**
 - Consumes: `Simulation`, `EventQueue`, `ISimEvent`, `EventLog` (plan 1).
@@ -942,14 +942,14 @@ site with a message naming what exists, not inside phase 1 of some later tick.
 
 - [ ] **Step 1: Write the fake and the failing tests**
 
-`tests/Dse.Core.Tests/Fakes/Fuse.cs`:
+`tests/Millrace.Core.Tests/Fakes/Fuse.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Faults;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Faults;
+using Millrace.Core.Graph;
 
-namespace Dse.Core.Tests.Fakes;
+namespace Millrace.Core.Tests.Fakes;
 
 /// <summary>Conducts until blown. The one fault has one parameter so resolution can be tested.</summary>
 public sealed class Fuse : ComponentBase, IFaultTarget
@@ -995,16 +995,16 @@ public sealed class Fuse : ComponentBase, IFaultTarget
 }
 ```
 
-`tests/Dse.Core.Tests/FaultChannelTests.cs`:
+`tests/Millrace.Core.Tests/FaultChannelTests.cs`:
 
 ```csharp
-using Dse.Core;
-using Dse.Core.Faults;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Time;
+using Millrace.Core;
+using Millrace.Core.Faults;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class FaultChannelTests
 {
@@ -1129,27 +1129,27 @@ public class FaultChannelTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Core.Tests --filter "FullyQualifiedName~FaultChannelTests"`
-Expected: build error — namespace `Dse.Core.Faults` does not exist.
+Run: `dotnet test tests/Millrace.Core.Tests --filter "FullyQualifiedName~FaultChannelTests"`
+Expected: build error — namespace `Millrace.Core.Faults` does not exist.
 
 - [ ] **Step 3: Implement the fault types**
 
-`src/Dse.Core/Faults/FaultArgument.cs`:
+`src/Millrace.Core/Faults/FaultArgument.cs`:
 
 ```csharp
-namespace Dse.Core.Faults;
+namespace Millrace.Core.Faults;
 
 /// <summary>One named numeric argument to a fault.</summary>
 public readonly record struct FaultArgument(string Name, double Value);
 ```
 
-`src/Dse.Core/Faults/FaultArguments.cs`:
+`src/Millrace.Core/Faults/FaultArguments.cs`:
 
 ```csharp
 using System.Globalization;
 using System.Text;
 
-namespace Dse.Core.Faults;
+namespace Millrace.Core.Faults;
 
 /// <summary>
 /// The arguments a fault is injected with. Small and ordered — a fault has a
@@ -1232,19 +1232,19 @@ public sealed class FaultArguments
 }
 ```
 
-`src/Dse.Core/Faults/FaultParameter.cs`:
+`src/Millrace.Core/Faults/FaultParameter.cs`:
 
 ```csharp
-namespace Dse.Core.Faults;
+namespace Millrace.Core.Faults;
 
 /// <summary>One parameter of a fault, with the default used when an injection omits it.</summary>
 public sealed record FaultParameter(string Name, string Unit, double DefaultValue, string Description);
 ```
 
-`src/Dse.Core/Faults/FaultDescriptor.cs`:
+`src/Millrace.Core/Faults/FaultDescriptor.cs`:
 
 ```csharp
-namespace Dse.Core.Faults;
+namespace Millrace.Core.Faults;
 
 /// <summary>
 /// What a component says about one way it can break: an id, a sentence, and
@@ -1295,12 +1295,12 @@ public sealed record FaultDescriptor(string Id, string Description, IReadOnlyLis
 }
 ```
 
-`src/Dse.Core/Faults/IFaultTarget.cs`:
+`src/Millrace.Core/Faults/IFaultTarget.cs`:
 
 ```csharp
-using Dse.Core.Graph;
+using Millrace.Core.Graph;
 
-namespace Dse.Core.Faults;
+namespace Millrace.Core.Faults;
 
 /// <summary>
 /// A component that can be broken on purpose. Faults arrive in phase 1 of the
@@ -1322,7 +1322,7 @@ public interface IFaultTarget : ISimComponent
 
 - [ ] **Step 4: Wire the simulation**
 
-`src/Dse.Core/Simulation.cs` — add `using Dse.Core.Faults;` and `using System.Globalization;`,
+`src/Millrace.Core/Simulation.cs` — add `using Millrace.Core.Faults;` and `using System.Globalization;`,
 a field, constructor work, the public methods and the nested event:
 
 ```csharp
@@ -1451,13 +1451,13 @@ Public members, after `ScheduleIn`:
 
 - [ ] **Step 5: Run the whole Core suite**
 
-Run: `dotnet test tests/Dse.Core.Tests`
+Run: `dotnet test tests/Millrace.Core.Tests`
 Expected: 221 pass.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Core/Faults src/Dse.Core/Simulation.cs tests/Dse.Core.Tests/Fakes/Fuse.cs tests/Dse.Core.Tests/FaultChannelTests.cs
+git add src/Millrace.Core/Faults src/Millrace.Core/Simulation.cs tests/Millrace.Core.Tests/Fakes/Fuse.cs tests/Millrace.Core.Tests/FaultChannelTests.cs
 git commit -m "feat(core): add the fault channel with descriptors, resolved arguments and scheduled injection"
 ```
 
@@ -1466,17 +1466,17 @@ git commit -m "feat(core): add the fault channel with descriptors, resolved argu
 ### Task 4: The components project, sources and sinks
 
 **Files:**
-- Create: `src/Dse.Components/Dse.Components.csproj`
-- Create: `src/Dse.Components/Flow/BulkSource.cs`
-- Create: `src/Dse.Components/Flow/BulkSink.cs`
-- Create: `src/Dse.Components/Flow/ItemSource.cs`
-- Create: `src/Dse.Components/Flow/ItemSink.cs`
-- Create: `tests/Dse.Components.Tests/Dse.Components.Tests.csproj`
-- Create: `tests/Dse.Components.Tests/Fakes/TestContexts.cs`
-- Create: `tests/Dse.Components.Tests/Fakes/Setpoint.cs`
-- Create: `tests/Dse.Components.Tests/Fakes/Switch.cs`
-- Modify: `Dse.sln`
-- Test: `tests/Dse.Components.Tests/SourceSinkTests.cs`
+- Create: `src/Millrace.Components/Millrace.Components.csproj`
+- Create: `src/Millrace.Components/Flow/BulkSource.cs`
+- Create: `src/Millrace.Components/Flow/BulkSink.cs`
+- Create: `src/Millrace.Components/Flow/ItemSource.cs`
+- Create: `src/Millrace.Components/Flow/ItemSink.cs`
+- Create: `tests/Millrace.Components.Tests/Millrace.Components.Tests.csproj`
+- Create: `tests/Millrace.Components.Tests/Fakes/TestContexts.cs`
+- Create: `tests/Millrace.Components.Tests/Fakes/Setpoint.cs`
+- Create: `tests/Millrace.Components.Tests/Fakes/Switch.cs`
+- Modify: `Millrace.sln`
+- Test: `tests/Millrace.Components.Tests/SourceSinkTests.cs`
 
 **Interfaces:**
 - Consumes: `FlowComponentBase`, transport interfaces, `BulkLot`, `ItemInstance`,
@@ -1514,18 +1514,18 @@ way to the boundary and the ledger stays exact.
 - [ ] **Step 1: Create the projects**
 
 ```bash
-cd /home/keeper/Work/Github/POCs/DSE
-dotnet new classlib -n Dse.Components -o src/Dse.Components --framework net10.0
-rm src/Dse.Components/Class1.cs
-dotnet add src/Dse.Components/Dse.Components.csproj reference src/Dse.Core/Dse.Core.csproj
-dotnet new xunit -n Dse.Components.Tests -o tests/Dse.Components.Tests --framework net10.0
-rm tests/Dse.Components.Tests/UnitTest1.cs
-dotnet add tests/Dse.Components.Tests/Dse.Components.Tests.csproj reference src/Dse.Components/Dse.Components.csproj
-dotnet sln Dse.sln add src/Dse.Components/Dse.Components.csproj --solution-folder src
-dotnet sln Dse.sln add tests/Dse.Components.Tests/Dse.Components.Tests.csproj --solution-folder tests
+# from the repository root
+dotnet new classlib -n Millrace.Components -o src/Millrace.Components --framework net10.0
+rm src/Millrace.Components/Class1.cs
+dotnet add src/Millrace.Components/Millrace.Components.csproj reference src/Millrace.Core/Millrace.Core.csproj
+dotnet new xunit -n Millrace.Components.Tests -o tests/Millrace.Components.Tests --framework net10.0
+rm tests/Millrace.Components.Tests/UnitTest1.cs
+dotnet add tests/Millrace.Components.Tests/Millrace.Components.Tests.csproj reference src/Millrace.Components/Millrace.Components.csproj
+dotnet sln Millrace.sln add src/Millrace.Components/Millrace.Components.csproj --solution-folder src
+dotnet sln Millrace.sln add tests/Millrace.Components.Tests/Millrace.Components.Tests.csproj --solution-folder tests
 ```
 
-Then edit `src/Dse.Components/Dse.Components.csproj` to exactly:
+Then edit `src/Millrace.Components/Millrace.Components.csproj` to exactly:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -1535,33 +1535,33 @@ Then edit `src/Dse.Components/Dse.Components.csproj` to exactly:
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Dse.Core\Dse.Core.csproj" />
+    <ProjectReference Include="..\Millrace.Core\Millrace.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <InternalsVisibleTo Include="Dse.Components.Tests" />
+    <InternalsVisibleTo Include="Millrace.Components.Tests" />
   </ItemGroup>
 </Project>
 ```
 
-and `tests/Dse.Components.Tests/Dse.Components.Tests.csproj` to match
-`tests/Dse.Core.Tests/Dse.Core.Tests.csproj` exactly (same four package
+and `tests/Millrace.Components.Tests/Millrace.Components.Tests.csproj` to match
+`tests/Millrace.Core.Tests/Millrace.Core.Tests.csproj` exactly (same four package
 versions, `<Using Include="Xunit" />`, `IsPackable` false) with the project
-reference pointing at `..\..\src\Dse.Components\Dse.Components.csproj`. The
+reference pointing at `..\..\src\Millrace.Components\Millrace.Components.csproj`. The
 template may pull newer package versions; pin them to the Core test project's.
 
 - [ ] **Step 2: Write the fakes and the failing tests**
 
-`tests/Dse.Components.Tests/Fakes/TestContexts.cs` — copy
-`tests/Dse.Core.Tests/Fakes/TestContexts.cs` verbatim, changing only the
-namespace to `Dse.Components.Tests.Fakes`.
+`tests/Millrace.Components.Tests/Fakes/TestContexts.cs` — copy
+`tests/Millrace.Core.Tests/Fakes/TestContexts.cs` verbatim, changing only the
+namespace to `Millrace.Components.Tests.Fakes`.
 
-`tests/Dse.Components.Tests/Fakes/Setpoint.cs`:
+`tests/Millrace.Components.Tests/Fakes/Setpoint.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
 
-namespace Dse.Components.Tests.Fakes;
+namespace Millrace.Components.Tests.Fakes;
 
 /// <summary>An analog signal a test can change between ticks.</summary>
 public sealed class Setpoint : ComponentBase
@@ -1581,13 +1581,13 @@ public sealed class Setpoint : ComponentBase
 }
 ```
 
-`tests/Dse.Components.Tests/Fakes/Switch.cs`:
+`tests/Millrace.Components.Tests/Fakes/Switch.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
 
-namespace Dse.Components.Tests.Fakes;
+namespace Millrace.Components.Tests.Fakes;
 
 /// <summary>A discrete signal a test can flip between ticks.</summary>
 public sealed class Switch : ComponentBase
@@ -1607,17 +1607,17 @@ public sealed class Switch : ComponentBase
 }
 ```
 
-`tests/Dse.Components.Tests/SourceSinkTests.cs`:
+`tests/Millrace.Components.Tests/SourceSinkTests.cs`:
 
 ```csharp
-using Dse.Components.Flow;
-using Dse.Components.Tests.Fakes;
-using Dse.Core;
-using Dse.Core.Flow;
-using Dse.Core.Time;
+using Millrace.Components.Flow;
+using Millrace.Components.Tests.Fakes;
+using Millrace.Core;
+using Millrace.Core.Flow;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 public class SourceSinkTests
 {
@@ -1795,21 +1795,21 @@ public class SourceSinkTests
 
 - [ ] **Step 3: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests`
-Expected: build error — `Dse.Components.Flow` does not exist.
+Run: `dotnet test tests/Millrace.Components.Tests`
+Expected: build error — `Millrace.Components.Flow` does not exist.
 
 - [ ] **Step 4: Implement the four components**
 
-`src/Dse.Components/Flow/BulkSource.cs`:
+`src/Millrace.Components/Flow/BulkSource.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Faults;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Telemetry;
+using Millrace.Core.Contexts;
+using Millrace.Core.Faults;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Telemetry;
 
-namespace Dse.Components.Flow;
+namespace Millrace.Components.Flow;
 
 /// <summary>
 /// Where bulk material enters the plant: a feeder drawing from an unbounded
@@ -1928,15 +1928,15 @@ public sealed class BulkSource : FlowComponentBase, IBulkProducer, IFaultTarget
 }
 ```
 
-`src/Dse.Components/Flow/BulkSink.cs`:
+`src/Millrace.Components/Flow/BulkSink.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Telemetry;
+using Millrace.Core.Contexts;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Telemetry;
 
-namespace Dse.Components.Flow;
+namespace Millrace.Components.Flow;
 
 /// <summary>
 /// Where bulk material leaves the plant: a stockpile, a truck, a declared loss.
@@ -2013,17 +2013,17 @@ public sealed class BulkSink : FlowComponentBase, IBulkConsumer
 }
 ```
 
-`src/Dse.Components/Flow/ItemSource.cs`:
+`src/Millrace.Components/Flow/ItemSource.cs`:
 
 ```csharp
 using System.Diagnostics.CodeAnalysis;
-using Dse.Core.Contexts;
-using Dse.Core.Faults;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Telemetry;
+using Millrace.Core.Contexts;
+using Millrace.Core.Faults;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Telemetry;
 
-namespace Dse.Components.Flow;
+namespace Millrace.Components.Flow;
 
 /// <summary>
 /// Where discrete items enter the plant: one item every interval, ids from
@@ -2145,15 +2145,15 @@ public sealed class ItemSource : FlowComponentBase, IItemProducer, IFaultTarget
 `_ids` is set in `Initialize`; `Simulation` always initialises before the first
 tick, and a hand-driven unit test must call `Initialize` itself.
 
-`src/Dse.Components/Flow/ItemSink.cs`:
+`src/Millrace.Components/Flow/ItemSink.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Telemetry;
+using Millrace.Core.Contexts;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Telemetry;
 
-namespace Dse.Components.Flow;
+namespace Millrace.Components.Flow;
 
 /// <summary>
 /// Where items leave the plant. Keeps a count, the mass, and the last item
@@ -2227,7 +2227,7 @@ public sealed class ItemSink : FlowComponentBase, IItemConsumer
 
 - [ ] **Step 5: Run the tests**
 
-Run: `dotnet test tests/Dse.Components.Tests`
+Run: `dotnet test tests/Millrace.Components.Tests`
 Expected: 9 pass. If the item cadence test is off by one, check the ordering
 argument in its comment before touching the source: with dt 0.5 and interval
 1.0 the first item is minted in `Advance` of tick 1 (elapsed reaches 1.0),
@@ -2237,7 +2237,7 @@ transfers on tick 2, so after 11 ticks (0–10) items minted on ticks 1, 3, 5,
 - [ ] **Step 6: Commit**
 
 ```bash
-git add Dse.sln src/Dse.Components tests/Dse.Components.Tests
+git add Millrace.sln src/Millrace.Components tests/Millrace.Components.Tests
 git commit -m "feat(components): add the component library project with bulk and item sources and sinks"
 ```
 
@@ -2246,8 +2246,8 @@ git commit -m "feat(components): add the component library project with bulk and
 ### Task 5: Transfer chute
 
 **Files:**
-- Create: `src/Dse.Components/Flow/TransferChute.cs`
-- Test: `tests/Dse.Components.Tests/TransferChuteTests.cs`
+- Create: `src/Millrace.Components/Flow/TransferChute.cs`
+- Test: `tests/Millrace.Components.Tests/TransferChuteTests.cs`
 
 **Interfaces:**
 - Consumes: `FlowComponentBase`, `IBulkConsumer`, `IBulkProducer`, `BulkLot`,
@@ -2265,16 +2265,16 @@ that chain in a test without stopping a belt.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Components.Tests/TransferChuteTests.cs`:
+`tests/Millrace.Components.Tests/TransferChuteTests.cs`:
 
 ```csharp
-using Dse.Components.Flow;
-using Dse.Core;
-using Dse.Core.Flow;
-using Dse.Core.Time;
+using Millrace.Components.Flow;
+using Millrace.Core;
+using Millrace.Core.Flow;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 public class TransferChuteTests
 {
@@ -2366,21 +2366,21 @@ public class TransferChuteTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --filter "FullyQualifiedName~TransferChuteTests"`
+Run: `dotnet test tests/Millrace.Components.Tests --filter "FullyQualifiedName~TransferChuteTests"`
 Expected: build error — `TransferChute` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/Dse.Components/Flow/TransferChute.cs`:
+`src/Millrace.Components/Flow/TransferChute.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Faults;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Telemetry;
+using Millrace.Core.Contexts;
+using Millrace.Core.Faults;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Telemetry;
 
-namespace Dse.Components.Flow;
+namespace Millrace.Components.Flow;
 
 /// <summary>
 /// A capacity-limited hold between two transports. It accepts the room it has
@@ -2485,13 +2485,13 @@ public sealed class TransferChute : FlowComponentBase, IBulkConsumer, IBulkProdu
 
 - [ ] **Step 4: Run the tests**
 
-Run: `dotnet test tests/Dse.Components.Tests`
+Run: `dotnet test tests/Millrace.Components.Tests`
 Expected: 13 pass.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Components/Flow/TransferChute.cs tests/Dse.Components.Tests/TransferChuteTests.cs
+git add src/Millrace.Components/Flow/TransferChute.cs tests/Millrace.Components.Tests/TransferChuteTests.cs
 git commit -m "feat(components): add the transfer chute with capacity back-pressure and a blockage fault"
 ```
 
@@ -2500,10 +2500,10 @@ git commit -m "feat(components): add the transfer chute with capacity back-press
 ### Task 6: The three shipped transforms
 
 **Files:**
-- Create: `src/Dse.Components/Transforms/ThermalTransfer.cs`
-- Create: `src/Dse.Components/Transforms/MoistureLoss.cs`
-- Create: `src/Dse.Components/Transforms/ResidenceAccumulator.cs`
-- Test: `tests/Dse.Components.Tests/TransformTests.cs`
+- Create: `src/Millrace.Components/Transforms/ThermalTransfer.cs`
+- Create: `src/Millrace.Components/Transforms/MoistureLoss.cs`
+- Create: `src/Millrace.Components/Transforms/ResidenceAccumulator.cs`
+- Test: `tests/Millrace.Components.Tests/TransformTests.cs`
 
 **Interfaces:**
 - Consumes: `IMaterialTransform`, `TransformContext`, `MaterialProperties`,
@@ -2522,16 +2522,16 @@ a `DiscreteBelt` to prove the wiring.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Components.Tests/TransformTests.cs`:
+`tests/Millrace.Components.Tests/TransformTests.cs`:
 
 ```csharp
-using Dse.Components.Tests.Fakes;
-using Dse.Components.Transforms;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
+using Millrace.Components.Tests.Fakes;
+using Millrace.Components.Transforms;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 public class TransformTests
 {
@@ -2662,17 +2662,17 @@ public class TransformTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --filter "FullyQualifiedName~TransformTests"`
-Expected: build error — `Dse.Components.Transforms` does not exist.
+Run: `dotnet test tests/Millrace.Components.Tests --filter "FullyQualifiedName~TransformTests"`
+Expected: build error — `Millrace.Components.Transforms` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/Dse.Components/Transforms/ThermalTransfer.cs`:
+`src/Millrace.Components/Transforms/ThermalTransfer.cs`:
 
 ```csharp
-using Dse.Core.Flow;
+using Millrace.Core.Flow;
 
-namespace Dse.Components.Transforms;
+namespace Millrace.Components.Transforms;
 
 /// <summary>
 /// Lumped-capacitance heat transfer toward the ambient temperature with one
@@ -2701,12 +2701,12 @@ public sealed class ThermalTransfer : IMaterialTransform
 }
 ```
 
-`src/Dse.Components/Transforms/MoistureLoss.cs`:
+`src/Millrace.Components/Transforms/MoistureLoss.cs`:
 
 ```csharp
-using Dse.Core.Flow;
+using Millrace.Core.Flow;
 
-namespace Dse.Components.Transforms;
+namespace Millrace.Components.Transforms;
 
 /// <summary>
 /// Moisture leaves at a rate proportional to how far the material is above a
@@ -2743,12 +2743,12 @@ public sealed class MoistureLoss : IMaterialTransform
 }
 ```
 
-`src/Dse.Components/Transforms/ResidenceAccumulator.cs`:
+`src/Millrace.Components/Transforms/ResidenceAccumulator.cs`:
 
 ```csharp
-using Dse.Core.Flow;
+using Millrace.Core.Flow;
 
-namespace Dse.Components.Transforms;
+namespace Millrace.Components.Transforms;
 
 /// <summary>
 /// Accumulates the time material spends at or above a temperature into one
@@ -2790,13 +2790,13 @@ public sealed class ResidenceAccumulator : IMaterialTransform
 
 - [ ] **Step 4: Run the tests**
 
-Run: `dotnet test tests/Dse.Components.Tests`
+Run: `dotnet test tests/Millrace.Components.Tests`
 Expected: 19 pass.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Components/Transforms tests/Dse.Components.Tests/TransformTests.cs
+git add src/Millrace.Components/Transforms tests/Millrace.Components.Tests/TransformTests.cs
 git commit -m "feat(components): add the thermal, moisture-loss and residence transforms"
 ```
 
@@ -2805,8 +2805,8 @@ git commit -m "feat(components): add the thermal, moisture-loss and residence tr
 ### Task 7: Former (bulk → discrete)
 
 **Files:**
-- Create: `src/Dse.Components/Flow/Former.cs`
-- Test: `tests/Dse.Components.Tests/FormerTests.cs`
+- Create: `src/Millrace.Components/Flow/Former.cs`
+- Test: `tests/Millrace.Components.Tests/FormerTests.cs`
 
 **Interfaces:**
 - Consumes: `FlowComponentBase`, `IBulkConsumer`, `IItemProducer`, `BulkLot`,
@@ -2826,16 +2826,16 @@ hopper plus the queue.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Components.Tests/FormerTests.cs`:
+`tests/Millrace.Components.Tests/FormerTests.cs`:
 
 ```csharp
-using Dse.Components.Flow;
-using Dse.Core;
-using Dse.Core.Flow;
-using Dse.Core.Time;
+using Millrace.Components.Flow;
+using Millrace.Core;
+using Millrace.Core.Flow;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 public class FormerTests
 {
@@ -2930,22 +2930,22 @@ public class FormerTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --filter "FullyQualifiedName~FormerTests"`
+Run: `dotnet test tests/Millrace.Components.Tests --filter "FullyQualifiedName~FormerTests"`
 Expected: build error — `Former` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/Dse.Components/Flow/Former.cs`:
+`src/Millrace.Components/Flow/Former.cs`:
 
 ```csharp
 using System.Diagnostics.CodeAnalysis;
-using Dse.Core.Contexts;
-using Dse.Core.Faults;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Telemetry;
+using Millrace.Core.Contexts;
+using Millrace.Core.Faults;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Telemetry;
 
-namespace Dse.Components.Flow;
+namespace Millrace.Components.Flow;
 
 /// <summary>
 /// Turns bulk into discrete items — a dough divider, a billet shear. Bulk
@@ -3111,13 +3111,13 @@ piece, so `piece.Mass == PieceMassKg` — `MassHeld` may use the constant.
 
 - [ ] **Step 4: Run the tests**
 
-Run: `dotnet test tests/Dse.Components.Tests`
+Run: `dotnet test tests/Millrace.Components.Tests`
 Expected: 24 pass.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Components/Flow/Former.cs tests/Dse.Components.Tests/FormerTests.cs
+git add src/Millrace.Components/Flow/Former.cs tests/Millrace.Components.Tests/FormerTests.cs
 git commit -m "feat(components): add the former that cuts bulk into discrete pieces"
 ```
 
@@ -3126,12 +3126,12 @@ git commit -m "feat(components): add the former that cuts bulk into discrete pie
 ### Task 8: Hold conditions and the bulk process unit
 
 **Files:**
-- Create: `src/Dse.Components/Flow/ProcessPhase.cs`
-- Create: `src/Dse.Components/Flow/IHoldCondition.cs`
-- Create: `src/Dse.Components/Flow/Hold.cs`
-- Create: `src/Dse.Components/Flow/RecipeLine.cs`
-- Create: `src/Dse.Components/Flow/BulkProcessUnit.cs`
-- Test: `tests/Dse.Components.Tests/BulkProcessUnitTests.cs`
+- Create: `src/Millrace.Components/Flow/ProcessPhase.cs`
+- Create: `src/Millrace.Components/Flow/IHoldCondition.cs`
+- Create: `src/Millrace.Components/Flow/Hold.cs`
+- Create: `src/Millrace.Components/Flow/RecipeLine.cs`
+- Create: `src/Millrace.Components/Flow/BulkProcessUnit.cs`
+- Test: `tests/Millrace.Components.Tests/BulkProcessUnitTests.cs`
 
 **Interfaces:**
 - Consumes: transport interfaces, `BulkLot`, `MaterialProperties.Blend`,
@@ -3167,19 +3167,19 @@ state changes are in `Advance`.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Components.Tests/BulkProcessUnitTests.cs`:
+`tests/Millrace.Components.Tests/BulkProcessUnitTests.cs`:
 
 ```csharp
-using Dse.Components.Flow;
-using Dse.Components.Tests.Fakes;
-using Dse.Components.Transforms;
-using Dse.Core;
-using Dse.Core.Faults;
-using Dse.Core.Flow;
-using Dse.Core.Time;
+using Millrace.Components.Flow;
+using Millrace.Components.Tests.Fakes;
+using Millrace.Components.Transforms;
+using Millrace.Core;
+using Millrace.Core.Faults;
+using Millrace.Core.Flow;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 public class BulkProcessUnitTests
 {
@@ -3324,7 +3324,7 @@ public class BulkProcessUnitTests
 ```
 
 `BulkSink` records only the last lot's properties, so add the type alongside.
-In `src/Dse.Components/Flow/BulkSink.cs` add
+In `src/Millrace.Components/Flow/BulkSink.cs` add
 
 ```csharp
     /// <summary>Material type of the last lot deposited, or null before any.</summary>
@@ -3335,15 +3335,15 @@ and in `Deposit`, after `LastProperties = lot.Properties;`, add `LastType = lot.
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --filter "FullyQualifiedName~BulkProcessUnitTests"`
+Run: `dotnet test tests/Millrace.Components.Tests --filter "FullyQualifiedName~BulkProcessUnitTests"`
 Expected: build error — `BulkProcessUnit` does not exist.
 
 - [ ] **Step 3: Implement the small types**
 
-`src/Dse.Components/Flow/ProcessPhase.cs`:
+`src/Millrace.Components/Flow/ProcessPhase.cs`:
 
 ```csharp
-namespace Dse.Components.Flow;
+namespace Millrace.Components.Flow;
 
 /// <summary>Where a batch unit is in its cycle.</summary>
 public enum ProcessPhase
@@ -3356,12 +3356,12 @@ public enum ProcessPhase
 }
 ```
 
-`src/Dse.Components/Flow/IHoldCondition.cs`:
+`src/Millrace.Components/Flow/IHoldCondition.cs`:
 
 ```csharp
-using Dse.Core.Flow;
+using Millrace.Core.Flow;
 
-namespace Dse.Components.Flow;
+namespace Millrace.Components.Flow;
 
 /// <summary>
 /// When a batch is done: a fixed time, a property threshold, an accumulated
@@ -3374,12 +3374,12 @@ public interface IHoldCondition
 }
 ```
 
-`src/Dse.Components/Flow/Hold.cs`:
+`src/Millrace.Components/Flow/Hold.cs`:
 
 ```csharp
-using Dse.Core.Flow;
+using Millrace.Core.Flow;
 
-namespace Dse.Components.Flow;
+namespace Millrace.Components.Flow;
 
 /// <summary>The shipped hold conditions.</summary>
 public static class Hold
@@ -3468,12 +3468,12 @@ public static class Hold
 }
 ```
 
-`src/Dse.Components/Flow/RecipeLine.cs`:
+`src/Millrace.Components/Flow/RecipeLine.cs`:
 
 ```csharp
-using Dse.Core.Flow;
+using Millrace.Core.Flow;
 
-namespace Dse.Components.Flow;
+namespace Millrace.Components.Flow;
 
 /// <summary>One ingredient of a bulk recipe: the inlet it arrives on, what it is, how much.</summary>
 /// <param name="InletName">The inlet's port name on the unit.</param>
@@ -3484,17 +3484,17 @@ public sealed record RecipeLine(string InletName, MaterialType Material, double 
 
 - [ ] **Step 4: Implement the unit**
 
-`src/Dse.Components/Flow/BulkProcessUnit.cs`:
+`src/Millrace.Components/Flow/BulkProcessUnit.cs`:
 
 ```csharp
 using System.Globalization;
-using Dse.Core.Contexts;
-using Dse.Core.Faults;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Telemetry;
+using Millrace.Core.Contexts;
+using Millrace.Core.Faults;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Telemetry;
 
-namespace Dse.Components.Flow;
+namespace Millrace.Components.Flow;
 
 /// <summary>
 /// A batch unit for bulk material: Idle → Filling → Processing → Discharging.
@@ -3916,7 +3916,7 @@ public sealed class BulkProcessUnit : FlowComponentBase, IBulkConsumer, IBulkPro
 
 - [ ] **Step 5: Run the tests**
 
-Run: `dotnet test tests/Dse.Components.Tests`
+Run: `dotnet test tests/Millrace.Components.Tests`
 Expected: 31 pass. Walk the first test by hand if a phase code is off. The
 unit is downstream of its sources, so in the phase-3 sweep its `Advance` runs
 *before* the sources' links deposit into it; a deposit on tick N is acted on
@@ -3929,7 +3929,7 @@ same tick, then `FILLING` again on tick 13.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Components/Flow tests/Dse.Components.Tests/BulkProcessUnitTests.cs
+git add src/Millrace.Components/Flow tests/Millrace.Components.Tests/BulkProcessUnitTests.cs
 git commit -m "feat(components): add hold conditions and the bulk process unit"
 ```
 
@@ -3938,8 +3938,8 @@ git commit -m "feat(components): add hold conditions and the bulk process unit"
 ### Task 9: Item process unit
 
 **Files:**
-- Create: `src/Dse.Components/Flow/ItemProcessUnit.cs`
-- Test: `tests/Dse.Components.Tests/ItemProcessUnitTests.cs`
+- Create: `src/Millrace.Components/Flow/ItemProcessUnit.cs`
+- Test: `tests/Millrace.Components.Tests/ItemProcessUnitTests.cs`
 
 **Interfaces:**
 - Consumes: `ProcessPhase`, `IHoldCondition`, `Hold` (Task 8); `IItemConsumer`,
@@ -3961,18 +3961,18 @@ and loses `(1 − yield)` of its mass to the declared loss.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Components.Tests/ItemProcessUnitTests.cs`:
+`tests/Millrace.Components.Tests/ItemProcessUnitTests.cs`:
 
 ```csharp
-using Dse.Components.Flow;
-using Dse.Components.Tests.Fakes;
-using Dse.Components.Transforms;
-using Dse.Core;
-using Dse.Core.Flow;
-using Dse.Core.Time;
+using Millrace.Components.Flow;
+using Millrace.Components.Tests.Fakes;
+using Millrace.Components.Transforms;
+using Millrace.Core;
+using Millrace.Core.Flow;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 public class ItemProcessUnitTests
 {
@@ -4100,23 +4100,23 @@ public class ItemProcessUnitTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --filter "FullyQualifiedName~ItemProcessUnitTests"`
+Run: `dotnet test tests/Millrace.Components.Tests --filter "FullyQualifiedName~ItemProcessUnitTests"`
 Expected: build error — `ItemProcessUnit` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/Dse.Components/Flow/ItemProcessUnit.cs`:
+`src/Millrace.Components/Flow/ItemProcessUnit.cs`:
 
 ```csharp
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using Dse.Core.Contexts;
-using Dse.Core.Faults;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Telemetry;
+using Millrace.Core.Contexts;
+using Millrace.Core.Faults;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Telemetry;
 
-namespace Dse.Components.Flow;
+namespace Millrace.Components.Flow;
 
 /// <summary>
 /// A batch unit for discrete items: Idle → Filling → Processing → Discharging.
@@ -4411,13 +4411,13 @@ public sealed class ItemProcessUnit : FlowComponentBase, IItemConsumer, IItemPro
 
 - [ ] **Step 4: Run the tests**
 
-Run: `dotnet test tests/Dse.Components.Tests`
+Run: `dotnet test tests/Millrace.Components.Tests`
 Expected: 38 pass.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Components/Flow/ItemProcessUnit.cs tests/Dse.Components.Tests/ItemProcessUnitTests.cs
+git add src/Millrace.Components/Flow/ItemProcessUnit.cs tests/Millrace.Components.Tests/ItemProcessUnitTests.cs
 git commit -m "feat(components): add the item process unit with type change and yield"
 ```
 
@@ -4426,12 +4426,12 @@ git commit -m "feat(components): add the item process unit with type change and 
 ### Task 10: Instrument base and the sensor-fault vocabulary
 
 **Files:**
-- Create: `src/Dse.Components/Instruments/InstrumentHealth.cs`
-- Create: `src/Dse.Components/Instruments/InstrumentSpec.cs`
-- Create: `src/Dse.Components/Instruments/InstrumentFaults.cs`
-- Create: `src/Dse.Components/Instruments/InstrumentBase.cs`
-- Create: `tests/Dse.Components.Tests/Fakes/ProbeInstrument.cs`
-- Test: `tests/Dse.Components.Tests/InstrumentBaseTests.cs`
+- Create: `src/Millrace.Components/Instruments/InstrumentHealth.cs`
+- Create: `src/Millrace.Components/Instruments/InstrumentSpec.cs`
+- Create: `src/Millrace.Components/Instruments/InstrumentFaults.cs`
+- Create: `src/Millrace.Components/Instruments/InstrumentBase.cs`
+- Create: `tests/Millrace.Components.Tests/Fakes/ProbeInstrument.cs`
+- Test: `tests/Millrace.Components.Tests/InstrumentBaseTests.cs`
 
 **Interfaces:**
 - Consumes: `ComponentBase`, `InitContext.Random`, `DeterministicRandom.NextGaussian`,
@@ -4469,14 +4469,14 @@ Value   = clamp(output, RangeLow, RangeHigh)
 
 - [ ] **Step 1: Write the fake and the failing tests**
 
-`tests/Dse.Components.Tests/Fakes/ProbeInstrument.cs`:
+`tests/Millrace.Components.Tests/Fakes/ProbeInstrument.cs`:
 
 ```csharp
-using Dse.Components.Instruments;
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
+using Millrace.Components.Instruments;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
 
-namespace Dse.Components.Tests.Fakes;
+namespace Millrace.Components.Tests.Fakes;
 
 /// <summary>Measures whatever is on its input, so the base pipeline can be tested alone.</summary>
 public sealed class ProbeInstrument : InstrumentBase
@@ -4490,18 +4490,18 @@ public sealed class ProbeInstrument : InstrumentBase
 }
 ```
 
-`tests/Dse.Components.Tests/InstrumentBaseTests.cs`:
+`tests/Millrace.Components.Tests/InstrumentBaseTests.cs`:
 
 ```csharp
-using Dse.Components.Instruments;
-using Dse.Components.Tests.Fakes;
-using Dse.Core;
-using Dse.Core.Faults;
-using Dse.Core.Graph;
-using Dse.Core.Time;
+using Millrace.Components.Instruments;
+using Millrace.Components.Tests.Fakes;
+using Millrace.Core;
+using Millrace.Core.Faults;
+using Millrace.Core.Graph;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 public class InstrumentBaseTests
 {
@@ -4707,15 +4707,15 @@ public class InstrumentBaseTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --filter "FullyQualifiedName~InstrumentBaseTests"`
-Expected: build error — `Dse.Components.Instruments` does not exist.
+Run: `dotnet test tests/Millrace.Components.Tests --filter "FullyQualifiedName~InstrumentBaseTests"`
+Expected: build error — `Millrace.Components.Instruments` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/Dse.Components/Instruments/InstrumentHealth.cs`:
+`src/Millrace.Components/Instruments/InstrumentHealth.cs`:
 
 ```csharp
-namespace Dse.Components.Instruments;
+namespace Millrace.Components.Instruments;
 
 /// <summary>
 /// What a transmitter reports about its own signal. Maps onto the I/O
@@ -4730,10 +4730,10 @@ public enum InstrumentHealth
 }
 ```
 
-`src/Dse.Components/Instruments/InstrumentSpec.cs`:
+`src/Millrace.Components/Instruments/InstrumentSpec.cs`:
 
 ```csharp
-namespace Dse.Components.Instruments;
+namespace Millrace.Components.Instruments;
 
 /// <summary>What an instrument's datasheet says.</summary>
 /// <param name="Unit">Engineering unit of <c>Value</c>.</param>
@@ -4749,12 +4749,12 @@ public readonly record struct InstrumentSpec(
     double LagSeconds = 0.0);
 ```
 
-`src/Dse.Components/Instruments/InstrumentFaults.cs`:
+`src/Millrace.Components/Instruments/InstrumentFaults.cs`:
 
 ```csharp
-using Dse.Core.Faults;
+using Millrace.Core.Faults;
 
-namespace Dse.Components.Instruments;
+namespace Millrace.Components.Instruments;
 
 /// <summary>The fault vocabulary every instrument supports.</summary>
 public static class InstrumentFaults
@@ -4785,16 +4785,16 @@ public static class InstrumentFaults
 }
 ```
 
-`src/Dse.Components/Instruments/InstrumentBase.cs`:
+`src/Millrace.Components/Instruments/InstrumentBase.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Faults;
-using Dse.Core.Graph;
-using Dse.Core.Randomness;
-using Dse.Core.Telemetry;
+using Millrace.Core.Contexts;
+using Millrace.Core.Faults;
+using Millrace.Core.Graph;
+using Millrace.Core.Randomness;
+using Millrace.Core.Telemetry;
 
-namespace Dse.Components.Instruments;
+namespace Millrace.Components.Instruments;
 
 /// <summary>
 /// Every sensor. A subclass says what it measures; this class says how a
@@ -4981,13 +4981,13 @@ the same way its analog value does.
 
 - [ ] **Step 4: Run the tests**
 
-Run: `dotnet test tests/Dse.Components.Tests`
+Run: `dotnet test tests/Millrace.Components.Tests`
 Expected: 50 pass.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Components/Instruments tests/Dse.Components.Tests/Fakes/ProbeInstrument.cs tests/Dse.Components.Tests/InstrumentBaseTests.cs
+git add src/Millrace.Components/Instruments tests/Millrace.Components.Tests/Fakes/ProbeInstrument.cs tests/Millrace.Components.Tests/InstrumentBaseTests.cs
 git commit -m "feat(components): add the instrument base with the shared sensor-fault vocabulary"
 ```
 
@@ -4996,11 +4996,11 @@ git commit -m "feat(components): add the instrument base with the shared sensor-
 ### Task 11: Signal instruments
 
 **Files:**
-- Create: `src/Dse.Components/Instruments/SpeedSensor.cs`
-- Create: `src/Dse.Components/Instruments/CurrentSensor.cs`
-- Create: `src/Dse.Components/Instruments/TemperatureSensor.cs`
-- Create: `src/Dse.Components/Instruments/ZeroSpeedSwitch.cs`
-- Test: `tests/Dse.Components.Tests/SignalInstrumentTests.cs`
+- Create: `src/Millrace.Components/Instruments/SpeedSensor.cs`
+- Create: `src/Millrace.Components/Instruments/CurrentSensor.cs`
+- Create: `src/Millrace.Components/Instruments/TemperatureSensor.cs`
+- Create: `src/Millrace.Components/Instruments/ZeroSpeedSwitch.cs`
+- Test: `tests/Millrace.Components.Tests/SignalInstrumentTests.cs`
 
 **Interfaces:**
 - Consumes: `InstrumentBase`, `InstrumentSpec` (Task 10).
@@ -5019,17 +5019,17 @@ discrete state from the corrupted reading, not the truth.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Components.Tests/SignalInstrumentTests.cs`:
+`tests/Millrace.Components.Tests/SignalInstrumentTests.cs`:
 
 ```csharp
-using Dse.Components.Instruments;
-using Dse.Components.Tests.Fakes;
-using Dse.Core;
-using Dse.Core.Faults;
-using Dse.Core.Time;
+using Millrace.Components.Instruments;
+using Millrace.Components.Tests.Fakes;
+using Millrace.Core;
+using Millrace.Core.Faults;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 public class SignalInstrumentTests
 {
@@ -5116,18 +5116,18 @@ public class SignalInstrumentTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --filter "FullyQualifiedName~SignalInstrumentTests"`
+Run: `dotnet test tests/Millrace.Components.Tests --filter "FullyQualifiedName~SignalInstrumentTests"`
 Expected: build error — `SpeedSensor` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/Dse.Components/Instruments/SpeedSensor.cs`:
+`src/Millrace.Components/Instruments/SpeedSensor.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
 
-namespace Dse.Components.Instruments;
+namespace Millrace.Components.Instruments;
 
 /// <summary>A tachometer or encoder on a pulley: reports the speed on its input, m/s.</summary>
 public sealed class SpeedSensor : InstrumentBase
@@ -5142,13 +5142,13 @@ public sealed class SpeedSensor : InstrumentBase
 }
 ```
 
-`src/Dse.Components/Instruments/CurrentSensor.cs`:
+`src/Millrace.Components/Instruments/CurrentSensor.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
 
-namespace Dse.Components.Instruments;
+namespace Millrace.Components.Instruments;
 
 /// <summary>A current transformer on a motor feed: reports the current on its input, A.</summary>
 public sealed class CurrentSensor : InstrumentBase
@@ -5163,13 +5163,13 @@ public sealed class CurrentSensor : InstrumentBase
 }
 ```
 
-`src/Dse.Components/Instruments/TemperatureSensor.cs`:
+`src/Millrace.Components/Instruments/TemperatureSensor.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
 
-namespace Dse.Components.Instruments;
+namespace Millrace.Components.Instruments;
 
 /// <summary>A thermocouple or RTD on a signal: reports the temperature on its input, °C.</summary>
 public sealed class TemperatureSensor : InstrumentBase
@@ -5184,14 +5184,14 @@ public sealed class TemperatureSensor : InstrumentBase
 }
 ```
 
-`src/Dse.Components/Instruments/ZeroSpeedSwitch.cs`:
+`src/Millrace.Components/Instruments/ZeroSpeedSwitch.cs`:
 
 ```csharp
 using System.Globalization;
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
 
-namespace Dse.Components.Instruments;
+namespace Millrace.Components.Instruments;
 
 /// <summary>
 /// A speed switch: <see cref="Stopped"/> goes true once the *reading* has
@@ -5252,7 +5252,7 @@ public sealed class ZeroSpeedSwitch : InstrumentBase
 
 - [ ] **Step 4: Run the tests**
 
-Run: `dotnet test tests/Dse.Components.Tests`
+Run: `dotnet test tests/Millrace.Components.Tests`
 Expected: 53 pass. In the delay test, with dt 0.1 the reading is below the
 threshold from the first tick after the setpoint change; `_belowFor` reaches
 0.5 on the fifth such tick, so 400 ms (4 ticks) is not enough and 600 ms is.
@@ -5260,7 +5260,7 @@ threshold from the first tick after the setpoint change; `_belowFor` reaches
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Components/Instruments tests/Dse.Components.Tests/SignalInstrumentTests.cs
+git add src/Millrace.Components/Instruments tests/Millrace.Components.Tests/SignalInstrumentTests.cs
 git commit -m "feat(components): add speed, current and temperature sensors and the zero-speed switch"
 ```
 
@@ -5269,10 +5269,10 @@ git commit -m "feat(components): add speed, current and temperature sensors and 
 ### Task 12: Material instruments — belt scale, pyrometer, part counter
 
 **Files:**
-- Create: `src/Dse.Components/Instruments/BeltScale.cs`
-- Create: `src/Dse.Components/Instruments/Pyrometer.cs`
-- Create: `src/Dse.Components/Instruments/PartCounter.cs`
-- Test: `tests/Dse.Components.Tests/MaterialInstrumentTests.cs`
+- Create: `src/Millrace.Components/Instruments/BeltScale.cs`
+- Create: `src/Millrace.Components/Instruments/Pyrometer.cs`
+- Create: `src/Millrace.Components/Instruments/PartCounter.cs`
+- Test: `tests/Millrace.Components.Tests/MaterialInstrumentTests.cs`
 
 **Interfaces:**
 - Consumes: `IMaterialObservable`, `MaterialObservation` (Task 2), `InstrumentBase`,
@@ -5295,18 +5295,18 @@ All three read the node they are mounted on through `IMaterialObservable` in
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Components.Tests/MaterialInstrumentTests.cs`:
+`tests/Millrace.Components.Tests/MaterialInstrumentTests.cs`:
 
 ```csharp
-using Dse.Components.Flow;
-using Dse.Components.Instruments;
-using Dse.Components.Tests.Fakes;
-using Dse.Core;
-using Dse.Core.Flow;
-using Dse.Core.Time;
+using Millrace.Components.Flow;
+using Millrace.Components.Instruments;
+using Millrace.Components.Tests.Fakes;
+using Millrace.Core;
+using Millrace.Core.Flow;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 public class MaterialInstrumentTests
 {
@@ -5417,19 +5417,19 @@ public class MaterialInstrumentTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --filter "FullyQualifiedName~MaterialInstrumentTests"`
+Run: `dotnet test tests/Millrace.Components.Tests --filter "FullyQualifiedName~MaterialInstrumentTests"`
 Expected: build error — `BeltScale` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/Dse.Components/Instruments/BeltScale.cs`:
+`src/Millrace.Components/Instruments/BeltScale.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
 
-namespace Dse.Components.Instruments;
+namespace Millrace.Components.Instruments;
 
 /// <summary>
 /// A belt weigher: linear density under the weigh idler times belt speed,
@@ -5466,14 +5466,14 @@ public sealed class BeltScale : InstrumentBase
 }
 ```
 
-`src/Dse.Components/Instruments/Pyrometer.cs`:
+`src/Millrace.Components/Instruments/Pyrometer.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
 
-namespace Dse.Components.Instruments;
+namespace Millrace.Components.Instruments;
 
 /// <summary>
 /// A non-contact temperature sensor aimed at one point on a node. Reads the
@@ -5510,16 +5510,16 @@ public sealed class Pyrometer : InstrumentBase
 }
 ```
 
-`src/Dse.Components/Instruments/PartCounter.cs`:
+`src/Millrace.Components/Instruments/PartCounter.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Faults;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Telemetry;
+using Millrace.Core.Contexts;
+using Millrace.Core.Faults;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Telemetry;
 
-namespace Dse.Components.Instruments;
+namespace Millrace.Components.Instruments;
 
 /// <summary>
 /// A photo-eye across a discrete belt. Counts every new item id it sees in
@@ -5593,13 +5593,13 @@ public sealed class PartCounter : ComponentBase, IFaultTarget
 
 - [ ] **Step 4: Run the tests**
 
-Run: `dotnet test tests/Dse.Components.Tests`
+Run: `dotnet test tests/Millrace.Components.Tests`
 Expected: 57 pass.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Components/Instruments tests/Dse.Components.Tests/MaterialInstrumentTests.cs
+git add src/Millrace.Components/Instruments tests/Millrace.Components.Tests/MaterialInstrumentTests.cs
 git commit -m "feat(components): add the belt scale, pyrometer and part counter mounted on flow nodes"
 ```
 
@@ -5608,9 +5608,9 @@ git commit -m "feat(components): add the belt scale, pyrometer and part counter 
 ### Task 13: Motor with the I²t thermal model
 
 **Files:**
-- Create: `src/Dse.Components/Mechanical/MotorRating.cs`
-- Create: `src/Dse.Components/Mechanical/Motor.cs`
-- Test: `tests/Dse.Components.Tests/MotorTests.cs`
+- Create: `src/Millrace.Components/Mechanical/MotorRating.cs`
+- Create: `src/Millrace.Components/Mechanical/Motor.cs`
+- Test: `tests/Millrace.Components.Tests/MotorTests.cs`
 
 **Interfaces:**
 - Consumes: `ComponentBase`, latched inputs (Task 1), `IFaultTarget` (Task 3).
@@ -5656,17 +5656,17 @@ overload characteristic with one time constant.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Components.Tests/MotorTests.cs`:
+`tests/Millrace.Components.Tests/MotorTests.cs`:
 
 ```csharp
-using Dse.Components.Mechanical;
-using Dse.Components.Tests.Fakes;
-using Dse.Core.Faults;
-using Dse.Core.Graph;
-using Dse.Core.Logging;
+using Millrace.Components.Mechanical;
+using Millrace.Components.Tests.Fakes;
+using Millrace.Core.Faults;
+using Millrace.Core.Graph;
+using Millrace.Core.Logging;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 public class MotorTests
 {
@@ -5862,15 +5862,15 @@ public class MotorTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --filter "FullyQualifiedName~MotorTests"`
-Expected: build error — `Dse.Components.Mechanical` does not exist.
+Run: `dotnet test tests/Millrace.Components.Tests --filter "FullyQualifiedName~MotorTests"`
+Expected: build error — `Millrace.Components.Mechanical` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/Dse.Components/Mechanical/MotorRating.cs`:
+`src/Millrace.Components/Mechanical/MotorRating.cs`:
 
 ```csharp
-namespace Dse.Components.Mechanical;
+namespace Millrace.Components.Mechanical;
 
 /// <summary>An induction motor's nameplate plus the handful of constants the model needs.</summary>
 /// <param name="RatedPowerW">W.</param>
@@ -5900,16 +5900,16 @@ public sealed record MotorRating(
 }
 ```
 
-`src/Dse.Components/Mechanical/Motor.cs`:
+`src/Millrace.Components/Mechanical/Motor.cs`:
 
 ```csharp
 using System.Globalization;
-using Dse.Core.Contexts;
-using Dse.Core.Faults;
-using Dse.Core.Graph;
-using Dse.Core.Telemetry;
+using Millrace.Core.Contexts;
+using Millrace.Core.Faults;
+using Millrace.Core.Graph;
+using Millrace.Core.Telemetry;
 
-namespace Dse.Components.Mechanical;
+namespace Millrace.Components.Mechanical;
 
 /// <summary>
 /// An induction motor as a causal model: torque demand sets current, current
@@ -6107,7 +6107,7 @@ own, and the descriptor says so. `IFaultTarget.ClearFault` permits that.
 
 - [ ] **Step 4: Run the tests**
 
-Run: `dotnet test tests/Dse.Components.Tests`
+Run: `dotnet test tests/Millrace.Components.Tests`
 Expected: 67 pass. The thermal-crossing window (18–30 s) is deliberately
 wide: the locked-rotor current during the start heats the state to about 0.3
 before the demand step, and forward Euler at dt 0.1 is a fraction of a
@@ -6117,7 +6117,7 @@ percent fast. If the crossing lands outside the window, print θ after the
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Components/Mechanical tests/Dse.Components.Tests/MotorTests.cs
+git add src/Millrace.Components/Mechanical tests/Millrace.Components.Tests/MotorTests.cs
 git commit -m "feat(components): add the motor with speed, current and I²t thermal model"
 ```
 
@@ -6126,12 +6126,12 @@ git commit -m "feat(components): add the motor with speed, current and I²t ther
 ### Task 14: Drivetrain — gearbox, pulleys, belt friction and belt geometry
 
 **Files:**
-- Create: `src/Dse.Components/Mechanical/Gearbox.cs`
-- Create: `src/Dse.Components/Mechanical/DrivePulley.cs`
-- Create: `src/Dse.Components/Mechanical/TailPulley.cs`
-- Create: `src/Dse.Components/Mechanical/BeltFriction.cs`
-- Create: `src/Dse.Components/Mechanical/BeltGeometry.cs`
-- Test: `tests/Dse.Components.Tests/DrivetrainTests.cs`
+- Create: `src/Millrace.Components/Mechanical/Gearbox.cs`
+- Create: `src/Millrace.Components/Mechanical/DrivePulley.cs`
+- Create: `src/Millrace.Components/Mechanical/TailPulley.cs`
+- Create: `src/Millrace.Components/Mechanical/BeltFriction.cs`
+- Create: `src/Millrace.Components/Mechanical/BeltGeometry.cs`
+- Test: `tests/Millrace.Components.Tests/DrivetrainTests.cs`
 
 **Interfaces:**
 - Consumes: `ComponentBase`, latched inputs, `IFaultTarget`, `Motor` (Task 13),
@@ -6163,20 +6163,20 @@ validates and settles.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Components.Tests/DrivetrainTests.cs`:
+`tests/Millrace.Components.Tests/DrivetrainTests.cs`:
 
 ```csharp
-using Dse.Components.Flow;
-using Dse.Components.Mechanical;
-using Dse.Components.Tests.Fakes;
-using Dse.Core;
-using Dse.Core.Faults;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Time;
+using Millrace.Components.Flow;
+using Millrace.Components.Mechanical;
+using Millrace.Components.Tests.Fakes;
+using Millrace.Core;
+using Millrace.Core.Faults;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 public class DrivetrainTests
 {
@@ -6307,18 +6307,18 @@ public class DrivetrainTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --filter "FullyQualifiedName~DrivetrainTests"`
+Run: `dotnet test tests/Millrace.Components.Tests --filter "FullyQualifiedName~DrivetrainTests"`
 Expected: build error — `Gearbox` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/Dse.Components/Mechanical/Gearbox.cs`:
+`src/Millrace.Components/Mechanical/Gearbox.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
 
-namespace Dse.Components.Mechanical;
+namespace Millrace.Components.Mechanical;
 
 /// <summary>
 /// A fixed-ratio reducer. Speed passes forward live; the torque the load
@@ -6369,14 +6369,14 @@ public sealed class Gearbox : ComponentBase
 }
 ```
 
-`src/Dse.Components/Mechanical/DrivePulley.cs`:
+`src/Millrace.Components/Mechanical/DrivePulley.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Faults;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Faults;
+using Millrace.Core.Graph;
 
-namespace Dse.Components.Mechanical;
+namespace Millrace.Components.Mechanical;
 
 /// <summary>
 /// The pulley the drive turns: shaft speed becomes belt speed, and the force
@@ -6471,14 +6471,14 @@ public sealed class DrivePulley : ComponentBase, IFaultTarget
 }
 ```
 
-`src/Dse.Components/Mechanical/TailPulley.cs`:
+`src/Millrace.Components/Mechanical/TailPulley.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Faults;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Faults;
+using Millrace.Core.Graph;
 
-namespace Dse.Components.Mechanical;
+namespace Millrace.Components.Mechanical;
 
 /// <summary>An idler pulley. What it contributes is drag, and a worn bearing adds to it.</summary>
 public sealed class TailPulley : ComponentBase, IFaultTarget
@@ -6519,13 +6519,13 @@ public sealed class TailPulley : ComponentBase, IFaultTarget
 }
 ```
 
-`src/Dse.Components/Mechanical/BeltFriction.cs`:
+`src/Millrace.Components/Mechanical/BeltFriction.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
 
-namespace Dse.Components.Mechanical;
+namespace Millrace.Components.Mechanical;
 
 /// <summary>
 /// The force it takes to move a loaded belt: rolling friction on the belt's
@@ -6569,10 +6569,10 @@ public sealed class BeltFriction : ComponentBase
 }
 ```
 
-`src/Dse.Components/Mechanical/BeltGeometry.cs`:
+`src/Millrace.Components/Mechanical/BeltGeometry.cs`:
 
 ```csharp
-namespace Dse.Components.Mechanical;
+namespace Millrace.Components.Mechanical;
 
 /// <summary>
 /// Belt width and the material's angle of repose give the most a belt can
@@ -6609,18 +6609,18 @@ public static class BeltGeometry
 
 - [ ] **Step 4: Run the tests**
 
-Run: `dotnet test tests/Dse.Components.Tests`
-Expected: 72 pass. The chain test's `Validate` must pass with no `DSE003`:
+Run: `dotnet test tests/Millrace.Components.Tests`
+Expected: 72 pass. The chain test's `Validate` must pass with no `MR003`:
 the only cycles are Motor⇄Gearbox and Gearbox⇄DrivePulley, each broken by
 a latched torque input, and DrivePulley→Belt→BeltFriction→DrivePulley, which
-is not a cycle because the belt has no feedthrough (R13). If `DSE003`
+is not a cycle because the belt has no feedthrough (R13). If `MR003`
 appears, the message names the loop; check the latched flags before anything
 else.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Components/Mechanical tests/Dse.Components.Tests/DrivetrainTests.cs
+git add src/Millrace.Components/Mechanical tests/Millrace.Components.Tests/DrivetrainTests.cs
 git commit -m "feat(components): add the gearbox, pulleys, belt friction and belt geometry"
 ```
 
@@ -6629,11 +6629,11 @@ git commit -m "feat(components): add the gearbox, pulleys, belt friction and bel
 ### Task 15: Safety circuit — e-stop, pull-key, safety relay
 
 **Files:**
-- Create: `src/Dse.Components/Safety/SafetySwitch.cs`
-- Create: `src/Dse.Components/Safety/EStop.cs`
-- Create: `src/Dse.Components/Safety/PullKey.cs`
-- Create: `src/Dse.Components/Safety/SafetyRelay.cs`
-- Test: `tests/Dse.Components.Tests/SafetyTests.cs`
+- Create: `src/Millrace.Components/Safety/SafetySwitch.cs`
+- Create: `src/Millrace.Components/Safety/EStop.cs`
+- Create: `src/Millrace.Components/Safety/PullKey.cs`
+- Create: `src/Millrace.Components/Safety/SafetyRelay.cs`
+- Test: `tests/Millrace.Components.Tests/SafetyTests.cs`
 
 **Interfaces:**
 - Consumes: `ComponentBase`, `IFaultTarget`.
@@ -6662,16 +6662,16 @@ same door.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Components.Tests/SafetyTests.cs`:
+`tests/Millrace.Components.Tests/SafetyTests.cs`:
 
 ```csharp
-using Dse.Components.Safety;
-using Dse.Components.Tests.Fakes;
-using Dse.Core;
-using Dse.Core.Time;
+using Millrace.Components.Safety;
+using Millrace.Components.Tests.Fakes;
+using Millrace.Core;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 public class SafetyTests
 {
@@ -6810,19 +6810,19 @@ public class SafetyTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --filter "FullyQualifiedName~SafetyTests"`
-Expected: build error — `Dse.Components.Safety` does not exist.
+Run: `dotnet test tests/Millrace.Components.Tests --filter "FullyQualifiedName~SafetyTests"`
+Expected: build error — `Millrace.Components.Safety` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/Dse.Components/Safety/SafetySwitch.cs`:
+`src/Millrace.Components/Safety/SafetySwitch.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Faults;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Faults;
+using Millrace.Core.Graph;
 
-namespace Dse.Components.Safety;
+namespace Millrace.Components.Safety;
 
 /// <summary>
 /// A normally-closed safety contact: <see cref="Ok"/> is true until someone
@@ -6906,10 +6906,10 @@ public abstract class SafetySwitch : ComponentBase, IFaultTarget
 }
 ```
 
-`src/Dse.Components/Safety/EStop.cs`:
+`src/Millrace.Components/Safety/EStop.cs`:
 
 ```csharp
-namespace Dse.Components.Safety;
+namespace Millrace.Components.Safety;
 
 /// <summary>An emergency stop button.</summary>
 public sealed class EStop : SafetySwitch
@@ -6925,10 +6925,10 @@ public sealed class EStop : SafetySwitch
 }
 ```
 
-`src/Dse.Components/Safety/PullKey.cs`:
+`src/Millrace.Components/Safety/PullKey.cs`:
 
 ```csharp
-namespace Dse.Components.Safety;
+namespace Millrace.Components.Safety;
 
 /// <summary>A pull-wire switch along a conveyor.</summary>
 public sealed class PullKey : SafetySwitch
@@ -6944,15 +6944,15 @@ public sealed class PullKey : SafetySwitch
 }
 ```
 
-`src/Dse.Components/Safety/SafetyRelay.cs`:
+`src/Millrace.Components/Safety/SafetyRelay.cs`:
 
 ```csharp
 using System.Globalization;
-using Dse.Core.Contexts;
-using Dse.Core.Faults;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Faults;
+using Millrace.Core.Graph;
 
-namespace Dse.Components.Safety;
+namespace Millrace.Components.Safety;
 
 /// <summary>
 /// A latching safety relay. Any open channel drops it and it stays dropped
@@ -7080,7 +7080,7 @@ public sealed class SafetyRelay : ComponentBase, IFaultTarget
 
 - [ ] **Step 4: Run the tests**
 
-Run: `dotnet test tests/Dse.Components.Tests`
+Run: `dotnet test tests/Millrace.Components.Tests`
 Expected: 77 pass. In the relay test the first tick reads `Reset` false, so the
 relay stays de-energised from power-up; the reset edge on the second tick
 energises it. In `RelayFaults` the reset switch is true from the first tick,
@@ -7089,7 +7089,7 @@ which is a rising edge from the relay's initial `_wasReset == false`.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Components/Safety tests/Dse.Components.Tests/SafetyTests.cs
+git add src/Millrace.Components/Safety tests/Millrace.Components.Tests/SafetyTests.cs
 git commit -m "feat(components): add the e-stop, pull-key and latching safety relay"
 ```
 
@@ -7098,8 +7098,8 @@ git commit -m "feat(components): add the e-stop, pull-key and latching safety re
 ### Task 16: Motor starter with overload relay
 
 **Files:**
-- Create: `src/Dse.Components/Mechanical/MotorStarter.cs`
-- Test: `tests/Dse.Components.Tests/MotorStarterTests.cs`
+- Create: `src/Millrace.Components/Mechanical/MotorStarter.cs`
+- Test: `tests/Millrace.Components.Tests/MotorStarterTests.cs`
 
 **Interfaces:**
 - Consumes: `ComponentBase`, `IFaultTarget`, `Motor` (Task 13), `SafetyRelay` (Task 15).
@@ -7118,16 +7118,16 @@ Spec 9.4: the safety relay de-energises the contactor directly through
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Components.Tests/MotorStarterTests.cs`:
+`tests/Millrace.Components.Tests/MotorStarterTests.cs`:
 
 ```csharp
-using Dse.Components.Mechanical;
-using Dse.Components.Tests.Fakes;
-using Dse.Core;
-using Dse.Core.Time;
+using Millrace.Components.Mechanical;
+using Millrace.Components.Tests.Fakes;
+using Millrace.Core;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 public class MotorStarterTests
 {
@@ -7233,20 +7233,20 @@ public class MotorStarterTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --filter "FullyQualifiedName~MotorStarterTests"`
+Run: `dotnet test tests/Millrace.Components.Tests --filter "FullyQualifiedName~MotorStarterTests"`
 Expected: build error — `MotorStarter` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/Dse.Components/Mechanical/MotorStarter.cs`:
+`src/Millrace.Components/Mechanical/MotorStarter.cs`:
 
 ```csharp
 using System.Globalization;
-using Dse.Core.Contexts;
-using Dse.Core.Faults;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Faults;
+using Millrace.Core.Graph;
 
-namespace Dse.Components.Mechanical;
+namespace Millrace.Components.Mechanical;
 
 /// <summary>
 /// A direct-on-line starter: a contactor and a thermal overload relay. The
@@ -7381,13 +7381,13 @@ public sealed class MotorStarter : ComponentBase, IFaultTarget
 
 - [ ] **Step 4: Run the tests**
 
-Run: `dotnet test tests/Dse.Components.Tests`
+Run: `dotnet test tests/Millrace.Components.Tests`
 Expected: 81 pass.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Components/Mechanical/MotorStarter.cs tests/Dse.Components.Tests/MotorStarterTests.cs
+git add src/Millrace.Components/Mechanical/MotorStarter.cs tests/Millrace.Components.Tests/MotorStarterTests.cs
 git commit -m "feat(components): add the motor starter with contactor and thermal overload relay"
 ```
 
@@ -7396,9 +7396,9 @@ git commit -m "feat(components): add the motor starter with contactor and therma
 ### Task 17: The conveyor composite, the causal chain, and docs
 
 **Files:**
-- Create: `src/Dse.Components/Conveyors/ConveyorOptions.cs`
-- Create: `src/Dse.Components/Conveyors/Conveyor.cs`
-- Test: `tests/Dse.Components.Tests/ConveyorTests.cs`
+- Create: `src/Millrace.Components/Conveyors/ConveyorOptions.cs`
+- Create: `src/Millrace.Components/Conveyors/Conveyor.cs`
+- Test: `tests/Millrace.Components.Tests/ConveyorTests.cs`
 - Modify: `docs/architecture.md`
 - Modify: `README.md`
 
@@ -7427,21 +7427,21 @@ replay test proves spec 16's determinism line for the library.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Components.Tests/ConveyorTests.cs`:
+`tests/Millrace.Components.Tests/ConveyorTests.cs`:
 
 ```csharp
-using Dse.Components.Conveyors;
-using Dse.Components.Flow;
-using Dse.Components.Mechanical;
-using Dse.Components.Tests.Fakes;
-using Dse.Core;
-using Dse.Core.Faults;
-using Dse.Core.Flow;
-using Dse.Core.Logging;
-using Dse.Core.Time;
+using Millrace.Components.Conveyors;
+using Millrace.Components.Flow;
+using Millrace.Components.Mechanical;
+using Millrace.Components.Tests.Fakes;
+using Millrace.Core;
+using Millrace.Core.Faults;
+using Millrace.Core.Flow;
+using Millrace.Core.Logging;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 public class ConveyorTests
 {
@@ -7692,17 +7692,17 @@ public class ConveyorTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --filter "FullyQualifiedName~ConveyorTests"`
-Expected: build error — `Dse.Components.Conveyors` does not exist.
+Run: `dotnet test tests/Millrace.Components.Tests --filter "FullyQualifiedName~ConveyorTests"`
+Expected: build error — `Millrace.Components.Conveyors` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/Dse.Components/Conveyors/ConveyorOptions.cs`:
+`src/Millrace.Components/Conveyors/ConveyorOptions.cs`:
 
 ```csharp
-using Dse.Components.Mechanical;
+using Millrace.Components.Mechanical;
 
-namespace Dse.Components.Conveyors;
+namespace Millrace.Components.Conveyors;
 
 /// <summary>Everything a bulk conveyor is built from.</summary>
 /// <param name="LengthM">m.</param>
@@ -7734,17 +7734,17 @@ public sealed record ConveyorOptions(
     double SpeedMarginFraction = 0.1);
 ```
 
-`src/Dse.Components/Conveyors/Conveyor.cs`:
+`src/Millrace.Components/Conveyors/Conveyor.cs`:
 
 ```csharp
 using System.Globalization;
-using Dse.Components.Instruments;
-using Dse.Components.Mechanical;
-using Dse.Components.Safety;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
+using Millrace.Components.Instruments;
+using Millrace.Components.Mechanical;
+using Millrace.Components.Safety;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
 
-namespace Dse.Components.Conveyors;
+namespace Millrace.Components.Conveyors;
 
 /// <summary>
 /// A bulk conveyor: motor, gearbox, drive and tail pulleys, belt, speed
@@ -7886,7 +7886,7 @@ evaluation, and the flattened leaves still never touch each other at run time.
 
 - [ ] **Step 4: Run the tests**
 
-Run: `dotnet test tests/Dse.Components.Tests`
+Run: `dotnet test tests/Millrace.Components.Tests`
 Expected: 88 pass. Expected numbers, for when one is off:
 
 | Quantity | Value |
@@ -7981,7 +7981,7 @@ dotnet test
 Expected: zero warnings; 221 Core tests and 88 Components tests pass (309).
 
 ```bash
-git add src/Dse.Components/Conveyors tests/Dse.Components.Tests/ConveyorTests.cs docs/architecture.md README.md
+git add src/Millrace.Components/Conveyors tests/Millrace.Components.Tests/ConveyorTests.cs docs/architecture.md README.md
 git commit -m "feat(components): add the conveyor composite and prove the overload causal chain end to end"
 ```
 
@@ -7989,11 +7989,11 @@ git commit -m "feat(components): add the conveyor composite and prove the overlo
 
 ## Definition of done for this plan
 
-- `dotnet test` passes: 204 from plans 1 and 2, 17 new in `Dse.Core.Tests`,
-  88 in `Dse.Components.Tests` — 309 in all.
+- `dotnet test` passes: 204 from plans 1 and 2, 17 new in `Millrace.Core.Tests`,
+  88 in `Millrace.Components.Tests` — 309 in all.
 - `dotnet build --configuration Release` produces zero warnings.
-- `Dse.Core`, `Dse.Io.Abstractions` and `Dse.Components` have no external
-  package references; `Dse.Components` references `Dse.Core` only.
+- `Millrace.Core`, `Millrace.Io.Abstractions` and `Millrace.Components` have no external
+  package references; `Millrace.Components` references `Millrace.Core` only.
 - A conveyor built purely by composition, fed at a steady rate, trips its own
   overload after the chute downstream of it blocks — belt load, torque
   demand, current and thermal state all rise first, in that order — then
@@ -8021,7 +8021,7 @@ real-time layer (plan 4) — `InstrumentHealth` is the hook plan 4 maps to
 quality. The component catalogue, JSON configuration, the CLI and scenario
 files (plan 5) — `FaultDescriptor` is what the catalogue will export. The
 mine-conveyor and wheel-line samples and any controller (plan 6 and
-`Dse.Control`) — the conveyor test here uses a hand-held start switch, not a
+`Millrace.Control`) — the conveyor test here uses a hand-held start switch, not a
 sequencer. A discrete-mode `Conveyor` composite: the wheel line composes one
 from `DiscreteBelt` and the same drivetrain in plan 6. The `Disintegrator`,
 splitters, mergers, and every component in spec 18. Plausibility checks

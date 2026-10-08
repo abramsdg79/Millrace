@@ -33,7 +33,7 @@ Nothing in this plan may reference those subsystems.
 ## Global Constraints
 
 - Target framework `net10.0` for every project.
-- `Dse.Core` and `Dse.Io.Abstractions` have **zero external runtime package
+- `Millrace.Core` and `Millrace.Io.Abstractions` have **zero external runtime package
   references**. Test projects may reference test packages.
 - `Nullable` enabled, `TreatWarningsAsErrors` true, `GenerateDocumentationFile`
   true (a `<see cref>` to a type that does not exist yet is a **build error**;
@@ -55,19 +55,19 @@ Nothing in this plan may reference those subsystems.
   receives `Span<double>.Empty` for bulk; items carry state. Spec 7.3 allows
   bulk state "when a process needs it" — no v1 process needs it, so it is a
   source change deferred until one does.
-- Validation codes introduced here: `DSE005` material recirculation loop,
-  `DSE006` CFL violation (`cellSize < maxSpeed·dt`), `DSE007` inlet fed by a
-  component not in the plant, `DSE008` flow contract not implemented (a flow
+- Validation codes introduced here: `MR005` material recirculation loop,
+  `MR006` CFL violation (`cellSize < maxSpeed·dt`), `MR007` inlet fed by a
+  component not in the plant, `MR008` flow contract not implemented (a flow
   port on a non-`IFlowNode`, or a connected port whose owner lacks the
   producer/consumer interface). Every message names the fix.
-- Licence: MIT. Namespace root: `Dse`. Flow types live in `Dse.Core.Flow`.
+- Licence: MIT. Namespace root: `Millrace`. Flow types live in `Millrace.Core.Flow`.
 - Commit trailers: every commit message body ends with the two attribution
   lines the session specifies (`Co-Authored-By: …` and `Claude-Session: …`),
   in the body, never on the subject line.
 
 ## Plan-1 facts this plan builds on
 
-- `ComponentBase` (`Dse.Core.Graph`): `Id`, `Ports`, protected `AddInput<T>`/
+- `ComponentBase` (`Millrace.Core.Graph`): `Id`, `Ports`, protected `AddInput<T>`/
   `AddOutput<T>`, virtual `HasDirectFeedthrough`, `Initialize(in InitContext)`,
   abstract `Evaluate(in TickContext)`, virtual `Latch()`. Ports are qualified
   with the composite path by `IQualifiable.Qualify`, which rewrites every
@@ -83,14 +83,14 @@ Nothing in this plan may reference those subsystems.
   out IReadOnlyList<string> cycle)` — Kahn's algorithm with a `SortedSet<int>`
   ready set and a backward-walking `FindCycle`. Task 6 extracts the sorting into
   `TopologicalSorter` so the flow graph can reuse it.
-- `SimulationBuilder.Validate()` emits `DSE001`–`DSE004`; `Build()` resolves and
+- `SimulationBuilder.Validate()` emits `MR001`–`MR004`; `Build()` resolves and
   constructs `Simulation(ISimComponent[] components, SimulationOptions options)`
   (internal constructor).
 - `Simulation.Tick()`: `Initialize()`, `DrainDueEvents()`, `EvaluateSignals()`
   (evaluate pass then latch pass), `AdvanceFlow()` (a `private static` no-op
   this plan replaces), `PublishIo()`, `EmitFrame()`, `Clock.Advance()`.
 - `SimulationOptions`: `Seed`, `StartTime`, `TimeStep` (default 10 ms).
-- Test fakes in `tests/Dse.Core.Tests/Fakes/`: `ConstantSource`, `Gain`,
+- Test fakes in `tests/Millrace.Core.Tests/Fakes/`: `ConstantSource`, `Gain`,
   `Integrator`, `NoiseSource`, `Recorder`, `Tripper`, `TwoStage`.
 - `OutputPort<T>.Value` is publicly settable, so a unit test can drive a
   component's input by wiring a bare `new OutputPort<double>("Out", "SP")` to it
@@ -99,7 +99,7 @@ Nothing in this plan may reference those subsystems.
 ## File Structure
 
 ```
-src/Dse.Core/
+src/Millrace.Core/
   Flow/PayloadKind.cs                      Bulk | Discrete
   Flow/MaterialProperties.cs               intensive struct + mass-weighted Blend
   Flow/MaterialType.cs                     name, kind, state schema
@@ -132,7 +132,7 @@ src/Dse.Core/
   SimulationBuilder.cs                     (modified: flow validation and build)
   Time/SimulationOptions.cs                (modified: CheckConservation, ConservationTolerance)
 
-tests/Dse.Core.Tests/
+tests/Millrace.Core.Tests/
   MaterialTests.cs, BulkLotTests.cs, ItemTests.cs, FlowPortTests.cs,
   FlowNodeTests.cs, TopologicalSorterTests.cs, FlowGraphTests.cs,
   ConservationTests.cs, SimulationFlowTests.cs, BulkBeltTests.cs,
@@ -159,10 +159,10 @@ machinery, not domain components.
 ### Task 1: Material types and properties
 
 **Files:**
-- Create: `src/Dse.Core/Flow/PayloadKind.cs`
-- Create: `src/Dse.Core/Flow/MaterialProperties.cs`
-- Create: `src/Dse.Core/Flow/MaterialType.cs`
-- Test: `tests/Dse.Core.Tests/MaterialTests.cs`
+- Create: `src/Millrace.Core/Flow/PayloadKind.cs`
+- Create: `src/Millrace.Core/Flow/MaterialProperties.cs`
+- Create: `src/Millrace.Core/Flow/MaterialType.cs`
+- Test: `tests/Millrace.Core.Tests/MaterialTests.cs`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -181,13 +181,13 @@ deterministic and costs nothing when empty.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/MaterialTests.cs`:
+`tests/Millrace.Core.Tests/MaterialTests.cs`:
 
 ```csharp
-using Dse.Core.Flow;
+using Millrace.Core.Flow;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class MaterialTests
 {
@@ -272,14 +272,14 @@ public class MaterialTests
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `dotnet test --filter FullyQualifiedName~MaterialTests`
-Expected: FAIL — `Dse.Core.Flow` does not exist.
+Expected: FAIL — `Millrace.Core.Flow` does not exist.
 
 - [ ] **Step 3: Implement the types**
 
-`src/Dse.Core/Flow/PayloadKind.cs`:
+`src/Millrace.Core/Flow/PayloadKind.cs`:
 
 ```csharp
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>What a flow node holds and a flow port carries. A node handles exactly one kind.</summary>
 public enum PayloadKind
@@ -297,10 +297,10 @@ public enum PayloadKind
 > `Whole item instances that move one at a time.` in this task; Task 3 restores
 > the `cref` once the type exists.
 
-`src/Dse.Core/Flow/MaterialProperties.cs`:
+`src/Millrace.Core/Flow/MaterialProperties.cs`:
 
 ```csharp
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>
 /// The intensive properties every parcel of material carries. A fixed struct
@@ -342,10 +342,10 @@ public readonly record struct MaterialProperties(double Density, double Moisture
 }
 ```
 
-`src/Dse.Core/Flow/MaterialType.cs`:
+`src/Millrace.Core/Flow/MaterialType.cs`:
 
 ```csharp
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>
 /// A kind of material — ore, dough, a billet. The state schema names the
@@ -418,7 +418,7 @@ Expected: PASS, 9 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Core/Flow tests/Dse.Core.Tests/MaterialTests.cs
+git add src/Millrace.Core/Flow tests/Millrace.Core.Tests/MaterialTests.cs
 git commit -m "feat(flow): add material types, kinds and blended properties"
 ```
 
@@ -427,8 +427,8 @@ git commit -m "feat(flow): add material types, kinds and blended properties"
 ### Task 2: Bulk lots
 
 **Files:**
-- Create: `src/Dse.Core/Flow/BulkLot.cs`
-- Test: `tests/Dse.Core.Tests/BulkLotTests.cs`
+- Create: `src/Millrace.Core/Flow/BulkLot.cs`
+- Test: `tests/Millrace.Core.Tests/BulkLotTests.cs`
 
 **Interfaces:**
 - Consumes: `MaterialType`, `MaterialProperties`, `PayloadKind` (Task 1).
@@ -445,13 +445,13 @@ material, and type changes happen in an explicit component (plan 3).
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/BulkLotTests.cs`:
+`tests/Millrace.Core.Tests/BulkLotTests.cs`:
 
 ```csharp
-using Dse.Core.Flow;
+using Millrace.Core.Flow;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class BulkLotTests
 {
@@ -557,10 +557,10 @@ Expected: FAIL — `BulkLot` does not exist.
 
 - [ ] **Step 3: Implement the lot**
 
-`src/Dse.Core/Flow/BulkLot.cs`:
+`src/Millrace.Core/Flow/BulkLot.cs`:
 
 ```csharp
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>
 /// A parcel of bulk material: what a cell holds and what moves across a link.
@@ -646,7 +646,7 @@ Expected: PASS, 9 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Core/Flow/BulkLot.cs tests/Dse.Core.Tests/BulkLotTests.cs
+git add src/Millrace.Core/Flow/BulkLot.cs tests/Millrace.Core.Tests/BulkLotTests.cs
 git commit -m "feat(flow): add bulk lots with merge and split"
 ```
 
@@ -655,14 +655,14 @@ git commit -m "feat(flow): add bulk lots with merge and split"
 ### Task 3: Items and the per-simulation id sequence
 
 **Files:**
-- Create: `src/Dse.Core/Flow/ItemIdSequence.cs`
-- Create: `src/Dse.Core/Flow/ItemInstance.cs`
-- Modify: `src/Dse.Core/Contexts/InitContext.cs` (new `items` constructor parameter and `Items` property)
-- Modify: `src/Dse.Core/Simulation.cs` (`Items` property, passed into `InitContext`)
-- Modify: `src/Dse.Core/Flow/PayloadKind.cs` (restore the `<see cref="ItemInstance"/>` on `Discrete`)
-- Modify: `tests/Dse.Core.Tests/ComponentTests.cs:96-97` (`NewInitContext` helper gains the sequence argument)
-- Create: `tests/Dse.Core.Tests/Fakes/TestContexts.cs`
-- Test: `tests/Dse.Core.Tests/ItemTests.cs`
+- Create: `src/Millrace.Core/Flow/ItemIdSequence.cs`
+- Create: `src/Millrace.Core/Flow/ItemInstance.cs`
+- Modify: `src/Millrace.Core/Contexts/InitContext.cs` (new `items` constructor parameter and `Items` property)
+- Modify: `src/Millrace.Core/Simulation.cs` (`Items` property, passed into `InitContext`)
+- Modify: `src/Millrace.Core/Flow/PayloadKind.cs` (restore the `<see cref="ItemInstance"/>` on `Discrete`)
+- Modify: `tests/Millrace.Core.Tests/ComponentTests.cs:96-97` (`NewInitContext` helper gains the sequence argument)
+- Create: `tests/Millrace.Core.Tests/Fakes/TestContexts.cs`
+- Test: `tests/Millrace.Core.Tests/ItemTests.cs`
 
 **Interfaces:**
 - Consumes: `MaterialType`, `MaterialProperties`, `PayloadKind` (Task 1); `InitContext`, `Simulation` (plan 1).
@@ -684,15 +684,15 @@ never mint the same id and two runs mint identical ids.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/ItemTests.cs`:
+`tests/Millrace.Core.Tests/ItemTests.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Flow;
-using Dse.Core.Tests.Fakes;
+using Millrace.Core.Contexts;
+using Millrace.Core.Flow;
+using Millrace.Core.Tests.Fakes;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class ItemTests
 {
@@ -757,16 +757,16 @@ public class ItemTests
 }
 ```
 
-`tests/Dse.Core.Tests/Fakes/TestContexts.cs`:
+`tests/Millrace.Core.Tests/Fakes/TestContexts.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Flow;
-using Dse.Core.Logging;
-using Dse.Core.Randomness;
-using Dse.Core.Telemetry;
+using Millrace.Core.Contexts;
+using Millrace.Core.Flow;
+using Millrace.Core.Logging;
+using Millrace.Core.Randomness;
+using Millrace.Core.Telemetry;
 
-namespace Dse.Core.Tests.Fakes;
+namespace Millrace.Core.Tests.Fakes;
 
 /// <summary>Builds the contexts a component needs when a test drives it without a Simulation.</summary>
 public static class TestContexts
@@ -798,10 +798,10 @@ Expected: FAIL — `ItemIdSequence` does not exist.
 
 - [ ] **Step 3: Implement the sequence and the item**
 
-`src/Dse.Core/Flow/ItemIdSequence.cs`:
+`src/Millrace.Core/Flow/ItemIdSequence.cs`:
 
 ```csharp
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>
 /// The simulation's item id counter. Ids are issued in creation order, so a
@@ -818,10 +818,10 @@ public sealed class ItemIdSequence
 }
 ```
 
-`src/Dse.Core/Flow/ItemInstance.cs`:
+`src/Millrace.Core/Flow/ItemInstance.cs`:
 
 ```csharp
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>
 /// One discrete piece of material. Mutable, because transforms change its
@@ -882,14 +882,14 @@ public sealed class ItemInstance
 
 - [ ] **Step 4: Thread the sequence through InitContext and Simulation**
 
-Replace `src/Dse.Core/Contexts/InitContext.cs` with:
+Replace `src/Millrace.Core/Contexts/InitContext.cs` with:
 
 ```csharp
-using Dse.Core.Flow;
-using Dse.Core.Randomness;
-using Dse.Core.Telemetry;
+using Millrace.Core.Flow;
+using Millrace.Core.Randomness;
+using Millrace.Core.Telemetry;
 
-namespace Dse.Core.Contexts;
+namespace Millrace.Core.Contexts;
 
 /// <summary>What a component is given once, before the first tick.</summary>
 public readonly struct InitContext
@@ -938,9 +938,9 @@ public readonly struct InitContext
 }
 ```
 
-In `src/Dse.Core/Simulation.cs`:
+In `src/Millrace.Core/Simulation.cs`:
 
-- add `using Dse.Core.Flow;` to the usings;
+- add `using Millrace.Core.Flow;` to the usings;
 - add, after `public EventLog Events { get; } = new();`:
 
 ```csharp
@@ -961,7 +961,7 @@ In `src/Dse.Core/Simulation.cs`:
                 Clock.DeltaSeconds);
 ```
 
-In `tests/Dse.Core.Tests/ComponentTests.cs`, add `using Dse.Core.Flow;` and
+In `tests/Millrace.Core.Tests/ComponentTests.cs`, add `using Millrace.Core.Flow;` and
 change the helper at lines 96–97 to:
 
 ```csharp
@@ -969,7 +969,7 @@ change the helper at lines 96–97 to:
         new(new DeterministicRandom(1UL), registry, new ItemIdSequence(), componentId, Start, 0.01);
 ```
 
-In `src/Dse.Core/Flow/PayloadKind.cs`, restore the doc comment on `Discrete`
+In `src/Millrace.Core/Flow/PayloadKind.cs`, restore the doc comment on `Discrete`
 to `/// <summary>Whole <see cref="ItemInstance"/> values that move one at a time.</summary>`.
 
 - [ ] **Step 5: Run the affected tests, then the whole suite**
@@ -983,7 +983,7 @@ Expected: PASS, all tests (91 from plan 1 + 9 + 9 + 5 = 114).
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Core/Flow src/Dse.Core/Contexts/InitContext.cs src/Dse.Core/Simulation.cs tests/Dse.Core.Tests/ItemTests.cs tests/Dse.Core.Tests/Fakes/TestContexts.cs tests/Dse.Core.Tests/ComponentTests.cs
+git add src/Millrace.Core/Flow src/Millrace.Core/Contexts/InitContext.cs src/Millrace.Core/Simulation.cs tests/Millrace.Core.Tests/ItemTests.cs tests/Millrace.Core.Tests/Fakes/TestContexts.cs tests/Millrace.Core.Tests/ComponentTests.cs
 git commit -m "feat(flow): add item instances and a per-simulation id sequence"
 ```
 
@@ -992,12 +992,12 @@ git commit -m "feat(flow): add item instances and a per-simulation id sequence"
 ### Task 4: Flow ports
 
 **Files:**
-- Create: `src/Dse.Core/Flow/FlowPort.cs`
-- Create: `src/Dse.Core/Flow/FlowInlet.cs`
-- Create: `src/Dse.Core/Flow/FlowOutlet.cs`
-- Modify: `src/Dse.Core/Graph/ComponentBase.cs` (protected `AddPort<TPort>`; `AddInput`/`AddOutput` delegate to it)
-- Modify: `src/Dse.Core/Graph/CompositeComponent.cs` (`Inlet(alias)`, `Outlet(alias)`)
-- Test: `tests/Dse.Core.Tests/FlowPortTests.cs`
+- Create: `src/Millrace.Core/Flow/FlowPort.cs`
+- Create: `src/Millrace.Core/Flow/FlowInlet.cs`
+- Create: `src/Millrace.Core/Flow/FlowOutlet.cs`
+- Modify: `src/Millrace.Core/Graph/ComponentBase.cs` (protected `AddPort<TPort>`; `AddInput`/`AddOutput` delegate to it)
+- Modify: `src/Millrace.Core/Graph/CompositeComponent.cs` (`Inlet(alias)`, `Outlet(alias)`)
+- Test: `tests/Millrace.Core.Tests/FlowPortTests.cs`
 
 **Interfaces:**
 - Consumes: `Port`, `ComponentBase`, `CompositeComponent`, `GraphResolver` (plan 1); `PayloadKind` (Task 1).
@@ -1021,15 +1021,15 @@ but `SourcePort` is `null` so the signal resolver never sees a flow edge.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/FlowPortTests.cs`:
+`tests/Millrace.Core.Tests/FlowPortTests.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class FlowPortTests
 {
@@ -1146,12 +1146,12 @@ Expected: FAIL — `FlowOutlet` does not exist.
 
 - [ ] **Step 3: Implement the ports**
 
-`src/Dse.Core/Flow/FlowPort.cs`:
+`src/Millrace.Core/Flow/FlowPort.cs`:
 
 ```csharp
-using Dse.Core.Graph;
+using Millrace.Core.Graph;
 
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>
 /// A material connection point. Flow ports never create signal-ordering edges:
@@ -1174,10 +1174,10 @@ public abstract class FlowPort : Port
 }
 ```
 
-`src/Dse.Core/Flow/FlowInlet.cs`:
+`src/Millrace.Core/Flow/FlowInlet.cs`:
 
 ```csharp
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>Where material enters a node. Exactly one source, because mass cannot merge implicitly.</summary>
 public sealed class FlowInlet : FlowPort
@@ -1208,10 +1208,10 @@ public sealed class FlowInlet : FlowPort
 }
 ```
 
-`src/Dse.Core/Flow/FlowOutlet.cs`:
+`src/Millrace.Core/Flow/FlowOutlet.cs`:
 
 ```csharp
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>Where material leaves a node. Feeds exactly one inlet, because mass cannot fan out.</summary>
 public sealed class FlowOutlet : FlowPort
@@ -1255,7 +1255,7 @@ public sealed class FlowOutlet : FlowPort
 
 - [ ] **Step 4: Open port registration on ComponentBase and alias lookup on composites**
 
-In `src/Dse.Core/Graph/ComponentBase.cs`, replace the two `Add…` methods with:
+In `src/Millrace.Core/Graph/ComponentBase.cs`, replace the two `Add…` methods with:
 
 ```csharp
     /// <summary>
@@ -1288,7 +1288,7 @@ In `src/Dse.Core/Graph/ComponentBase.cs`, replace the two `Add…` methods with:
         AddPort(new OutputPort<T>(name, Id));
 ```
 
-In `src/Dse.Core/Graph/CompositeComponent.cs`, add `using Dse.Core.Flow;` and,
+In `src/Millrace.Core/Graph/CompositeComponent.cs`, add `using Millrace.Core.Flow;` and,
 directly after `Output<T>`:
 
 ```csharp
@@ -1308,7 +1308,7 @@ Expected: PASS, all tests.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Core/Flow src/Dse.Core/Graph/ComponentBase.cs src/Dse.Core/Graph/CompositeComponent.cs tests/Dse.Core.Tests/FlowPortTests.cs
+git add src/Millrace.Core/Flow src/Millrace.Core/Graph/ComponentBase.cs src/Millrace.Core/Graph/CompositeComponent.cs tests/Millrace.Core.Tests/FlowPortTests.cs
 git commit -m "feat(flow): add single-source, single-target material ports"
 ```
 
@@ -1317,11 +1317,11 @@ git commit -m "feat(flow): add single-source, single-target material ports"
 ### Task 5: Flow node contracts and test nodes
 
 **Files:**
-- Create: `src/Dse.Core/Flow/IFlowNode.cs`
-- Create: `src/Dse.Core/Flow/IBulkProducer.cs`, `IBulkConsumer.cs`, `IItemProducer.cs`, `IItemConsumer.cs`
-- Create: `src/Dse.Core/Flow/FlowComponentBase.cs`
-- Create: `tests/Dse.Core.Tests/Fakes/Flow/BulkFeeder.cs`, `BulkSink.cs`, `BulkBuffer.cs`, `ItemFeeder.cs`, `ItemSink.cs`, `ItemBuffer.cs`
-- Test: `tests/Dse.Core.Tests/FlowNodeTests.cs`
+- Create: `src/Millrace.Core/Flow/IFlowNode.cs`
+- Create: `src/Millrace.Core/Flow/IBulkProducer.cs`, `IBulkConsumer.cs`, `IItemProducer.cs`, `IItemConsumer.cs`
+- Create: `src/Millrace.Core/Flow/FlowComponentBase.cs`
+- Create: `tests/Millrace.Core.Tests/Fakes/Flow/BulkFeeder.cs`, `BulkSink.cs`, `BulkBuffer.cs`, `ItemFeeder.cs`, `ItemSink.cs`, `ItemBuffer.cs`
+- Test: `tests/Millrace.Core.Tests/FlowNodeTests.cs`
 
 **Interfaces:**
 - Consumes: `ComponentBase`, `ISimComponent`, `ValidationError` (plan 1); Tasks 1–4.
@@ -1347,16 +1347,16 @@ have been resolved.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/FlowNodeTests.cs`:
+`tests/Millrace.Core.Tests/FlowNodeTests.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Flow;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Tests.Fakes.Flow;
+using Millrace.Core.Contexts;
+using Millrace.Core.Flow;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Tests.Fakes.Flow;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class FlowNodeTests
 {
@@ -1494,13 +1494,13 @@ public class FlowNodeTests
 
 - [ ] **Step 2: Write the test nodes**
 
-`tests/Dse.Core.Tests/Fakes/Flow/BulkFeeder.cs`:
+`tests/Millrace.Core.Tests/Fakes/Flow/BulkFeeder.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Flow;
+using Millrace.Core.Contexts;
+using Millrace.Core.Flow;
 
-namespace Dse.Core.Tests.Fakes.Flow;
+namespace Millrace.Core.Tests.Fakes.Flow;
 
 /// <summary>
 /// Creates bulk material at a rate each tick and offers everything it holds.
@@ -1553,12 +1553,12 @@ public sealed class BulkFeeder : FlowComponentBase, IBulkProducer
 }
 ```
 
-`tests/Dse.Core.Tests/Fakes/Flow/BulkSink.cs`:
+`tests/Millrace.Core.Tests/Fakes/Flow/BulkSink.cs`:
 
 ```csharp
-using Dse.Core.Flow;
+using Millrace.Core.Flow;
 
-namespace Dse.Core.Tests.Fakes.Flow;
+namespace Millrace.Core.Tests.Fakes.Flow;
 
 /// <summary>Accepts everything and removes it from the system, recording each deposit.</summary>
 public sealed class BulkSink : FlowComponentBase, IBulkConsumer
@@ -1593,12 +1593,12 @@ public sealed class BulkSink : FlowComponentBase, IBulkConsumer
 }
 ```
 
-`tests/Dse.Core.Tests/Fakes/Flow/BulkBuffer.cs`:
+`tests/Millrace.Core.Tests/Fakes/Flow/BulkBuffer.cs`:
 
 ```csharp
-using Dse.Core.Flow;
+using Millrace.Core.Flow;
 
-namespace Dse.Core.Tests.Fakes.Flow;
+namespace Millrace.Core.Tests.Fakes.Flow;
 
 /// <summary>A capacity-limited hold, like a transfer chute. Offers everything it holds.</summary>
 public sealed class BulkBuffer : FlowComponentBase, IBulkConsumer, IBulkProducer
@@ -1638,14 +1638,14 @@ public sealed class BulkBuffer : FlowComponentBase, IBulkConsumer, IBulkProducer
 }
 ```
 
-`tests/Dse.Core.Tests/Fakes/Flow/ItemFeeder.cs`:
+`tests/Millrace.Core.Tests/Fakes/Flow/ItemFeeder.cs`:
 
 ```csharp
 using System.Diagnostics.CodeAnalysis;
-using Dse.Core.Contexts;
-using Dse.Core.Flow;
+using Millrace.Core.Contexts;
+using Millrace.Core.Flow;
 
-namespace Dse.Core.Tests.Fakes.Flow;
+namespace Millrace.Core.Tests.Fakes.Flow;
 
 /// <summary>Mints one item every interval, ids from the simulation's sequence, and queues them for discharge.</summary>
 public sealed class ItemFeeder : FlowComponentBase, IItemProducer
@@ -1712,12 +1712,12 @@ public sealed class ItemFeeder : FlowComponentBase, IItemProducer
 }
 ```
 
-`tests/Dse.Core.Tests/Fakes/Flow/ItemSink.cs`:
+`tests/Millrace.Core.Tests/Fakes/Flow/ItemSink.cs`:
 
 ```csharp
-using Dse.Core.Flow;
+using Millrace.Core.Flow;
 
-namespace Dse.Core.Tests.Fakes.Flow;
+namespace Millrace.Core.Tests.Fakes.Flow;
 
 /// <summary>Accepts every item and removes it from the system.</summary>
 public sealed class ItemSink : FlowComponentBase, IItemConsumer
@@ -1746,13 +1746,13 @@ public sealed class ItemSink : FlowComponentBase, IItemConsumer
 }
 ```
 
-`tests/Dse.Core.Tests/Fakes/Flow/ItemBuffer.cs`:
+`tests/Millrace.Core.Tests/Fakes/Flow/ItemBuffer.cs`:
 
 ```csharp
 using System.Diagnostics.CodeAnalysis;
-using Dse.Core.Flow;
+using Millrace.Core.Flow;
 
-namespace Dse.Core.Tests.Fakes.Flow;
+namespace Millrace.Core.Tests.Fakes.Flow;
 
 /// <summary>A FIFO hold for a fixed number of items.</summary>
 public sealed class ItemBuffer : FlowComponentBase, IItemConsumer, IItemProducer
@@ -1807,13 +1807,13 @@ Expected: FAIL — `FlowComponentBase` does not exist.
 
 - [ ] **Step 4: Implement the contracts**
 
-`src/Dse.Core/Flow/IFlowNode.cs`:
+`src/Millrace.Core/Flow/IFlowNode.cs`:
 
 ```csharp
-using Dse.Core.Graph;
-using Dse.Core.Validation;
+using Millrace.Core.Graph;
+using Millrace.Core.Validation;
 
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>
 /// A component that holds material. It reports its inventory so the engine can
@@ -1843,10 +1843,10 @@ public interface IFlowNode : ISimComponent
 }
 ```
 
-`src/Dse.Core/Flow/IBulkProducer.cs`:
+`src/Millrace.Core/Flow/IBulkProducer.cs`:
 
 ```csharp
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>A node that discharges bulk material through one or more outlets.</summary>
 public interface IBulkProducer
@@ -1859,10 +1859,10 @@ public interface IBulkProducer
 }
 ```
 
-`src/Dse.Core/Flow/IBulkConsumer.cs`:
+`src/Millrace.Core/Flow/IBulkConsumer.cs`:
 
 ```csharp
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>A node that receives bulk material through one or more inlets.</summary>
 public interface IBulkConsumer
@@ -1874,12 +1874,12 @@ public interface IBulkConsumer
 }
 ```
 
-`src/Dse.Core/Flow/IItemProducer.cs`:
+`src/Millrace.Core/Flow/IItemProducer.cs`:
 
 ```csharp
 using System.Diagnostics.CodeAnalysis;
 
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>A node that discharges whole items through one or more outlets.</summary>
 public interface IItemProducer
@@ -1892,10 +1892,10 @@ public interface IItemProducer
 }
 ```
 
-`src/Dse.Core/Flow/IItemConsumer.cs`:
+`src/Millrace.Core/Flow/IItemConsumer.cs`:
 
 ```csharp
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>A node that receives whole items through one or more inlets.</summary>
 public interface IItemConsumer
@@ -1907,14 +1907,14 @@ public interface IItemConsumer
 }
 ```
 
-`src/Dse.Core/Flow/FlowComponentBase.cs`:
+`src/Millrace.Core/Flow/FlowComponentBase.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
-using Dse.Core.Validation;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
+using Millrace.Core.Validation;
 
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>
 /// Base for components that hold material. Most flow nodes neither create nor
@@ -1960,7 +1960,7 @@ Expected: PASS, 9 tests.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Core/Flow tests/Dse.Core.Tests/Fakes/Flow tests/Dse.Core.Tests/FlowNodeTests.cs
+git add src/Millrace.Core/Flow tests/Millrace.Core.Tests/Fakes/Flow tests/Millrace.Core.Tests/FlowNodeTests.cs
 git commit -m "feat(flow): add flow node contracts, offer/accept interfaces and test nodes"
 ```
 
@@ -1969,9 +1969,9 @@ git commit -m "feat(flow): add flow node contracts, offer/accept interfaces and 
 ### Task 6: Shared topological sorter
 
 **Files:**
-- Create: `src/Dse.Core/Graph/TopologicalSorter.cs`
-- Modify: `src/Dse.Core/Graph/GraphResolver.cs` (delegates sorting and cycle naming)
-- Test: `tests/Dse.Core.Tests/TopologicalSorterTests.cs`
+- Create: `src/Millrace.Core/Graph/TopologicalSorter.cs`
+- Modify: `src/Millrace.Core/Graph/GraphResolver.cs` (delegates sorting and cycle naming)
+- Test: `tests/Millrace.Core.Tests/TopologicalSorterTests.cs`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -1988,13 +1988,13 @@ for this refactor: they must pass unchanged.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/TopologicalSorterTests.cs`:
+`tests/Millrace.Core.Tests/TopologicalSorterTests.cs`:
 
 ```csharp
-using Dse.Core.Graph;
+using Millrace.Core.Graph;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class TopologicalSorterTests
 {
@@ -2069,10 +2069,10 @@ Expected: FAIL — `TopologicalSorter` does not exist.
 
 - [ ] **Step 3: Implement the sorter**
 
-`src/Dse.Core/Graph/TopologicalSorter.cs`:
+`src/Millrace.Core/Graph/TopologicalSorter.cs`:
 
 ```csharp
-namespace Dse.Core.Graph;
+namespace Millrace.Core.Graph;
 
 /// <summary>
 /// Kahn's algorithm over an adjacency list, ties broken by index so the order
@@ -2205,10 +2205,10 @@ internal static class TopologicalSorter
 
 - [ ] **Step 4: Make GraphResolver delegate**
 
-Replace `src/Dse.Core/Graph/GraphResolver.cs` with:
+Replace `src/Millrace.Core/Graph/GraphResolver.cs` with:
 
 ```csharp
-namespace Dse.Core.Graph;
+namespace Millrace.Core.Graph;
 
 /// <summary>
 /// Turns a wired component set into a fixed evaluation order. That order is the
@@ -2297,7 +2297,7 @@ Expected: PASS, all tests.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Core/Graph/TopologicalSorter.cs src/Dse.Core/Graph/GraphResolver.cs tests/Dse.Core.Tests/TopologicalSorterTests.cs
+git add src/Millrace.Core/Graph/TopologicalSorter.cs src/Millrace.Core/Graph/GraphResolver.cs tests/Millrace.Core.Tests/TopologicalSorterTests.cs
 git commit -m "refactor(core): extract the topological sorter shared by both resolvers"
 ```
 
@@ -2306,9 +2306,9 @@ git commit -m "refactor(core): extract the topological sorter shared by both res
 ### Task 7: Flow graph and the downstream-first sweep
 
 **Files:**
-- Create: `src/Dse.Core/Flow/FlowLink.cs`
-- Create: `src/Dse.Core/Flow/FlowGraph.cs`
-- Test: `tests/Dse.Core.Tests/FlowGraphTests.cs`
+- Create: `src/Millrace.Core/Flow/FlowLink.cs`
+- Create: `src/Millrace.Core/Flow/FlowGraph.cs`
+- Test: `tests/Millrace.Core.Tests/FlowGraphTests.cs`
 
 **Interfaces:**
 - Consumes: `IFlowNode`, the four producer/consumer interfaces, `FlowInlet.Source`, `FlowOutlet.Target`, `FlowComponentBase` (Task 5); `TopologicalSorter` (Task 6); `ValidationError` (plan 1).
@@ -2327,18 +2327,18 @@ and made room), then let it advance its own contents. Nothing else moves mass.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/FlowGraphTests.cs`:
+`tests/Millrace.Core.Tests/FlowGraphTests.cs`:
 
 ```csharp
 using System.Diagnostics.CodeAnalysis;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Tests.Fakes.Flow;
-using Dse.Core.Validation;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Tests.Fakes.Flow;
+using Millrace.Core.Validation;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class FlowGraphTests
 {
@@ -2447,7 +2447,7 @@ public class FlowGraphTests
         IReadOnlyList<ValidationError> errors = FlowGraph.Validate([a, b], Ids(a, b), 0.01);
 
         ValidationError error = Assert.Single(errors);
-        Assert.Equal("DSE005", error.Code);
+        Assert.Equal("MR005", error.Code);
         Assert.Contains("A", error.ComponentIds);
         Assert.Contains("B", error.ComponentIds);
     }
@@ -2461,7 +2461,7 @@ public class FlowGraphTests
 
         ValidationError error = Assert.Single(FlowGraph.Validate([buffer], Ids(buffer), 0.01));
 
-        Assert.Equal("DSE007", error.Code);
+        Assert.Equal("MR007", error.Code);
         Assert.Contains("F.Out", error.Message, StringComparison.Ordinal);
         Assert.Contains("B.In", error.Message, StringComparison.Ordinal);
     }
@@ -2476,7 +2476,7 @@ public class FlowGraphTests
 
         ValidationError error = Assert.Single(FlowGraph.Validate([buffer], plantIds, 0.01));
 
-        Assert.Equal("DSE008", error.Code);
+        Assert.Equal("MR008", error.Code);
         Assert.Contains(nameof(IFlowNode), error.Message, StringComparison.Ordinal);
     }
 
@@ -2489,7 +2489,7 @@ public class FlowGraphTests
 
         ValidationError error = Assert.Single(FlowGraph.Validate([mute, buffer], Ids(mute, buffer), 0.01));
 
-        Assert.Equal("DSE008", error.Code);
+        Assert.Equal("MR008", error.Code);
         Assert.Contains(nameof(IBulkProducer), error.Message, StringComparison.Ordinal);
         Assert.Contains("M.Out", error.Message, StringComparison.Ordinal);
     }
@@ -2501,7 +2501,7 @@ public class FlowGraphTests
 
         ValidationError error = Assert.Single(FlowGraph.Validate([picky], Ids(picky), 0.01));
 
-        Assert.Equal("DSE999", error.Code);
+        Assert.Equal("MR999", error.Code);
     }
 
     [Fact]
@@ -2584,7 +2584,7 @@ public class FlowGraphTests
         public override double MassHeld => 0.0;
 
         public override IEnumerable<ValidationError> ValidateFlow(double dt) =>
-            [new ValidationError("DSE999", "Picky.", [Id])];
+            [new ValidationError("MR999", "Picky.", [Id])];
     }
 }
 ```
@@ -2596,10 +2596,10 @@ Expected: FAIL — `FlowGraph` does not exist.
 
 - [ ] **Step 3: Implement the link and the graph**
 
-`src/Dse.Core/Flow/FlowLink.cs`:
+`src/Millrace.Core/Flow/FlowLink.cs`:
 
 ```csharp
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>One material connection, resolved to its two nodes at build time.</summary>
 internal readonly record struct FlowLink(
@@ -2609,13 +2609,13 @@ internal readonly record struct FlowLink(
     FlowInlet Inlet);
 ```
 
-`src/Dse.Core/Flow/FlowGraph.cs`:
+`src/Millrace.Core/Flow/FlowGraph.cs`:
 
 ```csharp
-using Dse.Core.Graph;
-using Dse.Core.Validation;
+using Millrace.Core.Graph;
+using Millrace.Core.Validation;
 
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>
 /// The material layer of a built plant: nodes in downstream-first order, each
@@ -2678,7 +2678,7 @@ internal sealed class FlowGraph
         if (errors.Count == 0 && !TrySort(nodes, byId, out _, out List<string> cycle))
         {
             errors.Add(new ValidationError(
-                "DSE005",
+                "MR005",
                 $"Material recirculation loop: {string.Join(" -> ", cycle.Append(cycle[0]))}. " +
                 $"Recirculation is not supported; break the loop with an explicit sink and source.",
                 cycle));
@@ -2860,7 +2860,7 @@ internal sealed class FlowGraph
 
     private static ValidationError ContractGap(IFlowNode node, FlowPort port, string contract) =>
         new(
-            "DSE008",
+            "MR008",
             $"Port '{port.QualifiedName}' is connected, but '{node.Id}' does not implement " +
             $"{contract}. Implement it, or leave the port unconnected.",
             [node.Id]);
@@ -2872,13 +2872,13 @@ internal sealed class FlowGraph
         IReadOnlySet<string> plantIds) =>
         plantIds.Contains(source.OwnerId)
             ? new ValidationError(
-                "DSE008",
+                "MR008",
                 $"Inlet '{inlet.QualifiedName}' is fed by '{source.QualifiedName}', but " +
                 $"'{source.OwnerId}' is not an {nameof(IFlowNode)}. Derive it from " +
                 $"{nameof(FlowComponentBase)} or implement {nameof(IFlowNode)}.",
                 [node.Id, source.OwnerId])
             : new ValidationError(
-                "DSE007",
+                "MR007",
                 $"Inlet '{inlet.QualifiedName}' is fed by '{source.QualifiedName}', but " +
                 $"component '{source.OwnerId}' is not part of the plant. Add it to the " +
                 $"builder, or add the composite that contains it.",
@@ -2894,7 +2894,7 @@ Expected: PASS, 12 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Core/Flow/FlowLink.cs src/Dse.Core/Flow/FlowGraph.cs tests/Dse.Core.Tests/FlowGraphTests.cs
+git add src/Millrace.Core/Flow/FlowLink.cs src/Millrace.Core/Flow/FlowGraph.cs tests/Millrace.Core.Tests/FlowGraphTests.cs
 git commit -m "feat(flow): add the flow graph with downstream-first transport and validation"
 ```
 
@@ -2903,12 +2903,12 @@ git commit -m "feat(flow): add the flow graph with downstream-first transport an
 ### Task 8: Mass conservation audit
 
 **Files:**
-- Create: `src/Dse.Core/Flow/MassBalance.cs`
-- Create: `src/Dse.Core/Flow/MassConservationException.cs`
-- Modify: `src/Dse.Core/Flow/FlowGraph.cs` (`Balance()`, `AssertConserved(tick, relativeTolerance)`)
-- Modify: `src/Dse.Core/Time/SimulationOptions.cs` (`CheckConservation`, `ConservationTolerance`)
-- Create: `tests/Dse.Core.Tests/Fakes/Flow/LeakyBuffer.cs`
-- Test: `tests/Dse.Core.Tests/ConservationTests.cs`
+- Create: `src/Millrace.Core/Flow/MassBalance.cs`
+- Create: `src/Millrace.Core/Flow/MassConservationException.cs`
+- Modify: `src/Millrace.Core/Flow/FlowGraph.cs` (`Balance()`, `AssertConserved(tick, relativeTolerance)`)
+- Modify: `src/Millrace.Core/Time/SimulationOptions.cs` (`CheckConservation`, `ConservationTolerance`)
+- Create: `tests/Millrace.Core.Tests/Fakes/Flow/LeakyBuffer.cs`
+- Test: `tests/Millrace.Core.Tests/ConservationTests.cs`
 
 **Interfaces:**
 - Consumes: `FlowGraph`, `IFlowNode` (Tasks 5, 7); `SimulationOptions` (plan 1).
@@ -2928,17 +2928,17 @@ not trip on accumulated rounding.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/ConservationTests.cs`:
+`tests/Millrace.Core.Tests/ConservationTests.cs`:
 
 ```csharp
 using System.Globalization;
-using Dse.Core.Flow;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Tests.Fakes.Flow;
-using Dse.Core.Time;
+using Millrace.Core.Flow;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Tests.Fakes.Flow;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class ConservationTests
 {
@@ -3044,12 +3044,12 @@ public class ConservationTests
 }
 ```
 
-`tests/Dse.Core.Tests/Fakes/Flow/LeakyBuffer.cs`:
+`tests/Millrace.Core.Tests/Fakes/Flow/LeakyBuffer.cs`:
 
 ```csharp
-using Dse.Core.Flow;
+using Millrace.Core.Flow;
 
-namespace Dse.Core.Tests.Fakes.Flow;
+namespace Millrace.Core.Tests.Fakes.Flow;
 
 /// <summary>
 /// Keeps only a fraction of what it is given and does not report the rest as
@@ -3098,10 +3098,10 @@ Expected: FAIL — `MassBalance` does not exist.
 
 - [ ] **Step 3: Implement the balance, the exception and the options**
 
-`src/Dse.Core/Flow/MassBalance.cs`:
+`src/Millrace.Core/Flow/MassBalance.cs`:
 
 ```csharp
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>The plant-wide mass ledger at one instant, in kilograms.</summary>
 /// <param name="Created">Cumulative mass injected by sources.</param>
@@ -3114,12 +3114,12 @@ public readonly record struct MassBalance(double Created, double Destroyed, doub
 }
 ```
 
-`src/Dse.Core/Flow/MassConservationException.cs`:
+`src/Millrace.Core/Flow/MassConservationException.cs`:
 
 ```csharp
 using System.Globalization;
 
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>Raised by the per-tick audit when mass appeared or vanished outside the transport protocol.</summary>
 public sealed class MassConservationException : Exception
@@ -3145,7 +3145,7 @@ public sealed class MassConservationException : Exception
 }
 ```
 
-Add to `src/Dse.Core/Flow/FlowGraph.cs`, after `Step`:
+Add to `src/Millrace.Core/Flow/FlowGraph.cs`, after `Step`:
 
 ```csharp
     /// <summary>Sums every node's ledger. O(nodes); no allocation.</summary>
@@ -3178,7 +3178,7 @@ Add to `src/Dse.Core/Flow/FlowGraph.cs`, after `Step`:
     }
 ```
 
-Add to `src/Dse.Core/Time/SimulationOptions.cs`, after `TimeStep`:
+Add to `src/Millrace.Core/Time/SimulationOptions.cs`, after `TimeStep`:
 
 ```csharp
     /// <summary>
@@ -3200,7 +3200,7 @@ Expected: PASS, 6 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Core/Flow src/Dse.Core/Time/SimulationOptions.cs tests/Dse.Core.Tests/Fakes/Flow/LeakyBuffer.cs tests/Dse.Core.Tests/ConservationTests.cs
+git add src/Millrace.Core/Flow src/Millrace.Core/Time/SimulationOptions.cs tests/Millrace.Core.Tests/Fakes/Flow/LeakyBuffer.cs tests/Millrace.Core.Tests/ConservationTests.cs
 git commit -m "feat(flow): add the per-tick mass conservation audit"
 ```
 
@@ -3209,14 +3209,14 @@ git commit -m "feat(flow): add the per-tick mass conservation audit"
 ### Task 9: Builder and Simulation integration
 
 **Files:**
-- Modify: `src/Dse.Core/SimulationBuilder.cs` (flow validation in `Validate`, flow graph in `Build`)
-- Modify: `src/Dse.Core/Simulation.cs` (constructor takes the flow graph; phase 3; `MassBalance`)
-- Test: `tests/Dse.Core.Tests/SimulationFlowTests.cs`
+- Modify: `src/Millrace.Core/SimulationBuilder.cs` (flow validation in `Validate`, flow graph in `Build`)
+- Modify: `src/Millrace.Core/Simulation.cs` (constructor takes the flow graph; phase 3; `MassBalance`)
+- Test: `tests/Millrace.Core.Tests/SimulationFlowTests.cs`
 
 **Interfaces:**
 - Consumes: `FlowGraph` (Tasks 7–8), `IFlowNode` (Task 5), `SimulationOptions.CheckConservation`/`ConservationTolerance` (Task 8).
 - Produces:
-  - `SimulationBuilder.Validate()` additionally emits `DSE005`–`DSE008` and node `ValidateFlow` errors
+  - `SimulationBuilder.Validate()` additionally emits `MR005`–`MR008` and node `ValidateFlow` errors
   - `internal Simulation(ISimComponent[] components, FlowGraph flow, SimulationOptions options)`
   - `Simulation.MassBalance` (`MassBalance`)
   - `Simulation.Tick()` phase 3 = `FlowGraph.Step(dt)` then the conservation audit when enabled
@@ -3228,19 +3228,19 @@ instance method walking it.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/SimulationFlowTests.cs`:
+`tests/Millrace.Core.Tests/SimulationFlowTests.cs`:
 
 ```csharp
-using Dse.Core;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Tests.Fakes.Flow;
-using Dse.Core.Time;
-using Dse.Core.Validation;
+using Millrace.Core;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Tests.Fakes.Flow;
+using Millrace.Core.Time;
+using Millrace.Core.Validation;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class SimulationFlowTests
 {
@@ -3293,7 +3293,7 @@ public class SimulationFlowTests
         SimulationValidationException error = Assert.Throws<SimulationValidationException>(
             () => new SimulationBuilder(Options()).Add(a).Add(b).Build());
 
-        Assert.Equal("DSE005", error.Result.Errors[0].Code);
+        Assert.Equal("MR005", error.Result.Errors[0].Code);
     }
 
     [Fact]
@@ -3305,7 +3305,7 @@ public class SimulationFlowTests
 
         ValidationResult result = new SimulationBuilder(Options()).Add(sink).Validate();
 
-        Assert.Equal("DSE007", result.Errors[0].Code);
+        Assert.Equal("MR007", result.Errors[0].Code);
         Assert.Contains("F.Out", result.Errors[0].Message, StringComparison.Ordinal);
     }
 
@@ -3387,10 +3387,10 @@ yet validate flow, so the recirculation test fails on its assertion).
 
 - [ ] **Step 3: Extend the builder**
 
-In `src/Dse.Core/SimulationBuilder.cs`:
+In `src/Millrace.Core/SimulationBuilder.cs`:
 
-- add `using Dse.Core.Flow;`;
-- in `Validate()`, after the `DSE003` block and before `return ValidationResult.From(errors);`, add:
+- add `using Millrace.Core.Flow;`;
+- in `Validate()`, after the `MR003` block and before `return ValidationResult.From(errors);`, add:
 
 ```csharp
         errors.AddRange(FlowGraph.Validate(FlowNodes(), seen, _options.TimeStep.TotalSeconds));
@@ -3417,12 +3417,12 @@ In `src/Dse.Core/SimulationBuilder.cs`:
     private List<IFlowNode> FlowNodes() => _components.OfType<IFlowNode>().ToList();
 ```
 
-(`seen` is the `HashSet<string>` of component ids the `DSE001` loop already
+(`seen` is the `HashSet<string>` of component ids the `MR001` loop already
 builds; `HashSet<string>` implements `IReadOnlySet<string>`.)
 
 - [ ] **Step 4: Give Simulation the flow graph and phase 3**
 
-In `src/Dse.Core/Simulation.cs`:
+In `src/Millrace.Core/Simulation.cs`:
 
 - add the fields after `_seed`:
 
@@ -3484,7 +3484,7 @@ Expected: PASS, all tests.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Core/SimulationBuilder.cs src/Dse.Core/Simulation.cs tests/Dse.Core.Tests/SimulationFlowTests.cs
+git add src/Millrace.Core/SimulationBuilder.cs src/Millrace.Core/Simulation.cs tests/Millrace.Core.Tests/SimulationFlowTests.cs
 git commit -m "feat(flow): validate, build and step the material graph in the simulation"
 ```
 
@@ -3493,8 +3493,8 @@ git commit -m "feat(flow): validate, build and step the material graph in the si
 ### Task 10: Bulk belt — cells, advection and back-pressure
 
 **Files:**
-- Create: `src/Dse.Core/Flow/BulkBelt.cs`
-- Test: `tests/Dse.Core.Tests/BulkBeltTests.cs`
+- Create: `src/Millrace.Core/Flow/BulkBelt.cs`
+- Test: `tests/Millrace.Core.Tests/BulkBeltTests.cs`
 
 **Interfaces:**
 - Consumes: `FlowComponentBase`, `IBulkProducer`, `IBulkConsumer`, `BulkLot` (Tasks 2, 5); `InputPort<T>`, `OutputPort<T>`, `TelemetryHandle`, `ValidationError` (plan 1).
@@ -3504,7 +3504,7 @@ git commit -m "feat(flow): validate, build and step the material graph in the si
     `OutputPort<double> Load` (kg), `OutputPort<double> PeakLinearDensity` (kg/m),
     `double Length`, `CellSize`, `MaxSpeed`, `MaxLinearDensity`, `int CellCount`,
     `ReadOnlySpan<BulkLot> Cells`, `double LinearDensityAt(double position)`,
-    `ValidateFlow` emitting `DSE006`
+    `ValidateFlow` emitting `MR006`
 
 Spec 7.5 bulk mode: cells of configured size; each tick a fraction
 `v·dt / cellSize` of each cell moves to its neighbour; validation enforces
@@ -3522,16 +3522,16 @@ always initialises before the first tick, and unit tests must call
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/BulkBeltTests.cs`:
+`tests/Millrace.Core.Tests/BulkBeltTests.cs`:
 
 ```csharp
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Validation;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Validation;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class BulkBeltTests
 {
@@ -3589,7 +3589,7 @@ public class BulkBeltTests
         BulkBelt tooFast = NewBelt(maxSpeed: 2.0);
 
         ValidationError error = Assert.Single(tooFast.ValidateFlow(Dt));
-        Assert.Equal("DSE006", error.Code);
+        Assert.Equal("MR006", error.Code);
         Assert.Equal(new[] { "CV" }, error.ComponentIds);
         Assert.Contains("cell", error.Message, StringComparison.Ordinal);
 
@@ -3740,16 +3740,16 @@ Expected: FAIL — `BulkBelt` does not exist.
 
 - [ ] **Step 3: Implement the belt**
 
-`src/Dse.Core/Flow/BulkBelt.cs`:
+`src/Millrace.Core/Flow/BulkBelt.cs`:
 
 ```csharp
 using System.Globalization;
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
-using Dse.Core.Telemetry;
-using Dse.Core.Validation;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
+using Millrace.Core.Telemetry;
+using Millrace.Core.Validation;
 
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>
 /// Bulk transport as an array of cells. Each tick a fraction v·dt/cellSize of
@@ -3874,7 +3874,7 @@ public sealed class BulkBelt : FlowComponentBase, IBulkProducer, IBulkConsumer
         if (CellSize < minimumCell)
         {
             yield return new ValidationError(
-                "DSE006",
+                "MR006",
                 string.Create(
                     CultureInfo.InvariantCulture,
                     $"Belt '{Id}': cell size {CellSize} m is smaller than maxSpeed × dt = " +
@@ -3955,7 +3955,7 @@ Expected: PASS, 12 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Core/Flow/BulkBelt.cs tests/Dse.Core.Tests/BulkBeltTests.cs
+git add src/Millrace.Core/Flow/BulkBelt.cs tests/Millrace.Core.Tests/BulkBeltTests.cs
 git commit -m "feat(flow): add the cell-based bulk belt with capacity back-pressure"
 ```
 
@@ -3964,11 +3964,11 @@ git commit -m "feat(flow): add the cell-based bulk belt with capacity back-press
 ### Task 11: Residence transforms and belt outputs
 
 **Files:**
-- Create: `src/Dse.Core/Flow/IMaterialTransform.cs`
-- Create: `src/Dse.Core/Flow/TransformContext.cs`
-- Modify: `src/Dse.Core/Flow/BulkBelt.cs` (optional `transforms` parameter, `AmbientTemperature` input, transforms applied in `Advance`)
-- Create: `tests/Dse.Core.Tests/Fakes/Flow/Heater.cs`
-- Test: `tests/Dse.Core.Tests/BulkBeltTransformTests.cs`
+- Create: `src/Millrace.Core/Flow/IMaterialTransform.cs`
+- Create: `src/Millrace.Core/Flow/TransformContext.cs`
+- Modify: `src/Millrace.Core/Flow/BulkBelt.cs` (optional `transforms` parameter, `AmbientTemperature` input, transforms applied in `Advance`)
+- Create: `tests/Millrace.Core.Tests/Fakes/Flow/Heater.cs`
+- Test: `tests/Millrace.Core.Tests/BulkBeltTransformTests.cs`
 
 **Interfaces:**
 - Consumes: `MaterialProperties` (Task 1), `BulkBelt` (Task 10).
@@ -3989,12 +3989,12 @@ through the belt with a test transform.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/Fakes/Flow/Heater.cs`:
+`tests/Millrace.Core.Tests/Fakes/Flow/Heater.cs`:
 
 ```csharp
-using Dse.Core.Flow;
+using Millrace.Core.Flow;
 
-namespace Dse.Core.Tests.Fakes.Flow;
+namespace Millrace.Core.Tests.Fakes.Flow;
 
 /// <summary>Moves temperature toward ambient at a fixed fraction per second. Ignores state.</summary>
 public sealed class Heater : IMaterialTransform
@@ -4012,17 +4012,17 @@ public sealed class Heater : IMaterialTransform
 }
 ```
 
-`tests/Dse.Core.Tests/BulkBeltTransformTests.cs`:
+`tests/Millrace.Core.Tests/BulkBeltTransformTests.cs`:
 
 ```csharp
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Telemetry;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Tests.Fakes.Flow;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Telemetry;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Tests.Fakes.Flow;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class BulkBeltTransformTests
 {
@@ -4161,10 +4161,10 @@ Expected: FAIL — `IMaterialTransform` does not exist.
 
 - [ ] **Step 3: Implement the contract**
 
-`src/Dse.Core/Flow/TransformContext.cs`:
+`src/Millrace.Core/Flow/TransformContext.cs`:
 
 ```csharp
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>
 /// Ambient conditions a node hands to its transforms, taken from the node's
@@ -4175,10 +4175,10 @@ namespace Dse.Core.Flow;
 public readonly record struct TransformContext(double AmbientTemperature);
 ```
 
-`src/Dse.Core/Flow/IMaterialTransform.cs`:
+`src/Millrace.Core/Flow/IMaterialTransform.cs`:
 
 ```csharp
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>
 /// Something that happens to material while it is resident in a node: heat
@@ -4195,7 +4195,7 @@ public interface IMaterialTransform
 
 - [ ] **Step 4: Apply transforms in the bulk belt**
 
-In `src/Dse.Core/Flow/BulkBelt.cs`:
+In `src/Millrace.Core/Flow/BulkBelt.cs`:
 
 - add the field after `_cellCapacity`:
 
@@ -4273,7 +4273,7 @@ Expected: PASS, all tests.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Core/Flow tests/Dse.Core.Tests/Fakes/Flow/Heater.cs tests/Dse.Core.Tests/BulkBeltTransformTests.cs
+git add src/Millrace.Core/Flow tests/Millrace.Core.Tests/Fakes/Flow/Heater.cs tests/Millrace.Core.Tests/BulkBeltTransformTests.cs
 git commit -m "feat(flow): add the residence transform contract and apply it on bulk belts"
 ```
 
@@ -4282,9 +4282,9 @@ git commit -m "feat(flow): add the residence transform contract and apply it on 
 ### Task 12: Discrete belt
 
 **Files:**
-- Create: `src/Dse.Core/Flow/DiscreteBelt.cs`
-- Create: `tests/Dse.Core.Tests/Fakes/Flow/ResidenceCounter.cs`
-- Test: `tests/Dse.Core.Tests/DiscreteBeltTests.cs`
+- Create: `src/Millrace.Core/Flow/DiscreteBelt.cs`
+- Create: `tests/Millrace.Core.Tests/Fakes/Flow/ResidenceCounter.cs`
+- Test: `tests/Millrace.Core.Tests/DiscreteBeltTests.cs`
 
 **Interfaces:**
 - Consumes: `FlowComponentBase`, `IItemProducer`, `IItemConsumer`, `ItemInstance`, `IMaterialTransform`, `TransformContext` (Tasks 3, 5, 11); `InputPort<T>`, `OutputPort<T>` (plan 1).
@@ -4306,12 +4306,12 @@ with the item's own state span, before positions move.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/Fakes/Flow/ResidenceCounter.cs`:
+`tests/Millrace.Core.Tests/Fakes/Flow/ResidenceCounter.cs`:
 
 ```csharp
-using Dse.Core.Flow;
+using Millrace.Core.Flow;
 
-namespace Dse.Core.Tests.Fakes.Flow;
+namespace Millrace.Core.Tests.Fakes.Flow;
 
 /// <summary>Accumulates, in one state slot, the seconds spent above a temperature.</summary>
 public sealed class ResidenceCounter : IMaterialTransform
@@ -4335,16 +4335,16 @@ public sealed class ResidenceCounter : IMaterialTransform
 }
 ```
 
-`tests/Dse.Core.Tests/DiscreteBeltTests.cs`:
+`tests/Millrace.Core.Tests/DiscreteBeltTests.cs`:
 
 ```csharp
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Tests.Fakes.Flow;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Tests.Fakes.Flow;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class DiscreteBeltTests
 {
@@ -4545,15 +4545,15 @@ Expected: FAIL — `DiscreteBelt` does not exist.
 
 - [ ] **Step 3: Implement the belt**
 
-`src/Dse.Core/Flow/DiscreteBelt.cs`:
+`src/Millrace.Core/Flow/DiscreteBelt.cs`:
 
 ```csharp
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
 
-namespace Dse.Core.Flow;
+namespace Millrace.Core.Flow;
 
 /// <summary>
 /// Discrete transport: each item carries a continuous position advanced by
@@ -4739,7 +4739,7 @@ Expected: PASS, 11 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Core/Flow/DiscreteBelt.cs tests/Dse.Core.Tests/Fakes/Flow/ResidenceCounter.cs tests/Dse.Core.Tests/DiscreteBeltTests.cs
+git add src/Millrace.Core/Flow/DiscreteBelt.cs tests/Millrace.Core.Tests/Fakes/Flow/ResidenceCounter.cs tests/Millrace.Core.Tests/DiscreteBeltTests.cs
 git commit -m "feat(flow): add the position-based discrete belt"
 ```
 
@@ -4748,9 +4748,9 @@ git commit -m "feat(flow): add the position-based discrete belt"
 ### Task 13: End-to-end back-pressure, conservation property test and docs
 
 **Files:**
-- Create: `tests/Dse.Core.Tests/Fakes/Setpoint.cs`
-- Test: `tests/Dse.Core.Tests/FlowIntegrationTests.cs`
-- Test: `tests/Dse.Core.Tests/ConservationPropertyTests.cs`
+- Create: `tests/Millrace.Core.Tests/Fakes/Setpoint.cs`
+- Test: `tests/Millrace.Core.Tests/FlowIntegrationTests.cs`
+- Test: `tests/Millrace.Core.Tests/ConservationPropertyTests.cs`
 - Modify: `docs/architecture.md` (phase 3 bullet; new "Material flow" section)
 - Modify: `README.md` (status)
 
@@ -4765,13 +4765,13 @@ bulk belts behave as shift registers. The property test is spec 16's
 
 - [ ] **Step 1: Write the setpoint fake and the integration tests**
 
-`tests/Dse.Core.Tests/Fakes/Setpoint.cs`:
+`tests/Millrace.Core.Tests/Fakes/Setpoint.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
 
-namespace Dse.Core.Tests.Fakes;
+namespace Millrace.Core.Tests.Fakes;
 
 /// <summary>A signal source a test can change between ticks.</summary>
 public sealed class Setpoint : ComponentBase
@@ -4791,17 +4791,17 @@ public sealed class Setpoint : ComponentBase
 }
 ```
 
-`tests/Dse.Core.Tests/FlowIntegrationTests.cs`:
+`tests/Millrace.Core.Tests/FlowIntegrationTests.cs`:
 
 ```csharp
-using Dse.Core;
-using Dse.Core.Flow;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Tests.Fakes.Flow;
-using Dse.Core.Time;
+using Millrace.Core;
+using Millrace.Core.Flow;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Tests.Fakes.Flow;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class FlowIntegrationTests
 {
@@ -4971,19 +4971,19 @@ public class FlowIntegrationTests
 
 - [ ] **Step 2: Write the conservation property test**
 
-`tests/Dse.Core.Tests/ConservationPropertyTests.cs`:
+`tests/Millrace.Core.Tests/ConservationPropertyTests.cs`:
 
 ```csharp
-using Dse.Core;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Randomness;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Tests.Fakes.Flow;
-using Dse.Core.Time;
+using Millrace.Core;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Randomness;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Tests.Fakes.Flow;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 /// <summary>
 /// Spec section 16: mass conservation over randomly generated plants. Each
@@ -5185,7 +5185,7 @@ state array sized by its material's schema.
 `BulkBelt` is an array of cells. Each tick a fraction `v·dt/cellSize` of every
 cell moves to its neighbour, resolved from the head backwards so a blocked
 discharge builds load along the belt; validation refuses `cellSize <
-maxSpeed·dt` (`DSE006`). A cell never exceeds `maxLinearDensity·cellSize`, so
+maxSpeed·dt` (`MR006`). A cell never exceeds `maxLinearDensity·cellSize`, so
 the inlet accepts only the room in the first cell. Speed zero freezes the load
 profile exactly. `DiscreteBelt` carries items at continuous positions with no
 diffusion; items queue behind a blocked head at the minimum spacing.
@@ -5201,9 +5201,9 @@ Every tick the engine sums each node's `MassHeld`, `MassCreated` and
 (relative to the mass sourced). A node that injects mass reports it in
 `MassCreated`; a node that removes it — a sink, a declared loss — reports it in
 `MassDestroyed`. Anything else is a bug, and the audit finds it on the tick it
-happens. Validation also rejects recirculation loops (`DSE005`), inlets fed
-from outside the plant (`DSE007`) and flow ports whose owner lacks the
-producer/consumer contract (`DSE008`).
+happens. Validation also rejects recirculation loops (`MR005`), inlets fed
+from outside the plant (`MR007`) and flow ports whose owner lacks the
+producer/consumer contract (`MR008`).
 ```
 
 - [ ] **Step 5: Update the README status**
@@ -5229,7 +5229,7 @@ implementation plans, and `docs/architecture.md` for how the engine works.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add tests/Dse.Core.Tests/Fakes/Setpoint.cs tests/Dse.Core.Tests/FlowIntegrationTests.cs tests/Dse.Core.Tests/ConservationPropertyTests.cs docs/architecture.md README.md
+git add tests/Millrace.Core.Tests/Fakes/Setpoint.cs tests/Millrace.Core.Tests/FlowIntegrationTests.cs tests/Millrace.Core.Tests/ConservationPropertyTests.cs docs/architecture.md README.md
 git commit -m "test(flow): add back-pressure acceptance tests and the conservation property test"
 ```
 
@@ -5239,7 +5239,7 @@ git commit -m "test(flow): add back-pressure acceptance tests and the conservati
 
 - `dotnet test` passes with every test above (91 from plan 1 plus 106 new).
 - `dotnet build --configuration Release` produces zero warnings.
-- `Dse.Core` and `Dse.Io.Abstractions` still have no external package references.
+- `Millrace.Core` and `Millrace.Io.Abstractions` still have no external package references.
 - A feeder → belt → chute → belt → sink chain reaches steady state at the feed
   rate; a pulse arrives after exactly length-over-speed per belt plus one
   hand-off tick; stopping the downstream belt fills the chute and builds load

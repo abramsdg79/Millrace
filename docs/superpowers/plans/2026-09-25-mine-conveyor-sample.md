@@ -5,7 +5,7 @@
 **Goal:** Ship the mine-conveyor reference sample of main spec §15.1 as a data
 folder — `samples/mine-conveyors/` holding a plant file with twelve controllers,
 eight scenarios, their golden event logs and a README — plus
-`tests/Dse.Samples.Tests`, which runs every scenario through `dse run --expect`
+`tests/Millrace.Samples.Tests`, which runs every scenario through `millrace run --expect`
 in-process, asserts its causal chain (by events, and by sampled state where the
 log cannot show it) and its absences, checks it settles before it ends, and
 replays it byte for byte from a recording; with one small engine change first —
@@ -15,9 +15,9 @@ a `bulk-source` that can be declared disabled at power-up.
 optional `enabled` parameter, default true, so a plant can declare its feeder
 off at power-up as a real PLC output is; every existing plant and golden is
 unchanged except the two catalogue-derived goldens that list parameters. The
-sample itself is JSON the `dse` command line of plans 5a–5d already runs. The
+sample itself is JSON the `millrace` command line of plans 5a–5d already runs. The
 test project drives the CLI in-process through `CliApp.Run` for `validate` and
-the goldens (`run --expect`, and `run --out` when `DSE_UPDATE_GOLDEN=1`), reads
+the goldens (`run --expect`, and `run --out` when `MILLRACE_UPDATE_GOLDEN=1`), reads
 each scenario's event log through `ScenarioRunner` (one cached run per scenario)
 for the stories, samples tag values from a live `Simulation` where a story is
 told by state, and builds a live `Simulation` with a `ScenarioRecorder` for
@@ -35,10 +35,10 @@ main spec `docs/superpowers/specs/2026-09-02-industrial-process-simulation-engin
 
 **Plan sequence:** This is plan 6a. Plans 1–5d are merged on `master`; this plan
 starts from `51980e2` (the commit that added the 6a spec). Measured on that
-commit with `dotnet test Dse.sln`: **1255 tests**, all passing — 37
-`Dse.Io.Abstractions` / 461 `Dse.Core` / 126 `Dse.Components` / 56
-`Dse.Realtime` / 209 `Dse.Configuration` / 163 `Dse.Scenarios` / 76 `Dse.Cli` /
-105 `Dse.Control` / 22 `Dse.Control.Catalogue`.
+commit with `dotnet test Millrace.sln`: **1255 tests**, all passing — 37
+`Millrace.Io.Abstractions` / 461 `Millrace.Core` / 126 `Millrace.Components` / 56
+`Millrace.Realtime` / 209 `Millrace.Configuration` / 163 `Millrace.Scenarios` / 76 `Millrace.Cli` /
+105 `Millrace.Control` / 22 `Millrace.Control.Catalogue`.
 
 **Task shape.** Eight tasks, in the spec's suggested order, with three changes
 the code argued for:
@@ -61,7 +61,7 @@ the code argued for:
 
 - **`src/` changes only in Task 1** (R112; spec criterion 5 allows a change
   with its own test and ruling). After Task 1, `git diff --stat 51980e2 -- src/`
-  lists only `src/Dse.Components/Flow/BulkSource.cs`. If a scenario exposes any
+  lists only `src/Millrace.Components/Flow/BulkSource.cs`. If a scenario exposes any
   other engine defect during execution, stop and report it rather than fixing
   `src/` inside a sample task. `git grep -n PackageReference -- 'src/*.csproj'`
   prints nothing (a plain `grep -r` over `src/` also hits `obj/` after a build).
@@ -70,10 +70,10 @@ the code argued for:
   with `StringComparer.Ordinal` or keep file order. String comparisons are
   ordinal. All formatting uses `CultureInfo.InvariantCulture`.
 - **Test packages.** The new project uses the versions of
-  `tests/Dse.Core.Tests/Dse.Core.Tests.csproj` (`coverlet.collector` 6.0.4,
+  `tests/Millrace.Core.Tests/Millrace.Core.Tests.csproj` (`coverlet.collector` 6.0.4,
   `Microsoft.NET.Test.Sdk` 17.14.1, `xunit` 2.9.3, `xunit.runner.visualstudio`
   3.1.4) and references **JsonSchema.Net 8.0.5**, pinned, with the same comment
-  `tests/Dse.Configuration.Tests` carries (R114). Those two test projects are the
+  `tests/Millrace.Configuration.Tests` carries (R114). Those two test projects are the
   only ones that reference it.
 - **Warnings are errors** (`Directory.Build.props`: `TreatWarningsAsErrors`,
   `EnforceCodeStyleInBuild`, `GenerateDocumentationFile`, `Nullable`). The
@@ -87,12 +87,12 @@ the code argued for:
   builds `new FaultArguments(fault.Arguments.ToArray())` from a parsed scenario.
 - **Goldens are generated and read, never invented or hand-edited** (R113).
   Task 1's two catalogue goldens use `tests/Shared/Golden.cs`: regenerate each
-  with `DSE_UPDATE_GOLDEN=1` and a `--filter` naming its one test, then read the
-  whole `git diff`. A sample golden is written by the golden theory itself when `DSE_UPDATE_GOLDEN=1`:
-  it runs `dse run <scenario> --out samples/mine-conveyors/expected/<name>.log`
+  with `MILLRACE_UPDATE_GOLDEN=1` and a `--filter` naming its one test, then read the
+  whole `git diff`. A sample golden is written by the golden theory itself when `MILLRACE_UPDATE_GOLDEN=1`:
+  it runs `millrace run <scenario> --out samples/mine-conveyors/expected/<name>.log`
   in-process, at the source path. Run the update **for this project and this
   theory only** —
-  `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"`
+  `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"`
   — never over the whole solution, which would rewrite every other project's
   goldens. Then **read each new golden in full** with a file-reading tool, check
   it against the task's checklist, quote the checked lines in the task report,
@@ -111,7 +111,7 @@ the code argued for:
   condition changes and its trip write is logged 10 ms after its
   `INTERLOCK_TRIP`; a sequencer step's writes land 10 ms after its
   `STEP_ENTERED`.
-- **Names.** Tag names are exactly what `dse tags samples/mine-conveyors/plant.json`
+- **Names.** Tag names are exactly what `millrace tags samples/mine-conveyors/plant.json`
   prints and match ordinally. A scenario's file name, its golden's file name and
   its `Sample.Names` entry are the same kebab-case word. Component ids for faults
   are the flattened leaf ids (`CV003.Motor`, `CV002.ZeroSpeed`,
@@ -131,8 +131,8 @@ the code argued for:
   the model that implements a given task: it is the same on every commit,
   whichever implementer model a task names. Never put it on the subject line.
 - **Commands**, from the repository root:
-  `dotnet build Dse.sln -c Release --nologo` (expect `0 Warning(s)`,
-  `0 Error(s)`) and `dotnet test Dse.sln --nologo` (expect the task's total).
+  `dotnet build Millrace.sln -c Release --nologo` (expect `0 Warning(s)`,
+  `0 Error(s)`) and `dotnet test Millrace.sln --nologo` (expect the task's total).
   `.superpowers/` **is** git-ignored (since `68c61e9`); scratch work goes under
   `.superpowers/sdd/6a/` and is never added.
 
@@ -147,7 +147,7 @@ likely to bite first. Each has its test in the owning task, named here.
    tick 0 exactly as before; the author expects the new parameter to change
    nothing unless it is written. Tests: Task 1,
    `FlowFactoryTests.ASourceIsEnabledAtPowerUpUnlessTheFileSaysOtherwise`, and
-   the unchanged goldens of `Dse.Scenarios.Tests` and `Dse.Control.Tests`
+   the unchanged goldens of `Millrace.Scenarios.Tests` and `Millrace.Control.Tests`
    (`conveyor-control.log` feeds from tick 0 and must not move).
 2. **A scenario added, renamed or deleted without its golden, its story or its
    README section** — the author expects a red test, not a theory that quietly
@@ -190,7 +190,7 @@ The 6a spec is amended in place to agree (its header note lists them), as plan
   from the switch's own *reading* after calibration, drift, noise, lag, freeze and
   failure (`InstrumentBase.Evaluate`), so a failed switch changes it.
   `CVn.ZeroSpeed.Value` is the switch's reading (Double, m/s), not a Bool; a
-  condition on it would be `DSE114`. Measured (`fail-low` on `CV002.ZeroSpeed` at
+  condition on it would be `MR114`. Measured (`fail-low` on `CV002.ZeroSpeed` at
   80 s): the reading pins at 0 m/s; `CV002.ZeroSpeed ZERO_SPEED` is logged at
   80.990 s (the switch's fixed 1 s delay) while CV002 runs at 1.92 m/s, and
   `INT_CV001` trips at 81.000 s.
@@ -281,15 +281,15 @@ The 6a spec is amended in place to agree (its header note lists them), as plan
   own test and ruling; this is Task 1. The sample declares `"enabled": false`;
   measured, no ore is created before `Feed.Enabled` is written true at 9.410 s,
   and `INT_FEED`'s power-up trip at 1.000 s writes a false that is already there.
-- **R113 — Goldens go through `dse run`, not `tests/Shared/Golden.cs`.** The
+- **R113 — Goldens go through `millrace run`, not `tests/Shared/Golden.cs`.** The
   golden theory runs `--expect` against the copy in the test output and, when
-  `DSE_UPDATE_GOLDEN=1`, runs `--out` to the source path found from `Sample.cs` by
+  `MILLRACE_UPDATE_GOLDEN=1`, runs `--out` to the source path found from `Sample.cs` by
   `[CallerFilePath]`. `tests/Shared` is not linked. A mismatch leaves
   `<name>.log.actual` beside the *output* copy (and `*.actual` is git-ignored).
   Task 1's two catalogue goldens are ordinary `Golden.Assert` goldens.
-- **R114 — `Dse.Samples.Tests` references JsonSchema.Net 8.0.5 itself.** The
+- **R114 — `Millrace.Samples.Tests` references JsonSchema.Net 8.0.5 itself.** The
   configuration tests' helper is `private` to `SchemaAgreementTests`. 5d's
-  constraint "pinned in `tests/Dse.Configuration.Tests` only" widens to these two
+  constraint "pinned in `tests/Millrace.Configuration.Tests` only" widens to these two
   test projects.
 - **R115 — `CausalChain`'s shape.** `EventPattern(string? Source, string Code,
   string MessageFragment = "")`: source and code match exactly (ordinal), a null
@@ -322,7 +322,7 @@ The 6a spec is amended in place to agree (its header note lists them), as plan
   (1.913 m/s at 288 t/h); 90 % of 1.935 is 1.74. `CVn.Speed` is the speed
   sensor (noise σ 0.002 m/s, no lag).
 - **R120 — Main spec amendments.** §15.1 says "A demo controller in
-  `Dse.Control`"; the controllers are in the plant file, so the sentence is
+  `Millrace.Control`"; the controllers are in the plant file, so the sentence is
   amended with the rest of §15.1 and §4's sample list (Task 8). §16's "the
   generated schema accepts both samples' plant files" holds and is left as
   written.
@@ -350,11 +350,11 @@ this plan.
 **The line.** Belts 1.0 m wide, horizontal, 1 m cells, 20° surcharge, ore at
 1 600 kg/m³: capacity 105.2 kg/m, or 738 t/h at 1.95 m/s. Feed 80 kg/s
 (288 t/h, 41.8 kg/m at 1.913 m/s, 40 % of capacity), enabled at 9.410 s. CFL:
-max speed 2.148 m/s × 10 ms = 0.021 m ≪ 1 m cells; no `DSE006`. Motors
+max speed 2.148 m/s × 10 ms = 0.021 m ≪ 1 m cells; no `MR006`. Motors
 155 rad/s (1 480 rpm), gear 25:1, pulley 0.63 m, coast time constant 1.5 s (a
 loaded belt's switch asserts 7.8 s after its contactor opens), other constants
 the catalogue defaults (locked-rotor 6×, acceleration τ 1 s, thermal τ 60 s,
-starter trip 1.1 / reset 0.9). `dse validate`: 7 components, 52 leaves, 6 flow
+starter trip 1.1 / reset 0.9). `millrace validate`: 7 components, 52 leaves, 6 flow
 links, 120 tags, 12 controllers.
 
 | | CV001 | CV002 | CV003 |
@@ -373,7 +373,7 @@ links, 120 tags, 12 controllers.
 `Hi` is about 1.2 × the loaded running current; `HiHi` about 1.05 × rated, just
 under the 1.049 × rated at which the thermal state settles at the trip level.
 
-**Wall time** per scenario, `dse run` from a shell (Release, process start
+**Wall time** per scenario, `millrace run` from a shell (Release, process start
 included): normal-start-stop 0.52 s, pull-key 0.50 s, e-stop 0.49 s, overload
 0.50 s, chute-blockage 0.63 s, failed-zero-speed 0.49 s, welded-contactor
 0.72 s, feed-starve 0.61 s. Under `dotnet test` (Debug) the whole new project
@@ -397,7 +397,7 @@ byte-identical in every golden):
 **Record → replay:** all eight byte-identical; each recording holds exactly the
 scenario's actions (3 each, 4 for normal-start-stop, 6 for welded-contactor).
 
-**Names confirmed** against `dse tags` (120 tags) and `dse catalog export`:
+**Names confirmed** against `millrace tags` (120 tags) and `millrace catalog export`:
 fault ids `thermal-bias` (`motor`), `blockage` (`transfer-chute`), `fail-low`
 (every instrument, including `zero-speed-switch`), `contactor-welded`
 (`motor-starter`), `starve` (`bulk-source`); tags `CVn.Start`, `CVn.SafetyReset`,
@@ -408,18 +408,18 @@ safety relay's last channel: `Channel3` with the default two pull-keys.
 ## File structure
 
 ```
-src/Dse.Components/Flow/BulkSource.cs          + optional `enabled` parameter (Task 1)
-tests/Dse.Components.Tests/SourceSinkTests.cs  + 1 test (Task 1)
-tests/Dse.Components.Tests/Catalogue/FlowFactoryTests.cs              + 1 test (Task 1)
-tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json regenerated (Task 1)
-tests/Dse.Configuration.Tests/Golden/plant.schema.json                regenerated (Task 1)
+src/Millrace.Components/Flow/BulkSource.cs          + optional `enabled` parameter (Task 1)
+tests/Millrace.Components.Tests/SourceSinkTests.cs  + 1 test (Task 1)
+tests/Millrace.Components.Tests/Catalogue/FlowFactoryTests.cs              + 1 test (Task 1)
+tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json regenerated (Task 1)
+tests/Millrace.Configuration.Tests/Golden/plant.schema.json                regenerated (Task 1)
 samples/mine-conveyors/
   plant.json                      the line and its twelve controllers (Task 3)
   README.md                       the line, the philosophy, one section per scenario (Task 7)
   scenarios/<name>.json           eight scenarios (Tasks 4–6)
   expected/<name>.log             eight goldens, generated (Tasks 4–6)
-tests/Dse.Samples.Tests/
-  Dse.Samples.Tests.csproj        new; copies samples/mine-conveyors/** to the output (Task 2)
+tests/Millrace.Samples.Tests/
+  Millrace.Samples.Tests.csproj        new; copies samples/mine-conveyors/** to the output (Task 2)
   CausalChain.cs                  EventPattern, Absence, CausalChain (Task 2)
   CausalChainTests.cs             11 tests (Task 2)
   StateChain.cs                   TagSample, StateChain (Task 2)
@@ -429,7 +429,7 @@ tests/Dse.Samples.Tests/
   MineConveyorTests.cs            plant tests (Task 3); scenario theories (Task 4); state facts (Task 6)
   Stories.cs                      Story and the eight stories (Task 4; grows in 5–6)
   SampleReadmeTests.cs            README quotes (Task 7)
-Dse.sln                           + Dse.Samples.Tests (Task 2)
+Millrace.sln                           + Millrace.Samples.Tests (Task 2)
 README.md                         status and quick start (Task 8)
 docs/control-blocks.md            points at the sample (Task 8)
 docs/superpowers/specs/2026-09-02-industrial-process-simulation-engine-design.md   §4, §15.1, §15.2 (Task 8)
@@ -462,11 +462,11 @@ read against its story).
 **Model:** sonnet.
 
 **Files:**
-- Modify: `src/Dse.Components/Flow/BulkSource.cs` (descriptor, constructor, one XML summary)
-- Test: `tests/Dse.Components.Tests/SourceSinkTests.cs` (+1 fact, + `using Dse.Io;`)
-- Test: `tests/Dse.Components.Tests/Catalogue/FlowFactoryTests.cs` (+1 fact)
-- Regenerate: `tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json`
-- Regenerate: `tests/Dse.Configuration.Tests/Golden/plant.schema.json`
+- Modify: `src/Millrace.Components/Flow/BulkSource.cs` (descriptor, constructor, one XML summary)
+- Test: `tests/Millrace.Components.Tests/SourceSinkTests.cs` (+1 fact, + `using Millrace.Io;`)
+- Test: `tests/Millrace.Components.Tests/Catalogue/FlowFactoryTests.cs` (+1 fact)
+- Regenerate: `tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json`
+- Regenerate: `tests/Millrace.Configuration.Tests/Golden/plant.schema.json`
 
 **Interfaces:**
 - Consumes: `Param.Bool(string name, string description, bool? @default = null)`,
@@ -478,8 +478,8 @@ read against its story).
 
 - [ ] **Step 1: Write the failing tests**
 
-In `tests/Dse.Components.Tests/SourceSinkTests.cs`, add `using Dse.Io;` after
-`using Dse.Core.Time;`, and insert before
+In `tests/Millrace.Components.Tests/SourceSinkTests.cs`, add `using Millrace.Io;` after
+`using Millrace.Core.Time;`, and insert before
 `    [Fact]\n    public void ASinkWithCapacityFillsOnceAndSaysSo()`:
 
 ```csharp
@@ -501,7 +501,7 @@ In `tests/Dse.Components.Tests/SourceSinkTests.cs`, add `using Dse.Io;` after
     }
 ```
 
-In `tests/Dse.Components.Tests/Catalogue/FlowFactoryTests.cs`, insert before
+In `tests/Millrace.Components.Tests/Catalogue/FlowFactoryTests.cs`, insert before
 `    [Fact]\n    public void AProcessUnitGetsOneInletPerRecipeLineAndANestedHold()`:
 
 ```csharp
@@ -519,12 +519,12 @@ In `tests/Dse.Components.Tests/Catalogue/FlowFactoryTests.cs`, insert before
 
 - [ ] **Step 2: Run them to see them fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --nologo`
+Run: `dotnet test tests/Millrace.Components.Tests --nologo`
 Expected: the build fails with `error CS1739: The best overload for 'BulkSource' does not have a parameter named 'enabled'`.
 
 - [ ] **Step 3: Add the parameter**
 
-In `src/Dse.Components/Flow/BulkSource.cs` make these five replacements.
+In `src/Millrace.Components/Flow/BulkSource.cs` make these five replacements.
 
 The factory:
 
@@ -599,7 +599,7 @@ becomes
 
 - [ ] **Step 4: Run the component tests**
 
-Run: `dotnet test tests/Dse.Components.Tests --nologo`
+Run: `dotnet test tests/Millrace.Components.Tests --nologo`
 Expected: 127 passed, 1 failed —
 `ComponentsExportTests.TheShippedCatalogueExportsExactlyTheGoldenFile` (the
 catalogue golden lists parameters). The two new facts pass, and so does the
@@ -608,14 +608,14 @@ catalogue conformance sweep: the new parameter has a default, so
 
 - [ ] **Step 5: Regenerate the two catalogue goldens and read their diffs**
 
-Run: `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Components.Tests --nologo --filter "FullyQualifiedName~TheShippedCatalogueExportsExactlyTheGoldenFile"`
-Run: `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Configuration.Tests --nologo --filter "FullyQualifiedName~PlantSchemaTests.MatchesTheGoldenFile"`
-Then read `git diff tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json tests/Dse.Configuration.Tests/Golden/plant.schema.json`
+Run: `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Components.Tests --nologo --filter "FullyQualifiedName~TheShippedCatalogueExportsExactlyTheGoldenFile"`
+Run: `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Configuration.Tests --nologo --filter "FullyQualifiedName~PlantSchemaTests.MatchesTheGoldenFile"`
+Then read `git diff tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json tests/Millrace.Configuration.Tests/Golden/plant.schema.json`
 in full. It must be exactly this, and nothing else (measured):
 
 ```diff
---- a/tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json
-+++ b/tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json
+--- a/tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json
++++ b/tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json
 @@ -601,6 +601,13 @@
            "optional": true,
            "minimum": 0,
@@ -639,8 +639,8 @@ in full. It must be exactly this, and nothing else (measured):
          },
          {
            "name": "HopperMass",
---- a/tests/Dse.Configuration.Tests/Golden/plant.schema.json
-+++ b/tests/Dse.Configuration.Tests/Golden/plant.schema.json
+--- a/tests/Millrace.Configuration.Tests/Golden/plant.schema.json
++++ b/tests/Millrace.Configuration.Tests/Golden/plant.schema.json
 @@ -701,6 +701,11 @@
                "description": "Hopper size. Omit for unlimited. Unit: kg.",
                "type": "number",
@@ -657,8 +657,8 @@ in full. It must be exactly this, and nothing else (measured):
 
 - [ ] **Step 6: Build and test the solution**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1257** (Components 128). Every
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1257** (Components 128). Every
 other golden — the scenario goldens, `conveyor-control.log`, the control
 catalogue — is unchanged: `git status --short` lists only the five files of
 this task.
@@ -666,7 +666,7 @@ this task.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/Dse.Components/Flow/BulkSource.cs tests/Dse.Components.Tests/SourceSinkTests.cs tests/Dse.Components.Tests/Catalogue/FlowFactoryTests.cs tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json tests/Dse.Configuration.Tests/Golden/plant.schema.json
+git add src/Millrace.Components/Flow/BulkSource.cs tests/Millrace.Components.Tests/SourceSinkTests.cs tests/Millrace.Components.Tests/Catalogue/FlowFactoryTests.cs tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json tests/Millrace.Configuration.Tests/Golden/plant.schema.json
 ```
 
 ```bash
@@ -680,15 +680,15 @@ git commit -m "feat(components): let a bulk source start disabled, as a PLC outp
 **Model:** sonnet.
 
 **Files:**
-- Create: `tests/Dse.Samples.Tests/Dse.Samples.Tests.csproj`
-- Create: `tests/Dse.Samples.Tests/CausalChain.cs`, `tests/Dse.Samples.Tests/StateChain.cs`
-- Test: `tests/Dse.Samples.Tests/CausalChainTests.cs`, `tests/Dse.Samples.Tests/StateChainTests.cs`
-- Modify: `Dse.sln` (through `dotnet sln add`)
+- Create: `tests/Millrace.Samples.Tests/Millrace.Samples.Tests.csproj`
+- Create: `tests/Millrace.Samples.Tests/CausalChain.cs`, `tests/Millrace.Samples.Tests/StateChain.cs`
+- Test: `tests/Millrace.Samples.Tests/CausalChainTests.cs`, `tests/Millrace.Samples.Tests/StateChainTests.cs`
+- Modify: `Millrace.sln` (through `dotnet sln add`)
 
 **Interfaces:**
-- Consumes: `Dse.Core.Logging.SimEventRecord(long Tick, DateTimeOffset SimTime,
+- Consumes: `Millrace.Core.Logging.SimEventRecord(long Tick, DateTimeOffset SimTime,
   string Source, string Code, string Message)` (existing).
-- Produces (namespace `Dse.Samples.Tests`):
+- Produces (namespace `Millrace.Samples.Tests`):
   - `public sealed record EventPattern(string? Source, string Code, string MessageFragment = "")`
     with `bool Matches(SimEventRecord record)` and a `ToString()` of the form
     `CV001.Starter CONTACTOR_OPENED` / `any source INTERLOCK_TRIP "fragment"`.
@@ -704,7 +704,7 @@ git commit -m "feat(components): let a bulk source start disabled, as a PLC outp
 
 - [ ] **Step 1: Create the project file**
 
-`tests/Dse.Samples.Tests/Dse.Samples.Tests.csproj`:
+`tests/Millrace.Samples.Tests/Millrace.Samples.Tests.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -735,11 +735,11 @@ git commit -m "feat(components): let a bulk source start disabled, as a PLC outp
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Dse.Cli\Dse.Cli.csproj" />
-    <ProjectReference Include="..\..\src\Dse.Scenarios\Dse.Scenarios.csproj" />
-    <ProjectReference Include="..\..\src\Dse.Configuration\Dse.Configuration.csproj" />
-    <ProjectReference Include="..\..\src\Dse.Control.Catalogue\Dse.Control.Catalogue.csproj" />
-    <ProjectReference Include="..\..\src\Dse.Components\Dse.Components.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Cli\Millrace.Cli.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Scenarios\Millrace.Scenarios.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Configuration\Millrace.Configuration.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Control.Catalogue\Millrace.Control.Catalogue.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Components\Millrace.Components.csproj" />
   </ItemGroup>
 
 </Project>
@@ -751,20 +751,20 @@ The folder does not exist until Task 3; an empty glob is not an error.
 
 - [ ] **Step 2: Add the project to the solution**
 
-Run: `dotnet sln Dse.sln add tests/Dse.Samples.Tests/Dse.Samples.Tests.csproj`
-Expected: `Project `tests/Dse.Samples.Tests/Dse.Samples.Tests.csproj` added to the solution.`
-Then `git diff --stat Dse.sln` shows 15 insertions: one `Project(...)` entry,
+Run: `dotnet sln Millrace.sln add tests/Millrace.Samples.Tests/Millrace.Samples.Tests.csproj`
+Expected: `Project `tests/Millrace.Samples.Tests/Millrace.Samples.Tests.csproj` added to the solution.`
+Then `git diff --stat Millrace.sln` shows 15 insertions: one `Project(...)` entry,
 twelve configuration lines, and a nesting line placing it under the existing
 `tests` folder `{0AB3BF05-4346-4AA6-1389-037BE0695223}`.
 
 - [ ] **Step 3: Write the failing tests**
 
-`tests/Dse.Samples.Tests/CausalChainTests.cs`:
+`tests/Millrace.Samples.Tests/CausalChainTests.cs`:
 
 ```csharp
-using Dse.Core.Logging;
+using Millrace.Core.Logging;
 
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 public class CausalChainTests
 {
@@ -877,10 +877,10 @@ public class CausalChainTests
 }
 ```
 
-`tests/Dse.Samples.Tests/StateChainTests.cs`:
+`tests/Millrace.Samples.Tests/StateChainTests.cs`:
 
 ```csharp
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 public class StateChainTests
 {
@@ -946,18 +946,18 @@ public class StateChainTests
 
 - [ ] **Step 4: Run them to see them fail**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo`
 Expected: the build fails with `error CS0246: The type or namespace name 'EventPattern' could not be found` (and the same for `Absence`, `CausalChain`, `TagSample` and `StateChain`).
 
 - [ ] **Step 5: Write the helpers**
 
-`tests/Dse.Samples.Tests/CausalChain.cs`:
+`tests/Millrace.Samples.Tests/CausalChain.cs`:
 
 ```csharp
 using System.Globalization;
-using Dse.Core.Logging;
+using Millrace.Core.Logging;
 
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 /// <summary>
 /// One event a story expects: an exact source (or any source, when null), an
@@ -1083,12 +1083,12 @@ public static class CausalChain
 }
 ```
 
-`tests/Dse.Samples.Tests/StateChain.cs`:
+`tests/Millrace.Samples.Tests/StateChain.cs`:
 
 ```csharp
 using System.Globalization;
 
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 /// <summary>One sampled value of a tag, at a time from the start of the run.</summary>
 public sealed record TagSample(TimeSpan Time, double Value);
@@ -1179,21 +1179,21 @@ public static class StateChain
 
 - [ ] **Step 6: Run the tests to see them pass**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo`
 Expected: `Passed!  - Failed:     0, Passed:    16, Skipped:     0, Total:    16`
 (`CausalChainTests`: eight facts and one theory of three rows; `StateChainTests`:
 five facts).
 
 - [ ] **Step 7: Build and test the solution**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect ten `Passed!` lines; the total is
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect ten `Passed!` lines; the total is
 **1273** (1257 + 16).
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add tests/Dse.Samples.Tests/Dse.Samples.Tests.csproj tests/Dse.Samples.Tests/CausalChain.cs tests/Dse.Samples.Tests/CausalChainTests.cs tests/Dse.Samples.Tests/StateChain.cs tests/Dse.Samples.Tests/StateChainTests.cs Dse.sln
+git add tests/Millrace.Samples.Tests/Millrace.Samples.Tests.csproj tests/Millrace.Samples.Tests/CausalChain.cs tests/Millrace.Samples.Tests/CausalChainTests.cs tests/Millrace.Samples.Tests/StateChain.cs tests/Millrace.Samples.Tests/StateChainTests.cs Millrace.sln
 ```
 
 ```bash
@@ -1208,14 +1208,14 @@ git commit -m "test(samples): add the samples test project and the event and sta
 
 **Files:**
 - Create: `samples/mine-conveyors/plant.json`
-- Create: `tests/Dse.Samples.Tests/Cli.cs`
-- Create: `tests/Dse.Samples.Tests/Sample.cs`
-- Test: `tests/Dse.Samples.Tests/MineConveyorTests.cs`
+- Create: `tests/Millrace.Samples.Tests/Cli.cs`
+- Create: `tests/Millrace.Samples.Tests/Sample.cs`
+- Test: `tests/Millrace.Samples.Tests/MineConveyorTests.cs`
 
 **Interfaces:**
 - Consumes: Task 1's `bulk-source` `enabled`; Task 2's `TagSample`;
-  `Dse.Cli.CliApp.Run(string[] args, TextWriter stdout, TextWriter stderr)` and
-  `Dse.Cli.ExitCodes` (public); `PlantLoader.Load(string json,
+  `Millrace.Cli.CliApp.Run(string[] args, TextWriter stdout, TextWriter stderr)` and
+  `Millrace.Cli.ExitCodes` (public); `PlantLoader.Load(string json,
   ComponentCatalogue catalogue, LoadOptions? options = null)`;
   `PlantSchema.Generate(ComponentCatalogue)`; `JsonSchema.FromText` /
   `Evaluate(JsonElement)`; `ScenarioLoader.Parse`, `ScenarioRunner.Run(Scenario,
@@ -1236,17 +1236,17 @@ git commit -m "test(samples): add the samples test project and the event and sta
 
 - [ ] **Step 1: Write the CLI helper**
 
-`tests/Dse.Samples.Tests/Cli.cs`:
+`tests/Millrace.Samples.Tests/Cli.cs`:
 
 ```csharp
-using Dse.Cli;
+using Millrace.Cli;
 
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 /// <summary>What one in-process run of the CLI printed, and how it exited.</summary>
 internal sealed record CliRun(int ExitCode, string Out, string Err);
 
-/// <summary>Runs the CLI in-process, as <c>Dse.Cli.Tests</c> does, and captures both streams.</summary>
+/// <summary>Runs the CLI in-process, as <c>Millrace.Cli.Tests</c> does, and captures both streams.</summary>
 internal static class Cli
 {
     public static CliRun Run(params string[] args)
@@ -1261,26 +1261,26 @@ internal static class Cli
 
 - [ ] **Step 2: Write `Sample`**
 
-`tests/Dse.Samples.Tests/Sample.cs` — `Names` is empty here; Tasks 4–6 fill it.
+`tests/Millrace.Samples.Tests/Sample.cs` — `Names` is empty here; Tasks 4–6 fill it.
 `Schedule` and `Trace` are first used in Tasks 4 and 6:
 
 ```csharp
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using Dse.Components;
-using Dse.Control.Catalogue;
-using Dse.Configuration;
-using Dse.Core;
-using Dse.Core.Catalogue;
-using Dse.Core.Faults;
-using Dse.Io;
-using Dse.Scenarios;
+using Millrace.Components;
+using Millrace.Control.Catalogue;
+using Millrace.Configuration;
+using Millrace.Core;
+using Millrace.Core.Catalogue;
+using Millrace.Core.Faults;
+using Millrace.Io;
+using Millrace.Scenarios;
 
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 /// <summary>
 /// The mine-conveyor sample's files: read from the copy in the test output, and
-/// written — only when DSE_UPDATE_GOLDEN=1 — at their source under
+/// written — only when MILLRACE_UPDATE_GOLDEN=1 — at their source under
 /// <c>samples/mine-conveyors/</c>.
 /// </summary>
 public static class Sample
@@ -1303,7 +1303,7 @@ public static class Sample
     /// <summary>The sample's folder in the repository, found from this source file.</summary>
     public static string SourceRoot { get; } = FindSourceRoot();
 
-    public static bool Updating => Environment.GetEnvironmentVariable("DSE_UPDATE_GOLDEN") == "1";
+    public static bool Updating => Environment.GetEnvironmentVariable("MILLRACE_UPDATE_GOLDEN") == "1";
 
     public static string Scenario(string name) => Path.Combine(Root, "scenarios", name + ".json");
 
@@ -1314,7 +1314,7 @@ public static class Sample
     private static readonly ConcurrentDictionary<string, Lazy<ScenarioRunResult>> Runs = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// A scenario's run through the same runner <c>dse run</c> uses, once per test
+    /// A scenario's run through the same runner <c>millrace run</c> uses, once per test
     /// process: a run is deterministic, so every test that reads it shares it.
     /// </summary>
     public static ScenarioRunResult Run(string name) =>
@@ -1402,16 +1402,16 @@ public static class Sample
 
 - [ ] **Step 3: Write the failing plant tests**
 
-`tests/Dse.Samples.Tests/MineConveyorTests.cs` (Task 4 replaces this file with its
+`tests/Millrace.Samples.Tests/MineConveyorTests.cs` (Task 4 replaces this file with its
 full form, keeping these three facts unchanged):
 
 ```csharp
 using System.Text.Json;
-using Dse.Cli;
-using Dse.Configuration;
+using Millrace.Cli;
+using Millrace.Configuration;
 using Json.Schema;
 
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 /// <summary>The mine-conveyor sample's plant: it validates, and the schema accepts it.</summary>
 public class MineConveyorTests
@@ -1452,7 +1452,7 @@ public class MineConveyorTests
 
 - [ ] **Step 4: Run them to see them fail**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~MineConveyorTests"`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~MineConveyorTests"`
 Expected: 3 failed. `ThePlantValidatesWithTwelveControllers` exits 3 (`Cannot
 read`), the other two throw `FileNotFoundException` or
 `DirectoryNotFoundException` for `mine-conveyors/plant.json`.
@@ -1629,12 +1629,12 @@ read`), the other two throw `FileNotFoundException` or
 
 - [ ] **Step 6: Run the plant tests to see them pass**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo`
 Expected: `Passed:    19` (16 + 3).
 
 - [ ] **Step 7: Check the plant through the CLI**
 
-Run: `dotnet run --project src/Dse.Cli -- validate samples/mine-conveyors/plant.json`
+Run: `dotnet run --project src/Millrace.Cli -- validate samples/mine-conveyors/plant.json`
 Expected, exactly:
 
 ```
@@ -1648,7 +1648,7 @@ OK  samples/mine-conveyors/plant.json
   time step     10 ms
 ```
 
-Run: `dotnet run --project src/Dse.Cli -- tags samples/mine-conveyors/plant.json`
+Run: `dotnet run --project src/Millrace.Cli -- tags samples/mine-conveyors/plant.json`
 Expected: 120 lines. Among them, exactly these (spot checks of tags a controller
 or a scenario names):
 
@@ -1665,14 +1665,14 @@ SEQ_STOP.Start  Bool  ReadWrite  Enters step 1 from idle on a rising edge
 
 - [ ] **Step 8: Build and test the solution**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1276**.
-Run: `git diff --stat 51980e2 -- src/` — expect only `src/Dse.Components/Flow/BulkSource.cs`.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1276**.
+Run: `git diff --stat 51980e2 -- src/` — expect only `src/Millrace.Components/Flow/BulkSource.cs`.
 
 - [ ] **Step 9: Commit**
 
 ```bash
-git add samples/mine-conveyors/plant.json tests/Dse.Samples.Tests/Cli.cs tests/Dse.Samples.Tests/Sample.cs tests/Dse.Samples.Tests/MineConveyorTests.cs
+git add samples/mine-conveyors/plant.json tests/Millrace.Samples.Tests/Cli.cs tests/Millrace.Samples.Tests/Sample.cs tests/Millrace.Samples.Tests/MineConveyorTests.cs
 ```
 
 ```bash
@@ -1688,9 +1688,9 @@ git commit -m "feat(samples): add the mine-conveyor plant and its controllers" -
 **Files:**
 - Create: `samples/mine-conveyors/scenarios/normal-start-stop.json`, `pull-key.json`, `e-stop.json`
 - Create (generated): `samples/mine-conveyors/expected/normal-start-stop.log`, `pull-key.log`, `e-stop.log`
-- Create: `tests/Dse.Samples.Tests/Stories.cs`
-- Modify: `tests/Dse.Samples.Tests/Sample.cs` (`Names`)
-- Test: `tests/Dse.Samples.Tests/MineConveyorTests.cs` (replaced in full)
+- Create: `tests/Millrace.Samples.Tests/Stories.cs`
+- Modify: `tests/Millrace.Samples.Tests/Sample.cs` (`Names`)
+- Test: `tests/Millrace.Samples.Tests/MineConveyorTests.cs` (replaced in full)
 
 **Interfaces:**
 - Consumes: Task 2's `EventPattern`, `Absence`, `CausalChain`; Task 3's `Sample`
@@ -1754,7 +1754,7 @@ logged at 87.910 s.
 
 - [ ] **Step 2: Name them in `Sample`**
 
-In `tests/Dse.Samples.Tests/Sample.cs`, replace
+In `tests/Millrace.Samples.Tests/Sample.cs`, replace
 
 ```csharp
     public static IReadOnlyList<string> Names { get; } = [];
@@ -1773,10 +1773,10 @@ with
 
 - [ ] **Step 3: Write their stories**
 
-`tests/Dse.Samples.Tests/Stories.cs`:
+`tests/Millrace.Samples.Tests/Stories.cs`:
 
 ```csharp
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 /// <summary>A scenario's causal chain, in order, and what must not happen.</summary>
 public sealed record Story(IReadOnlyList<EventPattern> Chain, IReadOnlyList<Absence> Absences);
@@ -1869,22 +1869,22 @@ public static class Stories
 
 - [ ] **Step 4: Write the scenario tests**
 
-Replace `tests/Dse.Samples.Tests/MineConveyorTests.cs` with:
+Replace `tests/Millrace.Samples.Tests/MineConveyorTests.cs` with:
 
 ```csharp
 using System.Text.Json;
-using Dse.Cli;
-using Dse.Configuration;
-using Dse.Core;
-using Dse.Core.Logging;
-using Dse.Scenarios;
+using Millrace.Cli;
+using Millrace.Configuration;
+using Millrace.Core;
+using Millrace.Core.Logging;
+using Millrace.Scenarios;
 using Json.Schema;
 
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 /// <summary>
 /// The mine-conveyor sample, end to end: the plant validates and the schema
-/// accepts it; every scenario matches its golden through <c>dse run --expect</c>,
+/// accepts it; every scenario matches its golden through <c>millrace run --expect</c>,
 /// tells its story, settles before it ends, and replays byte for byte from a
 /// recording.
 /// </summary>
@@ -2016,7 +2016,7 @@ public class MineConveyorTests
 
 - [ ] **Step 5: Run them to see the goldens missing**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo`
 Expected: 4 failed, 28 passed (32 total). The failures are the three
 `EveryScenarioMatchesItsGolden` rows (exit 3; standard error `Cannot read
 '…/expected/<name>.log'`) and
@@ -2027,7 +2027,7 @@ message names the first pattern not found and the last matched; report it.
 
 - [ ] **Step 6: Generate the three goldens**
 
-Run: `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"`
+Run: `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"`
 Expected: `Passed:     3`. `git status --short -uall samples/` lists the three new
 `expected/*.log` files and the three scenarios, nothing else.
 
@@ -2130,20 +2130,20 @@ above (R107).
 
 - [ ] **Step 8: Run the project again**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo`
 Expected: `Passed:    32` (19 + 13). On success each golden row's `run.Out` is
 `Matched <path> (94 events).`, `(81 events)` and `(75 events)` respectively.
 
 - [ ] **Step 9: Build and test the solution**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1289**.
-Run: `git diff --stat 51980e2 -- src/` — expect only `src/Dse.Components/Flow/BulkSource.cs`.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1289**.
+Run: `git diff --stat 51980e2 -- src/` — expect only `src/Millrace.Components/Flow/BulkSource.cs`.
 
 - [ ] **Step 10: Commit**
 
 ```bash
-git add samples/mine-conveyors/scenarios/normal-start-stop.json samples/mine-conveyors/scenarios/pull-key.json samples/mine-conveyors/scenarios/e-stop.json samples/mine-conveyors/expected/normal-start-stop.log samples/mine-conveyors/expected/pull-key.log samples/mine-conveyors/expected/e-stop.log tests/Dse.Samples.Tests/Stories.cs tests/Dse.Samples.Tests/Sample.cs tests/Dse.Samples.Tests/MineConveyorTests.cs
+git add samples/mine-conveyors/scenarios/normal-start-stop.json samples/mine-conveyors/scenarios/pull-key.json samples/mine-conveyors/scenarios/e-stop.json samples/mine-conveyors/expected/normal-start-stop.log samples/mine-conveyors/expected/pull-key.log samples/mine-conveyors/expected/e-stop.log tests/Millrace.Samples.Tests/Stories.cs tests/Millrace.Samples.Tests/Sample.cs tests/Millrace.Samples.Tests/MineConveyorTests.cs
 ```
 
 ```bash
@@ -2159,7 +2159,7 @@ git commit -m "feat(samples): run, tell and replay the start-stop, pull-key and 
 **Files:**
 - Create: `samples/mine-conveyors/scenarios/overload.json`, `chute-blockage.json`, `failed-zero-speed.json`
 - Create (generated): `samples/mine-conveyors/expected/overload.log`, `chute-blockage.log`, `failed-zero-speed.log`
-- Modify: `tests/Dse.Samples.Tests/Sample.cs` (`Names`), `tests/Dse.Samples.Tests/Stories.cs` (three entries)
+- Modify: `tests/Millrace.Samples.Tests/Sample.cs` (`Names`), `tests/Millrace.Samples.Tests/Stories.cs` (three entries)
 
 **Interfaces:**
 - Consumes: Task 4's `Stories.All`, `Sample.Names` and the theories over them.
@@ -2215,7 +2215,7 @@ overload trip is logged on the injection tick, 80.000 s.
 
 - [ ] **Step 2: Name them in `Sample`**
 
-In `tests/Dse.Samples.Tests/Sample.cs`, replace
+In `tests/Millrace.Samples.Tests/Sample.cs`, replace
 
 ```csharp
         "e-stop",
@@ -2234,7 +2234,7 @@ with
 
 - [ ] **Step 3: Add their stories**
 
-In `tests/Dse.Samples.Tests/Stories.cs`, the dictionary ends with the only
+In `tests/Millrace.Samples.Tests/Stories.cs`, the dictionary ends with the only
 occurrence of
 
 ```csharp
@@ -2307,14 +2307,14 @@ Replace it with:
 
 - [ ] **Step 4: Run to see the goldens missing**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo`
 Expected: 4 failed, 40 passed (44 total): the three new golden rows (exit 3) and
 the folder fact (`'overload' has no golden.`). Every story, settle and replay row
 passes.
 
 - [ ] **Step 5: Generate the three goldens**
 
-Run: `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"`
+Run: `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"`
 Expected: `Passed:     6`. `git status --short -uall samples/` lists the three new
 goldens and three new scenarios only — the update rewrote Task 4's goldens with
 identical bytes, so they do not appear.
@@ -2396,19 +2396,19 @@ line 63: CV002 and CV003 never stop (R103).
 
 - [ ] **Step 7: Run the project again**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo`
 Expected: `Passed:    44` (32 + 12).
 
 - [ ] **Step 8: Build and test the solution**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1301**.
-Run: `git diff --stat 51980e2 -- src/` — expect only `src/Dse.Components/Flow/BulkSource.cs`.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1301**.
+Run: `git diff --stat 51980e2 -- src/` — expect only `src/Millrace.Components/Flow/BulkSource.cs`.
 
 - [ ] **Step 9: Commit**
 
 ```bash
-git add samples/mine-conveyors/scenarios/overload.json samples/mine-conveyors/scenarios/chute-blockage.json samples/mine-conveyors/scenarios/failed-zero-speed.json samples/mine-conveyors/expected/overload.log samples/mine-conveyors/expected/chute-blockage.log samples/mine-conveyors/expected/failed-zero-speed.log tests/Dse.Samples.Tests/Sample.cs tests/Dse.Samples.Tests/Stories.cs
+git add samples/mine-conveyors/scenarios/overload.json samples/mine-conveyors/scenarios/chute-blockage.json samples/mine-conveyors/scenarios/failed-zero-speed.json samples/mine-conveyors/expected/overload.log samples/mine-conveyors/expected/chute-blockage.log samples/mine-conveyors/expected/failed-zero-speed.log tests/Millrace.Samples.Tests/Sample.cs tests/Millrace.Samples.Tests/Stories.cs
 ```
 
 ```bash
@@ -2424,8 +2424,8 @@ git commit -m "feat(samples): add the overload, chute-blockage and failed-switch
 **Files:**
 - Create: `samples/mine-conveyors/scenarios/welded-contactor.json`, `feed-starve.json`
 - Create (generated): `samples/mine-conveyors/expected/welded-contactor.log`, `feed-starve.log`
-- Modify: `tests/Dse.Samples.Tests/Sample.cs` (`Names`), `tests/Dse.Samples.Tests/Stories.cs` (two entries)
-- Test: `tests/Dse.Samples.Tests/MineConveyorTests.cs` (+3 facts)
+- Modify: `tests/Millrace.Samples.Tests/Sample.cs` (`Names`), `tests/Millrace.Samples.Tests/Stories.cs` (two entries)
+- Test: `tests/Millrace.Samples.Tests/MineConveyorTests.cs` (+3 facts)
 
 **Interfaces:**
 - Consumes: Task 5's state; Task 2's `StateChain`, `TagSample`; Task 3's `Sample.Trace`.
@@ -2472,7 +2472,7 @@ sample at 80.0 s shows the plant as of the end of tick 8000.
 
 - [ ] **Step 2: Name them in `Sample`**
 
-In `tests/Dse.Samples.Tests/Sample.cs`, replace
+In `tests/Millrace.Samples.Tests/Sample.cs`, replace
 
 ```csharp
         "failed-zero-speed",
@@ -2490,7 +2490,7 @@ with
 
 - [ ] **Step 3: Add their stories**
 
-In `tests/Dse.Samples.Tests/Stories.cs`, replace the only occurrence of
+In `tests/Millrace.Samples.Tests/Stories.cs`, replace the only occurrence of
 
 ```csharp
             ]),
@@ -2552,7 +2552,7 @@ with
 
 - [ ] **Step 4: Add the two state facts and the trace guard**
 
-In `tests/Dse.Samples.Tests/MineConveyorTests.cs`, insert immediately before
+In `tests/Millrace.Samples.Tests/MineConveyorTests.cs`, insert immediately before
 
 ```csharp
     [Theory]
@@ -2595,7 +2595,7 @@ these three facts:
 
 - [ ] **Step 5: Run to see the goldens missing**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo`
 Expected: 3 failed, 52 passed (55 total): the two new golden rows and the folder
 fact. The two state facts and the trace guard already pass — they read no golden. If
 `AStarvedFeedEmptiesTheBeltsInTransportOrder` fails, its message names the scale
@@ -2603,7 +2603,7 @@ that was not running, never settled, or settled out of order; report it.
 
 - [ ] **Step 6: Generate the two goldens**
 
-Run: `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"`
+Run: `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"`
 Expected: `Passed:     8`; `git status --short -uall samples/` lists only the two new
 goldens and two new scenarios.
 
@@ -2669,19 +2669,19 @@ checked by `AStarvedFeedEmptiesTheBeltsInTransportOrder`, not by the log.
 
 - [ ] **Step 8: Run the project again**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo`
 Expected: `Passed:    55` (44 + 11).
 
 - [ ] **Step 9: Build and test the solution**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1312**.
-Run: `git diff --stat 51980e2 -- src/` — expect only `src/Dse.Components/Flow/BulkSource.cs`.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1312**.
+Run: `git diff --stat 51980e2 -- src/` — expect only `src/Millrace.Components/Flow/BulkSource.cs`.
 
 - [ ] **Step 10: Commit**
 
 ```bash
-git add samples/mine-conveyors/scenarios/welded-contactor.json samples/mine-conveyors/scenarios/feed-starve.json samples/mine-conveyors/expected/welded-contactor.log samples/mine-conveyors/expected/feed-starve.log tests/Dse.Samples.Tests/Sample.cs tests/Dse.Samples.Tests/Stories.cs tests/Dse.Samples.Tests/MineConveyorTests.cs
+git add samples/mine-conveyors/scenarios/welded-contactor.json samples/mine-conveyors/scenarios/feed-starve.json samples/mine-conveyors/expected/welded-contactor.log samples/mine-conveyors/expected/feed-starve.log tests/Millrace.Samples.Tests/Sample.cs tests/Millrace.Samples.Tests/Stories.cs tests/Millrace.Samples.Tests/MineConveyorTests.cs
 ```
 
 ```bash
@@ -2696,7 +2696,7 @@ git commit -m "feat(samples): add the welded-contactor and feed-starve scenarios
 
 **Files:**
 - Create: `samples/mine-conveyors/README.md`
-- Test: `tests/Dse.Samples.Tests/SampleReadmeTests.cs`
+- Test: `tests/Millrace.Samples.Tests/SampleReadmeTests.cs`
 
 **Interfaces:**
 - Consumes: `Sample.Readme`, `Sample.Names`, `Sample.Scenarios`, `Sample.Golden(name)`.
@@ -2707,12 +2707,12 @@ git commit -m "feat(samples): add the welded-contactor and feed-starve scenarios
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Samples.Tests/SampleReadmeTests.cs`:
+`tests/Millrace.Samples.Tests/SampleReadmeTests.cs`:
 
 ```csharp
 using System.Text.RegularExpressions;
 
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 /// <summary>
 /// The sample's README quotes each scenario's log in a block fenced as
@@ -2755,7 +2755,7 @@ public partial class SampleReadmeTests
 
 - [ ] **Step 2: Run them to see them fail**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~SampleReadmeTests"`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~SampleReadmeTests"`
 Expected: 9 failed, each with `FileNotFoundException` for `mine-conveyors/README.md`.
 
 - [ ] **Step 3: Write the README**
@@ -2769,7 +2769,7 @@ A reference sample: three belt conveyors in series carrying ore from a feeder to
 a stockpile, with the PLC logic a real line would have — a sequenced start, a
 sequenced stop, cascade interlocks, permissives and current alarms — declared in
 one plant file, and eight scenarios that break it in eight ways. There is no C#
-here. Everything is data the `dse` command line runs.
+here. Everything is data the `millrace` command line runs.
 
 ```
 Feed ──▶ CV001 (60 m) ──▶ CH1 ──▶ CV002 (40 m) ──▶ CH2 ──▶ CV003 (30 m) ──▶ Stockpile
@@ -2846,9 +2846,9 @@ Each runs in well under a second.
 From the repository root:
 
 ```bash
-dotnet run --project src/Dse.Cli -- validate samples/mine-conveyors/plant.json
-dotnet run --project src/Dse.Cli -- tags samples/mine-conveyors/plant.json
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/pull-key.json
+dotnet run --project src/Millrace.Cli -- validate samples/mine-conveyors/plant.json
+dotnet run --project src/Millrace.Cli -- tags samples/mine-conveyors/plant.json
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/pull-key.json
 ```
 
 Add `--expect samples/mine-conveyors/expected/<name>.log` to check a run against
@@ -2880,7 +2880,7 @@ know a stop was planned. Between `SEQUENCE_COMPLETE` and `SEQ_STOP` nothing
 trips, and no alarm raises in the whole run.
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/normal-start-stop.json --expect samples/mine-conveyors/expected/normal-start-stop.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/normal-start-stop.json --expect samples/mine-conveyors/expected/normal-start-stop.log
 ```
 
 ## 2. Pull-key
@@ -2902,7 +2902,7 @@ stopped by its interlock, and then the feeder. CV003 carries on and runs empty.
 ```
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/pull-key.json --expect samples/mine-conveyors/expected/pull-key.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/pull-key.json --expect samples/mine-conveyors/expected/pull-key.log
 ```
 
 ## 3. Emergency stop
@@ -2922,7 +2922,7 @@ downstream and keep running.
 ```
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/e-stop.json --expect samples/mine-conveyors/expected/e-stop.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/e-stop.json --expect samples/mine-conveyors/expected/e-stop.log
 ```
 
 ## 4. Motor overload
@@ -2943,7 +2943,7 @@ the current falls to zero.
 ```
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/overload.json --expect samples/mine-conveyors/expected/overload.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/overload.json --expect samples/mine-conveyors/expected/overload.log
 ```
 
 ## 5. Chute blockage
@@ -2969,7 +2969,7 @@ that tag is the model's truth, not an instrument a PLC could wire.
 ```
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/chute-blockage.json --expect samples/mine-conveyors/expected/chute-blockage.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/chute-blockage.json --expect samples/mine-conveyors/expected/chute-blockage.log
 ```
 
 ## 6. Failed zero-speed switch
@@ -2988,7 +2988,7 @@ nuisance trip, and it is the price of an interlock that reads the instrument.
 ```
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/failed-zero-speed.json --expect samples/mine-conveyors/expected/failed-zero-speed.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/failed-zero-speed.json --expect samples/mine-conveyors/expected/failed-zero-speed.log
 ```
 
 ## 7. Welded contactor
@@ -3024,7 +3024,7 @@ Nothing after that: CV003's contactor never opens, and its zero-speed switch
 never reports it stopped.
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/welded-contactor.json --expect samples/mine-conveyors/expected/welded-contactor.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/welded-contactor.json --expect samples/mine-conveyors/expected/welded-contactor.log
 ```
 
 ## 8. Feed starve
@@ -3042,7 +3042,7 @@ CV002 at 133.7 s, CV003 at 153.7 s. The sample's tests check that order from
 the scales' values, and check that nothing trips, stops or alarms.
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/feed-starve.json --expect samples/mine-conveyors/expected/feed-starve.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/feed-starve.json --expect samples/mine-conveyors/expected/feed-starve.log
 ```
 
 ## Power-up
@@ -3057,7 +3057,7 @@ it already is: the feeder is declared disabled, so no ore moves until
 
 - [ ] **Step 4: Run the tests to see them pass**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo`
 Expected: `Passed:    64` (55 + 9).
 
 - [ ] **Step 5: Check the README's numbers and commands**
@@ -3066,18 +3066,18 @@ Every number in the README's sizing table and in its feed-starve section is in
 this plan's Measurements or R105 (rounded to one decimal where the README shows
 one). Run one quoted command to be sure it works from the repository root:
 
-Run: `dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/pull-key.json --expect samples/mine-conveyors/expected/pull-key.log`
+Run: `dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/pull-key.json --expect samples/mine-conveyors/expected/pull-key.log`
 Expected: `Matched samples/mine-conveyors/expected/pull-key.log (81 events).` and exit 0.
 
 - [ ] **Step 6: Build and test the solution**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1321**.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1321**.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add samples/mine-conveyors/README.md tests/Dse.Samples.Tests/SampleReadmeTests.cs
+git add samples/mine-conveyors/README.md tests/Millrace.Samples.Tests/SampleReadmeTests.cs
 ```
 
 ```bash
@@ -3097,7 +3097,7 @@ git commit -m "docs(samples): describe the mine-conveyor line and quote each sce
 
 **Interfaces:**
 - Consumes: the sample as built in Tasks 3–7.
-- Produces: no code. `tests/Dse.Control.Tests/DocumentationTests.cs` reads
+- Produces: no code. `tests/Millrace.Control.Tests/DocumentationTests.cs` reads
   `docs/control-blocks.md` and must still find every token it checks (none is
   removed here) and no `\r`. The 6a spec was amended with this plan and is not
   touched here.
@@ -3107,14 +3107,14 @@ git commit -m "docs(samples): describe the mine-conveyor line and quote each sce
 Replace
 
 ```
-`controllers` section — `Dse.Control.Catalogue` registers them — or attached in
+`controllers` section — `Millrace.Control.Catalogue` registers them — or attached in
 code; the reference samples are planned.
 ```
 
 with
 
 ```
-`controllers` section — `Dse.Control.Catalogue` registers them — or attached in
+`controllers` section — `Millrace.Control.Catalogue` registers them — or attached in
 code.
 
 The first reference sample, `samples/mine-conveyors/`, is three conveyors, a
@@ -3130,14 +3130,14 @@ sample, a wheel line of discrete items, is planned (plan 6b).
 Replace
 
 ```
-dotnet run --project src/Dse.Cli -- run scenario.json --expect golden.log  # replay a scenario; exit 4 if the log changed
+dotnet run --project src/Millrace.Cli -- run scenario.json --expect golden.log  # replay a scenario; exit 4 if the log changed
 ```
 
 with
 
 ```
-dotnet run --project src/Dse.Cli -- run scenario.json --expect golden.log  # replay a scenario; exit 4 if the log changed
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/pull-key.json  # the sample: a pull-key stops the line
+dotnet run --project src/Millrace.Cli -- run scenario.json --expect golden.log  # replay a scenario; exit 4 if the log changed
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/pull-key.json  # the sample: a pull-key stops the line
 ```
 
 and replace
@@ -3201,15 +3201,15 @@ data folder, not a C# project — and §15.2 names plan 6b.
 and replace
 
 ```
-Samples: `samples/Dse.Samples.MineConveyors`, `samples/Dse.Samples.WheelLine`.
+Samples: `samples/Millrace.Samples.MineConveyors`, `samples/Millrace.Samples.WheelLine`.
 ```
 
 with
 
 ```
 Samples: `samples/mine-conveyors/` — a plant file with its controllers,
-scenarios, golden logs and a README; data only, run by `dse`, and tested by
-`tests/Dse.Samples.Tests` — and the wheel line (plan 6b).
+scenarios, golden logs and a README; data only, run by `millrace`, and tested by
+`tests/Millrace.Samples.Tests` — and the wheel line (plan 6b).
 ```
 
 - [ ] **Step 5: Main spec — §15.1 and §15.2**
@@ -3217,7 +3217,7 @@ scenarios, golden logs and a README; data only, run by `dse`, and tested by
 Replace
 
 ```
-pull-keys, e-stops, safety relay and starter. A demo controller in `Dse.Control`
+pull-keys, e-stops, safety relay and starter. A demo controller in `Millrace.Control`
 provides sequenced start, interlocks and permissives.
 
 Demonstrates: plant start, sequenced conveyor start, material flow, speed
@@ -3231,7 +3231,7 @@ with
 ```
 pull-keys, e-stops, safety relay and starter. The plant file's `controllers`
 section provides sequenced start and stop, interlocks, permissives and alarms
-from the `Dse.Control` blocks; the sample is a data folder,
+from the `Millrace.Control` blocks; the sample is a data folder,
 `samples/mine-conveyors/`, with no C#.
 
 Demonstrates: plant start, sequenced conveyor start, material flow, speed
@@ -3263,8 +3263,8 @@ that keeps soaking, a reject path for discrete items — which 6b designs first.
 Run: `git diff --stat`
 Expected: exactly the three files of this task.
 Run: `grep -c $'\r' docs/control-blocks.md README.md` — expect `docs/control-blocks.md:0` and `README.md:0` (exit 1 is expected).
-Run: `dotnet test Dse.sln --nologo` — expect **1321**, including
-`Dse.Control.Tests`' two `DocumentationTests`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1321**, including
+`Millrace.Control.Tests`' two `DocumentationTests`.
 
 - [ ] **Step 7: Commit**
 
@@ -3282,13 +3282,13 @@ git commit -m "docs: point at the mine-conveyor sample and amend the main spec t
 
 | Spec section | Requirement | Task |
 |---|---|---|
-| 1, criterion 1 | `dse validate` reports nothing; the schema accepts the plant | 3 (`ThePlantValidatesWithTwelveControllers`, `TheLoaderReportsNothingAtAllNotEvenAWarning`, `TheGeneratedSchemaAcceptsThePlantAndRejectsAMistakeInIt`) |
-| 1, criterion 2 | all eight scenarios match through `dse run --expect`, in-process | 4–6 (`EveryScenarioMatchesItsGolden`, R113) |
+| 1, criterion 1 | `millrace validate` reports nothing; the schema accepts the plant | 3 (`ThePlantValidatesWithTwelveControllers`, `TheLoaderReportsNothingAtAllNotEvenAWarning`, `TheGeneratedSchemaAcceptsThePlantAndRejectsAMistakeInIt`) |
+| 1, criterion 2 | all eight scenarios match through `millrace run --expect`, in-process | 4–6 (`EveryScenarioMatchesItsGolden`, R113) |
 | 1, criterion 3 | each chain holds as an ordered subsequence; each absence holds | 2 (`CausalChain`, `StateChain`), 4–6 (`EveryScenarioTellsItsStory`, R115); 6 (the two state facts, R105, R108, R121) |
 | 1, criterion 4 | record → replay byte for byte, through `ScenarioRecorder` | 4–6 (`EveryScenarioReplaysByteForByteFromARecording`) |
 | 1, criterion 5 | `src/` changes only for a real need, with its own test and ruling; no package under `src/`; existing tests and goldens unchanged except as that change requires | 1 (R112: two facts, two regenerated catalogue goldens, measured diff); every later task's `git diff --stat 51980e2 -- src/` |
 | 1, criterion 6 | README quotes are verbatim golden lines | 7 (`SampleReadmeTests`) |
-| 2 | layout; the test project, its references, `Dse.sln`, copies to output | 2, 3 (R113, R114) |
+| 2 | layout; the test project, its references, `Millrace.sln`, copies to output | 2, 3 (R113, R114) |
 | 3 | the plant: topology, sizing, measured per-conveyor numbers, defaults | 3; Measurements; R118, R119 |
 | 4 | `SEQ_START`, `SEQ_STOP`, interlocks on the instrument, permissives, alarms, the feeder off at power-up | 1, 3 (R103, R104, R106, R111, R112) |
 | 5 | the eight scenarios, their chains and absences; fault ids and tags confirmed | 4, 5, 6 (R105, R107–R110, R117); Measurements (names confirmed) |
@@ -3297,20 +3297,20 @@ git commit -m "docs: point at the mine-conveyor sample and amend the main spec t
 
 ## Test-count arithmetic
 
-Measured on `51980e2` with `dotnet test Dse.sln`: **1255**.
+Measured on `51980e2` with `dotnet test Millrace.sln`: **1255**.
 
 | Project | Before | Task deltas | After |
 |---|---|---|---|
-| Dse.Io.Abstractions | 37 | — | 37 |
-| Dse.Core | 461 | — | 461 |
-| Dse.Components | 126 | T1 +2 (`ASourceBuiltDisabledCreatesNothingUntilItsEnabledTagIsWritten`, `ASourceIsEnabledAtPowerUpUnlessTheFileSaysOtherwise`) | 128 |
-| Dse.Realtime | 56 | — | 56 |
-| Dse.Configuration | 209 | — (T1 regenerates its schema golden) | 209 |
-| Dse.Scenarios | 163 | — | 163 |
-| Dse.Cli | 76 | — | 76 |
-| Dse.Control | 105 | — | 105 |
-| Dse.Control.Catalogue | 22 | — | 22 |
-| Dse.Samples (new) | 0 | T2 +16 (11 `CausalChainTests` + 5 `StateChainTests`), T3 +3, T4 +13 (1 fact + 4 theories × 3), T5 +12 (4 × 3), T6 +11 (4 × 2 + 3 facts), T7 +9 (1 fact + 8 rows) | 64 |
+| Millrace.Io.Abstractions | 37 | — | 37 |
+| Millrace.Core | 461 | — | 461 |
+| Millrace.Components | 126 | T1 +2 (`ASourceBuiltDisabledCreatesNothingUntilItsEnabledTagIsWritten`, `ASourceIsEnabledAtPowerUpUnlessTheFileSaysOtherwise`) | 128 |
+| Millrace.Realtime | 56 | — | 56 |
+| Millrace.Configuration | 209 | — (T1 regenerates its schema golden) | 209 |
+| Millrace.Scenarios | 163 | — | 163 |
+| Millrace.Cli | 76 | — | 76 |
+| Millrace.Control | 105 | — | 105 |
+| Millrace.Control.Catalogue | 22 | — | 22 |
+| Millrace.Samples (new) | 0 | T2 +16 (11 `CausalChainTests` + 5 `StateChainTests`), T3 +3, T4 +13 (1 fact + 4 theories × 3), T5 +12 (4 × 3), T6 +11 (4 × 2 + 3 facts), T7 +9 (1 fact + 8 rows) | 64 |
 | **Total** | **1255** | +66 | **1321** |
 
 Running totals after each task: 1257, 1273, 1276, 1289, 1301, 1312, 1321, 1321.
@@ -3345,8 +3345,8 @@ the plant, eight scenarios, eight goldens, the README and the ten test files —
 was built and run in a scratch copy of the repository at `51980e2` (warnings as
 errors): the existing 1255 tests plus Task 1's two pass, with only the two
 catalogue goldens changed as quoted; the new project reports 63 passed; the
-`DSE_UPDATE_GOLDEN=1` path regenerated all eight goldens byte-identical to
-`dse run`'s output. The intermediate states of Tasks 3 and 4 were run in the
+`MILLRACE_UPDATE_GOLDEN=1` path regenerated all eight goldens byte-identical to
+`millrace run`'s output. The intermediate states of Tasks 3 and 4 were run in the
 draft and gave the stated counts.
 
 **Review Focus.** Each of the five lines has its test in the owning task (Tasks

@@ -66,34 +66,34 @@ listed in section 18.
 | Test framework | xUnit, plain assertions | Minimal dependencies; avoids libraries with shifting licences. |
 | Licence | MIT | Maximum reuse for a foundation library. |
 
-Root namespace `Dse` is provisional and may be renamed before first release.
+Root namespace `Millrace` is provisional and may be renamed before first release.
 
 ## 4. Solution layout
 
 Eight shipping projects, two samples, and a test project per shipping project;
-`Dse.Samples.Tests` runs the samples themselves.
+`Millrace.Samples.Tests` runs the samples themselves.
 
 | Project | Contains | Depends on |
 |---|---|---|
-| `Dse.Io.Abstractions` | The I/O contract only: tag read/write interface, tag metadata, `TagValue`, `Quality`, `TickFrame`. Deliberately tiny so an application under test, or a protocol adapter, can reference it without the engine. | — |
-| `Dse.Core` | Clock, tick loop, event queue, RNG, component and port model, graph resolver, flow graph and transport, transforms, fault channel, telemetry, event log, component catalogue. No industrial concepts. | `Io.Abstractions` |
-| `Dse.Components` | The industrial object library: mechanical, instrumentation, safety, process units, material types. | `Core` |
-| `Dse.Control` | Optional control blocks written against the I/O contract: interlock, permissive, sequencer, timer, alarm. | `Io.Abstractions` |
-| `Dse.Scenarios` | Scenario definition, fault schedules, recording, replay, golden event logs. | `Core` |
-| `Dse.Realtime` | Real-time event engine, live state engine, subscription API, command bus. The attachment point for every downstream consumer. | `Io.Abstractions` |
-| `Dse.Configuration` | Declarative plant definition (JSON), loader, and JSON Schema generated from the catalogue. | `Core`, `Components` |
-| `Dse.Cli` | Thin CLI: `catalog export`, `validate`, `run`. | all |
+| `Millrace.Io.Abstractions` | The I/O contract only: tag read/write interface, tag metadata, `TagValue`, `Quality`, `TickFrame`. Deliberately tiny so an application under test, or a protocol adapter, can reference it without the engine. | — |
+| `Millrace.Core` | Clock, tick loop, event queue, RNG, component and port model, graph resolver, flow graph and transport, transforms, fault channel, telemetry, event log, component catalogue. No industrial concepts. | `Io.Abstractions` |
+| `Millrace.Components` | The industrial object library: mechanical, instrumentation, safety, process units, material types. | `Core` |
+| `Millrace.Control` | Optional control blocks written against the I/O contract: interlock, permissive, sequencer, timer, alarm. | `Io.Abstractions` |
+| `Millrace.Scenarios` | Scenario definition, fault schedules, recording, replay, golden event logs. | `Core` |
+| `Millrace.Realtime` | Real-time event engine, live state engine, subscription API, command bus. The attachment point for every downstream consumer. | `Io.Abstractions` |
+| `Millrace.Configuration` | Declarative plant definition (JSON), loader, and JSON Schema generated from the catalogue. | `Core`, `Components` |
+| `Millrace.Cli` | Thin CLI: `catalog export`, `validate`, `run`. | all |
 
 Samples: `samples/mine-conveyors/` — a plant file with its controllers,
-scenarios, golden logs and a README; data only, run by `dse`, and tested by
-`tests/Dse.Samples.Tests` — and `samples/wheel-line/`, the same shape (plan 6b.2).
+scenarios, golden logs and a README; data only, run by `millrace`, and tested by
+`tests/Millrace.Samples.Tests` — and `samples/wheel-line/`, the same shape (plan 6b.2).
 
-`Dse.Control` deliberately does *not* reference `Dse.Components`. A control
+`Millrace.Control` deliberately does *not* reference `Millrace.Components`. A control
 block that reaches into a component has broken the layering.
 
-`Dse.Realtime` deliberately does *not* reference `Dse.Core`. It consumes frames
+`Millrace.Realtime` deliberately does *not* reference `Millrace.Core`. It consumes frames
 and produces commands, and has no access to the model. This is what makes a
-future protocol adapter a genuine bolt-on: it references `Dse.Realtime` only.
+future protocol adapter a genuine bolt-on: it references `Millrace.Realtime` only.
 
 ## 5. Simulation core
 
@@ -415,7 +415,7 @@ tick numbers.
 ### 9.4 Safety bypasses the controller
 
 E-stops and pull-keys are physical components producing discrete signals, and a
-`SafetyRelay` in `Dse.Components` de-energises the motor contactor directly. A
+`SafetyRelay` in `Millrace.Components` de-energises the motor contactor directly. A
 pull-key therefore stops the belt with no controller connected at all — as in a
 real plant, where the safety circuit is hardwired around the PLC. Routing safety
 through the control layer would be both wrong and a weaker demonstration.
@@ -452,7 +452,7 @@ enqueue into a ring buffer; a dispatcher thread performs fan-out.
 Ordered distribution. Owns the ring buffer, the dispatcher, per-subscriber
 filtering and deadbands, and backpressure policy.
 
-Deadbands live here rather than in `Dse.Core` because they are
+Deadbands live here rather than in `Millrace.Core` because they are
 subscriber-specific: an HMI wants half a percent on a belt speed, a historian
 wants every sample.
 
@@ -540,7 +540,7 @@ question from reaching the engine.
 
 ## 11. Control layer
 
-`Dse.Control` blocks are written against `ISimulationIo` and know nothing about
+`Millrace.Control` blocks are written against `ISimulationIo` and know nothing about
 components: interlock, permissive, sequencer, timer, alarm.
 
 A controller declares a **scan period** — say 100 ms against a 10 ms simulation
@@ -551,7 +551,7 @@ asymmetry, and modelling it is nearly free.
 
 Alarm *evaluation* lives here, since it is logic over signals. The resulting
 alarm events go into the same ordered event log as everything else in
-`Dse.Core`.
+`Millrace.Core`.
 
 ## 12. Faults
 
@@ -581,7 +581,7 @@ A scenario contains:
 - an ordered timeline of actions keyed to simulation time: fault injections,
   control writes, setpoint changes.
 
-Serialized as JSON in `Dse.Scenarios`. A recorder captures external writes and
+Serialized as JSON in `Millrace.Scenarios`. A recorder captures external writes and
 injections from a live run into the same format, so "reproduce the failure I
 just saw" is a save rather than a reconstruction.
 
@@ -607,7 +607,7 @@ imposes requirements beyond capability.
 - **A written recipe** for authoring a new component: which interfaces to
   implement, where state lives, how to declare ports, faults and descriptors,
   and how to avoid breaking determinism.
-- **`Dse.Cli`**: `dse catalog export`, `dse validate <plant>`, `dse run <scenario>`.
+- **`Millrace.Cli`**: `millrace catalog export`, `millrace validate <plant>`, `millrace run <scenario>`.
 
 The framework's job is to make the plumbing free so that domain physics is the
 only real work left.
@@ -624,7 +624,7 @@ transfer → CV003 → sink. Each conveyor composes motor, gearbox, drive and ta
 pulley, belt, speed sensor, belt scale, current sensor, zero-speed switch,
 pull-keys, e-stops, safety relay and starter. The plant file's `controllers`
 section provides sequenced start and stop, interlocks, permissives and alarms
-from the `Dse.Control` blocks; the sample is a data folder,
+from the `Millrace.Control` blocks; the sample is a data folder,
 `samples/mine-conveyors/`, with no C#.
 
 Demonstrates: plant start, sequenced conveyor start, material flow, speed
@@ -716,9 +716,9 @@ switches; overspeed detectors; PID control; raw-count to engineering-unit
 scaling; YAML configuration; mid-run state snapshot and restore; any GUI.
 
 Deferred consumers of the real-time layer, every one of them additive because
-section 10 exists: `Dse.Realtime.Http` (WebSocket streaming and REST), OPC UA,
+section 10 exists: `Millrace.Realtime.Http` (WebSocket streaming and REST), OPC UA,
 MQTT/Sparkplug B and Modbus TCP adapters, an external rules engine, and a
-historian. `Dse.Control` already covers logic running inside the plant; an
+historian. `Millrace.Control` already covers logic running inside the plant; an
 external rules engine is a different thing, and needs only the stream
 subscription API.
 

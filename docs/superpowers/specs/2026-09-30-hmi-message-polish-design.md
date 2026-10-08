@@ -25,7 +25,7 @@ R143–R154), where the code forced a choice:
 - **A negative zero prints as zero in both alarm messages (R146).**
 - **`F<n>` rounds an exact binary midpoint half to even (R147)**, e.g.
   `0.125` → `0.12`, and the 12.5 N·m breakdown torque of a small motor → `12`.
-- **The `DSE016` hint searches only the block's `Writes` the plant has, then
+- **The `MR016` hint searches only the block's `Writes` the plant has, then
   every tag (R149)**; `Suggest.Closest` sorts its candidates, so ties go to
   the ordinally first name within each set.
 - **Criterion 6's check is a script over git history (R151)**, not a test.
@@ -52,8 +52,8 @@ have" case a nearest-name hint, as other unknown-name diagnostics already have.
 |---|---|
 | Precision rule | **Fixed decimals per quantity**, chosen per message the way a tag's display format is configured. (Rejected: one significant-figures rule everywhere — uniform, but alarm values show more digits than an HMI would; a per-tag display-format attribute published in the directory — most realistic, but a descriptor change and a value for every instrument.) |
 | An alarm value that rounds onto its limit | An alarm prints its value with one more decimal than its limit has, and **a raise rounds away from the limit**, so a raised value never displays equal to or inside its limit. |
-| Shared helper? | **No.** `Dse.Control` references only `Dse.Io.Abstractions`; each site changes one format. The alarm keeps its decimals rule private. |
-| DSE016 hint | `Suggest.Closest` only, not `Suggest.Fix`: listing eight of a plant's ~124 tags is noise. |
+| Shared helper? | **No.** `Millrace.Control` references only `Millrace.Io.Abstractions`; each site changes one format. The alarm keeps its decimals rule private. |
+| MR016 hint | `Suggest.Closest` only, not `Suggest.Fix`: listing eight of a plant's ~124 tags is noise. |
 
 ### Success criteria
 
@@ -86,40 +86,40 @@ have" case a nearest-name hint, as other unknown-name diagnostics already have.
 5. Unchanged: the `WRITE` log (`Set to … .`), every tag value in the image,
    frames and telemetry, and every other message. This is display text only.
 6. **Goldens change only in the formatted numbers.** Every event log in the
-   solution — the nine sample goldens, `tests/Dse.Control.Tests/Golden/conveyor-control.log`,
-   the `Dse.Scenarios.Tests` goldens — is regenerated with `DSE_UPDATE_GOLDEN=1`
+   solution — the nine sample goldens, `tests/Millrace.Control.Tests/Golden/conveyor-control.log`,
+   the `Millrace.Scenarios.Tests` goldens — is regenerated with `MILLRACE_UPDATE_GOLDEN=1`
    and checked mechanically against its previous version: the same number of
    lines, and on every line the same time, source and event, with only numbers
    in the message text differing. README and doc quotes of those lines follow.
-7. **DSE016 hint.** When a claim names no tag, Core looks for the nearest name
+7. **MR016 hint.** When a claim names no tag, Core looks for the nearest name
    with `Suggest.Closest`, first among the claiming block's `Writes`, then among
    all plant tags. If one is found, the fix reads
-   `Check the name against 'dse tags' — '<closest>' is closest; a block claims a tag it commands.`
+   `Check the name against 'millrace tags' — '<closest>' is closest; a block claims a tag it commands.`
    If none is found, the message is exactly as today. Matching stays ordinal
    and exact (6d R137); the hint only suggests.
 
-## 2. Components (`Dse.Components`)
+## 2. Components (`Millrace.Components`)
 
 `Motor` (`AT_SPEED`, `STALLED`), `MotorStarter` (`OVERLOAD_TRIP`),
 `BulkProcessUnit` and `ItemProcessUnit` (hold satisfied) change their
 interpolation holes to the formats of criterion 1. Existing tests that assert
 these texts change to the new text and nothing else.
 
-## 3. Control (`Dse.Control`)
+## 3. Control (`Millrace.Control`)
 
 `Alarm` formats its value by criteria 2 and 3 through one private static
 method (the decimals rule and the directed rounding), used by both messages.
 Its unit tests cover a Hi and a Lo raise just past the limit, a whole-number
 limit, the 6-decimal cap, and a clear.
 
-## 4. Core (`Dse.Core`)
+## 4. Core (`Millrace.Core`)
 
-`SimulationBuilder.CheckClaims`' "which the plant does not have" DSE016 gains
+`SimulationBuilder.CheckClaims`' "which the plant does not have" MR016 gains
 the hint of criterion 7. The hint sits in the fix half after the first `". "`;
 the quoted names contain no `". "`, so the loader's split after the quoted
 claim (6d R133) still holds. Tests: a near-miss claim (`cv003.permit` against
 `CV003.Permit`) gets the hint in Core and, through a plant file, on the
-`Fix:` line of `dse validate`; a far-off claim does not.
+`Fix:` line of `millrace validate`; a far-off claim does not.
 
 ## 5. Goldens and documentation
 
@@ -127,11 +127,11 @@ Every golden that moves is regenerated and read, and the criterion 6 check is
 run and quoted. `samples/mine-conveyors/README.md`, `docs/control-blocks.md`
 and any other document quoting a changed line are updated to the regenerated
 text; documentation tests that pin those quotes follow. The diagnostics
-reference does not change (DSE016's summary still holds).
+reference does not change (MR016's summary still holds).
 
 ## 6. Out of scope
 
 - Units: the motor's speed stays in rad/s; no rpm or belt-speed conversion.
 - A per-tag display-format attribute.
-- A hint on Core's DSE014 unknown-pin message (plant files report DSE113 first).
+- A hint on Core's MR014 unknown-pin message (plant files report MR113 first).
 - Any change to how values are computed or when events fire.

@@ -5,20 +5,20 @@
 **Goal:** Ship the wheel-line reference sample of main spec §15.2 as a data
 folder — `samples/wheel-line/` holding a plant file with five controllers, six
 scenarios, their golden event logs and a README — and grow
-`tests/Dse.Samples.Tests` to run every scenario through `dse run --expect`,
+`tests/Millrace.Samples.Tests` to run every scenario through `millrace run --expect`,
 assert its causal chain and absences, check its quiet tail, its mass balance
 and its byte-for-byte replay, and prove on live runs what the log cannot show:
 a held billet over-soaking only while the press is slow, the belt filling and
 draining, and over-soaked billets becoming wheels when the kicker sticks.
 
-**Architecture:** No change under `src/` (spec §2). The sample is JSON the `dse`
+**Architecture:** No change under `src/` (spec §2). The sample is JSON the `millrace`
 command line of plans 5a–6b.1 already runs. The test project gains a
 `WheelLine` helper beside the mine conveyors' `Sample` (R180) — its own paths,
 names, cached runs and a live `Watch` that calls back after every tick — and
 reuses `Sample.Catalogue`, `Sample.Updating`, `Sample.Schedule`, `Cli`,
 `CausalChain`, `EventPattern`, `Absence` and `Story` unchanged. Every existing
 test, sample file and golden is unchanged; the only existing files that change
-are `tests/Dse.Samples.Tests/Dse.Samples.Tests.csproj` (one `None` item),
+are `tests/Millrace.Samples.Tests/Millrace.Samples.Tests.csproj` (one `None` item),
 `README.md`, `docs/control-blocks.md` and the main spec.
 
 **Tech Stack:** .NET 10 (`net10.0`, SDK 10.0.401), C#, xUnit 2.9.3. No package
@@ -34,17 +34,17 @@ the shape of `docs/superpowers/specs/2026-09-25-mine-conveyor-sample-design.md`
 
 **Plan sequence:** This is plan 6b.2. Plans 1–5d, 6a, 6a.1, 6c, 6d, 6e and 6b.1
 are merged on `master`; this plan starts from `4c77cb7` (the commit that added
-the 6b.2 spec). Measured on that commit with `dotnet test Dse.sln`: **1506
-tests**, all passing — 37 `Dse.Io.Abstractions` / 498 `Dse.Core` / 176
-`Dse.Components` / 57 `Dse.Realtime` / 239 `Dse.Configuration` / 167
-`Dse.Scenarios` / 78 `Dse.Cli` / 149 `Dse.Control` / 27 `Dse.Control.Catalogue`
-/ 78 `Dse.Samples`. Release build `0 Warning(s)`, `0 Error(s)`.
+the 6b.2 spec). Measured on that commit with `dotnet test Millrace.sln`: **1506
+tests**, all passing — 37 `Millrace.Io.Abstractions` / 498 `Millrace.Core` / 176
+`Millrace.Components` / 57 `Millrace.Realtime` / 239 `Millrace.Configuration` / 167
+`Millrace.Scenarios` / 78 `Millrace.Cli` / 149 `Millrace.Control` / 27 `Millrace.Control.Catalogue`
+/ 78 `Millrace.Samples`. Release build `0 Warning(s)`, `0 Error(s)`.
 
 **Task shape.** Four tasks, sequential, each leaving the whole suite green:
 
 - **Task 1 — the plant.** `plant.json`, the test project's copy of the sample,
   the `WheelLine` helper, and the plant's tests: validate, loader, schema, the
-  two claims in `dse tags`, and a scenario refused for writing a claimed tag.
+  two claims in `millrace tags`, and a scenario refused for writing a claimed tag.
 - **Task 2 — the six scenarios.** The scenario files, their goldens (generated
   and read), the six stories, and the per-scenario theories: line start,
   golden, story, quiet tail, mass balance, replay.
@@ -61,17 +61,17 @@ tests**, all passing — 37 `Dse.Io.Abstractions` / 498 `Dse.Core` / 176
   an engine change, stop and report it as a blocker; do not edit `src/`.
   `git grep -n PackageReference -- 'src/*.csproj'` prints nothing.
 - **Existing tests and files are unchanged** except
-  `tests/Dse.Samples.Tests/Dse.Samples.Tests.csproj` (Task 1), `README.md`,
+  `tests/Millrace.Samples.Tests/Millrace.Samples.Tests.csproj` (Task 1), `README.md`,
   `docs/control-blocks.md` and
   `docs/superpowers/specs/2026-09-02-industrial-process-simulation-engine-design.md`
   (Task 4). No existing golden moves: every `samples/mine-conveyors/expected/*.log`
   and every golden under `tests/` is byte-identical after every task.
 - **Goldens are generated and read, never invented or hand-edited.** A
   wheel-line golden is written by `WheelLineTests.EveryScenarioMatchesItsGolden`
-  itself when `DSE_UPDATE_GOLDEN=1`: it runs `dse run <scenario> --out
+  itself when `MILLRACE_UPDATE_GOLDEN=1`: it runs `millrace run <scenario> --out
   samples/wheel-line/expected/<name>.log` in-process, at the source path. Run
   the update **for this project and this theory only** —
-  `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~WheelLineTests.EveryScenarioMatchesItsGolden"`
+  `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~WheelLineTests.EveryScenarioMatchesItsGolden"`
   — never over the whole solution, which would rewrite every other project's
   goldens, and never with a filter that also matches
   `MineConveyorTests.EveryScenarioMatchesItsGolden`. Then **read each new
@@ -95,7 +95,7 @@ tests**, all passing — 37 `Dse.Io.Abstractions` / 498 `Dse.Core` / 176
 - **Warnings are errors** (`Directory.Build.props`: `TreatWarningsAsErrors`,
   `EnforceCodeStyleInBuild`, `GenerateDocumentationFile`, `Nullable`). The
   Release build prints `0 Warning(s)` and `0 Error(s)` after every task:
-  `dotnet build Dse.sln -c Release --nologo`.
+  `dotnet build Millrace.sln -c Release --nologo`.
 - **xUnit analyzers run under warnings-as-errors:** prefer `Assert.Single`,
   `Assert.Contains`, `Assert.DoesNotContain`, `Assert.Empty`, `Assert.All`;
   never `Assert.True(x.Any())` or `Assert.Equal(1, x.Count())`. Theories take
@@ -115,7 +115,7 @@ tests**, all passing — 37 `Dse.Io.Abstractions` / 498 `Dse.Core` / 176
   end of the tick before, the tick-0 scan never sees a t = 0 write. In phase 3
   the flow graph visits nodes most-downstream first, so a billet the gate
   releases on tick N is replaced by the furnace's on the same tick N.
-- **Names.** Tag names are exactly what `dse tags samples/wheel-line/plant.json`
+- **Names.** Tag names are exactly what `millrace tags samples/wheel-line/plant.json`
   prints and match ordinally. A scenario's file name, its golden's file name
   and its `WheelLine.Names` entry are the same kebab-case word.
 - **JSON and Markdown files** are written exactly as this plan shows them: LF
@@ -137,8 +137,8 @@ tests**, all passing — 37 `Dse.Io.Abstractions` / 498 `Dse.Core` / 176
   and commit with `git commit -F`; then run
   `git log -1 --format='%h%n%s%n--%n%b'` and check the subject, the blank line
   and the trailer.
-- **Commands**, from the repository root: `dotnet build Dse.sln -c Release --nologo`
-  (expect `0 Warning(s)`, `0 Error(s)`) and `dotnet test Dse.sln --nologo`
+- **Commands**, from the repository root: `dotnet build Millrace.sln -c Release --nologo`
+  (expect `0 Warning(s)`, `0 Error(s)`) and `dotnet test Millrace.sln --nologo`
   (expect the task's total). `.superpowers/` is git-ignored; scratch work and
   commit messages go under `.superpowers/sdd/6b.2/` and are never added.
   Inside a worktree the harness refuses Bash text that mentions git inside a
@@ -199,7 +199,7 @@ first. Each has its pinning test in the owning task.
 Also pinned, beyond the five: every scenario conserves mass on every tick and
 accounts for every billet as a wheel, a reject or line content
 (`EveryScenarioConservesMassOnEveryTick`); a scenario that writes either
-claimed tag is refused with `DSE206` before tick 0
+claimed tag is refused with `MR206` before tick 0
 (`AScenarioThatWritesAClaimedTagIsRefusedBeforeTickZero`); the README's dwell
 arithmetic is read back against the plant file
 (`TheDwellArithmeticIsThisPlantsAndTheLineStartIsEveryGoldensFirstThreeLines`).
@@ -234,11 +234,11 @@ gives the amendment note that records them in the spec.
 - **R173 — `ALM_QUEUE` watches a hot-metal detector, not `CV.ItemCount`.** An
   `alarm` reads a Double tag (`AlarmCatalogue`: `Param.Tag("input", …,
   TagKind.Double)`), and a `discrete-belt`'s `ItemCount` port is an `int`, which
-  the `tags` envelope publishes as Int64. Measured: `dse validate` on an
-  `ALM_QUEUE` with `"input": "CV.ItemCount"` reports `DSE114
+  the `tags` envelope publishes as Int64. Measured: `millrace validate` on an
+  `ALM_QUEUE` with `"input": "CV.ItemCount"` reports `MR114
   $.controllers[2].parameters.input` — `'CV.ItemCount' is an Int64 tag, but
   'input' needs a Double tag.` No catalogue component converts an Int64 to a
-  Double, and a signal link between different value types is `DSE109`. The
+  Double, and a signal link between different value types is `MR109`. The
   smallest data-only way round is the instrument real lines use: `HMD`, a
   `pyrometer` aimed at `CV` at 4 m (`windowM` 0.1, `lagSeconds` 5) — blanks
   queue 2 m apart from the 10 m head, so a blank standing at 4 m means four
@@ -254,7 +254,7 @@ gives the amendment note that records them in the spec.
   when the queue shifts with the belt still full, raises again at
   06:12:55.800, clears at 06:18:32.400, and raises and clears 1.7 s apart at
   06:19:36.000; `press-jam` clears on the clear's first shift. `CV.ItemCount` stays read-bound through the `tags`
-  envelope (spec criterion 1): `dse tags` lists it and Task 3's slow-press
+  envelope (spec criterion 1): `millrace tags` lists it and Task 3's slow-press
   fact traces it. The spec's criterion 2 and 4 wording is amended (R183).
 - **R174 — `ALM_ZONE` has a 5 s on-delay because the first scan reads the
   primed image.** `FCE.ZONE_SP` primes at the `AmbientTemperature` default,
@@ -285,7 +285,7 @@ gives the amendment note that records them in the spec.
   criterion 5 asks for a quiet tail of at least 500 ticks (50 s). A running
   line logs four `FCE` and four `PRESS` phase events per billet, so its log
   never falls quiet; and `Billets.Enabled` is claimed by `INT_BAY`, so a
-  scenario cannot write it (`DSE206`, pinned). `normal-run`, `slow-press`,
+  scenario cannot write it (`MR206`, pinned). `normal-run`, `slow-press`,
   `stuck-kicker` and `press-jam` therefore inject `Billets` `starve` (at 600 s,
   2100 s, 2100 s, 2100 s), the line runs empty, and the run goes on quietly;
   `zone-low` and `pyro-fail-high` stop by themselves. Measured quiet tails:
@@ -373,7 +373,7 @@ gives the amendment note that records them in the spec.
   R171–R183), where the code or a measured run forced a choice:
 
   - **`ALM_QUEUE` watches a hot-metal detector (R173).** An `alarm` reads a
-    Double tag and `CV.ItemCount` is Int64 (`DSE114`), so `ALM_QUEUE` raises on
+    Double tag and `CV.ItemCount` is Int64 (`MR114`), so `ALM_QUEUE` raises on
     `HMD.Value`, a pyrometer aimed at the belt's queue-full position (4 m, 5 s
     lag; `Hi` 200 °C, 60 s on-delay). `CV.ItemCount` stays read-bound.
     Criterion 1 gains `HMD` (a second `pyrometer`, observing `CV`); criteria
@@ -406,10 +406,10 @@ task leaves it).
 `0 Error(s)`. Per project: 37 Io.Abstractions / 498 Core / 176 Components / 57
 Realtime / 239 Configuration / 167 Scenarios / 78 Cli / 149 Control / 27
 Control.Catalogue / 134 Samples. After Task 1: 84 Samples (1512); Task 2: 121
-(1549); Task 3: 124 (1552). `Dse.Samples.Tests` runs in about 18 s (Debug),
+(1549); Task 3: 124 (1552). `Millrace.Samples.Tests` runs in about 18 s (Debug),
 as before.
 
-**`dse validate samples/wheel-line/plant.json`:**
+**`millrace validate samples/wheel-line/plant.json`:**
 
 ```
 OK  samples/wheel-line/plant.json
@@ -449,17 +449,17 @@ made × 400 kg = wheels ÷ 0.92 + bay + held: 4000, 12800, 12800, 11600, 2800
 **Record → replay:** all six byte-identical; each recording holds exactly the
 scenario's actions (3, 5, 6, 5, 3, 5).
 
-**Wall time**, `dse run … --expect …` from a shell (Release, process start
+**Wall time**, `millrace run … --expect …` from a shell (Release, process start
 included): 0.27 s (`normal-run`), 0.46 s (`slow-press`), 0.43 s
 (`stuck-kicker`), 0.41 s (`press-jam`), 0.24 s (`zone-low`), 0.25 s
 (`pyro-fail-high`).
 
-**Names confirmed** against `dse tags` (39 tags) and `dse catalog export`:
+**Names confirmed** against `millrace tags` (39 tags) and `millrace catalog export`:
 fault ids `slow-cycle` and `discharge-jam` (`item-process-unit`), `stuck`
 (`reject-gate`), `fail-high` (`pyrometer`), `starve` (`item-source`); tags
 `FCE.ZONE_SP`, `CV.SPEED_SP`, `CV.ItemCount`, `FCE.Phase`, `PYRO.Value`,
 `HMD.Value`, `GATE.Reject`, `GATE.Rejected`, `Bay.Full`, `Billets.Enabled`,
-`INT_BAY.Reset`, `ALM_PYRO.HiHi.Active`. `dse tags` prints the two claims as
+`INT_BAY.Reset`, `ALM_PYRO.HiHi.Active`. `millrace tags` prints the two claims as
 
 ```
 Billets.Enabled  Bool  ReadOnly  Minting enabled  claimed by INT_BAY
@@ -469,13 +469,13 @@ GATE.Reject  Bool  ReadOnly  Divert the item leaving now to the reject outlet  c
 ## File structure
 
 ```
-tests/Dse.Samples.Tests/Dse.Samples.Tests.csproj    + copies samples/wheel-line/** to the output (Task 1)
+tests/Millrace.Samples.Tests/Millrace.Samples.Tests.csproj    + copies samples/wheel-line/** to the output (Task 1)
 samples/wheel-line/
   plant.json                    the line and its five controllers (Task 1)
   scenarios/<name>.json         six scenarios (Task 2)
   expected/<name>.log           six goldens, generated (Task 2)
   README.md                     the line, the controllers, the dwell, one section per scenario (Task 4)
-tests/Dse.Samples.Tests/
+tests/Millrace.Samples.Tests/
   WheelLine.cs                  paths, names, cached runs, Watch, Component (Task 1)
   WheelLineTests.cs             plant tests (Task 1); scenario theories (Task 2); live-run facts (Task 3)
   WheelLineStories.cs           the six stories (Task 2)
@@ -509,9 +509,9 @@ Task 3 reads Task 2's runs, Task 4 quotes Task 2's goldens.
 **Model:** implementer sonnet; reviewer **opus** (the numbers: R171–R175).
 
 **Files:**
-- Modify: `tests/Dse.Samples.Tests/Dse.Samples.Tests.csproj` (one `None` item)
-- Create: `tests/Dse.Samples.Tests/WheelLine.cs`
-- Create: `tests/Dse.Samples.Tests/WheelLineTests.cs` (4 facts + theory of 2 = 6)
+- Modify: `tests/Millrace.Samples.Tests/Millrace.Samples.Tests.csproj` (one `None` item)
+- Create: `tests/Millrace.Samples.Tests/WheelLine.cs`
+- Create: `tests/Millrace.Samples.Tests/WheelLineTests.cs` (4 facts + theory of 2 = 6)
 - Create: `samples/wheel-line/plant.json`
 
 **Interfaces:**
@@ -531,7 +531,7 @@ Task 3 reads Task 2's runs, Task 4 quotes Task 2's goldens.
 
 - [ ] **Step 1: Copy the sample into the test output**
 
-In `tests/Dse.Samples.Tests/Dse.Samples.Tests.csproj`, replace
+In `tests/Millrace.Samples.Tests/Millrace.Samples.Tests.csproj`, replace
 
 ```xml
     <None Include="..\..\samples\mine-conveyors\**\*"
@@ -549,21 +549,21 @@ with
 
 - [ ] **Step 2: Write the helper**
 
-Create `tests/Dse.Samples.Tests/WheelLine.cs`:
+Create `tests/Millrace.Samples.Tests/WheelLine.cs`:
 
 ```csharp
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using Dse.Configuration;
-using Dse.Core;
-using Dse.Core.Graph;
-using Dse.Scenarios;
+using Millrace.Configuration;
+using Millrace.Core;
+using Millrace.Core.Graph;
+using Millrace.Scenarios;
 
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 /// <summary>
 /// The wheel-line sample's files: read from the copy in the test output, and
-/// written — only when DSE_UPDATE_GOLDEN=1 — at their source under
+/// written — only when MILLRACE_UPDATE_GOLDEN=1 — at their source under
 /// <c>samples/wheel-line/</c>. The catalogue, the update switch and the way a
 /// scenario action is scheduled are the mine-conveyor sample's, from
 /// <see cref="Sample"/>.
@@ -601,7 +601,7 @@ public static class WheelLine
     private static readonly ConcurrentDictionary<string, Lazy<ScenarioRunResult>> Runs = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// A scenario's run through the same runner <c>dse run</c> uses, once per test
+    /// A scenario's run through the same runner <c>millrace run</c> uses, once per test
     /// process: a run is deterministic, so every test that reads it shares it.
     /// </summary>
     public static ScenarioRunResult Run(string name) =>
@@ -660,21 +660,21 @@ public static class WheelLine
 
 - [ ] **Step 3: Write the failing plant tests**
 
-Create `tests/Dse.Samples.Tests/WheelLineTests.cs` (4 facts and a theory of 2):
+Create `tests/Millrace.Samples.Tests/WheelLineTests.cs` (4 facts and a theory of 2):
 
 ```csharp
 using System.Text.Json;
-using Dse.Cli;
-using Dse.Configuration;
-using Dse.Scenarios;
+using Millrace.Cli;
+using Millrace.Configuration;
+using Millrace.Scenarios;
 using Json.Schema;
 
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 /// <summary>
 /// The wheel-line sample, end to end: the plant validates and the schema
 /// accepts it; every scenario opens with the line start, matches its golden
-/// through <c>dse run --expect</c>, tells its story, settles before it ends,
+/// through <c>millrace run --expect</c>, tells its story, settles before it ends,
 /// conserves mass and replays byte for byte from a recording; and the stories
 /// the log cannot tell — a held billet's temperature, the belt's count, which
 /// billet became which wheel — hold on a live run.
@@ -745,7 +745,7 @@ public class WheelLineTests
         ScenarioRunResult result = ScenarioRunner.Run(scenario, File.ReadAllText(WheelLine.Plant), Sample.Catalogue);
 
         ConfigDiagnostic d = Assert.Single(result.Diagnostics);
-        Assert.Equal(("DSE206", "$.timeline[0].write"), (d.Code, d.Path));
+        Assert.Equal(("MR206", "$.timeline[0].write"), (d.Code, d.Path));
         Assert.Equal($"Tag '{tag}' is claimed by {block}; a scenario cannot write it.", d.Message);
         Assert.Null(result.Events);
     }
@@ -754,7 +754,7 @@ public class WheelLineTests
 
 - [ ] **Step 4: Run them to see them fail**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~WheelLineTests"`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~WheelLineTests"`
 Expected: `Failed: 6, Passed: 0` — `samples/wheel-line/plant.json` does not
 exist yet, so `validate` and `tags` exit non-zero and the others cannot read it.
 
@@ -831,7 +831,7 @@ Create `samples/wheel-line/plant.json`:
 
 - [ ] **Step 6: Run the plant tests**
 
-Run: `dotnet run --project src/Dse.Cli -- validate samples/wheel-line/plant.json`
+Run: `dotnet run --project src/Millrace.Cli -- validate samples/wheel-line/plant.json`
 Expected, exactly:
 
 ```
@@ -845,12 +845,12 @@ OK  samples/wheel-line/plant.json
   time step     100 ms
 ```
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo` — expect PASS, **84**.
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo` — expect PASS, **84**.
 
 - [ ] **Step 7: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1512**: 37 / 498 / 176 / 57 /
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1512**: 37 / 498 / 176 / 57 /
 239 / 167 / 78 / 149 / 27 / 84.
 Run: `git diff --stat 4c77cb7 -- src/` — expect nothing.
 Run: `git status --short` — expect exactly the four paths of Step 8.
@@ -858,7 +858,7 @@ Run: `git status --short` — expect exactly the four paths of Step 8.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add tests/Dse.Samples.Tests/Dse.Samples.Tests.csproj tests/Dse.Samples.Tests/WheelLine.cs tests/Dse.Samples.Tests/WheelLineTests.cs samples/wheel-line/plant.json
+git add tests/Millrace.Samples.Tests/Millrace.Samples.Tests.csproj tests/Millrace.Samples.Tests/WheelLine.cs tests/Millrace.Samples.Tests/WheelLineTests.cs samples/wheel-line/plant.json
 git commit -F .superpowers/sdd/6b.2/msg-task1.txt
 ```
 
@@ -875,7 +875,7 @@ INT_BAY stops the saw when the bay is full and claims Billets.Enabled.
 The zone setpoint and belt speed are write-bound through the plant's
 tags envelope; CV.ItemCount is read-bound.
 
-An alarm reads Double tags and the belt's count is Int64 (DSE114), so
+An alarm reads Double tags and the belt's count is Int64 (MR114), so
 the queue alarm watches a hot-metal detector at the belt's queue-full
 position. The zone alarm has a 5 s on-delay: the first scan reads the
 primed 20 °C, not the line-start write.
@@ -897,8 +897,8 @@ story; R176–R178).
 - Create: `samples/wheel-line/scenarios/normal-run.json`, `slow-press.json`,
   `stuck-kicker.json`, `press-jam.json`, `zone-low.json`, `pyro-fail-high.json`
 - Generate: `samples/wheel-line/expected/<name>.log` (six)
-- Create: `tests/Dse.Samples.Tests/WheelLineStories.cs`
-- Modify: `tests/Dse.Samples.Tests/WheelLineTests.cs` (replaced in full: + 1
+- Create: `tests/Millrace.Samples.Tests/WheelLineStories.cs`
+- Modify: `tests/Millrace.Samples.Tests/WheelLineTests.cs` (replaced in full: + 1
   fact and six theories of 6 = 37 tests)
 
 **Interfaces:**
@@ -1006,10 +1006,10 @@ Create `samples/wheel-line/scenarios/pyro-fail-high.json`:
 
 - [ ] **Step 2: Write the stories**
 
-Create `tests/Dse.Samples.Tests/WheelLineStories.cs`:
+Create `tests/Millrace.Samples.Tests/WheelLineStories.cs`:
 
 ```csharp
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 /// <summary>
 /// The six wheel-line stories of the design (6b.2 spec criterion 5, as the
@@ -1180,27 +1180,27 @@ public static class WheelLineStories
 
 - [ ] **Step 3: Add the scenario theories**
 
-Replace the whole of `tests/Dse.Samples.Tests/WheelLineTests.cs` with (Task 1's
+Replace the whole of `tests/Millrace.Samples.Tests/WheelLineTests.cs` with (Task 1's
 six tests unchanged, then the folder fact and six theories):
 
 ```csharp
 using System.Globalization;
 using System.Text.Json;
-using Dse.Cli;
-using Dse.Components.Flow;
-using Dse.Configuration;
-using Dse.Core;
-using Dse.Core.Flow;
-using Dse.Core.Logging;
-using Dse.Scenarios;
+using Millrace.Cli;
+using Millrace.Components.Flow;
+using Millrace.Configuration;
+using Millrace.Core;
+using Millrace.Core.Flow;
+using Millrace.Core.Logging;
+using Millrace.Scenarios;
 using Json.Schema;
 
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 /// <summary>
 /// The wheel-line sample, end to end: the plant validates and the schema
 /// accepts it; every scenario opens with the line start, matches its golden
-/// through <c>dse run --expect</c>, tells its story, settles before it ends,
+/// through <c>millrace run --expect</c>, tells its story, settles before it ends,
 /// conserves mass and replays byte for byte from a recording; and the stories
 /// the log cannot tell — a held billet's temperature, the belt's count, which
 /// billet became which wheel — hold on a live run.
@@ -1271,7 +1271,7 @@ public class WheelLineTests
         ScenarioRunResult result = ScenarioRunner.Run(scenario, File.ReadAllText(WheelLine.Plant), Sample.Catalogue);
 
         ConfigDiagnostic d = Assert.Single(result.Diagnostics);
-        Assert.Equal(("DSE206", "$.timeline[0].write"), (d.Code, d.Path));
+        Assert.Equal(("MR206", "$.timeline[0].write"), (d.Code, d.Path));
         Assert.Equal($"Tag '{tag}' is claimed by {block}; a scenario cannot write it.", d.Message);
         Assert.Null(result.Events);
     }
@@ -1409,7 +1409,7 @@ public class WheelLineTests
 
 - [ ] **Step 4: Run them to see the golden tests fail**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~WheelLineTests"`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~WheelLineTests"`
 Expected: `Failed: 7, Passed: 36` — the six `EveryScenarioMatchesItsGolden`
 rows (there is no golden to `--expect`) and
 `TheScenarioFolderHoldsExactlyTheSixScenariosEachWithAGoldenAndAStory`
@@ -1419,7 +1419,7 @@ failures if they differ.
 
 - [ ] **Step 5: Generate the goldens**
 
-Run: `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~WheelLineTests.EveryScenarioMatchesItsGolden"`
+Run: `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~WheelLineTests.EveryScenarioMatchesItsGolden"`
 Expected: 6 passed, and six new files under `samples/wheel-line/expected/`.
 
 - [ ] **Step 6: Read every golden in full and check it**
@@ -1504,10 +1504,10 @@ Quote the checked lines in the task report.
 
 - [ ] **Step 7: Run the project, then everything**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo` — expect PASS, **121**
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo` — expect PASS, **121**
 (this run rebuilds and copies the goldens to the output).
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1549**: 37 / 498 / 176 / 57 /
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1549**: 37 / 498 / 176 / 57 /
 239 / 167 / 78 / 149 / 27 / 121.
 Run: `git status --short --ignored -- 'tests/**/*.actual' 'samples/**/*.actual'`
 — delete anything it lists.
@@ -1517,7 +1517,7 @@ Run: `git status --short` — expect exactly the paths of Step 8.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add samples/wheel-line/scenarios samples/wheel-line/expected tests/Dse.Samples.Tests/WheelLineStories.cs tests/Dse.Samples.Tests/WheelLineTests.cs
+git add samples/wheel-line/scenarios samples/wheel-line/expected tests/Millrace.Samples.Tests/WheelLineStories.cs tests/Millrace.Samples.Tests/WheelLineTests.cs
 git commit -F .superpowers/sdd/6b.2/msg-task2.txt
 ```
 
@@ -1552,7 +1552,7 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 R175, R181).
 
 **Files:**
-- Modify: `tests/Dse.Samples.Tests/WheelLineTests.cs` (+ 3 facts, a constant
+- Modify: `tests/Millrace.Samples.Tests/WheelLineTests.cs` (+ 3 facts, a constant
   and a helper)
 
 **Interfaces:**
@@ -1567,7 +1567,7 @@ first run. A failure is a measurement: report it, with the value measured.
 
 - [ ] **Step 1: Add the constant**
 
-In `tests/Dse.Samples.Tests/WheelLineTests.cs`, replace
+In `tests/Millrace.Samples.Tests/WheelLineTests.cs`, replace
 
 ```csharp
 public class WheelLineTests
@@ -1720,21 +1720,21 @@ with
 
 - [ ] **Step 3: Run them**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~WheelLineTests.TheRejectDecision|FullyQualifiedName~WheelLineTests.ASlowPress|FullyQualifiedName~WheelLineTests.AStuckKicker"`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~WheelLineTests.TheRejectDecision|FullyQualifiedName~WheelLineTests.ASlowPress|FullyQualifiedName~WheelLineTests.AStuckKicker"`
 — expect PASS, 3.
-Run: `dotnet test tests/Dse.Samples.Tests --nologo` — expect PASS, **124**.
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo` — expect PASS, **124**.
 
 - [ ] **Step 4: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1552**: 37 / 498 / 176 / 57 /
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1552**: 37 / 498 / 176 / 57 /
 239 / 167 / 78 / 149 / 27 / 124.
-Run: `git status --short` — expect only `tests/Dse.Samples.Tests/WheelLineTests.cs`.
+Run: `git status --short` — expect only `tests/Millrace.Samples.Tests/WheelLineTests.cs`.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add tests/Dse.Samples.Tests/WheelLineTests.cs
+git add tests/Millrace.Samples.Tests/WheelLineTests.cs
 git commit -F .superpowers/sdd/6b.2/msg-task3.txt
 ```
 
@@ -1764,7 +1764,7 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 
 **Files:**
 - Create: `samples/wheel-line/README.md`
-- Create: `tests/Dse.Samples.Tests/WheelLineReadmeTests.cs` (4 facts + theory of 6 = 10)
+- Create: `tests/Millrace.Samples.Tests/WheelLineReadmeTests.cs` (4 facts + theory of 6 = 10)
 - Modify: `README.md` (three replacements)
 - Modify: `docs/control-blocks.md` (one insertion)
 - Modify: `docs/superpowers/specs/2026-09-02-industrial-process-simulation-engine-design.md` (four replacements)
@@ -1785,7 +1785,7 @@ The second reference sample: a forging cell that heats steel billets in a
 furnace, checks each one's temperature at the furnace exit, carries the good
 ones on a belt to a press and forges each into a wheel. Six scenarios break it
 in six ways. As in `samples/mine-conveyors/`, there is no C# here: everything is
-data the `dse` command line runs.
+data the `millrace` command line runs.
 
 It is a different domain on purpose. The mine conveyors move bulk ore; here
 each billet is an item with its own id, mass and temperature, the press changes
@@ -1858,13 +1858,13 @@ All five scan every 100 ms.
 
 **The reject is the PLC's decision.** The pyrometer measures, the alarm
 decides, the coil drives the kicker. The coil claims `GATE.Reject`, so nothing
-else — no HMI, no scenario — can write it: `dse tags` lists it `ReadOnly …
+else — no HMI, no scenario — can write it: `millrace tags` lists it `ReadOnly …
 claimed by COIL_REJECT`. `INT_BAY` stops the saw when the reject cradle is full
 and claims `Billets.Enabled` the same way.
 
 **Why the queue alarm watches a hot-metal detector.** An `alarm` watches a
-Double tag, and a belt's `ItemCount` is an Int64 — `dse validate` refuses an
-alarm on it (`DSE114`). Lines detect a queue the way this one does: a
+Double tag, and a belt's `ItemCount` is an Int64 — `millrace validate` refuses an
+alarm on it (`MR114`). Lines detect a queue the way this one does: a
 hot-metal detector at the queue-full position. Blanks stand 2 m apart from the
 head, so a blank standing at 4 m means at least four are queued. A blank
 passing at belt speed is in its view for under half a second, and the 5 s lag
@@ -1925,9 +1925,9 @@ lands at 06:18:36.000 (*N*), `HiHi` raises at *N* + 2, the coil's write lands at
 From the repository root:
 
 ```bash
-dotnet run --project src/Dse.Cli -- validate samples/wheel-line/plant.json
-dotnet run --project src/Dse.Cli -- tags samples/wheel-line/plant.json
-dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/slow-press.json
+dotnet run --project src/Millrace.Cli -- validate samples/wheel-line/plant.json
+dotnet run --project src/Millrace.Cli -- tags samples/wheel-line/plant.json
+dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/slow-press.json
 ```
 
 Add `--expect samples/wheel-line/expected/<name>.log` to check a run against
@@ -1947,7 +1947,7 @@ and `Reject` is never written again after the first scan.
 06:11:51.800  PRESS  IDLE  Batch discharged; ready for the next.
 ```
 
-`dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/normal-run.json --expect samples/wheel-line/expected/normal-run.log`
+`dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/normal-run.json --expect samples/wheel-line/expected/normal-run.log`
 
 ## 2. Slow press
 
@@ -1982,7 +1982,7 @@ clears, and the line runs normally until the saw stops at 2100 s.
 Only billet 13 is rejected. The rejection itself makes room: the next billet
 reaches the gate at its target and waits there, good, for the belt.
 
-`dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/slow-press.json --expect samples/wheel-line/expected/slow-press.log`
+`dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/slow-press.json --expect samples/wheel-line/expected/slow-press.log`
 
 ## 3. Stuck kicker
 
@@ -2008,7 +2008,7 @@ station proves the kick — a sensor on the reject chute, or the gate's own
 sample deliberately has no such check, so the failure shows; the tests follow
 billets 13 and 14 by id into the `Wheels` sink.
 
-`dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/stuck-kicker.json --expect samples/wheel-line/expected/stuck-kicker.log`
+`dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/stuck-kicker.json --expect samples/wheel-line/expected/stuck-kicker.log`
 
 ## 4. Press jam
 
@@ -2037,7 +2037,7 @@ gate, no over-soaked billet can reach the pyrometer, so rejects cannot
 accumulate during a jam; the full bay and `INT_BAY` are shown by scenario 6,
 where they can.
 
-`dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/press-jam.json --expect samples/wheel-line/expected/press-jam.log`
+`dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/press-jam.json --expect samples/wheel-line/expected/press-jam.log`
 
 ## 5. Zone low
 
@@ -2055,7 +2055,7 @@ reaches the gate.
 06:05:51.800  PRESS  IDLE  Batch discharged; ready for the next.
 ```
 
-`dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/zone-low.json --expect samples/wheel-line/expected/zone-low.log`
+`dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/zone-low.json --expect samples/wheel-line/expected/zone-low.log`
 
 ## 6. Pyrometer fails high
 
@@ -2084,7 +2084,7 @@ crane or a forklift, after which the reset is accepted and writes
 `Billets.Enabled` true; an `item-sink` cannot be emptied, so no scenario can
 show that recovery.
 
-`dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/pyro-fail-high.json --expect samples/wheel-line/expected/pyro-fail-high.log`
+`dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/pyro-fail-high.json --expect samples/wheel-line/expected/pyro-fail-high.log`
 
 ## Known limits
 
@@ -2105,14 +2105,14 @@ show that recovery.
 
 - [ ] **Step 2: Write the README tests**
 
-Create `tests/Dse.Samples.Tests/WheelLineReadmeTests.cs`:
+Create `tests/Millrace.Samples.Tests/WheelLineReadmeTests.cs`:
 
 ````csharp
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 /// <summary>
 /// The wheel-line README quotes each scenario's log in a block fenced as
@@ -2197,7 +2197,7 @@ public partial class WheelLineReadmeTests
                  {
                      "**No burner or zone controller.**", "**No descaler.**", "**One press.**",
                      "**Lumped billet temperature.**", "**The zone held as a written setpoint.**",
-                     "a belt's `ItemCount` is an Int64", "(`DSE114`)", "claimed by COIL_REJECT",
+                     "a belt's `ItemCount` is an Int64", "(`MR114`)", "claimed by COIL_REJECT",
                      "the full bay and `INT_BAY` are shown by scenario 6",
                  })
         {
@@ -2232,7 +2232,7 @@ public partial class WheelLineReadmeTests
 
 - [ ] **Step 3: Run them to see the repository-pages fact fail**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~WheelLineReadmeTests"`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~WheelLineReadmeTests"`
 Expected: `Failed: 1, Passed: 9` —
 `TheRootReadmeTheControlBlocksPageAndTheMainSpecNameTheWheelLine` (the root
 README does not name the sample yet).
@@ -2261,14 +2261,14 @@ low furnace zone and a pyrometer failed high. It is data only too.
 replace
 
 ```markdown
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/pull-key.json  # the sample: a pull-key stops the line
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/pull-key.json  # the sample: a pull-key stops the line
 ```
 
 with
 
 ```markdown
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/pull-key.json  # the sample: a pull-key stops the line
-dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/slow-press.json      # the second: a slow press over-soaks a billet and the PLC rejects it
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/pull-key.json  # the sample: a pull-key stops the line
+dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/slow-press.json      # the second: a slow press over-soaks a billet and the PLC rejects it
 ```
 
 and replace
@@ -2325,13 +2325,13 @@ folder, `samples/wheel-line/`, like the mine conveyors.
 replace
 
 ```markdown
-`tests/Dse.Samples.Tests` — and the wheel line (plan 6b).
+`tests/Millrace.Samples.Tests` — and the wheel line (plan 6b).
 ```
 
 with
 
 ```markdown
-`tests/Dse.Samples.Tests` — and `samples/wheel-line/`, the same shape (plan 6b.2).
+`tests/Millrace.Samples.Tests` — and `samples/wheel-line/`, the same shape (plan 6b.2).
 ```
 
 replace
@@ -2370,11 +2370,11 @@ a hot-metal detector on the conveyor raises the queue alarm.
 
 - [ ] **Step 5: Run everything**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo` — expect PASS, **134**.
-Run: `dotnet test tests/Dse.Control.Tests --nologo` — expect PASS, 149
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo` — expect PASS, **134**.
+Run: `dotnet test tests/Millrace.Control.Tests --nologo` — expect PASS, 149
 (`DocumentationTests` unchanged: the new paragraph quotes no log line).
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1562**: 37 / 498 / 176 / 57 /
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1562**: 37 / 498 / 176 / 57 /
 239 / 167 / 78 / 149 / 27 / 134.
 Run: `git diff --stat 4c77cb7 -- src/` — expect nothing.
 Run: `git status --short` — expect exactly the five paths of Step 6.
@@ -2382,7 +2382,7 @@ Run: `git status --short` — expect exactly the five paths of Step 6.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add samples/wheel-line/README.md tests/Dse.Samples.Tests/WheelLineReadmeTests.cs README.md docs/control-blocks.md docs/superpowers/specs/2026-09-02-industrial-process-simulation-engine-design.md
+git add samples/wheel-line/README.md tests/Millrace.Samples.Tests/WheelLineReadmeTests.cs README.md docs/control-blocks.md docs/superpowers/specs/2026-09-02-industrial-process-simulation-engine-design.md
 git commit -F .superpowers/sdd/6b.2/msg-task4.txt
 ```
 
@@ -2430,7 +2430,7 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 | 4. steady queue below `ALM_QUEUE` Hi | 2, 3 | `normal-run` absence of `ALARM_RAISED`; `ASlowPressOverSoaks…` (≤ 1 blank before 300 s) |
 | 5. six scenarios, goldens, line-start writes, ≥ 500-tick quiet tail | 2 | `TheScenarioFolderHoldsExactlyTheSixScenarios…`, `EveryScenarioMatchesItsGolden`, `EveryScenarioOpensWithTheLineStartAndTheCoilsFirstScan`, `EveryScenarioSettlesAtLeastFiveHundredTicksBeforeItEnds` |
 | 5. the table's six rows (as R177 amends `press-jam` and `pyro-fail-high`) | 2, 3 | `EveryScenarioTellsItsStory` (6 rows); `ASlowPressOverSoaks…`; `AStuckKicker…` |
-| 6. validate + schema; golden; replay; quiet tail; `dse tags` claims | 1, 2 | as above; `EveryScenarioReplaysByteForByteFromARecording` |
+| 6. validate + schema; golden; replay; quiet tail; `millrace tags` claims | 1, 2 | as above; `EveryScenarioReplaysByteForByteFromARecording` |
 | 6. `slow-press` causal chain with temperature and `ItemCount` traces | 2, 3 | `slow-press` story; `ASlowPressOverSoaksTheHeldBilletOnlyWhileItIsSlowAndTheBeltFillsAndDrains` |
 | 6. `stuck-kicker`: a wheel made from an over-soaked billet | 3 | `AStuckKickerTurnsTheOverSoakedBilletsIntoWheels` |
 | 6. mass conservation in every scenario | 2 | `EveryScenarioConservesMassOnEveryTick` (6 rows) |
@@ -2444,7 +2444,7 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 Baseline on `4c77cb7` (measured): 1506 = 37 + 498 + 176 + 57 + 239 + 167 + 78 +
 149 + 27 + 78.
 
-| Task | Added to `Dse.Samples.Tests` | Samples | Suite |
+| Task | Added to `Millrace.Samples.Tests` | Samples | Suite |
 |---|---|---|---|
 | 1 | `WheelLineTests`: 4 facts + `AScenarioThatWritesAClaimedTagIsRefusedBeforeTickZero` (2 rows) = 6 | 84 | 1512 |
 | 2 | `WheelLineTests`: `TheScenarioFolderHolds…` 1 + six theories × 6 rows (`EveryScenarioOpensWith…`, `EveryScenarioMatchesItsGolden`, `EveryScenarioTellsItsStory`, `EveryScenarioSettles…`, `EveryScenarioConservesMass…`, `EveryScenarioReplays…`) = 37 | 121 | 1549 |

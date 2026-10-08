@@ -31,8 +31,8 @@ R184–R193), where the code or a measured run forced a choice:
   `F0`, as before.
 - **The release adds `ReleaseTests` (R191)**, two facts pinning the version,
   the changelog's links and the README's commands; every assembly except
-  `Dse.Cli` was already 1.0.0 by the SDK default, and `Dse.Cli`'s own 0.1.0
-  override was removed, so the `dse` tool and its package move from 0.1.0
+  `Millrace.Cli` was already 1.0.0 by the SDK default, and `Millrace.Cli`'s own 0.1.0
+  override was removed, so the `millrace` tool and its package move from 0.1.0
   to 1.0.0. `Directory.Build.props` is now the single source, and
   `ReleaseTests` fails if a project under `src/` sets its own version.
 - **"The merge commit" (criterion 6) reads "`master`'s head after the
@@ -55,7 +55,7 @@ three change event text, one is test-only — then the release.
 
 ### Success criteria
 
-1. **Refused reset (`Dse.Control` `Interlock`).** On a scan where `Reset` rises
+1. **Refused reset (`Millrace.Control` `Interlock`).** On a scan where `Reset` rises
    while the interlock is tripped and at least one condition is not normal, it
    raises event `RESET_REFUSED` with message
    `Reset refused: <tag> is not normal.`, naming the first condition, in
@@ -80,7 +80,7 @@ three change event text, one is test-only — then the release.
      floor of 3 keeps today's `F3` for the shipped trip level `1.1`, so no
      golden moves for this item; a trip level with 3 or more decimals gets
      one more.
-4. **Shared sample loader (tests only).** `tests/Dse.Samples.Tests` has one
+4. **Shared sample loader (tests only).** `tests/Millrace.Samples.Tests` has one
    loader used by both the mine-conveyor and wheel-line helpers: parse the
    scenario, load the plant, build, schedule the timeline, run cache, and the
    per-sample paths keyed by the sample's folder. Every existing test keeps its
@@ -89,7 +89,7 @@ three change event text, one is test-only — then the release.
    `samples/wheel-line/expected/pyro-fail-high.log` gains one `RESET_REFUSED`
    line; the slowed hold lines of `slow-press.log` and `stuck-kicker.log` gain
    the wall time; any other golden with a refused reset gains its line. Each is
-   regenerated with `DSE_UPDATE_GOLDEN=1` and read. README and documentation
+   regenerated with `MILLRACE_UPDATE_GOLDEN=1` and read. README and documentation
    text that said a refused reset logs nothing, or that quotes a changed line,
    is updated.
 6. **Release.**
@@ -100,7 +100,7 @@ three change event text, one is test-only — then the release.
    - `Directory.Build.props` sets `<Version>1.0.0</Version>`.
    - The root `README.md` gains a "Getting started" section — prerequisites
      (.NET 10 SDK), build and test commands, running a scenario of each sample
-     against its golden with `dse run … --expect …`, and where to read next —
+     against its golden with `millrace run … --expect …`, and where to read next —
      and its plan-by-plan "Status" section is condensed to a short summary
      pointing at the changelog.
    - After the merge, an annotated tag `v1.0.0` on the merge commit, created

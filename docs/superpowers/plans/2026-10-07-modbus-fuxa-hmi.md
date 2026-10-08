@@ -2,27 +2,27 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Give DSE its first external consumer. A new `Dse.Modbus` project
+**Goal:** Give Millrace its first external consumer. A new `Millrace.Modbus` project
 maps a plant's tag directory to Modbus registers and serves them over Modbus
-TCP; `dse serve` runs a plant in real time behind that server and
-`dse modbus-map` prints the map; `hmi/fuxa/` starts the mine-conveyor sample
+TCP; `millrace serve` runs a plant in real time behind that server and
+`millrace modbus-map` prints the map; `hmi/fuxa/` starts the mine-conveyor sample
 in the FUXA web SCADA — an overview mimic, alarms and trends — with one
 `docker compose up`.
 
-**Architecture:** `Dse.Modbus` references `Dse.Io.Abstractions` and
-`Dse.Realtime` only, and no package (R195). `RegisterMap` assigns addresses
+**Architecture:** `Millrace.Modbus` references `Millrace.Io.Abstractions` and
+`Millrace.Realtime` only, and no package (R195). `RegisterMap` assigns addresses
 from an `ITagDirectory` in directory order; `RegisterCodec` holds the
 big-endian Float32 and saturating Int32 encodings; `ModbusProtocol` turns one
 request PDU into one response PDU, reading a published image through a
 `Func<ReadOnlyMemory<TagValue>>` once per request and writing through
 `CommandBus`; `ModbusServer` frames MBAP over `TcpListener`, one task per
-connection. `Dse.Scenarios` gains `ScenarioRunner.Bind` — the load-and-schedule
-half of `Run` — so `dse serve --scenario` replays a timeline without a second
-copy of the binding rules. `dse serve` ticks the `Simulation` on the CLI
+connection. `Millrace.Scenarios` gains `ScenarioRunner.Bind` — the load-and-schedule
+half of `Run` — so `millrace serve --scenario` replays a timeline without a second
+copy of the binding rules. `millrace serve` ticks the `Simulation` on the CLI
 thread with `SimulationRunner` (real time, or `--speed` times it) while the
 server answers on the thread pool from `Simulation.IO.Snapshot`. The FUXA
 project is generated, not drawn: a scratch generator (in this plan, never
-committed) turns `dse modbus-map --format fuxa` into the device, three views,
+committed) turns `millrace modbus-map --format fuxa` into the device, three views,
 the alarms, two charts and one server script; the committed JSON is its
 output, verified against a running FUXA 1.3.4 (R205).
 
@@ -41,11 +41,11 @@ adds to the spec with the plan commit), on top of the main spec
 
 **Plan sequence:** Plan 8, the first after v1.0.0. It starts from `aca64d9`
 (the commit that added the plan 8 spec). Measured on that commit with
-`dotnet test Dse.sln`: **1581 tests, 1580 passing, 1 failing** — 37
-`Dse.Io.Abstractions` / 498 `Dse.Core` / 189 `Dse.Components` / 57
-`Dse.Realtime` / 239 `Dse.Configuration` / 167 `Dse.Scenarios` / 78
-`Dse.Cli` / 153 `Dse.Control` / 27 `Dse.Control.Catalogue` / 136
-`Dse.Samples`. The failure is
+`dotnet test Millrace.sln`: **1581 tests, 1580 passing, 1 failing** — 37
+`Millrace.Io.Abstractions` / 498 `Millrace.Core` / 189 `Millrace.Components` / 57
+`Millrace.Realtime` / 239 `Millrace.Configuration` / 167 `Millrace.Scenarios` / 78
+`Millrace.Cli` / 153 `Millrace.Control` / 27 `Millrace.Control.Catalogue` / 136
+`Millrace.Samples`. The failure is
 `ReleaseTests.TheVersionTheChangelogAndTheReadmeAgree`: it requires the
 changelog to link every spec and plan dated before 2026-10-08, and the plan 8
 spec (2026-10-07) is not linked — `master` has been red since `aca64d9`, and
@@ -57,11 +57,11 @@ Task 1 on:
 
 - **Task 1 — the changelog's Unreleased entry.** An `## Unreleased` heading
   that links the plan 8 spec and plan; `ReleaseTests` accepts it.
-- **Task 2 — the register map.** `Dse.Modbus` and `Dse.Modbus.Tests` join the
+- **Task 2 — the register map.** `Millrace.Modbus` and `Millrace.Modbus.Tests` join the
   solution: `ModbusArea`, `RegisterEntry`, `RegisterMap`, `RegisterCodec`.
 - **Task 3 — the Modbus TCP server.** `ModbusProtocol`, `ModbusServer`,
   `ModbusExceptionCode`; the test-side `ModbusClient` in `tests/Shared/`.
-- **Task 4 — `dse serve` and `dse modbus-map`.** `ScenarioRunner.Bind`, the
+- **Task 4 — `millrace serve` and `millrace modbus-map`.** `ScenarioRunner.Bind`, the
   two commands, their tests, and the end-to-end test on the mine plant.
 - **Task 5 — the FUXA stack.** Dockerfiles, compose, the generated FUXA
   project, the smoke check, `hmi/fuxa/README.md` and the in-sync tests; the
@@ -75,19 +75,19 @@ Task 1 on:
   before its commit lists exactly the paths its commit step adds. No task
   edits `docs/superpowers/` (the controller amends the spec with the plan
   commit, R210). `git grep -n PackageReference -- 'src/*.csproj'` prints
-  nothing: `Dse.Modbus` has no package (spec criterion 2).
+  nothing: `Millrace.Modbus` has no package (spec criterion 2).
 - **No computed value changes.** No engine component, block, message or
   result changes (spec §2). After every task `git diff --stat aca64d9 --
-  samples/mine-conveyors samples/wheel-line tests/Dse.Control.Tests/Golden
-  tests/Dse.Scenarios.Tests/Golden src/Dse.Core src/Dse.Components
-  src/Dse.Control src/Dse.Control.Catalogue src/Dse.Configuration
-  src/Dse.Io.Abstractions src/Dse.Realtime` prints nothing.
+  samples/mine-conveyors samples/wheel-line tests/Millrace.Control.Tests/Golden
+  tests/Millrace.Scenarios.Tests/Golden src/Millrace.Core src/Millrace.Components
+  src/Millrace.Control src/Millrace.Control.Catalogue src/Millrace.Configuration
+  src/Millrace.Io.Abstractions src/Millrace.Realtime` prints nothing.
 - **Generated files are generated and read, never hand-edited.** The FUXA
   project `hmi/fuxa/mine-conveyors.fuxap.json` is written by the committed
-  generator `hmi/fuxa/generate-project.py` from `dse modbus-map … --format
+  generator `hmi/fuxa/generate-project.py` from `millrace modbus-map … --format
   fuxa` (its source, R205), and Task 5 checks the output's SHA-256 as a
   reproducibility check;
-  the register map in `hmi/fuxa/README.md` is the output of `dse modbus-map`,
+  the register map in `hmi/fuxa/README.md` is the output of `millrace modbus-map`,
   pasted by the script in Task 5, and a test compares the two. If a check
   disagrees, report the measured output; never edit the file to fit.
 - **Report every measurement.** Where an expected value in this plan (a test
@@ -98,17 +98,17 @@ Task 1 on:
   `Dictionary`/`HashSet` iteration order reaching an assertion or an output.
   String comparisons are ordinal; formatting and parsing use
   `CultureInfo.InvariantCulture`. The register map is a pure function of the
-  directory. (`dse serve` is real time and is not replayable tick for tick;
+  directory. (`millrace serve` is real time and is not replayable tick for tick;
   nothing asserts on its tick count.)
 - **No flaky tests.** Every test that talks to a socket listens on port 0 (the
   system picks a free port) on loopback, every wait is bounded (5 s per
   client read, 10 s or 30 s per condition, as written), and nothing sleeps to
   "let things settle" without a bound. Measured: the whole suite passed four
-  runs in a row, and `Dse.Modbus.Tests` runs in under a second.
+  runs in a row, and `Millrace.Modbus.Tests` runs in under a second.
 - **Warnings are errors** (`Directory.Build.props`: `TreatWarningsAsErrors`,
   `EnforceCodeStyleInBuild`, `GenerateDocumentationFile`, `Nullable`). The
   Release build prints `0 Warning(s)` and `0 Error(s)` after every task:
-  `dotnet build Dse.sln -c Release --nologo`.
+  `dotnet build Millrace.sln -c Release --nologo`.
 - **xUnit analyzers run under warnings-as-errors:** prefer `Assert.Single`,
   `Assert.Contains`, `Assert.DoesNotContain`, `Assert.Empty`, `Assert.All`;
   never `Assert.True(x.Any())` or `Assert.Equal(1, x.Count())`; never block on
@@ -138,8 +138,8 @@ Task 1 on:
   and commit with `git commit -F .superpowers/sdd/8/msg-taskN.txt`; then run
   `git log -1 --format='%h%n%s%n--%n%b'` and check the subject, the blank line
   and the trailer.
-- **Commands**, from the repository root: `dotnet build Dse.sln -c Release --nologo`
-  (expect `0 Warning(s)`, `0 Error(s)`) and `dotnet test Dse.sln --nologo`
+- **Commands**, from the repository root: `dotnet build Millrace.sln -c Release --nologo`
+  (expect `0 Warning(s)`, `0 Error(s)`) and `dotnet test Millrace.sln --nologo`
   (expect the task's total). `.superpowers/` is git-ignored; scratch work,
   the FUXA generator and commit messages go under `.superpowers/sdd/8/` and
   are never added. Inside a worktree the harness refuses Bash text that
@@ -148,12 +148,12 @@ Task 1 on:
   Write tool and run each command as the plain command this plan shows.
 - **Docker (Task 5 only).** Everything Task 5 starts it also removes: after
   the task, `docker ps -a`, `docker volume ls` and `docker network ls` list
-  nothing whose name starts with `dse-hmi`, and `docker images` lists no
-  `dse-hmi/*`, `curlimages/curl` or `frangoteam/fuxa` image. Never touch a
+  nothing whose name starts with `millrace-hmi`, and `docker images` lists no
+  `millrace-hmi/*`, `curlimages/curl` or `frangoteam/fuxa` image. Never touch a
   container, volume, network or image the task did not create (the machine
   runs others, such as `dockhand`). Pkill/pgrep patterns must not match the
-  shell's own command line: write `pgrep -af '[n]et10.0/dse serve'`, not
-  `pgrep -f 'dse serve'` (measured: the bare pattern kills the calling shell,
+  shell's own command line: write `pgrep -af '[n]et10.0/millrace serve'`, not
+  `pgrep -f 'millrace serve'` (measured: the bare pattern kills the calling shell,
   exit 144).
 
 ## Review Focus
@@ -198,13 +198,13 @@ bite first. Each has its pinning test in the owning task.
    `AnImageNotYetPrimedReadsAsZeroesRatherThanFailing`.
 5. **The HMI drifting from the plant.** A tag renamed or a block added
    changes the map; a hand edit of the FUXA project could point a button at
-   a read-only tag, which FUXA would accept and DSE would refuse with 02. The
+   a read-only tag, which FUXA would accept and Millrace would refuse with 02. The
    author expects a test to fail rather than the HMI to go quietly dead.
    Tests: Task 5, `TheDeviceTagsAreExactlyTheModbusMapOfTheMinePlant`,
    `EveryTagTheHmiReferencesIsADeviceTag`, `EveryTagTheHmiWritesIsACoil`,
    `TheReadmesRegisterMapIsTheOneModbusMapPrints`.
 
-Also pinned, beyond the five: `dse serve` on a port in use exits 3 and names
+Also pinned, beyond the five: `millrace serve` on a port in use exits 3 and names
 the port (`APortInUseExits3AndSaysWhichPort`), a scenario written for another
 plant is refused (`AScenarioForAnotherPlantIsAUsageError`), and a cancelled
 run stops before its first tick with the exit code 0 that Ctrl+C gives
@@ -220,21 +220,21 @@ a choice. R210 gives the amendment note that records them in the spec.
   `CHANGELOG.md` to link every spec and plan file dated before 2026-10-08,
   and allows exactly one `## ` heading. The plan 8 spec (committed in
   `aca64d9`) and this plan (committed with the plan) are dated 2026-10-07 and
-  unlinked (measured: `Failed: 1, Passed: 135` in `Dse.Samples.Tests`, "Not
+  unlinked (measured: `Failed: 1, Passed: 135` in `Millrace.Samples.Tests`, "Not
   found: docs/superpowers/specs/2026-10-07-modbus-fuxa-hmi-…"). Task 1 adds
   an `## Unreleased` section above `## 1.0.0 — 2026-10-07` that links both,
   and relaxes the one-heading assertion to "an optional `## Unreleased`, then
   the one release heading, last". The date filter stays: the plan 8 files
   are dated before 2026-10-08, so the test now also proves plan 8 is in the
   changelog. Task 6 fills the section in.
-- **R195 — `Dse.Modbus` references `Dse.Io.Abstractions` and `Dse.Realtime`,
+- **R195 — `Millrace.Modbus` references `Millrace.Io.Abstractions` and `Millrace.Realtime`,
   and reads through a delegate.** The server needs the directory and
   `TagValue` (Io.Abstractions) and `CommandBus` (Realtime, spec criterion 2).
-  It does not reference `Dse.Core`: the one Core member it needs is
+  It does not reference `Millrace.Core`: the one Core member it needs is
   `TagImage.Snapshot()`, the whole published array swapped with one volatile
   write, which no Io.Abstractions interface exposes (`ITagReader.Read(int)`
   reads one tag at a time, so a multi-register read could straddle two
-  ticks). The server takes a `Func<ReadOnlyMemory<TagValue>>` — in `dse
+  ticks). The server takes a `Func<ReadOnlyMemory<TagValue>>` — in `millrace
   serve`, the method group `simulation.IO.Snapshot` — and calls it once per
   read request. This keeps the adapter a bolt-on in the sense of
   `docs/architecture.md`'s real-time boundary, and lets its tests run with a
@@ -253,7 +253,7 @@ a choice. R210 gives the amendment note that records them in the spec.
   Quality is not carried (Modbus has no field for it). A slot whose value
   is of another kind than its tag — the all-`default` image before
   `Simulation.Initialize` holds a `Bool` in every slot — encodes as 0, so a
-  connection never faults on it; `dse serve` calls `Initialize` before it
+  connection never faults on it; `millrace serve` calls `Initialize` before it
   opens the port anyway.
 - **R197 — Requests, checked in the specification's order.** Function first
   (01 for any code but 1, 2, 3, 4, 5, 6, 15, 16 — including 0, 7, 8, 0x17,
@@ -291,7 +291,7 @@ a choice. R210 gives the amendment note that records them in the spec.
   answers its requests in order; connections are independent. Disposing the
   server cancels every read, closes every socket and awaits every
   connection task.
-- **R199 — `dse serve`.** Options: `--scenario`, `--port`, `--speed` and
+- **R199 — `millrace serve`.** Options: `--scenario`, `--port`, `--speed` and
   `--assembly` (every plant-loading command takes `--assembly`; there is no
   `--time-step`, which a scenario's `timeStepMs` covers). `--port` is a whole
   number 0–65535, default 5020 (502 needs privileges); **0 asks the system
@@ -309,7 +309,7 @@ a choice. R210 gives the amendment note that records them in the spec.
   overload with a `CancellationToken`, which `CliContext.Cancellation`
   carries, so a test stops a run as Ctrl+C would. Signals are taken with
   `PosixSignalRegistration` for SIGINT and SIGTERM, each cancelling the run
-  (measured: `docker compose stop dse` returns in 0.4 s with `Stopped at …`
+  (measured: `docker compose stop millrace` returns in 0.4 s with `Stopped at …`
   in the log and exit 0; a SIGINT sent to a process started in the
   background by a non-interactive shell is ignored, because such a shell
   starts it with SIGINT ignored — use SIGTERM there).
@@ -322,8 +322,8 @@ a choice. R210 gives the amendment note that records them in the spec.
   timeline is scheduled through the new `ScenarioRunner.Bind` (the first half
   of `Run`, which now calls it; diagnostics identical), and the run goes on
   past the scenario's `duration` until stopped. A scenario that does not
-  parse or bind is reported as `dse run` reports it, exit 1.
-- **R201 — `dse modbus-map`.** Options `--format text|csv|fuxa` (default
+  parse or bind is reported as `millrace run` reports it, exit 1.
+- **R201 — `millrace modbus-map`.** Options `--format text|csv|fuxa` (default
   text), `--out` and `--assembly`. `--format` here is its own `OptionSpec`
   (`MapFormat`, same name, other values); `CliApp`'s value check now looks at
   the options the command actually has, so `validate --format csv` is still
@@ -335,26 +335,26 @@ a choice. R210 gives the amendment note that records them in the spec.
   the text and a `claimedBy` column in the CSV; the CSV quotes a cell with a
   comma, quote or line break (RFC 4180). The FUXA object lists tags in
   directory order.
-- **R202 — The end-to-end test runs `dse serve` in-process.** A child
-  process would need a built `dse` at a known path and a kill on failure;
+- **R202 — The end-to-end test runs `millrace serve` in-process.** A child
+  process would need a built `millrace` at a known path and a kill on failure;
   in-process, `CliApp.Run` takes a `CancellationToken`, stdout is a locked
   writer the test polls for `Listening on 0.0.0.0:<port>`, `--port 0` gives a
   free port, and `--speed 20` brings CV001 to 1.74 m/s in about 0.5 s of wall
   time (measured; the bound is 30 s). The test finds the addresses from
-  `dse modbus-map --format csv`, as an integrator would, writes the coil
+  `millrace modbus-map --format csv`, as an integrator would, writes the coil
   `SEQ_START.Start` (one rising edge starts the sequence), and polls
   `CV001.Speed`. The test-side `ModbusClient` is one file,
-  `tests/Shared/ModbusClient.cs`, linked into `Dse.Modbus.Tests` and
-  `Dse.Samples.Tests` as `Golden.cs` is linked elsewhere; it knows only the
+  `tests/Shared/ModbusClient.cs`, linked into `Millrace.Modbus.Tests` and
+  `Millrace.Samples.Tests` as `Golden.cs` is linked elsewhere; it knows only the
   wire protocol.
-- **R203 — FUXA tag ids are `t_` + the DSE tag name.** Stable for a given
+- **R203 — FUXA tag ids are `t_` + the Millrace tag name.** Stable for a given
   plant, readable in FUXA's editor, and the same string the views, alarms,
   charts and script reference (FUXA treats ids as opaque strings; dots are
   fine — measured, `getTagValue` and `setTagValue` with `t_CV001.Speed`).
-  Each tag object is exactly `id`, `name` (the DSE name), `type` (`Bool`,
+  Each tag object is exactly `id`, `name` (the Millrace name), `type` (`Bool`,
   `Float32`, `Int32`), `memaddress` (`000000`, `100000`, `300000`,
   `400000`), `address` (1-based, a string, as FUXA stores it) and
-  `description` (the DSE description, with ` (<unit>)` when the tag has one).
+  `description` (the Millrace description, with ` (<unit>)` when the tag has one).
   These are the fields FUXA's own `Tag` model uses for a Modbus tag that is
   not scaled; the committed project is posted as is.
 - **R204 — FUXA facts that differ from the spec.** (a) The newest version tag
@@ -364,7 +364,7 @@ a choice. R210 gives the amendment note that records them in the spec.
   development build; it is not a version and is not used.) (b) **The image has no Modbus
   driver**: FUXA loads `modbus-serial` as a plugin, installed from npm at run
   time; with the plain image, posting the project logs
-  `try to create DSE but plugin is missing!` and every value stays `null`
+  `try to create Millrace but plugin is missing!` and every value stays `null`
   (measured). So the `fuxa` service is built by `hmi/fuxa/fuxa.Dockerfile`:
   `FROM frangoteam/fuxa:1.3.4@sha256:3778da33…` plus
   `npm install --save-exact modbus-serial@8.0.19` (the version FUXA's plugin
@@ -429,23 +429,23 @@ a choice. R210 gives the amendment note that records them in the spec.
   `ackactive`. Trends: two real-time charts (speeds; motor currents), no DAQ
   history (spec §2 excludes history). FUXA's own `ALM_CVn.Ack` is not
   wired: FUXA acknowledges its own alarms.
-- **R208 — The stack.** Compose project `dse-hmi`; services `dse` (image
-  `dse-hmi/dse:local` from `hmi/fuxa/Dockerfile`, context the repository
+- **R208 — The stack.** Compose project `millrace-hmi`; services `millrace` (image
+  `millrace-hmi/millrace:local` from `hmi/fuxa/Dockerfile`, context the repository
   root, `Dockerfile.dockerignore` sending only `Directory.Build.props`,
-  `src/` and `samples/`), `fuxa` (`dse-hmi/fuxa:1.3.4-modbus` from
+  `src/` and `samples/`), `fuxa` (`millrace-hmi/fuxa:1.3.4-modbus` from
   `fuxa.Dockerfile`, port 1881, named volumes for `_appdata`, `_db`,
   `_logs`) and `fuxa-init` (pinned curl; waits up to 120 s for
   `/api/settings`, then **posts the project only if FUXA does not already
-  hold one whose device address is `dse:5020`**, so edits made in FUXA's
+  hold one whose device address is `millrace:5020`**, so edits made in FUXA's
   editor survive `docker compose up` — "edits stay in its volume until
   exported", spec criterion 7; `docker compose down -v` returns to the
-  committed project). `dse` is published on 5020 too, so a local Modbus tool
+  committed project). `millrace` is published on 5020 too, so a local Modbus tool
   can read it. The smoke check is `hmi/fuxa/smoke-check.sh` (POSIX sh, curl
   and awk): it waits for FUXA to read `t_CV001.Speed`, runs the `pulse`
   script for **Start line** through `POST /api/runscript`, and waits for the
   speed to reach 1.74 m/s.
 - **R209 — Docs.** `hmi/fuxa/README.md` (Task 5) quotes the register map as
-  `dse modbus-map` prints it, and a test compares the two. The root README
+  `millrace modbus-map` prints it, and a test compares the two. The root README
   gains two lines in "Command line" and a section "A SCADA on the sample";
   `docs/architecture.md` a section "Modbus TCP" after "The real-time
   boundary"; `docs/scenarios.md` one line; `CHANGELOG.md`'s Unreleased entry
@@ -484,10 +484,10 @@ a choice. R210 gives the amendment note that records them in the spec.
     each tag true for 0.5 s; Start and Stop reset their sequencer first.
     Pull-keys and e-stops are toggles. "Interlock and safety resets" are two
     plant-wide buttons.
-  - **`dse serve` (R199, R200)**: `--port 0` picks a free port; a port that
+  - **`millrace serve` (R199, R200)**: `--port 0` picks a free port; a port that
     cannot be opened exits 3; a scenario must name the plant served; SIGINT
-    and SIGTERM stop it with exit 0. `dse serve` also takes `--assembly`.
-    `ScenarioRunner.Bind` is added to `Dse.Scenarios` for it.
+    and SIGTERM stop it with exit 0. `millrace serve` also takes `--assembly`.
+    `ScenarioRunner.Bind` is added to `Millrace.Scenarios` for it.
   - **`fuxa-init` loads the project only into a FUXA that does not have it
     (R208)**, so editor changes survive a restart; `docker compose down -v`
     resets.
@@ -514,14 +514,14 @@ with this plan's changes applied; each stage built in Release with
 | Task 5 | 37 | 498 | 189 | 57 | 239 | 170 | 106 | 153 | 27 | 143 | 93 | 1712 |
 | Task 6 | 37 | 498 | 189 | 57 | 239 | 170 | 106 | 153 | 27 | 144 | 93 | **1713** |
 
-`Dse.Modbus.Tests` runs in under a second (Debug), and passed 120 runs of
+`Millrace.Modbus.Tests` runs in under a second (Debug), and passed 120 runs of
 the whole project under 8-way parallel load with no failure (before the
 consistent first image of R197's read test, its read-consistency test failed
-13 of about 200 such runs); `Dse.Samples.Tests` in
+13 of about 200 such runs); `Millrace.Samples.Tests` in
 about 19 s, as before, of which `ServeTests` takes under 2 s. Four full-suite
 runs in a row passed with no failure.
 
-**End to end, `dse serve` in-process at `--speed 20`:** the coil write to
+**End to end, `millrace serve` in-process at `--speed 20`:** the coil write to
 `SEQ_START.Start` (coil offset 30) is answered `05 00 1E FF 00`; CV001's
 speed (input registers 6–7) reads 0.0004 m/s before and 1.876 m/s 0.5 s
 after. Run by hand with `samples/mine-conveyors/scenarios/chute-blockage.json`
@@ -529,7 +529,7 @@ at `--speed 20`, `ALM_CV001.Hi.Active` (discrete input offset 1) reads true
 4.9 s of wall time after the port opened — the golden's 06:01:53.4, 113.4 s
 of simulation, divided by 20.
 
-**The mine plant's map** (`dse modbus-map samples/mine-conveyors/plant.json`):
+**The mine plant's map** (`millrace modbus-map samples/mine-conveyors/plant.json`):
 124 tags — 36 coils, 59 discrete inputs, 28 input-register values (56
 registers), 1 holding-register value (`Feed.Rate`, 2 registers). Selected
 addresses: `SEQ_START.Start` coil 31 (offset 30); `CV001.Permit` discrete
@@ -542,13 +542,13 @@ the second run with the digest-pinned `Dockerfile` exactly as Task 5 writes
 it): `docker compose up -d --build` builds both images (about 1 min the first
 time); `fuxa-init` logs `Loaded the mine-conveyors project into FUXA.`, and
 on a second `docker compose up -d`
-`FUXA already has the DSE project; leaving it as it is.`; `./smoke-check.sh`
+`FUXA already has the Millrace project; leaving it as it is.`; `./smoke-check.sh`
 prints `FUXA reads CV001.Speed = 0.0016007993835955858 m/s.`,
 `Pressed Start line.`, `PASS: CV001.Speed = 1.8446321487426758 m/s after the start sequence.`
-and exits 0; `docker compose stop dse` → `Stopped at 2026-03-02 06:00:34.860 after 3486 ticks.`;
+and exits 0; `docker compose stop millrace` → `Stopped at 2026-03-02 06:00:34.860 after 3486 ticks.`;
 `docker compose down -v --rmi all` removes the containers, the network, the
-three volumes and the three images (`dse-hmi/dse:local`,
-`dse-hmi/fuxa:1.3.4-modbus`, `curlimages/curl`). Docker's build cache is left
+three volumes and the three images (`millrace-hmi/millrace:local`,
+`millrace-hmi/fuxa:1.3.4-modbus`, `curlimages/curl`). Docker's build cache is left
 (about 1.5 GB; `docker builder prune` clears it).
 
 **In the browser** (Playwright, 1500 × 900): the overview at power-up shows
@@ -595,38 +595,38 @@ its first `Contains`.
 
 ```
 CHANGELOG.md                                      ## Unreleased (Task 1); its sections (Task 6)
-tests/Dse.Samples.Tests/ReleaseTests.cs           accepts ## Unreleased (Task 1)
-Dse.sln                                           + Dse.Modbus, Dse.Modbus.Tests (Task 2)
-src/Dse.Modbus/Dse.Modbus.csproj                  new (Task 2)
-src/Dse.Modbus/ModbusArea.cs                      new (Task 2)
-src/Dse.Modbus/RegisterEntry.cs                   new (Task 2)
-src/Dse.Modbus/RegisterMap.cs                     new (Task 2)
-src/Dse.Modbus/RegisterCodec.cs                   new (Task 2)
-tests/Dse.Modbus.Tests/Dse.Modbus.Tests.csproj    new (Task 2); + ModbusClient link (Task 3)
-tests/Dse.Modbus.Tests/Fakes/Plant.cs             new (Task 2)
-tests/Dse.Modbus.Tests/RegisterMapTests.cs        new, 29 tests (Task 2)
-src/Dse.Modbus/ModbusExceptionCode.cs             new (Task 3)
-src/Dse.Modbus/ModbusProtocol.cs                  new (Task 3)
-src/Dse.Modbus/ModbusServer.cs                    new (Task 3)
+tests/Millrace.Samples.Tests/ReleaseTests.cs           accepts ## Unreleased (Task 1)
+Millrace.sln                                           + Millrace.Modbus, Millrace.Modbus.Tests (Task 2)
+src/Millrace.Modbus/Millrace.Modbus.csproj                  new (Task 2)
+src/Millrace.Modbus/ModbusArea.cs                      new (Task 2)
+src/Millrace.Modbus/RegisterEntry.cs                   new (Task 2)
+src/Millrace.Modbus/RegisterMap.cs                     new (Task 2)
+src/Millrace.Modbus/RegisterCodec.cs                   new (Task 2)
+tests/Millrace.Modbus.Tests/Millrace.Modbus.Tests.csproj    new (Task 2); + ModbusClient link (Task 3)
+tests/Millrace.Modbus.Tests/Fakes/Plant.cs             new (Task 2)
+tests/Millrace.Modbus.Tests/RegisterMapTests.cs        new, 29 tests (Task 2)
+src/Millrace.Modbus/ModbusExceptionCode.cs             new (Task 3)
+src/Millrace.Modbus/ModbusProtocol.cs                  new (Task 3)
+src/Millrace.Modbus/ModbusServer.cs                    new (Task 3)
 tests/Shared/ModbusClient.cs                      new (Task 3)
-tests/Dse.Modbus.Tests/Fakes/Rig.cs               new (Task 3)
-tests/Dse.Modbus.Tests/FunctionCodeTests.cs       new, 50 tests (Task 3)
-tests/Dse.Modbus.Tests/ServerTests.cs             new, 14 tests (Task 3)
-src/Dse.Scenarios/ScenarioBinding.cs              new (Task 4)
-src/Dse.Scenarios/ScenarioRunner.cs               Run = Bind + RunFor (Task 4)
-tests/Dse.Scenarios.Tests/ScenarioBindingTests.cs new, 3 tests (Task 4)
-src/Dse.Cli/Dse.Cli.csproj                        + Dse.Modbus (Task 4)
-src/Dse.Cli/CliApp.cs                             CancellationToken overload; per-command option checks (Task 4)
-src/Dse.Cli/CliContext.cs                         + Cancellation (Task 4)
-src/Dse.Cli/CommandTable.cs                       serve, modbus-map, 4 options, exit-code line (Task 4)
-src/Dse.Cli/ExitCodes.cs                          Unreadable's summary (Task 4)
-src/Dse.Cli/Commands/Serve.cs                     new (Task 4)
-src/Dse.Cli/Commands/ModbusMap.cs                 new (Task 4)
-tests/Dse.Cli.Tests/Cli.cs                        Run(CancellationToken, …) (Task 4)
-tests/Dse.Cli.Tests/ServeCommandTests.cs          new, 19 tests (Task 4)
-tests/Dse.Cli.Tests/ModbusMapCommandTests.cs      new, 9 tests (Task 4)
-tests/Dse.Samples.Tests/Dse.Samples.Tests.csproj  + ModbusClient link (Task 4)
-tests/Dse.Samples.Tests/ServeTests.cs             new, 1 test (Task 4)
+tests/Millrace.Modbus.Tests/Fakes/Rig.cs               new (Task 3)
+tests/Millrace.Modbus.Tests/FunctionCodeTests.cs       new, 50 tests (Task 3)
+tests/Millrace.Modbus.Tests/ServerTests.cs             new, 14 tests (Task 3)
+src/Millrace.Scenarios/ScenarioBinding.cs              new (Task 4)
+src/Millrace.Scenarios/ScenarioRunner.cs               Run = Bind + RunFor (Task 4)
+tests/Millrace.Scenarios.Tests/ScenarioBindingTests.cs new, 3 tests (Task 4)
+src/Millrace.Cli/Millrace.Cli.csproj                        + Millrace.Modbus (Task 4)
+src/Millrace.Cli/CliApp.cs                             CancellationToken overload; per-command option checks (Task 4)
+src/Millrace.Cli/CliContext.cs                         + Cancellation (Task 4)
+src/Millrace.Cli/CommandTable.cs                       serve, modbus-map, 4 options, exit-code line (Task 4)
+src/Millrace.Cli/ExitCodes.cs                          Unreadable's summary (Task 4)
+src/Millrace.Cli/Commands/Serve.cs                     new (Task 4)
+src/Millrace.Cli/Commands/ModbusMap.cs                 new (Task 4)
+tests/Millrace.Cli.Tests/Cli.cs                        Run(CancellationToken, …) (Task 4)
+tests/Millrace.Cli.Tests/ServeCommandTests.cs          new, 19 tests (Task 4)
+tests/Millrace.Cli.Tests/ModbusMapCommandTests.cs      new, 9 tests (Task 4)
+tests/Millrace.Samples.Tests/Millrace.Samples.Tests.csproj  + ModbusClient link (Task 4)
+tests/Millrace.Samples.Tests/ServeTests.cs             new, 1 test (Task 4)
 hmi/fuxa/Dockerfile                               new (Task 5)
 hmi/fuxa/Dockerfile.dockerignore                  new (Task 5)
 hmi/fuxa/fuxa.Dockerfile                          new (Task 5)
@@ -635,7 +635,7 @@ hmi/fuxa/smoke-check.sh                           new, executable (Task 5)
 hmi/fuxa/generate-project.py                      new: the FUXA project's generator (Task 5)
 hmi/fuxa/mine-conveyors.fuxap.json                generated by it (Task 5)
 hmi/fuxa/README.md                                new (Task 5)
-tests/Dse.Samples.Tests/FuxaProjectTests.cs       new, 6 tests (Task 5); + 1 (Task 6)
+tests/Millrace.Samples.Tests/FuxaProjectTests.cs       new, 6 tests (Task 5); + 1 (Task 6)
 README.md                                         Command line, A SCADA on the sample (Task 6)
 docs/architecture.md                              ## Modbus TCP (Task 6)
 docs/scenarios.md                                 one line (Task 6)
@@ -649,9 +649,9 @@ edits it.
 | # | Task | Implementer | Reviewer | Tests after |
 |---|---|---|---|---|
 | 1 | The changelog's Unreleased entry; `ReleaseTests` | sonnet | sonnet | 1581 (all passing) |
-| 2 | `Dse.Modbus`: the register map and encodings | sonnet | sonnet | 1610 |
-| 3 | `Dse.Modbus`: the Modbus TCP server | sonnet | **opus** (protocol, framing, concurrency, shutdown: R197, R198, Review Focus 1–4) | 1674 |
-| 4 | `dse serve`, `dse modbus-map`, `ScenarioRunner.Bind`, the end-to-end test | sonnet | **opus** (threading, signals, cancellation: R199, R200, R202) | 1706 |
+| 2 | `Millrace.Modbus`: the register map and encodings | sonnet | sonnet | 1610 |
+| 3 | `Millrace.Modbus`: the Modbus TCP server | sonnet | **opus** (protocol, framing, concurrency, shutdown: R197, R198, Review Focus 1–4) | 1674 |
+| 4 | `millrace serve`, `millrace modbus-map`, `ScenarioRunner.Bind`, the end-to-end test | sonnet | **opus** (threading, signals, cancellation: R199, R200, R202) | 1706 |
 | 5 | The FUXA stack: Docker, compose, the generated project, smoke check, HMI README, in-sync tests | **opus** (needs Docker and the browser tools) | **opus** (R204–R208, Review Focus 5) | 1712 |
 | 6 | Docs: root README, architecture, scenarios, changelog | sonnet | sonnet | **1713** |
 
@@ -668,7 +668,7 @@ review at the end is Opus.
 
 **Files:**
 - Modify: `CHANGELOG.md` (an `## Unreleased` section above `## 1.0.0 — 2026-10-07`)
-- Modify: `tests/Dse.Samples.Tests/ReleaseTests.cs` (one assertion becomes three lines)
+- Modify: `tests/Millrace.Samples.Tests/ReleaseTests.cs` (one assertion becomes three lines)
 
 **Interfaces:**
 - Consumes: `ReleaseTests`, the plan 8 spec and this plan (both on `master`
@@ -677,7 +677,7 @@ review at the end is Opus.
 
 - [ ] **Step 1: See the baseline failure**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~ReleaseTests"`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~ReleaseTests"`
 Expected: `Failed: 1, Passed: 1, Total: 2` —
 `TheVersionTheChangelogAndTheReadmeAgree`, `Assert.All() Failure` with
 `Not found: "docs/superpowers/specs/2026-10-07-modbus-fuxa-hmi-"···` (and the
@@ -685,7 +685,7 @@ plan file). This is `master`'s state since `aca64d9` (R194).
 
 - [ ] **Step 2: Let the test accept an Unreleased section**
 
-In `tests/Dse.Samples.Tests/ReleaseTests.cs`, replace
+In `tests/Millrace.Samples.Tests/ReleaseTests.cs`, replace
 
 ```csharp
         Assert.Single(changelog.Split('\n'), l => l.StartsWith("## ", StringComparison.Ordinal));
@@ -717,7 +717,7 @@ with
 ```markdown
 ## Unreleased
 
-DSE's first external consumer: a SCADA watching and operating a simulated
+Millrace's first external consumer: a SCADA watching and operating a simulated
 plant over Modbus TCP
 ([design](docs/superpowers/specs/2026-10-07-modbus-fuxa-hmi-design.md),
 [plan 8](docs/superpowers/plans/2026-10-07-modbus-fuxa-hmi.md)).
@@ -730,15 +730,15 @@ paragraph.)
 
 - [ ] **Step 4: Run the tests and everything**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~ReleaseTests"` — expect `Passed: 2, Total: 2`.
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1581**, all passing: 37 / 498 / 189 / 57 / 239 / 167 / 78 / 153 / 27 / 136.
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~ReleaseTests"` — expect `Passed: 2, Total: 2`.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1581**, all passing: 37 / 498 / 189 / 57 / 239 / 167 / 78 / 153 / 27 / 136.
 Run: `git status --short -uall` — expect exactly the two paths of Step 5.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add CHANGELOG.md tests/Dse.Samples.Tests/ReleaseTests.cs
+git add CHANGELOG.md tests/Millrace.Samples.Tests/ReleaseTests.cs
 git commit -F .superpowers/sdd/8/msg-task1.txt
 ```
 
@@ -764,12 +764,12 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 **Model:** implementer sonnet; reviewer sonnet.
 
 **Files:**
-- Create: `src/Dse.Modbus/Dse.Modbus.csproj`, `ModbusArea.cs`, `RegisterEntry.cs`, `RegisterMap.cs`, `RegisterCodec.cs`
-- Create: `tests/Dse.Modbus.Tests/Dse.Modbus.Tests.csproj`, `Fakes/Plant.cs`, `RegisterMapTests.cs`
-- Modify: `Dse.sln` (two projects, by `dotnet sln add`)
+- Create: `src/Millrace.Modbus/Millrace.Modbus.csproj`, `ModbusArea.cs`, `RegisterEntry.cs`, `RegisterMap.cs`, `RegisterCodec.cs`
+- Create: `tests/Millrace.Modbus.Tests/Millrace.Modbus.Tests.csproj`, `Fakes/Plant.cs`, `RegisterMapTests.cs`
+- Modify: `Millrace.sln` (two projects, by `dotnet sln add`)
 
 **Interfaces:**
-- Consumes: `Dse.Io` — `ITagDirectory`, `TagDescriptor` (`Index`, `Name`,
+- Consumes: `Millrace.Io` — `ITagDirectory`, `TagDescriptor` (`Index`, `Name`,
   `Kind`, `Access`, `Unit`, `RangeLow`, `RangeHigh`, `HasRange`,
   `Description`, `ClaimedBy`), `TagKind`, `TagAccess`, `TagValue`.
 - Produces: `ModbusArea { Coils, DiscreteInputs, InputRegisters, HoldingRegisters }`;
@@ -783,7 +783,7 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 
 - [ ] **Step 1: Create the test project and its fake plant**
 
-Create `tests/Dse.Modbus.Tests/Dse.Modbus.Tests.csproj`:
+Create `tests/Millrace.Modbus.Tests/Millrace.Modbus.Tests.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -807,7 +807,7 @@ Create `tests/Dse.Modbus.Tests/Dse.Modbus.Tests.csproj`:
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Dse.Modbus\Dse.Modbus.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Modbus\Millrace.Modbus.csproj" />
   </ItemGroup>
 
 </Project>
@@ -816,12 +816,12 @@ Create `tests/Dse.Modbus.Tests/Dse.Modbus.Tests.csproj`:
 (The same packages and versions as every test project; Task 3 adds the shared
 client link.)
 
-Create `tests/Dse.Modbus.Tests/Fakes/Plant.cs`:
+Create `tests/Millrace.Modbus.Tests/Fakes/Plant.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Modbus.Tests.Fakes;
+namespace Millrace.Modbus.Tests.Fakes;
 
 /// <summary>
 /// A nine-tag directory with every kind and access, a claimed tag among them,
@@ -930,13 +930,13 @@ public sealed class RecordingWriter(ITagDirectory directory) : ITagWriter
 
 - [ ] **Step 2: Write the failing map and codec tests**
 
-Create `tests/Dse.Modbus.Tests/RegisterMapTests.cs`:
+Create `tests/Millrace.Modbus.Tests/RegisterMapTests.cs`:
 
 ```csharp
-using Dse.Io;
-using Dse.Modbus.Tests.Fakes;
+using Millrace.Io;
+using Millrace.Modbus.Tests.Fakes;
 
-namespace Dse.Modbus.Tests;
+namespace Millrace.Modbus.Tests;
 
 public class RegisterMapTests
 {
@@ -1044,12 +1044,12 @@ public class RegisterMapTests
 ordinal-name order, as `TagDirectory` sorts a real one; its map is in the
 summary of `Plant`.)
 
-Run: `dotnet build tests/Dse.Modbus.Tests --nologo` — expect it to fail: the
-referenced `src/Dse.Modbus/Dse.Modbus.csproj` does not exist yet.
+Run: `dotnet build tests/Millrace.Modbus.Tests --nologo` — expect it to fail: the
+referenced `src/Millrace.Modbus/Millrace.Modbus.csproj` does not exist yet.
 
 - [ ] **Step 3: Create the project**
 
-Create `src/Dse.Modbus/Dse.Modbus.csproj`:
+Create `src/Millrace.Modbus/Millrace.Modbus.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -1061,21 +1061,21 @@ Create `src/Dse.Modbus/Dse.Modbus.csproj`:
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Dse.Io.Abstractions\Dse.Io.Abstractions.csproj" />
-    <ProjectReference Include="..\Dse.Realtime\Dse.Realtime.csproj" />
+    <ProjectReference Include="..\Millrace.Io.Abstractions\Millrace.Io.Abstractions.csproj" />
+    <ProjectReference Include="..\Millrace.Realtime\Millrace.Realtime.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Dse.Modbus.Tests" />
+    <InternalsVisibleTo Include="Millrace.Modbus.Tests" />
   </ItemGroup>
 
 </Project>
 ```
 
-Create `src/Dse.Modbus/ModbusArea.cs`:
+Create `src/Millrace.Modbus/ModbusArea.cs`:
 
 ```csharp
-namespace Dse.Modbus;
+namespace Millrace.Modbus;
 
 /// <summary>The four Modbus data areas, in the order a SCADA numbers them (0xxxxx, 1xxxxx, 3xxxxx, 4xxxxx).</summary>
 public enum ModbusArea
@@ -1094,12 +1094,12 @@ public enum ModbusArea
 }
 ```
 
-Create `src/Dse.Modbus/RegisterEntry.cs`:
+Create `src/Millrace.Modbus/RegisterEntry.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Modbus;
+namespace Millrace.Modbus;
 
 /// <summary>
 /// Where one tag lives on the wire: its area, its 0-based offset (the address
@@ -1132,12 +1132,12 @@ public sealed record RegisterEntry(ModbusArea Area, int Offset, TagDescriptor Ta
 }
 ```
 
-Create `src/Dse.Modbus/RegisterMap.cs`:
+Create `src/Millrace.Modbus/RegisterMap.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Modbus;
+namespace Millrace.Modbus;
 
 /// <summary>
 /// A plant's Modbus register map (plan 8 spec §1, criterion 1). Built from the
@@ -1254,12 +1254,12 @@ public sealed class RegisterMap
 }
 ```
 
-Create `src/Dse.Modbus/RegisterCodec.cs`:
+Create `src/Millrace.Modbus/RegisterCodec.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Modbus;
+namespace Millrace.Modbus;
 
 /// <summary>
 /// The two-register encodings (spec criterion 1): a Double as an IEEE 754
@@ -1317,10 +1317,10 @@ public static class RegisterCodec
 
 - [ ] **Step 4: Add both projects to the solution**
 
-Run: `dotnet sln Dse.sln add src/Dse.Modbus/Dse.Modbus.csproj --solution-folder src`
-Expected: `Project `src/Dse.Modbus/Dse.Modbus.csproj` added to the solution.`
-Run: `dotnet sln Dse.sln add tests/Dse.Modbus.Tests/Dse.Modbus.Tests.csproj --solution-folder tests`
-Expected: `Project `tests/Dse.Modbus.Tests/Dse.Modbus.Tests.csproj` added to the solution.`
+Run: `dotnet sln Millrace.sln add src/Millrace.Modbus/Millrace.Modbus.csproj --solution-folder src`
+Expected: `Project `src/Millrace.Modbus/Millrace.Modbus.csproj` added to the solution.`
+Run: `dotnet sln Millrace.sln add tests/Millrace.Modbus.Tests/Millrace.Modbus.Tests.csproj --solution-folder tests`
+Expected: `Project `tests/Millrace.Modbus.Tests/Millrace.Modbus.Tests.csproj` added to the solution.`
 
 (Measured: each adds a `Project(…)` entry, twelve configuration lines and a
 `NestedProjects` line under the existing `src` or `tests` folder; the GUIDs
@@ -1328,16 +1328,16 @@ are random and need not match anyone's.)
 
 - [ ] **Step 5: Run the tests and everything**
 
-Run: `dotnet test tests/Dse.Modbus.Tests --nologo` — expect PASS, **29**.
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test tests/Millrace.Modbus.Tests --nologo` — expect PASS, **29**.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
 Run: `git grep -n PackageReference -- 'src/*.csproj'` — expect nothing.
-Run: `dotnet test Dse.sln --nologo` — expect **1610**: the Task 1 counts plus `Dse.Modbus.Tests` 29.
+Run: `dotnet test Millrace.sln --nologo` — expect **1610**: the Task 1 counts plus `Millrace.Modbus.Tests` 29.
 Run: `git status --short -uall` — expect exactly the paths of Step 6.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add Dse.sln src/Dse.Modbus/Dse.Modbus.csproj src/Dse.Modbus/ModbusArea.cs src/Dse.Modbus/RegisterEntry.cs src/Dse.Modbus/RegisterMap.cs src/Dse.Modbus/RegisterCodec.cs tests/Dse.Modbus.Tests/Dse.Modbus.Tests.csproj tests/Dse.Modbus.Tests/Fakes/Plant.cs tests/Dse.Modbus.Tests/RegisterMapTests.cs
+git add Millrace.sln src/Millrace.Modbus/Millrace.Modbus.csproj src/Millrace.Modbus/ModbusArea.cs src/Millrace.Modbus/RegisterEntry.cs src/Millrace.Modbus/RegisterMap.cs src/Millrace.Modbus/RegisterCodec.cs tests/Millrace.Modbus.Tests/Millrace.Modbus.Tests.csproj tests/Millrace.Modbus.Tests/Fakes/Plant.cs tests/Millrace.Modbus.Tests/RegisterMapTests.cs
 git commit -F .superpowers/sdd/8/msg-task2.txt
 ```
 
@@ -1346,12 +1346,12 @@ with `.superpowers/sdd/8/msg-task2.txt`:
 ```
 feat(modbus): map a plant's tags to Modbus registers
 
-Dse.Modbus builds a register map from a tag directory, in directory
+Millrace.Modbus builds a register map from a tag directory, in directory
 order: a read-write Bool is a coil, a read-only one a discrete input; a
 Double is a big-endian Float32 and an Int64 a saturating big-endian
 Int32, two holding registers when read-write and two input registers when
 read-only. A claimed tag is read-only. The project references
-Dse.Io.Abstractions and Dse.Realtime and no package.
+Millrace.Io.Abstractions and Millrace.Realtime and no package.
 
 Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
 ```
@@ -1365,21 +1365,21 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 **Model:** implementer sonnet; reviewer **opus** (R197, R198; Review Focus 1–4).
 
 **Files:**
-- Create: `src/Dse.Modbus/ModbusExceptionCode.cs`, `ModbusProtocol.cs`, `ModbusServer.cs`
+- Create: `src/Millrace.Modbus/ModbusExceptionCode.cs`, `ModbusProtocol.cs`, `ModbusServer.cs`
 - Create: `tests/Shared/ModbusClient.cs`
-- Create: `tests/Dse.Modbus.Tests/Fakes/Rig.cs`, `FunctionCodeTests.cs`, `ServerTests.cs`
-- Modify: `tests/Dse.Modbus.Tests/Dse.Modbus.Tests.csproj` (link the shared client)
+- Create: `tests/Millrace.Modbus.Tests/Fakes/Rig.cs`, `FunctionCodeTests.cs`, `ServerTests.cs`
+- Modify: `tests/Millrace.Modbus.Tests/Millrace.Modbus.Tests.csproj` (link the shared client)
 
 **Interfaces:**
 - Consumes: Task 2's `RegisterMap`, `RegisterEntry`, `RegisterCodec`;
-  `Dse.Realtime.CommandBus` (`Write(string, TagValue)`, `WriteBool`,
+  `Millrace.Realtime.CommandBus` (`Write(string, TagValue)`, `WriteBool`,
   `Accepted`, `Rejected`; it refuses an unknown tag, a read-only tag, a kind
   mismatch and a double out of range or not finite, and never throws).
 - Produces: `ModbusServer(RegisterMap, Func<ReadOnlyMemory<TagValue>>, CommandBus)`
   with `Start(IPEndPoint) → IPEndPoint` (throws `SocketException` on a port
   in use), `LocalEndPoint`, `OpenConnections`, `Requests`, `Map`,
   `DisposeAsync()`; `ModbusExceptionCode`; internal `ModbusProtocol`. The
-  test-side `Dse.Tests.Shared.ModbusClient` (Task 4's end-to-end test uses it).
+  test-side `Millrace.Tests.Shared.ModbusClient` (Task 4's end-to-end test uses it).
 
 - [ ] **Step 1: Write the shared test client**
 
@@ -1390,7 +1390,7 @@ using System.Buffers.Binary;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Dse.Tests.Shared;
+namespace Millrace.Tests.Shared;
 
 /// <summary>
 /// A minimal, blocking Modbus TCP master for tests: it frames a PDU in an
@@ -1562,11 +1562,11 @@ internal sealed class ModbusClient : IDisposable
 }
 ```
 
-In `tests/Dse.Modbus.Tests/Dse.Modbus.Tests.csproj`, replace
+In `tests/Millrace.Modbus.Tests/Millrace.Modbus.Tests.csproj`, replace
 
 ```xml
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Dse.Modbus\Dse.Modbus.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Modbus\Millrace.Modbus.csproj" />
   </ItemGroup>
 ```
 
@@ -1578,21 +1578,21 @@ with
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Dse.Modbus\Dse.Modbus.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Modbus\Millrace.Modbus.csproj" />
   </ItemGroup>
 ```
 
 - [ ] **Step 2: Write the failing server tests**
 
-Create `tests/Dse.Modbus.Tests/Fakes/Rig.cs`:
+Create `tests/Millrace.Modbus.Tests/Fakes/Rig.cs`:
 
 ```csharp
 using System.Net;
-using Dse.Io;
-using Dse.Realtime;
-using Dse.Tests.Shared;
+using Millrace.Io;
+using Millrace.Realtime;
+using Millrace.Tests.Shared;
 
-namespace Dse.Modbus.Tests.Fakes;
+namespace Millrace.Modbus.Tests.Fakes;
 
 /// <summary>
 /// A server over <see cref="Plant"/> on a free loopback port: the image it
@@ -1640,14 +1640,14 @@ internal sealed class Rig : IAsyncDisposable
 }
 ```
 
-Create `tests/Dse.Modbus.Tests/FunctionCodeTests.cs`:
+Create `tests/Millrace.Modbus.Tests/FunctionCodeTests.cs`:
 
 ```csharp
-using Dse.Io;
-using Dse.Modbus.Tests.Fakes;
-using Dse.Tests.Shared;
+using Millrace.Io;
+using Millrace.Modbus.Tests.Fakes;
+using Millrace.Tests.Shared;
 
-namespace Dse.Modbus.Tests;
+namespace Millrace.Modbus.Tests;
 
 /// <summary>Each function code against <see cref="Plant"/>, over a real loopback connection.</summary>
 public class FunctionCodeTests
@@ -1892,18 +1892,18 @@ public class FunctionCodeTests
 expected bytes follow from `Plant`'s image: `A.Speed` 1.95 is `3FF9 999A`,
 `A.Batch` −7 is `FFFF FFF9`, `A.Setpoint` 1.5 is `3FC0 0000`.)
 
-Create `tests/Dse.Modbus.Tests/ServerTests.cs`:
+Create `tests/Millrace.Modbus.Tests/ServerTests.cs`:
 
 ```csharp
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
-using Dse.Io;
-using Dse.Modbus.Tests.Fakes;
-using Dse.Realtime;
-using Dse.Tests.Shared;
+using Millrace.Io;
+using Millrace.Modbus.Tests.Fakes;
+using Millrace.Realtime;
+using Millrace.Tests.Shared;
 
-namespace Dse.Modbus.Tests;
+namespace Millrace.Modbus.Tests;
 
 /// <summary>MBAP framing, unit ids, several clients at once, and shutdown.</summary>
 public class ServerTests
@@ -2082,15 +2082,15 @@ public class ServerTests
 
 (14 tests: theories of 5 and 3 rows, 6 facts.)
 
-Run: `dotnet build tests/Dse.Modbus.Tests --nologo` — expect it not to
+Run: `dotnet build tests/Millrace.Modbus.Tests --nologo` — expect it not to
 compile: `ModbusServer` does not exist.
 
 - [ ] **Step 3: Write the server**
 
-Create `src/Dse.Modbus/ModbusExceptionCode.cs`:
+Create `src/Millrace.Modbus/ModbusExceptionCode.cs`:
 
 ```csharp
-namespace Dse.Modbus;
+namespace Millrace.Modbus;
 
 /// <summary>The Modbus exception codes this server answers with (spec criterion 2).</summary>
 public enum ModbusExceptionCode : byte
@@ -2106,14 +2106,14 @@ public enum ModbusExceptionCode : byte
 }
 ```
 
-Create `src/Dse.Modbus/ModbusProtocol.cs`:
+Create `src/Millrace.Modbus/ModbusProtocol.cs`:
 
 ```csharp
 using System.Buffers.Binary;
-using Dse.Io;
-using Dse.Realtime;
+using Millrace.Io;
+using Millrace.Realtime;
 
-namespace Dse.Modbus;
+namespace Millrace.Modbus;
 
 /// <summary>
 /// One request PDU in, one response PDU out (Modbus Application Protocol
@@ -2388,16 +2388,16 @@ internal sealed class ModbusProtocol
 }
 ```
 
-Create `src/Dse.Modbus/ModbusServer.cs`:
+Create `src/Millrace.Modbus/ModbusServer.cs`:
 
 ```csharp
 using System.Buffers.Binary;
 using System.Net;
 using System.Net.Sockets;
-using Dse.Io;
-using Dse.Realtime;
+using Millrace.Io;
+using Millrace.Realtime;
 
-namespace Dse.Modbus;
+namespace Millrace.Modbus;
 
 /// <summary>
 /// A Modbus TCP server over a plant (plan 8 spec criterion 2): MBAP framing,
@@ -2578,15 +2578,15 @@ public sealed class ModbusServer : IAsyncDisposable
 
 - [ ] **Step 4: Run the tests and everything**
 
-Run: `dotnet test tests/Dse.Modbus.Tests --nologo` — expect PASS, **93**; run it three times (measured: under a second each, no failure).
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1674**: the Task 2 counts with `Dse.Modbus.Tests` 93.
+Run: `dotnet test tests/Millrace.Modbus.Tests --nologo` — expect PASS, **93**; run it three times (measured: under a second each, no failure).
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1674**: the Task 2 counts with `Millrace.Modbus.Tests` 93.
 Run: `git status --short -uall` — expect exactly the paths of Step 5.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Modbus/ModbusExceptionCode.cs src/Dse.Modbus/ModbusProtocol.cs src/Dse.Modbus/ModbusServer.cs tests/Shared/ModbusClient.cs tests/Dse.Modbus.Tests/Dse.Modbus.Tests.csproj tests/Dse.Modbus.Tests/Fakes/Rig.cs tests/Dse.Modbus.Tests/FunctionCodeTests.cs tests/Dse.Modbus.Tests/ServerTests.cs
+git add src/Millrace.Modbus/ModbusExceptionCode.cs src/Millrace.Modbus/ModbusProtocol.cs src/Millrace.Modbus/ModbusServer.cs tests/Shared/ModbusClient.cs tests/Millrace.Modbus.Tests/Millrace.Modbus.Tests.csproj tests/Millrace.Modbus.Tests/Fakes/Rig.cs tests/Millrace.Modbus.Tests/FunctionCodeTests.cs tests/Millrace.Modbus.Tests/ServerTests.cs
 git commit -F .superpowers/sdd/8/msg-task3.txt
 ```
 
@@ -2611,19 +2611,19 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 
 ---
 
-### Task 4: `dse serve` and `dse modbus-map`
+### Task 4: `millrace serve` and `millrace modbus-map`
 
 **Model:** implementer sonnet; reviewer **opus** (R199–R202: threading,
 signals, cancellation, the scenario binding).
 
 **Files:**
-- Create: `src/Dse.Scenarios/ScenarioBinding.cs`
-- Replace: `src/Dse.Scenarios/ScenarioRunner.cs` (whole file shown; `Run` becomes `Bind` + `RunFor`)
-- Create: `tests/Dse.Scenarios.Tests/ScenarioBindingTests.cs`
-- Replace: `src/Dse.Cli/Dse.Cli.csproj`, `src/Dse.Cli/CliApp.cs`, `src/Dse.Cli/CommandTable.cs` (whole files shown)
-- Modify: `src/Dse.Cli/CliContext.cs`, `src/Dse.Cli/ExitCodes.cs`, `tests/Dse.Cli.Tests/Cli.cs`, `tests/Dse.Samples.Tests/Dse.Samples.Tests.csproj`
-- Create: `src/Dse.Cli/Commands/Serve.cs`, `src/Dse.Cli/Commands/ModbusMap.cs`
-- Create: `tests/Dse.Cli.Tests/ServeCommandTests.cs`, `tests/Dse.Cli.Tests/ModbusMapCommandTests.cs`, `tests/Dse.Samples.Tests/ServeTests.cs`
+- Create: `src/Millrace.Scenarios/ScenarioBinding.cs`
+- Replace: `src/Millrace.Scenarios/ScenarioRunner.cs` (whole file shown; `Run` becomes `Bind` + `RunFor`)
+- Create: `tests/Millrace.Scenarios.Tests/ScenarioBindingTests.cs`
+- Replace: `src/Millrace.Cli/Millrace.Cli.csproj`, `src/Millrace.Cli/CliApp.cs`, `src/Millrace.Cli/CommandTable.cs` (whole files shown)
+- Modify: `src/Millrace.Cli/CliContext.cs`, `src/Millrace.Cli/ExitCodes.cs`, `tests/Millrace.Cli.Tests/Cli.cs`, `tests/Millrace.Samples.Tests/Millrace.Samples.Tests.csproj`
+- Create: `src/Millrace.Cli/Commands/Serve.cs`, `src/Millrace.Cli/Commands/ModbusMap.cs`
+- Create: `tests/Millrace.Cli.Tests/ServeCommandTests.cs`, `tests/Millrace.Cli.Tests/ModbusMapCommandTests.cs`, `tests/Millrace.Samples.Tests/ServeTests.cs`
 
 **Interfaces:**
 - Consumes: Tasks 2–3 (`RegisterMap`, `RegisterEntry`, `ModbusServer`,
@@ -2643,13 +2643,13 @@ signals, cancellation, the scenario binding).
 
 - [ ] **Step 1: Write the failing scenario-binding tests**
 
-Create `tests/Dse.Scenarios.Tests/ScenarioBindingTests.cs`:
+Create `tests/Millrace.Scenarios.Tests/ScenarioBindingTests.cs`:
 
 ```csharp
-using Dse.Core;
-using Dse.Io;
+using Millrace.Core;
+using Millrace.Io;
 
-namespace Dse.Scenarios.Tests;
+namespace Millrace.Scenarios.Tests;
 
 /// <summary><c>ScenarioRunner.Bind</c> (plan 8): the run without the running, for a host that ticks it itself.</summary>
 public class ScenarioBindingTests
@@ -2708,13 +2708,13 @@ public class ScenarioBindingTests
 
 - [ ] **Step 2: Split `ScenarioRunner.Run` into `Bind` and the run**
 
-Create `src/Dse.Scenarios/ScenarioBinding.cs`:
+Create `src/Millrace.Scenarios/ScenarioBinding.cs`:
 
 ```csharp
-using Dse.Configuration;
-using Dse.Core;
+using Millrace.Configuration;
+using Millrace.Core;
 
-namespace Dse.Scenarios;
+namespace Millrace.Scenarios;
 
 /// <summary>
 /// A scenario bound to its plant and not yet run: the built simulation with
@@ -2743,17 +2743,17 @@ public sealed class ScenarioBinding
 }
 ```
 
-Replace the whole of `src/Dse.Scenarios/ScenarioRunner.cs` with:
+Replace the whole of `src/Millrace.Scenarios/ScenarioRunner.cs` with:
 
 ```csharp
 using System.Globalization;
-using Dse.Configuration;
-using Dse.Core;
-using Dse.Core.Catalogue;
-using Dse.Core.Faults;
-using Dse.Io;
+using Millrace.Configuration;
+using Millrace.Core;
+using Millrace.Core.Catalogue;
+using Millrace.Core.Faults;
+using Millrace.Io;
 
-namespace Dse.Scenarios;
+namespace Millrace.Scenarios;
 
 /// <summary>
 /// Runs a scenario against a plant. Pure given the two texts — the caller reads
@@ -2763,7 +2763,7 @@ namespace Dse.Scenarios;
 public static class ScenarioRunner
 {
     private const string BindFix =
-        "Use a component, a fault and arguments the plant declares; `dse catalog export` lists every component's faults.";
+        "Use a component, a fault and arguments the plant declares; `millrace catalog export` lists every component's faults.";
 
     /// <summary>Loads the plant, binds every action, and runs only if nothing is wrong.</summary>
     public static ScenarioRunResult Run(Scenario scenario, string plantJson, ComponentCatalogue catalogue)
@@ -2784,7 +2784,7 @@ public static class ScenarioRunner
     /// <summary>
     /// Loads the plant and schedules every action, without ticking: the
     /// simulation a host runs for as long as it likes (plan 8's
-    /// <c>dse serve</c>). Null, with every reason, when anything is wrong —
+    /// <c>millrace serve</c>). Null, with every reason, when anything is wrong —
     /// exactly the diagnostics <see cref="Run"/> reports.
     /// </summary>
     public static ScenarioBinding Bind(Scenario scenario, string plantJson, ComponentCatalogue catalogue)
@@ -2838,7 +2838,7 @@ public static class ScenarioRunner
                 "$.plant",
                 string.Create(CultureInfo.InvariantCulture,
                     $"The plant '{scenario.PlantPath}' has {errors} error{(errors == 1 ? string.Empty : "s")} of its own; they follow."),
-                "Fix the plant file and run the scenario again; `dse validate` reports exactly these errors."),
+                "Fix the plant file and run the scenario again; `millrace validate` reports exactly these errors."),
         };
 
         diagnostics.AddRange(load.Diagnostics);
@@ -2851,7 +2851,7 @@ public static class ScenarioRunner
         ScenarioAction action = scenario.Timeline[index];
         string path = string.Create(CultureInfo.InvariantCulture, $"$.timeline[{index}]");
 
-        // "at >= 0" is DSE202 wherever it is checked (spec 3): the parser rejects
+        // "at >= 0" is MR202 wherever it is checked (spec 3): the parser rejects
         // a negative number as an out-of-range value, and so does this, for a
         // Scenario built in code rather than parsed.
         if (action.At < TimeSpan.Zero)
@@ -2923,7 +2923,7 @@ public static class ScenarioRunner
                 ScenarioDiagnostics.DoesNotBind,
                 $"{path}.write",
                 $"Tag '{tag.Name}' is claimed by {tag.ClaimedBy}; a scenario cannot write it.",
-                "Write the inputs of the block that claims it instead; `dse tags` names it."));
+                "Write the inputs of the block that claims it instead; `millrace tags` names it."));
             return;
         }
 
@@ -2933,7 +2933,7 @@ public static class ScenarioRunner
                 ScenarioDiagnostics.DoesNotBind,
                 $"{path}.write",
                 $"Tag '{tag.Name}' is read-only; a scenario cannot write it.",
-                "Write a tag whose access is ReadWrite; `dse tags <plant>` shows each tag's access."));
+                "Write a tag whose access is ReadWrite; `millrace tags <plant>` shows each tag's access."));
             return;
         }
 
@@ -2957,7 +2957,7 @@ public static class ScenarioRunner
 
     /// <summary>
     /// Schedules one action, turning the engine's own "no such thing" into
-    /// DSE206 at the JSON path of the part that was wrong (R58). The engine's
+    /// MR206 at the JSON path of the part that was wrong (R58). The engine's
     /// messages already name what exists, so they are the message.
     /// </summary>
     private static void Attempt(List<ConfigDiagnostic> diagnostics, string path, string key, Action schedule)
@@ -2999,11 +2999,11 @@ body of `Run` up to the diagnostics check is `Bind`, returning a
 `PlantDiagnostics` are unchanged. Every existing scenario test and golden
 passes unchanged.)
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo` — expect PASS, **170**.
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo` — expect PASS, **170**.
 
 - [ ] **Step 3: Give the CLI a cancellation token and the new options**
 
-Replace the whole of `src/Dse.Cli/Dse.Cli.csproj` with:
+Replace the whole of `src/Millrace.Cli/Millrace.Cli.csproj` with:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -3012,35 +3012,35 @@ Replace the whole of `src/Dse.Cli/Dse.Cli.csproj` with:
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>dse</AssemblyName>
-    <RootNamespace>Dse.Cli</RootNamespace>
+    <AssemblyName>millrace</AssemblyName>
+    <RootNamespace>Millrace.Cli</RootNamespace>
     <PackAsTool>true</PackAsTool>
-    <ToolCommandName>dse</ToolCommandName>
-    <PackageId>Dse.Cli</PackageId>
+    <ToolCommandName>millrace</ToolCommandName>
+    <PackageId>Millrace.Cli</PackageId>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Dse.Core\Dse.Core.csproj" />
-    <ProjectReference Include="..\Dse.Components\Dse.Components.csproj" />
-    <ProjectReference Include="..\Dse.Configuration\Dse.Configuration.csproj" />
-    <ProjectReference Include="..\Dse.Scenarios\Dse.Scenarios.csproj" />
-    <ProjectReference Include="..\Dse.Control.Catalogue\Dse.Control.Catalogue.csproj" />
-    <ProjectReference Include="..\Dse.Modbus\Dse.Modbus.csproj" />
+    <ProjectReference Include="..\Millrace.Core\Millrace.Core.csproj" />
+    <ProjectReference Include="..\Millrace.Components\Millrace.Components.csproj" />
+    <ProjectReference Include="..\Millrace.Configuration\Millrace.Configuration.csproj" />
+    <ProjectReference Include="..\Millrace.Scenarios\Millrace.Scenarios.csproj" />
+    <ProjectReference Include="..\Millrace.Control.Catalogue\Millrace.Control.Catalogue.csproj" />
+    <ProjectReference Include="..\Millrace.Modbus\Millrace.Modbus.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <InternalsVisibleTo Include="Dse.Cli.Tests" />
+    <InternalsVisibleTo Include="Millrace.Cli.Tests" />
   </ItemGroup>
 </Project>
 ```
 
-Replace the whole of `src/Dse.Cli/CliApp.cs` with:
+Replace the whole of `src/Millrace.Cli/CliApp.cs` with:
 
 ```csharp
 using System.Globalization;
-using Dse.Components;
-using Dse.Control.Catalogue;
-using Dse.Core.Catalogue;
+using Millrace.Components;
+using Millrace.Control.Catalogue;
+using Millrace.Core.Catalogue;
 
-namespace Dse.Cli;
+namespace Millrace.Cli;
 
 /// <summary>The whole CLI as a function of its arguments and two streams, so tests run it in-process.</summary>
 public static class CliApp
@@ -3050,7 +3050,7 @@ public static class CliApp
 
     /// <summary>
     /// As <see cref="Run(string[], TextWriter, TextWriter)"/>; <paramref name="cancellation"/>
-    /// stops a long-running command (<c>dse serve</c>) as Ctrl+C does, so a test can.
+    /// stops a long-running command (<c>millrace serve</c>) as Ctrl+C does, so a test can.
     /// </summary>
     public static int Run(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken cancellation)
     {
@@ -3073,7 +3073,7 @@ public static class CliApp
 
         if (OptionValueProblem(parsed) is { } problem)
         {
-            stderr.Write($"{problem}\nRun `dse {string.Join(' ', parsed.Command!.Words)} --help` for its options.\n");
+            stderr.Write($"{problem}\nRun `millrace {string.Join(' ', parsed.Command!.Words)} --help` for its options.\n");
             return ExitCodes.Usage;
         }
 
@@ -3126,7 +3126,7 @@ public static class CliApp
 (The format check now applies only to commands that take `--format text|json`;
 `--port` and `--speed` are checked like `--time-step`.)
 
-In `src/Dse.Cli/CliContext.cs`, replace
+In `src/Millrace.Cli/CliContext.cs`, replace
 
 ```csharp
 internal sealed class CliContext(ParsedCommandLine commandLine, ComponentCatalogue catalogue, TextWriter stdout, TextWriter stderr)
@@ -3156,7 +3156,7 @@ with
     public CancellationToken Cancellation { get; } = cancellation;
 ```
 
-In `src/Dse.Cli/ExitCodes.cs`, replace
+In `src/Millrace.Cli/ExitCodes.cs`, replace
 
 ```csharp
     /// <summary>A file or an assembly could not be read, written or loaded.</summary>
@@ -3165,13 +3165,13 @@ In `src/Dse.Cli/ExitCodes.cs`, replace
 with
 
 ```csharp
-    /// <summary>A file or an assembly could not be read, written or loaded, or <c>dse serve</c> could not open its port.</summary>
+    /// <summary>A file or an assembly could not be read, written or loaded, or <c>millrace serve</c> could not open its port.</summary>
 ```
 
-Replace the whole of `src/Dse.Cli/CommandTable.cs` with:
+Replace the whole of `src/Millrace.Cli/CommandTable.cs` with:
 
 ```csharp
-namespace Dse.Cli;
+namespace Millrace.Cli;
 
 /// <summary>An option a command accepts. Every option takes a value.</summary>
 internal sealed record OptionSpec(string Name, string ValueName, string Help, bool Repeatable = false);
@@ -3222,7 +3222,7 @@ internal static class CommandTable
 
     public static string GeneralHelp()
     {
-        var lines = new List<string> { "dse — deterministic industrial process simulation engine", string.Empty, "Commands:" };
+        var lines = new List<string> { "millrace — deterministic industrial process simulation engine", string.Empty, "Commands:" };
         int width = All.Max(c => c.Invocation.Length);
         foreach (CommandSpec command in All)
         {
@@ -3230,7 +3230,7 @@ internal static class CommandTable
         }
 
         lines.Add(string.Empty);
-        lines.Add("Run `dse <command> --help` for a command's options.");
+        lines.Add("Run `millrace <command> --help` for a command's options.");
         lines.Add(string.Empty);
         lines.Add("Exit codes: 0 success; 1 the plant or scenario has errors; 2 usage error; " +
                   "3 a file or assembly could not be read, or the port could not be opened; 4 the event log differs from --expect.");
@@ -3239,7 +3239,7 @@ internal static class CommandTable
 
     public static string HelpFor(CommandSpec command)
     {
-        var lines = new List<string> { $"dse {command.Invocation} [options]", string.Empty, command.Summary, string.Empty, "Options:" };
+        var lines = new List<string> { $"millrace {command.Invocation} [options]", string.Empty, command.Summary, string.Empty, "Options:" };
         int width = command.Options.Max(o => o.Name.Length + o.ValueName.Length + 3);
         foreach (OptionSpec option in command.Options)
         {
@@ -3253,7 +3253,7 @@ internal static class CommandTable
 
 - [ ] **Step 4: Write the failing command tests**
 
-In `tests/Dse.Cli.Tests/Cli.cs`, replace
+In `tests/Millrace.Cli.Tests/Cli.cs`, replace
 
 ```csharp
     public static CliRun Run(params string[] args)
@@ -3270,7 +3270,7 @@ with
 ```csharp
     public static CliRun Run(params string[] args) => Run(CancellationToken.None, args);
 
-    /// <summary>Runs with a cancellation token, which stops <c>dse serve</c> as Ctrl+C does.</summary>
+    /// <summary>Runs with a cancellation token, which stops <c>millrace serve</c> as Ctrl+C does.</summary>
     public static CliRun Run(CancellationToken cancellation, params string[] args)
     {
         using var stdout = new StringWriter { NewLine = "\n" };
@@ -3280,20 +3280,20 @@ with
     }
 ```
 
-Create `tests/Dse.Cli.Tests/ServeCommandTests.cs`:
+Create `tests/Millrace.Cli.Tests/ServeCommandTests.cs`:
 
 ```csharp
 using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 
-namespace Dse.Cli.Tests;
+namespace Millrace.Cli.Tests;
 
 /// <summary>
-/// <c>dse serve</c>'s command line, loading and stopping. A cancelled token
+/// <c>millrace serve</c>'s command line, loading and stopping. A cancelled token
 /// stops the run before its first tick, so these tests never wait on the
 /// wall clock; the mine-conveyor run over a real connection is
-/// <c>Dse.Samples.Tests.ServeTests</c>.
+/// <c>Millrace.Samples.Tests.ServeTests</c>.
 /// </summary>
 public partial class ServeCommandTests
 {
@@ -3325,7 +3325,7 @@ public partial class ServeCommandTests
 
         Assert.Equal(ExitCodes.Usage, run.ExitCode);
         Assert.Empty(run.Out);
-        Assert.Contains("dse serve --help", run.Err, StringComparison.Ordinal);
+        Assert.Contains("millrace serve --help", run.Err, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -3373,7 +3373,7 @@ public partial class ServeCommandTests
 
         Assert.Equal(ExitCodes.PlantInvalid, run.ExitCode);
         Assert.Empty(run.Out);
-        Assert.Contains("DSE102", run.Err, StringComparison.Ordinal);
+        Assert.Contains("MR102", run.Err, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -3383,7 +3383,7 @@ public partial class ServeCommandTests
 
         Assert.Equal(ExitCodes.PlantInvalid, run.ExitCode);
         Assert.Empty(run.Out);
-        Assert.Contains("DSE102", run.Err, StringComparison.Ordinal);
+        Assert.Contains("MR102", run.Err, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -3430,12 +3430,12 @@ stops `RunFor` before its first tick, so these never wait on the clock. The
 `claimed-permit.json` plant has 13 tags: 2 coils, 5 discrete inputs, 5
 input-register values, 1 holding-register value.)
 
-Create `tests/Dse.Cli.Tests/ModbusMapCommandTests.cs`:
+Create `tests/Millrace.Cli.Tests/ModbusMapCommandTests.cs`:
 
 ```csharp
 using System.Text.Json.Nodes;
 
-namespace Dse.Cli.Tests;
+namespace Millrace.Cli.Tests;
 
 public class ModbusMapCommandTests
 {
@@ -3509,7 +3509,7 @@ public class ModbusMapCommandTests
     [Fact]
     public void OutWritesTheMapToAFile()
     {
-        string path = Path.Combine(Path.GetTempPath(), $"dse-map-{Guid.NewGuid():N}.csv");
+        string path = Path.Combine(Path.GetTempPath(), $"millrace-map-{Guid.NewGuid():N}.csv");
         try
         {
             CliRun run = Cli.Run("modbus-map", Cli.Plant("minimal.json"), "--format", "csv", "--out", path);
@@ -3535,7 +3535,7 @@ public class ModbusMapCommandTests
 
         Assert.Equal(ExitCodes.Usage, run.ExitCode);
         Assert.Empty(run.Out);
-        Assert.Contains("dse modbus-map --help", run.Err, StringComparison.Ordinal);
+        Assert.Contains("millrace modbus-map --help", run.Err, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -3545,33 +3545,33 @@ public class ModbusMapCommandTests
 
         Assert.Equal(ExitCodes.PlantInvalid, run.ExitCode);
         Assert.Empty(run.Out);
-        Assert.Contains("DSE102", run.Err, StringComparison.Ordinal);
+        Assert.Contains("MR102", run.Err, StringComparison.Ordinal);
     }
 }
 ```
 
 (9 tests: 5 facts and a 4-row theory. The expected text was generated by the
-prototype and checked by hand against the `dse tags` listing of
+prototype and checked by hand against the `millrace tags` listing of
 `claimed-permit.json`: one row per tag, by area then address, numbers
 right-aligned, trailing spaces trimmed.)
 
 - [ ] **Step 5: Write the commands**
 
-Create `src/Dse.Cli/Commands/ModbusMap.cs`:
+Create `src/Millrace.Cli/Commands/ModbusMap.cs`:
 
 ```csharp
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using Dse.Configuration;
-using Dse.Core;
-using Dse.Core.Catalogue;
-using Dse.Modbus;
+using Millrace.Configuration;
+using Millrace.Core;
+using Millrace.Core.Catalogue;
+using Millrace.Modbus;
 
-namespace Dse.Cli.Commands;
+namespace Millrace.Cli.Commands;
 
 /// <summary>
-/// <c>dse modbus-map</c> (plan 8): the register map <c>dse serve</c> serves,
+/// <c>millrace modbus-map</c> (plan 8): the register map <c>millrace serve</c> serves,
 /// as a table, as CSV, or as the <c>tags</c> object of a FUXA Modbus device.
 /// The table and the CSV list the entries by area, then address; the FUXA
 /// object lists them in directory order, as the map assigns them.
@@ -3612,7 +3612,7 @@ internal static class ModbusMap
         _ => "400000",
     };
 
-    /// <summary>A FUXA tag id: <c>t_</c> and the DSE tag name, so it is stable for a given plant and readable in FUXA's editor (R203).</summary>
+    /// <summary>A FUXA tag id: <c>t_</c> and the Millrace tag name, so it is stable for a given plant and readable in FUXA's editor (R203).</summary>
     internal static string FuxaId(RegisterEntry entry) => "t_" + entry.Tag.Name;
 
     private static string Access(RegisterEntry entry) => entry.IsWritable ? "ReadWrite" : "ReadOnly";
@@ -3703,23 +3703,23 @@ internal static class ModbusMap
 }
 ```
 
-Create `src/Dse.Cli/Commands/Serve.cs`:
+Create `src/Millrace.Cli/Commands/Serve.cs`:
 
 ```csharp
 using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using Dse.Configuration;
-using Dse.Core;
-using Dse.Modbus;
-using Dse.Realtime;
-using Dse.Scenarios;
+using Millrace.Configuration;
+using Millrace.Core;
+using Millrace.Modbus;
+using Millrace.Realtime;
+using Millrace.Scenarios;
 
-namespace Dse.Cli.Commands;
+namespace Millrace.Cli.Commands;
 
 /// <summary>
-/// <c>dse serve</c> (plan 8): runs a plant — and a scenario's timeline, if one
+/// <c>millrace serve</c> (plan 8): runs a plant — and a scenario's timeline, if one
 /// is given — paced to the wall clock, and serves its tags over Modbus TCP
 /// until Ctrl+C, SIGTERM or the caller's cancellation. The simulation ticks on
 /// this thread; the server answers on the thread pool, reading the image the
@@ -3855,15 +3855,15 @@ internal static class Serve
 }
 ```
 
-Run: `dotnet test tests/Dse.Cli.Tests --nologo` — expect PASS, **106**.
+Run: `dotnet test tests/Millrace.Cli.Tests --nologo` — expect PASS, **106**.
 
 - [ ] **Step 6: Write the end-to-end test**
 
-In `tests/Dse.Samples.Tests/Dse.Samples.Tests.csproj`, replace
+In `tests/Millrace.Samples.Tests/Millrace.Samples.Tests.csproj`, replace
 
 ```xml
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Dse.Cli\Dse.Cli.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Cli\Millrace.Cli.csproj" />
 ```
 
 with
@@ -3874,10 +3874,10 @@ with
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Dse.Cli\Dse.Cli.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Cli\Millrace.Cli.csproj" />
 ```
 
-Create `tests/Dse.Samples.Tests/ServeTests.cs`:
+Create `tests/Millrace.Samples.Tests/ServeTests.cs`:
 
 ```csharp
 using System.Diagnostics;
@@ -3885,13 +3885,13 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
-using Dse.Cli;
-using Dse.Tests.Shared;
+using Millrace.Cli;
+using Millrace.Tests.Shared;
 
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 /// <summary>
-/// End to end (plan 8 criterion 5): <c>dse serve</c> runs the mine plant
+/// End to end (plan 8 criterion 5): <c>millrace serve</c> runs the mine plant
 /// in-process at 20 times real time on a port the system picks; a test-side
 /// Modbus client writes the start sequence's coil and reads CV001's speed
 /// rise past the 1.74 m/s the sequence proves it at. Every wait is bounded.
@@ -3949,7 +3949,7 @@ public partial class ServeTests
         Assert.Contains("Stopped at 2026-03-02 06:", stdout.Text, StringComparison.Ordinal);
     }
 
-    /// <summary>Every tag's area and wire offset, from <c>dse modbus-map --format csv</c>, as an integrator would read them.</summary>
+    /// <summary>Every tag's area and wire offset, from <c>millrace modbus-map --format csv</c>, as an integrator would read them.</summary>
     private static Dictionary<string, (string Area, int Offset)> Map()
     {
         CliRun run = Cli.Run("modbus-map", Sample.Plant, "--format", "csv");
@@ -3970,8 +3970,8 @@ public partial class ServeTests
                 return int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
             }
 
-            Assert.False(serving.IsCompleted, $"dse serve exited before listening: {stderr.Text}");
-            Assert.True(clock.Elapsed < Patience, "dse serve did not say where it listens.");
+            Assert.False(serving.IsCompleted, $"millrace serve exited before listening: {stderr.Text}");
+            Assert.True(clock.Elapsed < Patience, "millrace serve did not say where it listens.");
             await Task.Delay(20);
         }
     }
@@ -4014,27 +4014,27 @@ public partial class ServeTests
 }
 ```
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~ServeTests"` — expect PASS, 1, in under 2 s.
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~ServeTests"` — expect PASS, 1, in under 2 s.
 
 - [ ] **Step 7: Try it by hand**
 
-Run: `dotnet run --project src/Dse.Cli -- modbus-map samples/mine-conveyors/plant.json --format csv`
+Run: `dotnet run --project src/Millrace.Cli -- modbus-map samples/mine-conveyors/plant.json --format csv`
 — expect a header and 124 rows; `coils,31,30,Bool,SEQ_START.Start,ReadWrite,,Enters step 1 from idle on a rising edge,`
 and `input registers,7,6,Float32,CV001.Speed,ReadOnly,m/s,Measured value,` among them.
-Run: `dotnet run --project src/Dse.Cli -- serve samples/mine-conveyors/plant.json --port 0 --speed 0`
+Run: `dotnet run --project src/Millrace.Cli -- serve samples/mine-conveyors/plant.json --port 0 --speed 0`
 — expect exit 2 and `'--speed 0' is not a speed. Give a factor greater than zero, such as 10 or 0.5.`
 
 - [ ] **Step 8: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1706**: 37 / 498 / 189 / 57 / 239 / 170 / 106 / 153 / 27 / 137, and `Dse.Modbus.Tests` 93.
-Run: `git diff --stat aca64d9 -- samples tests/Dse.Control.Tests/Golden tests/Dse.Scenarios.Tests/Golden` — expect nothing.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1706**: 37 / 498 / 189 / 57 / 239 / 170 / 106 / 153 / 27 / 137, and `Millrace.Modbus.Tests` 93.
+Run: `git diff --stat aca64d9 -- samples tests/Millrace.Control.Tests/Golden tests/Millrace.Scenarios.Tests/Golden` — expect nothing.
 Run: `git status --short -uall` — expect exactly the paths of Step 9.
 
 - [ ] **Step 9: Commit**
 
 ```bash
-git add src/Dse.Scenarios/ScenarioBinding.cs src/Dse.Scenarios/ScenarioRunner.cs tests/Dse.Scenarios.Tests/ScenarioBindingTests.cs src/Dse.Cli/Dse.Cli.csproj src/Dse.Cli/CliApp.cs src/Dse.Cli/CliContext.cs src/Dse.Cli/CommandTable.cs src/Dse.Cli/ExitCodes.cs src/Dse.Cli/Commands/Serve.cs src/Dse.Cli/Commands/ModbusMap.cs tests/Dse.Cli.Tests/Cli.cs tests/Dse.Cli.Tests/ServeCommandTests.cs tests/Dse.Cli.Tests/ModbusMapCommandTests.cs tests/Dse.Samples.Tests/Dse.Samples.Tests.csproj tests/Dse.Samples.Tests/ServeTests.cs
+git add src/Millrace.Scenarios/ScenarioBinding.cs src/Millrace.Scenarios/ScenarioRunner.cs tests/Millrace.Scenarios.Tests/ScenarioBindingTests.cs src/Millrace.Cli/Millrace.Cli.csproj src/Millrace.Cli/CliApp.cs src/Millrace.Cli/CliContext.cs src/Millrace.Cli/CommandTable.cs src/Millrace.Cli/ExitCodes.cs src/Millrace.Cli/Commands/Serve.cs src/Millrace.Cli/Commands/ModbusMap.cs tests/Millrace.Cli.Tests/Cli.cs tests/Millrace.Cli.Tests/ServeCommandTests.cs tests/Millrace.Cli.Tests/ModbusMapCommandTests.cs tests/Millrace.Samples.Tests/Millrace.Samples.Tests.csproj tests/Millrace.Samples.Tests/ServeTests.cs
 git commit -F .superpowers/sdd/8/msg-task4.txt
 ```
 
@@ -4043,11 +4043,11 @@ with `.superpowers/sdd/8/msg-task4.txt`:
 ```
 feat(cli): serve a plant over Modbus TCP and print its register map
 
-dse serve runs a plant paced to the wall clock, or --speed times it, and
+millrace serve runs a plant paced to the wall clock, or --speed times it, and
 serves its tags over Modbus TCP until Ctrl+C or SIGTERM; --scenario
 replays a timeline written for the same plant, bound through the new
 ScenarioRunner.Bind. --port 0 picks a free port; a port that cannot be
-opened exits 3. dse modbus-map prints the map as a table, as CSV, or as
+opened exits 3. millrace modbus-map prints the map as a table, as CSV, or as
 the tags of a FUXA Modbus device. An end-to-end test serves the mine plant
 at 20x, starts the sequence over Modbus and reads CV001 up to speed.
 
@@ -4068,31 +4068,31 @@ reviewer **opus** (R203–R208, Review Focus 5).
 **Files:**
 - Create: `hmi/fuxa/Dockerfile`, `hmi/fuxa/Dockerfile.dockerignore`, `hmi/fuxa/fuxa.Dockerfile`, `hmi/fuxa/docker-compose.yml`, `hmi/fuxa/smoke-check.sh` (mode 755), `hmi/fuxa/README.md`
 - Generate: `hmi/fuxa/mine-conveyors.fuxap.json`
-- Create: `tests/Dse.Samples.Tests/FuxaProjectTests.cs` (6 facts)
+- Create: `tests/Millrace.Samples.Tests/FuxaProjectTests.cs` (6 facts)
 - Create: `hmi/fuxa/generate-project.py` (the project's source, R205)
 - Scratch, never added: `.superpowers/sdd/8/fuxa-tags.json`, screenshots
 
 **Interfaces:**
-- Consumes: `dse modbus-map … --format fuxa` and the text map (Task 4); the
-  tag ids `t_<name>` (R203); the `dse serve` command line (Task 4).
-- Produces: the stack; the FUXA project (device id `dse`, views `v_overview`,
+- Consumes: `millrace modbus-map … --format fuxa` and the text map (Task 4); the
+  tag ids `t_<name>` (R203); the `millrace serve` command line (Task 4).
+- Produces: the stack; the FUXA project (device id `millrace`, views `v_overview`,
   `v_alarms`, `v_trends`, script `s_pulse`, charts `c_speed`, `c_current`,
   10 alarms); the README Task 6 links to.
 
 - [ ] **Step 1: Write the failing in-sync tests**
 
-Create `tests/Dse.Samples.Tests/FuxaProjectTests.cs`:
+Create `tests/Millrace.Samples.Tests/FuxaProjectTests.cs`:
 
 ```csharp
 using System.Runtime.CompilerServices;
 using System.Text.Json.Nodes;
-using Dse.Cli;
+using Millrace.Cli;
 
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 /// <summary>
 /// The committed FUXA project (plan 8 criterion 5, "in sync"): its device is
-/// the DSE server, its tags are exactly <c>dse modbus-map … --format fuxa</c>,
+/// the Millrace server, its tags are exactly <c>millrace modbus-map … --format fuxa</c>,
 /// and everything its views, alarms, charts and script reference is one of
 /// them — and writable where the HMI writes it.
 /// </summary>
@@ -4101,7 +4101,7 @@ public class FuxaProjectTests
     private static JsonObject Project() =>
         JsonNode.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "hmi", "fuxa", "mine-conveyors.fuxap.json")))!.AsObject();
 
-    private static JsonObject Tags(JsonObject project) => project["devices"]!["dse"]!["tags"]!.AsObject();
+    private static JsonObject Tags(JsonObject project) => project["devices"]!["millrace"]!["tags"]!.AsObject();
 
     [Fact]
     public void TheDeviceTagsAreExactlyTheModbusMapOfTheMinePlant()
@@ -4116,14 +4116,14 @@ public class FuxaProjectTests
     }
 
     [Fact]
-    public void TheDeviceIsTheDseServerPolledEvery200Milliseconds()
+    public void TheDeviceIsTheMillraceServerPolledEvery200Milliseconds()
     {
-        JsonNode device = Project()["devices"]!["dse"]!;
+        JsonNode device = Project()["devices"]!["millrace"]!;
 
         Assert.Equal("ModbusTCP", (string?)device["type"]);
         Assert.True((bool)device["enabled"]!);
         Assert.Equal(200, (int)device["polling"]!);
-        Assert.Equal("dse:5020", (string?)device["property"]!["address"]);
+        Assert.Equal("millrace:5020", (string?)device["property"]!["address"]);
         Assert.Equal("1", (string?)device["property"]!["slaveid"]);
         Assert.Equal("TcpPort", (string?)device["property"]!["connectionOption"]);
     }
@@ -4220,7 +4220,7 @@ public class FuxaProjectTests
 (6 facts. `EveryTagTheHmiWritesIsACoil` counts 17 written tag ids: 2 + 2 + 3
 + 4 pulsed by the four push-buttons, and 6 toggled.)
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~FuxaProjectTests"`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~FuxaProjectTests"`
 Expected: `Failed: 6` — `DirectoryNotFoundException` (no `hmi/fuxa/`).
 
 - [ ] **Step 2: Write the images and the compose file**
@@ -4228,7 +4228,7 @@ Expected: `Failed: 6` — `DirectoryNotFoundException` (no `hmi/fuxa/`).
 Create `hmi/fuxa/Dockerfile`:
 
 ```dockerfile
-# The dse command line in a container: built from this repository's source
+# The millrace command line in a container: built from this repository's source
 # with the .NET SDK, run on the .NET runtime, with the samples beside it.
 # Build context: the repository root (see docker-compose.yml).
 
@@ -4236,14 +4236,14 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0.401-noble@sha256:e70cdb7f80b0348f5cb85f19
 WORKDIR /src
 COPY Directory.Build.props ./
 COPY src/ src/
-RUN dotnet publish src/Dse.Cli/Dse.Cli.csproj -c Release -o /app --nologo
+RUN dotnet publish src/Millrace.Cli/Millrace.Cli.csproj -c Release -o /app --nologo
 
 FROM mcr.microsoft.com/dotnet/runtime:10.0.12-noble@sha256:b89586dc17781f25531909993658aa8161205ae38b8cec8847df4a8221a403d5
-WORKDIR /dse
+WORKDIR /millrace
 COPY --from=build /app /app
 COPY samples/ samples/
 EXPOSE 5020
-ENTRYPOINT ["/app/dse"]
+ENTRYPOINT ["/app/millrace"]
 CMD ["serve", "samples/mine-conveyors/plant.json", "--port", "5020"]
 ```
 
@@ -4279,19 +4279,19 @@ Create `hmi/fuxa/docker-compose.yml` (in the `fuxa-init` command, `$$` is
 Compose's escape for a literal `$`):
 
 ```yaml
-# The mine-conveyor sample as a SCADA would see it: DSE serves the plant over
+# The mine-conveyor sample as a SCADA would see it: Millrace serves the plant over
 # Modbus TCP, FUXA polls it and shows the HMI on http://localhost:1881, and a
 # one-shot container loads the HMI project into FUXA on its first start.
 # Run from this folder: docker compose up --build
 
-name: dse-hmi
+name: millrace-hmi
 
 services:
-  dse:
+  millrace:
     build:
       context: ../..
       dockerfile: hmi/fuxa/Dockerfile
-    image: dse-hmi/dse:local
+    image: millrace-hmi/millrace:local
     command: ["serve", "samples/mine-conveyors/plant.json", "--port", "5020"]
     ports:
       - "5020:5020"
@@ -4300,9 +4300,9 @@ services:
     build:
       context: .
       dockerfile: fuxa.Dockerfile
-    image: dse-hmi/fuxa:1.3.4-modbus
+    image: millrace-hmi/fuxa:1.3.4-modbus
     depends_on:
-      - dse
+      - millrace
     ports:
       - "1881:1881"
     volumes:
@@ -4325,8 +4325,8 @@ services:
           if [ "$$tries" -ge 120 ]; then echo "FUXA did not answer within 120 s." >&2; exit 1; fi
           sleep 1
         done
-        if curl -fsS http://fuxa:1881/api/project | grep -q '"address":"dse:5020"'; then
-          echo "FUXA already has the DSE project; leaving it as it is."
+        if curl -fsS http://fuxa:1881/api/project | grep -q '"address":"millrace:5020"'; then
+          echo "FUXA already has the Millrace project; leaving it as it is."
           exit 0
         fi
         curl -fsS -X POST -H 'Content-Type: application/json' \
@@ -4389,7 +4389,7 @@ R205; Python 3, standard library only):
 """Writes the FUXA project hmi/fuxa/mine-conveyors.fuxap.json, its source (plan 8).
 
 From the repository root:
-    dotnet run --project src/Dse.Cli -- modbus-map samples/mine-conveyors/plant.json --format fuxa --out <tags.json>
+    dotnet run --project src/Millrace.Cli -- modbus-map samples/mine-conveyors/plant.json --format fuxa --out <tags.json>
     python3 -I hmi/fuxa/generate-project.py <tags.json> hmi/fuxa/mine-conveyors.fuxap.json
 The output is a pure function of the tags: same tags, same bytes. Change the
 views, alarms, charts or script here, not in the JSON: regenerating replaces it.
@@ -4401,7 +4401,7 @@ from xml.sax.saxutils import escape
 tags = json.load(open(sys.argv[1]))
 out = sys.argv[2]
 
-DEV = "dse"
+DEV = "millrace"
 
 
 def t(name):
@@ -4508,7 +4508,7 @@ GREY, GREEN, RED, AMBER, DARK = "#9e9e9e", "#2e7d32", "#c62828", "#f9a825", "#37
 # ---------------------------------------------------------------- Overview
 ov = View("v_overview", "Overview", 1280, 720)
 ov.text("ov_title", 24, 40, "Mine conveyors — overview", size=24, weight="bold")
-ov.text("ov_sub", 24, 64, "Simulated by DSE over Modbus TCP · belt green running, grey stopped, red tripped", size=13,
+ov.text("ov_sub", 24, 64, "Simulated by Millrace over Modbus TCP · belt green running, grey stopped, red tripped", size=13,
         fill="#546e7a")
 
 # Ore source (feeder hopper)
@@ -4638,7 +4638,7 @@ charts = []
 for i, (cid, title, field, unit) in enumerate([("c_speed", "Belt speed (m/s)", "Speed", "m/s"),
                                                 ("c_current", "Motor current (A)", "Current", "A")]):
     charts.append({"id": cid, "name": title, "lines": [
-        {"device": "DSE", "id": t(f"{cv}.{field}"), "name": f"{cv}.{field}", "label": f"{cv} {unit}",
+        {"device": "Millrace", "id": t(f"{cv}.{field}"), "name": f"{cv}.{field}", "label": f"{cv} {unit}",
          "color": colors[cv], "yaxis": 1, "lineInterpolation": 0, "lineWidth": 2, "spanGaps": True}
         for cv in ["CV001", "CV002", "CV003"]]})
     opts = {"title": title, "fontFamily": "sans-serif", "legendFontSize": 12, "colorBackground": "rgba(255,255,255,1)",
@@ -4651,8 +4651,8 @@ for i, (cid, title, field, unit) in enumerate([("c_speed", "Belt speed (m/s)", "
                {"id": cid, "type": "realtime1", "options": opts, "events": []}, "HtmlChart", title)
 
 # ---------------------------------------------------------------- project
-device = {"id": DEV, "name": "DSE", "type": "ModbusTCP", "enabled": True, "polling": 200,
-          "property": {"address": "dse:5020", "port": None, "slot": None, "rack": None, "slaveid": "1",
+device = {"id": DEV, "name": "Millrace", "type": "ModbusTCP", "enabled": True, "polling": 200,
+          "property": {"address": "millrace:5020", "port": None, "slot": None, "rack": None, "slaveid": "1",
                        "baudrate": None, "databits": None, "stopbits": None, "parity": None,
                        "connectionOption": "TcpPort", "delay": 10, "socketReuse": None, "forceFC16": False},
           "tags": tags}
@@ -4664,7 +4664,7 @@ script_code = ("const hold = ms => new Promise(resolve => setTimeout(resolve, ms
                "}")
 project = {
     "version": "1.01",
-    "name": "DSE mine conveyors",
+    "name": "Millrace mine conveyors",
     "server": {"id": "0", "name": "FUXA Server", "type": "FuxaServer", "property": {}, "enabled": True, "tags": {}},
     "devices": {DEV: device},
     "hmi": {"views": [ov.to_json(), al.to_json(), tr.to_json()],
@@ -4676,7 +4676,7 @@ project = {
                                                  "link": ""},
                                                 {"text": "Trends", "view": "v_trends", "icon": "show_chart",
                                                  "link": ""}]},
-                       "header": {"title": "DSE mine conveyors", "alarms": "fix", "infos": "", "bkcolor": "#ffffff",
+                       "header": {"title": "Millrace mine conveyors", "alarms": "fix", "infos": "", "bkcolor": "#ffffff",
                                   "fgcolor": "#000000", "height": 46, "buttonHeight": 36, "fontSize": 13,
                                   "items": [], "itemsAnchor": "left"}}},
     "charts": charts, "graphs": [], "alarms": alarms, "notifications": [],
@@ -4689,7 +4689,7 @@ open(out, "a").write("\n")
 print("views", [len(v["items"]) for v in project["hmi"]["views"]])
 ```
 
-Run: `dotnet run --project src/Dse.Cli -- modbus-map samples/mine-conveyors/plant.json --format fuxa --out .superpowers/sdd/8/fuxa-tags.json`
+Run: `dotnet run --project src/Millrace.Cli -- modbus-map samples/mine-conveyors/plant.json --format fuxa --out .superpowers/sdd/8/fuxa-tags.json`
 Run: `python3 -I hmi/fuxa/generate-project.py .superpowers/sdd/8/fuxa-tags.json hmi/fuxa/mine-conveyors.fuxap.json`
 Expected: `views [45, 1, 2]` (the overview's 45 widgets, the alarm table,
 the two charts).
@@ -4701,7 +4701,7 @@ differently: compare before going on, and report it; never edit the JSON.
 - [ ] **Step 4: Write the HMI's README**
 
 Create `hmi/fuxa/README.md` (the block under "Register map" is exactly what
-`dotnet run --project src/Dse.Cli -- modbus-map samples/mine-conveyors/plant.json`
+`dotnet run --project src/Millrace.Cli -- modbus-map samples/mine-conveyors/plant.json`
 prints — `TheReadmesRegisterMapIsTheOneModbusMapPrints` compares them; if it
 fails, replace the block with the command's output and report the
 difference):
@@ -4710,20 +4710,20 @@ difference):
 # The mine conveyors in FUXA
 
 The [mine-conveyor sample](../../samples/mine-conveyors/README.md) as an
-operator sees it: DSE runs the plant in real time and serves its tags over
+operator sees it: Millrace runs the plant in real time and serves its tags over
 Modbus TCP, and [FUXA](https://github.com/frangoteam/FUXA), an open-source web
 SCADA, polls them and shows an overview mimic, the alarms and the trends. You
 start the line, stop it, pull a pull-key or press an e-stop from the browser,
 and watch the plant's PLC logic answer.
 
 ```
-dse  ──Modbus TCP :5020──▶  FUXA  ──HTTP :1881──▶  your browser
+millrace  ──Modbus TCP :5020──▶  FUXA  ──HTTP :1881──▶  your browser
 ```
 
 ## Run it
 
 You need [Docker](https://docs.docker.com/get-docker/) with Compose v2;
-nothing else (the images build DSE from this repository). From this folder:
+nothing else (the images build Millrace from this repository). From this folder:
 
 ```bash
 docker compose up --build
@@ -4734,12 +4734,12 @@ a few minutes; later starts take seconds. Three services start:
 
 | service | what it does |
 |---|---|
-| `dse` | `dse serve samples/mine-conveyors/plant.json --port 5020`: the plant, in real time, on port 5020 |
+| `millrace` | `millrace serve samples/mine-conveyors/plant.json --port 5020`: the plant, in real time, on port 5020 |
 | `fuxa` | FUXA 1.3.4 with its Modbus driver, on port 1881 |
 | `fuxa-init` | waits for FUXA, loads `mine-conveyors.fuxap.json` into it on the first start, and exits |
 
 Stop with Ctrl+C, or `docker compose down` from another terminal. The plant
-starts cold every time `dse` starts: every belt stopped and every interlock
+starts cold every time `millrace` starts: every belt stopped and every interlock
 tripped, as at power-up.
 
 To check the stack from a terminal instead of a browser, with it running:
@@ -4797,21 +4797,21 @@ line — or just press **Start line**, which resets both on its way.
 Faults — an overload, a blocked chute, a welded contactor — are not tags, so
 the HMI cannot inject them. To watch one, replay a scenario's timeline: in
 `docker-compose.yml`, add `"--scenario",
-"samples/mine-conveyors/scenarios/chute-blockage.json"` to the `dse` service's
+"samples/mine-conveyors/scenarios/chute-blockage.json"` to the `millrace` service's
 `command`, then `docker compose up`. The scenario starts the line at 1 s and
 blocks CH1 at 80 s; CV001's `Hi` alarm raises at about 1 min 53 s, `HiHi`
 about 16 s later, and the overload trips at about 3 min 10 s.
 
 ## Register map
 
-`dse serve` maps the plant's tags in their directory order: a read-write Bool
+`millrace serve` maps the plant's tags in their directory order: a read-write Bool
 is a coil, a read-only one a discrete input; a Double is a big-endian Float32
 in two registers and an Int64 a big-endian Int32 in two registers (clamped to
 the Int32 range), holding when read-write, input when read-only. A tag a
 block claims, such as `CV001.Permit`, is read-only. Any unit id is answered.
 `address` is 1-based, as FUXA and most SCADAs show it; `offset` is what goes
 on the wire. This is the output of
-`dotnet run --project src/Dse.Cli -- modbus-map samples/mine-conveyors/plant.json`
+`dotnet run --project src/Millrace.Cli -- modbus-map samples/mine-conveyors/plant.json`
 (`--format csv` for a spreadsheet, `--format fuxa` for the FUXA device's
 tags):
 
@@ -4949,7 +4949,7 @@ value, or one outside the tag's range, answers 03; any other function, 01.
 
 ## Limits
 
-- **A local demo.** FUXA runs with authentication off and DSE's Modbus server
+- **A local demo.** FUXA runs with authentication off and Millrace's Modbus server
   has none either: anyone who can reach ports 1881 and 5020 can operate the
   plant. Do not expose them beyond your machine.
 - **Edits stay in FUXA's volume.** Whatever you change in FUXA's editor
@@ -4960,9 +4960,9 @@ value, or one outside the tag's range, answers 03; any other function, 01.
   generator; a project exported from the editor and committed as is would be
   lost at the next regeneration. To go back to the committed project,
   `docker compose down -v` and start again.
-- **Real time, not replay.** Under `dse serve` the plant runs on the wall
+- **Real time, not replay.** Under `millrace serve` the plant runs on the wall
   clock and the operator's writes land whenever they arrive, so a session is
-  not reproducible tick for tick the way `dse run` is.
+  not reproducible tick for tick the way `millrace run` is.
 - **One plant.** The wheel-line HMI is a follow-up.
 
 ## Changing the project
@@ -4971,13 +4971,13 @@ value, or one outside the tag's range, answers 03; any other function, 01.
 `generate-project.py`, then, from the repository root:
 
 ```bash
-dotnet run --project src/Dse.Cli -- modbus-map samples/mine-conveyors/plant.json --format fuxa --out fuxa-tags.json
+dotnet run --project src/Millrace.Cli -- modbus-map samples/mine-conveyors/plant.json --format fuxa --out fuxa-tags.json
 python3 -I hmi/fuxa/generate-project.py fuxa-tags.json hmi/fuxa/mine-conveyors.fuxap.json
 rm fuxa-tags.json
 ```
 
 Regenerate the same way when the plant's tags change: the tests fail until
-the project's device tags equal `dse modbus-map … --format fuxa` again.
+the project's device tags equal `millrace modbus-map … --format fuxa` again.
 
 ## Cleaning up
 
@@ -4994,19 +4994,19 @@ builder prune` removes it.
 | file | what it is |
 |---|---|
 | `docker-compose.yml` | the three services |
-| `Dockerfile` | the `dse` image: the .NET SDK builds `src/Dse.Cli`, the .NET runtime runs it, with `samples/` |
+| `Dockerfile` | the `millrace` image: the .NET SDK builds `src/Millrace.Cli`, the .NET runtime runs it, with `samples/` |
 | `Dockerfile.dockerignore` | sends only `Directory.Build.props`, `src/` and `samples/` to that build |
 | `fuxa.Dockerfile` | `frangoteam/fuxa:1.3.4` with the `modbus-serial` 8.0.19 driver installed |
 | `generate-project.py` | writes `mine-conveyors.fuxap.json` from the register map: its source |
-| `mine-conveyors.fuxap.json` | the FUXA project: the `DSE` Modbus device, the three views, the alarms, the trend charts and the `pulse` script |
+| `mine-conveyors.fuxap.json` | the FUXA project: the `Millrace` Modbus device, the three views, the alarms, the trend charts and the `pulse` script |
 | `smoke-check.sh` | the scripted check above |
 ````
 
 - [ ] **Step 5: Run the tests**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo` — expect PASS, **143**.
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1712**: the Task 4 counts with Samples 143.
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo` — expect PASS, **143**.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1712**: the Task 4 counts with Samples 143.
 
 - [ ] **Step 6: Run the stack and smoke-check it**
 
@@ -5016,8 +5016,8 @@ everything listed now must still exist at the end of this step, and nothing
 else.
 
 Run: `docker compose -f hmi/fuxa/docker-compose.yml up -d --build` (about a
-minute the first time) — expect the three containers `dse-hmi-dse-1`,
-`dse-hmi-fuxa-1`, `dse-hmi-fuxa-init-1` created and started.
+minute the first time) — expect the three containers `millrace-hmi-millrace-1`,
+`millrace-hmi-fuxa-1`, `millrace-hmi-fuxa-init-1` created and started.
 Run: `docker compose -f hmi/fuxa/docker-compose.yml logs fuxa-init` (wait
 about 15 s first, until it has exited) — expect
 `Loaded the mine-conveyors project into FUXA.` (and possibly one
@@ -5048,7 +5048,7 @@ the cold plant; the smoke check below then finds the line already running
 and passes on its first read of the speed.) The Playwright tools may only write
 under the main checkout's `.playwright-mcp/`: move that folder to
 `.superpowers/sdd/8/screenshots/` in your worktree
-(`mv /home/keeper/Work/Github/POCs/DSE/.playwright-mcp .superpowers/sdd/8/screenshots`)
+(`mv .playwright-mcp .superpowers/sdd/8/screenshots`)
 so the main checkout's `git status` shows nothing new; quote the checks in
 the task report with the screenshots' paths. If a check fails, report what
 the screenshot shows; never edit the project JSON by hand (R205).
@@ -5061,17 +5061,17 @@ stack it reads about 0 m/s first and passes within about 15 s:
 `PASS: CV001.Speed = 1.8446321487426758 m/s after the start sequence.`.)
 Run: `docker compose -f hmi/fuxa/docker-compose.yml up -d`, then the same
 `logs fuxa-init` — expect the last line
-`FUXA already has the DSE project; leaving it as it is.`
-Run: `docker compose -f hmi/fuxa/docker-compose.yml stop dse`, then
-`docker compose -f hmi/fuxa/docker-compose.yml logs dse` — expect the last
+`FUXA already has the Millrace project; leaving it as it is.`
+Run: `docker compose -f hmi/fuxa/docker-compose.yml stop millrace`, then
+`docker compose -f hmi/fuxa/docker-compose.yml logs millrace` — expect the last
 line `Stopped at 2026-03-02 06:… after … ticks.` (SIGTERM, R199).
 
 Clean up:
 
 Run: `docker compose -f hmi/fuxa/docker-compose.yml down -v --rmi all` —
-expect the three containers, the network `dse-hmi_default`, the volumes
-`dse-hmi_fuxa-appdata`, `dse-hmi_fuxa-db`, `dse-hmi_fuxa-logs` and the images
-`dse-hmi/dse:local`, `dse-hmi/fuxa:1.3.4-modbus` and `curlimages/curl…`
+expect the three containers, the network `millrace-hmi_default`, the volumes
+`millrace-hmi_fuxa-appdata`, `millrace-hmi_fuxa-db`, `millrace-hmi_fuxa-logs` and the images
+`millrace-hmi/millrace:local`, `millrace-hmi/fuxa:1.3.4-modbus` and `curlimages/curl…`
 removed.
 Run: `docker ps -a`, `docker volume ls`, `docker network ls`,
 `docker images` — expect exactly the lists noted before the step. (The build
@@ -5086,7 +5086,7 @@ and nothing under `.playwright-mcp/`.
 Run: `git ls-files -s hmi/fuxa/smoke-check.sh` after adding — expect mode `100755`.
 
 ```bash
-git add hmi/fuxa/Dockerfile hmi/fuxa/Dockerfile.dockerignore hmi/fuxa/fuxa.Dockerfile hmi/fuxa/docker-compose.yml hmi/fuxa/smoke-check.sh hmi/fuxa/generate-project.py hmi/fuxa/mine-conveyors.fuxap.json hmi/fuxa/README.md tests/Dse.Samples.Tests/FuxaProjectTests.cs
+git add hmi/fuxa/Dockerfile hmi/fuxa/Dockerfile.dockerignore hmi/fuxa/fuxa.Dockerfile hmi/fuxa/docker-compose.yml hmi/fuxa/smoke-check.sh hmi/fuxa/generate-project.py hmi/fuxa/mine-conveyors.fuxap.json hmi/fuxa/README.md tests/Millrace.Samples.Tests/FuxaProjectTests.cs
 git commit -F .superpowers/sdd/8/msg-task5.txt
 ```
 
@@ -5095,10 +5095,10 @@ with `.superpowers/sdd/8/msg-task5.txt`:
 ```
 feat(hmi): show the mine conveyors in FUXA with one compose up
 
-hmi/fuxa starts three services: dse serves the mine plant over Modbus TCP,
+hmi/fuxa starts three services: millrace serves the mine plant over Modbus TCP,
 FUXA 1.3.4 with its Modbus driver polls it every 200 ms, and a one-shot
 curl loads the HMI project on FUXA's first start. The project is generated
-by generate-project.py from dse modbus-map --format fuxa, whose output its
+by generate-project.py from millrace modbus-map --format fuxa, whose output its
 device tags are exactly; its views are an overview
 mimic with states, values, lamps and operator buttons, the alarms and two
 trend charts. Push-buttons pulse their rising-edge commands through a
@@ -5121,7 +5121,7 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 - Modify: `docs/architecture.md` (a section "Modbus TCP")
 - Modify: `docs/scenarios.md` (one line)
 - Modify: `CHANGELOG.md` (the Unreleased entry's sections)
-- Modify: `tests/Dse.Samples.Tests/FuxaProjectTests.cs` (one fact)
+- Modify: `tests/Millrace.Samples.Tests/FuxaProjectTests.cs` (one fact)
 
 **Interfaces:**
 - Consumes: everything above; `hmi/fuxa/README.md` (Task 5) for the links.
@@ -5129,7 +5129,7 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 
 - [ ] **Step 1: Write the failing docs test**
 
-In `tests/Dse.Samples.Tests/FuxaProjectTests.cs`, replace
+In `tests/Millrace.Samples.Tests/FuxaProjectTests.cs`, replace
 
 ```csharp
     /// <summary>Every <c>t_…</c> tag id in a subtree: a string value that is one, or a comma-separated list of them.</summary>
@@ -5149,14 +5149,14 @@ with
         Assert.Contains("-- modbus-map plant.json", readme, StringComparison.Ordinal);
         Assert.Contains("[FUXA HMI](hmi/fuxa/README.md)", readme, StringComparison.Ordinal);
         Assert.Contains("\n## Modbus TCP\n", architecture, StringComparison.Ordinal);
-        Assert.Contains("`Dse.Modbus`", architecture, StringComparison.Ordinal);
-        Assert.Contains("dse serve plant.json --scenario scenario.json", scenarios, StringComparison.Ordinal);
+        Assert.Contains("`Millrace.Modbus`", architecture, StringComparison.Ordinal);
+        Assert.Contains("millrace serve plant.json --scenario scenario.json", scenarios, StringComparison.Ordinal);
     }
 
     /// <summary>Every <c>t_…</c> tag id in a subtree: a string value that is one, or a comma-separated list of them.</summary>
 ```
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~TheRootReadmeTheArchitecture"`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~TheRootReadmeTheArchitecture"`
 Expected: `Failed: 1` on the first `Assert.Contains` (`-- serve samples/mine-conveyors/plant.json`).
 
 - [ ] **Step 2: The root README**
@@ -5164,15 +5164,15 @@ Expected: `Failed: 1` on the first `Assert.Contains` (`-- serve samples/mine-con
 In `README.md`, replace
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/slow-press.json      # the second: a slow press over-soaks a billet and the PLC rejects it
+dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/slow-press.json      # the second: a slow press over-soaks a billet and the PLC rejects it
 ```
 
 with
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/wheel-line/scenarios/slow-press.json      # the second: a slow press over-soaks a billet and the PLC rejects it
-dotnet run --project src/Dse.Cli -- modbus-map plant.json     # the Modbus register map dse serve serves
-dotnet run --project src/Dse.Cli -- serve samples/mine-conveyors/plant.json  # run it in real time on Modbus TCP port 5020 until Ctrl+C
+dotnet run --project src/Millrace.Cli -- run samples/wheel-line/scenarios/slow-press.json      # the second: a slow press over-soaks a billet and the PLC rejects it
+dotnet run --project src/Millrace.Cli -- modbus-map plant.json     # the Modbus register map millrace serve serves
+dotnet run --project src/Millrace.Cli -- serve samples/mine-conveyors/plant.json  # run it in real time on Modbus TCP port 5020 until Ctrl+C
 ```
 
 (The old line occurs once, inside the "Command line" block.) Then replace
@@ -5186,7 +5186,7 @@ with
 ````markdown
 ## A SCADA on the sample
 
-`dse serve` runs a plant in real time and serves its tags over Modbus TCP, so a
+`millrace serve` runs a plant in real time and serves its tags over Modbus TCP, so a
 real SCADA can watch and operate it. `hmi/fuxa/` puts the mine-conveyor sample
 in the open-source web SCADA FUXA — an overview mimic, alarms and trends, with
 start, stop, reset, pull-key and e-stop buttons — with one command:
@@ -5223,8 +5223,8 @@ optional `ICommandRecorder`, which is where a scenario recorder attaches.
 
 ## Modbus TCP
 
-`Dse.Modbus` is the first protocol adapter built on that boundary. It
-references `Dse.Io.Abstractions` and `Dse.Realtime` only, and no package.
+`Millrace.Modbus` is the first protocol adapter built on that boundary. It
+references `Millrace.Io.Abstractions` and `Millrace.Realtime` only, and no package.
 `RegisterMap.Build` turns a tag directory into a register map, in directory
 order: a read-write Bool is a coil and a read-only one a discrete input; a
 Double is a big-endian Float32 and an Int64 a saturating big-endian Int32,
@@ -5238,7 +5238,7 @@ the published image — `Simulation.IO.Snapshot` — and reads it once per
 request, so every value in a response belongs to one tick; it is given a
 `CommandBus` for writes, which therefore land at phase 1 of the next tick like
 any other external write. A multi-value write is validated whole before any of
-it is queued. `dse serve` puts the two together: it ticks the simulation on
+it is queued. `millrace serve` puts the two together: it ticks the simulation on
 its own thread with `SimulationRunner` in real time (or `--speed` times it),
 while the server answers on the thread pool. `hmi/fuxa/` connects the FUXA
 web SCADA to it.
@@ -5249,14 +5249,14 @@ web SCADA to it.
 In `docs/scenarios.md`, replace
 
 ```bash
-dse run scenario.json --format json                # the same run, as records
+millrace run scenario.json --format json                # the same run, as records
 ```
 
 with
 
 ```bash
-dse run scenario.json --format json                # the same run, as records
-dse serve plant.json --scenario scenario.json      # the same timeline in real time, served over Modbus TCP
+millrace run scenario.json --format json                # the same run, as records
+millrace serve plant.json --scenario scenario.json      # the same timeline in real time, served over Modbus TCP
 ```
 
 - [ ] **Step 4: The changelog's sections**
@@ -5274,7 +5274,7 @@ with
 ```markdown
 [plan 8](docs/superpowers/plans/2026-10-07-modbus-fuxa-hmi.md)).
 
-### Modbus (`Dse.Modbus`)
+### Modbus (`Millrace.Modbus`)
 
 - A register map built from a plant's tag directory, in directory order: a
   read-write Bool is a coil, a read-only one a discrete input; a Double is a
@@ -5284,19 +5284,19 @@ with
 - A Modbus TCP server, with no external package: function codes 1, 2, 3, 4,
   5, 6, 15 and 16; exceptions 01, 02 and 03; any unit id; several clients at
   once. Reads come from the published tag image; writes go through
-  `Dse.Realtime`'s `CommandBus` and land at phase 1 of the next tick.
+  `Millrace.Realtime`'s `CommandBus` and land at phase 1 of the next tick.
 
-### Scenarios (`Dse.Scenarios`)
+### Scenarios (`Millrace.Scenarios`)
 
 - `ScenarioRunner.Bind` loads a scenario's plant and schedules its timeline
   without running it, for a host that ticks the simulation itself.
 
-### Cli (`dse`)
+### Cli (`millrace`)
 
-- `dse serve <plant.json> [--scenario <file>] [--port <n>] [--speed <x>]`
+- `millrace serve <plant.json> [--scenario <file>] [--port <n>] [--speed <x>]`
   runs a plant paced to the wall clock and serves it over Modbus TCP until
   Ctrl+C. Exit 3 now also covers a port that cannot be opened.
-- `dse modbus-map <plant.json> [--format text|csv|fuxa]` prints the register
+- `millrace modbus-map <plant.json> [--format text|csv|fuxa]` prints the register
   map, or the tags of a FUXA Modbus device.
 
 ### HMI (`hmi/fuxa/`)
@@ -5315,26 +5315,26 @@ the new sections make resolves.)
 
 - [ ] **Step 5: Run the tests and everything**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo` — expect PASS, **144**.
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1713**: 37 / 498 / 189 / 57 / 239 / 170 / 106 / 153 / 27 / 144, and `Dse.Modbus.Tests` 93.
-Run: `git diff --stat aca64d9 -- samples tests/Dse.Control.Tests/Golden tests/Dse.Scenarios.Tests/Golden src/Dse.Core src/Dse.Components src/Dse.Control src/Dse.Control.Catalogue src/Dse.Configuration src/Dse.Io.Abstractions src/Dse.Realtime` — expect nothing.
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo` — expect PASS, **144**.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1713**: 37 / 498 / 189 / 57 / 239 / 170 / 106 / 153 / 27 / 144, and `Millrace.Modbus.Tests` 93.
+Run: `git diff --stat aca64d9 -- samples tests/Millrace.Control.Tests/Golden tests/Millrace.Scenarios.Tests/Golden src/Millrace.Core src/Millrace.Components src/Millrace.Control src/Millrace.Control.Catalogue src/Millrace.Configuration src/Millrace.Io.Abstractions src/Millrace.Realtime` — expect nothing.
 Run: `git status --short -uall` — expect exactly the five paths of Step 6.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add README.md docs/architecture.md docs/scenarios.md CHANGELOG.md tests/Dse.Samples.Tests/FuxaProjectTests.cs
+git add README.md docs/architecture.md docs/scenarios.md CHANGELOG.md tests/Millrace.Samples.Tests/FuxaProjectTests.cs
 git commit -F .superpowers/sdd/8/msg-task6.txt
 ```
 
 with `.superpowers/sdd/8/msg-task6.txt`:
 
 ```
-docs: describe dse serve, the Modbus adapter and the FUXA HMI
+docs: describe millrace serve, the Modbus adapter and the FUXA HMI
 
-The root README lists dse modbus-map and dse serve and points to the FUXA
-HMI; the architecture page explains Dse.Modbus on top of the real-time
+The root README lists millrace modbus-map and millrace serve and points to the FUXA
+HMI; the architecture page explains Millrace.Modbus on top of the real-time
 boundary; the scenarios page shows serving a scenario's timeline; the
 changelog's Unreleased entry records Modbus, Scenarios, Cli and the HMI.
 A test pins the new lines.
@@ -5359,15 +5359,15 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 | 2. FC 5, 6, 15, 16 through the `CommandBus` | 3 | `WriteSingleCoilQueuesTheBoolAndEchoesTheRequest`, `WriteMultipleCoilsQueuesEachBoolInAddressOrder`, `WriteMultipleRegistersQueuesWholeValuesDecodedByKind`, `AWriteToAnAddressNoReadWriteTagOccupiesOrToHalfAValueIsException02` (FC6, R197) |
 | 2. exceptions 01, 02, 03 | 3 | `AnUnsupportedFunctionIsException01` (5), `AReadPastTheEndOfItsAreaIsException02` (7), `AWriteOfPartOfATwoRegisterValueIsException02AndWritesNothing` (4), `ANonFiniteOrOutOfRangeValueIsException03AndNothingOfTheRequestIsWritten` (5), `AReadOfAnIllegalQuantityIsException03` (6), `ACoilValueOtherThanFF00Or0000IsException03` (3), `AMalformedRequestIsException03` (7) |
 | 2. several clients; no external package | 3 | `SeveralClientsAtOnceEachGetTheirOwnAnswers`, `DisposingTheServerClosesEveryConnectionAndStopsListening`, `APortInUseFailsToStartWithASocketException`; Task 2 Step 5's `git grep` |
-| 3. `dse serve`: load, scenario, real time / `--speed`, until Ctrl+C, prints the address, exit codes | 4 | `ServeCommandTests` (19), `ScenarioBindingTests` (3), `ServeTests.AStartSequenceWrittenOverModbusRunsCv001UpToSpeed`; Task 5 Step 6 (`stop dse` → `Stopped at`) |
-| 3. `dse modbus-map` text / csv (1-based and 0-based, type, tag, access, unit, description) / fuxa | 4 | `ModbusMapCommandTests` (9) |
-| 4. compose: `dse`, `fuxa` pinned with 3 volumes, `fuxa-init` | 5 | Task 5 Step 6 (run, logs, smoke, cleanup); R204 (driver), R208 (load once) |
-| 4. project: ModbusTCP at `dse:5020`, slave 1, 200 ms, tags = the map | 5 | `TheDeviceTagsAreExactlyTheModbusMapOfTheMinePlant`, `TheDeviceIsTheDseServerPolledEvery200Milliseconds` |
+| 3. `millrace serve`: load, scenario, real time / `--speed`, until Ctrl+C, prints the address, exit codes | 4 | `ServeCommandTests` (19), `ScenarioBindingTests` (3), `ServeTests.AStartSequenceWrittenOverModbusRunsCv001UpToSpeed`; Task 5 Step 6 (`stop millrace` → `Stopped at`) |
+| 3. `millrace modbus-map` text / csv (1-based and 0-based, type, tag, access, unit, description) / fuxa | 4 | `ModbusMapCommandTests` (9) |
+| 4. compose: `millrace`, `fuxa` pinned with 3 volumes, `fuxa-init` | 5 | Task 5 Step 6 (run, logs, smoke, cleanup); R204 (driver), R208 (load once) |
+| 4. project: ModbusTCP at `millrace:5020`, slave 1, 200 ms, tags = the map | 5 | `TheDeviceTagsAreExactlyTheModbusMapOfTheMinePlant`, `TheDeviceIsTheMillraceServerPolledEvery200Milliseconds` |
 | 4. Overview, Alarms, Trends; built and verified against a running FUXA | 5 | `TheProjectHasTheThreeViewsAndEachItemIsAnElementOfItsView`, `EveryTagTheHmiReferencesIsADeviceTag`, `EveryTagTheHmiWritesIsACoil`; Task 5 Step 6's screenshots (R205) |
 | 5. tests: protocol, map, end to end, in sync | 2–5 | as above |
 | 6. smoke check: up, init POST, live CV001 speed, screenshot, start button | 5 | `hmi/fuxa/smoke-check.sh`; Task 5 Step 6 |
 | 7. `hmi/fuxa/README.md` (prerequisites, run, URL, buttons and scenarios, the generated map, limits) | 5 | `TheReadmesRegisterMapIsTheOneModbusMapPrints` |
-| 7. `docs/` and the root README mention `dse serve` and the HMI; changelog Unreleased | 1, 6 | `TheRootReadmeTheArchitectureAndTheScenariosPageNameServeAndTheHmi`; `ReleaseTests.TheVersionTheChangelogAndTheReadmeAgree` |
+| 7. `docs/` and the root README mention `millrace serve` and the HMI; changelog Unreleased | 1, 6 | `TheRootReadmeTheArchitectureAndTheScenariosPageNameServeAndTheHmi`; `ReleaseTests.TheVersionTheChangelogAndTheReadmeAgree` |
 | §2 no change to components, blocks or results | 1–6 | every task's `git diff --stat aca64d9 -- …` (empty); every golden test unchanged |
 | Review Focus 1–5 | 2, 3, 5 | the tests named there |
 
@@ -5408,6 +5408,6 @@ prototype worktree). No golden changes.
 - Names checked across tasks: `t_<name>` ids in `ModbusMap.FuxaId`, the
   generator's `t()`, the smoke check (`t_CV001.Speed`, `t_SEQ_START.Reset`,
   `t_SEQ_START.Start`) and the tests; `s_pulse` in the generator and the smoke
-  check; `dse:5020` in the generator, `fuxa-init` and
-  `TheDeviceIsTheDseServerPolledEvery200Milliseconds`; the `Listening on …`
+  check; `millrace:5020` in the generator, `fuxa-init` and
+  `TheDeviceIsTheMillraceServerPolledEvery200Milliseconds`; the `Listening on …`
   line in `Serve.cs`, `ServeCommandTests` and `ServeTests`.

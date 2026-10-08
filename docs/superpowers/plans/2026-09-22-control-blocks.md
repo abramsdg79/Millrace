@@ -3,9 +3,9 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Give the engine a control layer: a pure scan-block contract in
-`Dse.Io.Abstractions`, a scan host in `Dse.Core` that schedules each block
+`Millrace.Io.Abstractions`, a scan host in `Millrace.Core` that schedules each block
 through the event queue at its own period and publishes the block's outputs as
-ordinary tags, five blocks in a new `Dse.Control` project (timer, permissive,
+ordinary tags, five blocks in a new `Millrace.Control` project (timer, permissive,
 interlock, alarm, sequencer), and a committed golden event log of the conveyor
 plant run under all four of them — plus the two crash paths plan 5b parked.
 
@@ -13,13 +13,13 @@ plant run under all four of them — plus the two crash paths plan 5b parked.
 and `ScanOutputs`, are the whole contract: a block sees values, a tick, a clock
 reading and two elapsed times, and it answers with outputs, writes and events.
 It never sees a directory, a binding, a clock or a log. `SimulationBuilder.
-AddScanBlock` validates each block against the built tag list (`DSE013`–
-`DSE015`), turns its `Outputs` and `Commands` into ordinary `TagBinding`s over
+AddScanBlock` validates each block against the built tag list (`MR013`–
+`MR015`), turns its `Outputs` and `Commands` into ordinary `TagBinding`s over
 ordinary ports, and hands `Simulation` a plan per block. `Simulation` schedules
 one self-rescheduling `ScanEvent` per block at tick 0; each scan reads the image
 published at the end of the previous tick, calls `Scan`, stores the outputs into
 the block's own ports, queues its writes through `TagImage.Write`, and logs its
-events under the block id. `Dse.Control` then contains five pure classes that
+events under the block id. `Millrace.Control` then contains five pure classes that
 know nothing but the contract.
 
 **Tech Stack:** .NET 10 (`net10.0`), C#, xUnit. No external runtime
@@ -34,7 +34,7 @@ refining its sections 4, 11 and 17.
 `6efd7b0` (947 tests green, Release build with `0 Warning(s)`). Blocks are
 **built and attached in code** in 5c: there is no `controllers` section in the
 plant JSON, no catalogue descriptor for a block, no loader stage and no new
-configuration diagnostic beyond `DSE013`–`DSE015`. `dse run` therefore cannot
+configuration diagnostic beyond `MR013`–`MR015`. `millrace run` therefore cannot
 attach blocks, and the worked example's golden is a **test** golden, not a CLI
 one. Nothing in this plan may reference the reference samples of plan 6.
 
@@ -42,27 +42,27 @@ one. Nothing in this plan may reference the reference samples of plan 6.
 the code argued for:
 
 - **The worked example is its own task (Task 10), separate from the per-block
-  host tests (Task 9).** Both are `Dse.Control.Tests`, but a reviewer can
+  host tests (Task 9).** Both are `Millrace.Control.Tests`, but a reviewer can
   sensibly reject the worked example — whose golden is a generated artifact that
   must be read line by line — while approving five small host tests, and vice
   versa. Folding them together would make one task carry four blocks, a 120 s
   run, a 47-tag directory assertion and a golden all at once.
 - **Task 1 fixes three crashes, not two.** Plan 5b parked the scenario
   `timeStepMs` overflow and the plant `defaults.timeStepMs` sub-tick. Measured
-  on `6efd7b0`, a plant `defaults.timeStepMs` of `1e30` crashes `dse validate`
+  on `6efd7b0`, a plant `defaults.timeStepMs` of `1e30` crashes `millrace validate`
   the same way the scenario one does — `System.OverflowException` out of
   `TimeSpan.FromMilliseconds`, exit 134. The same guard covers both, so the
   plant loader gets both checks (R65).
 
 ## Global Constraints
 
-- Target framework `net10.0` for every project. **`Dse.Control` references
-  `Dse.Io.Abstractions` and nothing else** — no `Dse.Core`, no `Dse.Components`.
-  `Dse.Core` still references only `Dse.Io.Abstractions`. `Dse.Io.Abstractions`
+- Target framework `net10.0` for every project. **`Millrace.Control` references
+  `Millrace.Io.Abstractions` and nothing else** — no `Millrace.Core`, no `Millrace.Components`.
+  `Millrace.Core` still references only `Millrace.Io.Abstractions`. `Millrace.Io.Abstractions`
   references nothing. **Zero external runtime package references** in any
   shipping project: `grep -rn "PackageReference" src/` must print nothing. Test
   projects use the same test package versions as
-  `tests/Dse.Core.Tests/Dse.Core.Tests.csproj`; `Dse.Control.Tests` adds no
+  `tests/Millrace.Core.Tests/Millrace.Core.Tests.csproj`; `Millrace.Control.Tests` adds no
   package at all.
 - `Nullable` enabled, `TreatWarningsAsErrors` true, `GenerateDocumentationFile`
   true (a `<see cref>` to a type that does not exist yet is a **build error**;
@@ -75,7 +75,7 @@ the code argued for:
   `StringComparer.Ordinal` first, or is in declaration order.
 - All formatting and parsing uses `CultureInfo.InvariantCulture`. Messages that
   embed a number use `string.Create(CultureInfo.InvariantCulture, $"...")`.
-- **Names.** Tag names are exactly what `dse tags <plant>` prints
+- **Names.** Tag names are exactly what `millrace tags <plant>` prints
   (`CV001.Start`, `Feed.Enabled`) and match ordinally. Component ids for faults
   are the flattened leaf ids (`CV001.Motor`). Fault ids and argument names are
   what the catalogue declares (`thermal-bias`, `amount`).
@@ -84,7 +84,7 @@ the code argued for:
 - Diagnostic messages are human sentences ending in a full stop. A `Fix` begins
   with an **imperative** sentence ending in a full stop and may add one more
   sentence. A `ValidationError.Message` is one string holding both, split at its
-  first sentence by the loader, exactly as `DSE001`–`DSE011` already are.
+  first sentence by the loader, exactly as `MR001`–`MR011` already are.
   Descriptions in `DiagnosticInfo.Explanation` are sentences ending in a full
   stop; titles do not end in a full stop.
 - **Every event message a block raises is a sentence ending in a full stop.**
@@ -93,13 +93,13 @@ the code argued for:
 - **Report every measurement, never widen a window.** Where an expected value
   stated in this plan disagrees with what the code produces, report the
   measurement in the task report and say which one you changed and why. A golden
-  log's *content* is never invented: it is generated with `DSE_UPDATE_GOLDEN=1`,
+  log's *content* is never invented: it is generated with `MILLRACE_UPDATE_GOLDEN=1`,
   read, checked against the task's checklist, and reported.
 - xUnit analyzers run under warnings-as-errors: prefer `Assert.Single`,
   `Assert.Contains`, `Assert.Empty` over `Assert.True(x.Any())` and
   `Assert.Equal(1, x.Count())`.
-- Licence: MIT. Namespaces: `Dse.Io` (the contract), `Dse.Core`,
-  `Dse.Core.Control`, `Dse.Core.Io`, `Dse.Control`, `Dse.Control.Tests`.
+- Licence: MIT. Namespaces: `Millrace.Io` (the contract), `Millrace.Core`,
+  `Millrace.Core.Control`, `Millrace.Core.Io`, `Millrace.Control`, `Millrace.Control.Tests`.
 - **Git, for every task.** One git command per `Bash` call. `git add` names
   paths explicitly — never `git add -A`, never `git add .`. **Never `git
   stash`.** Every commit message ends with a body trailer, on its own line after
@@ -111,8 +111,8 @@ the code argued for:
 
   Never put the trailer on the subject line.
 - Build and test commands, from the repository root:
-  `dotnet build Dse.sln -c Release --nologo` (expect `0 Warning(s)`, `0
-  Error(s)`) and `dotnet test Dse.sln --nologo`.
+  `dotnet build Millrace.sln -c Release --nologo` (expect `0 Warning(s)`, `0
+  Error(s)`) and `dotnet test Millrace.sln --nologo`.
 
 ## Decisions settled here (carry forward as rulings R65–R79)
 
@@ -122,9 +122,9 @@ choice. Where one differs from the spec's wording, this plan wins and says why.
 - **R65 — the plant loader gets both time-step guards, not one.** Spec 8 parks
   the overflow for `ScenarioLoader.ReadTimeStep` and the sub-tick for
   `StructureStage.ReadDefaults`. Measured on `6efd7b0`, `defaults.timeStepMs:
-  1e30` crashes `dse validate` out of `TimeSpan.FromMilliseconds` with exit 134,
+  1e30` crashes `millrace validate` out of `TimeSpan.FromMilliseconds` with exit 134,
   exactly as the scenario one does, and `timeStepMs: 0.00001` crashes later in
-  `SimulationClock`. Both are `DSE103` in the plant loader and `DSE202` in the
+  `SimulationClock`. Both are `MR103` in the plant loader and `MR202` in the
   scenario loader, and the bound is the same in both: **more than 86 400 000 ms
   (one day) is out of range**, checked *before* `TimeSpan.FromMilliseconds` is
   called.
@@ -138,7 +138,7 @@ choice. Where one differs from the spec's wording, this plan wins and says why.
   output refuses writes because `TagBinding.Read` has no apply path, and a
   command accepts them because `TagBinding.Write` does.
 - **R67 — `ScanInputs` and `ScanOutputs` are publicly constructible.** Spec 2
-  calls `ScanOutputs` "owned and reused by the host", but `Dse.Control.Tests`'
+  calls `ScanOutputs` "owned and reused by the host", but `Millrace.Control.Tests`'
   pure suites — spec 6 — must build both without a `Simulation`. Both therefore
   have public constructors, and `ScanOutputs` has a public `Reset()`,
   `TryOutput`, `TryWrite` and `Events` for the host to read back. Every field of
@@ -162,9 +162,9 @@ choice. Where one differs from the spec's wording, this plan wins and says why.
   sentence, not the spec's.
 - **R69 — `AddScanBlock` validation lives in `SimulationBuilder.Validate()`, in
   two passes.** Blocks are checked after `CollectTags` so the plant's tags are
-  known. Pass one checks the period (`DSE013`) and the ids and owned names
-  (`DSE015`) and *creates* the owned bindings; pass two checks `Inputs` and
-  `Writes` (`DSE014`) against plant tags **and every block's owned tags**. Two
+  known. Pass one checks the period (`MR013`) and the ids and owned names
+  (`MR015`) and *creates* the owned bindings; pass two checks `Inputs` and
+  `Writes` (`MR014`) against plant tags **and every block's owned tags**. Two
   passes is what makes spec 5's composition rule true regardless of add order:
   an interlock may list `PERM01.Ok` whether `PERM01` was added before it or
   after.
@@ -210,17 +210,17 @@ choice. Where one differs from the spec's wording, this plan wins and says why.
   of 1.379925633697662 – 1.5557235827003415 A. The alarm limits are chosen from
   those measurements and the golden shows the alarm raising at the start. This
   is reported, not hidden.
-- **R75 — `tests/Dse.Control.Tests` does not reference `Dse.Scenarios`, and does
-  reference `Dse.Realtime`.** Spec 9 lists the first and not the second, but
+- **R75 — `tests/Millrace.Control.Tests` does not reference `Millrace.Scenarios`, and does
+  reference `Millrace.Realtime`.** Spec 9 lists the first and not the second, but
   `ScenarioRunner` builds its own `Simulation` and 5c gives it no way to attach
   a block, so no test in this plan can use it; while spec 1's success criterion
   1 requires a block's output to be visible in `LiveState` and in tick frames,
-  which needs a real `RealtimeHub`. The project references `Dse.Control`,
-  `Dse.Core`, `Dse.Components`, `Dse.Configuration` and — added in Task 9, where
-  it is first needed, as plan 5b's R61 added the same one — `Dse.Realtime`, and
+  which needs a real `RealtimeHub`. The project references `Millrace.Control`,
+  `Millrace.Core`, `Millrace.Components`, `Millrace.Configuration` and — added in Task 9, where
+  it is first needed, as plan 5b's R61 added the same one — `Millrace.Realtime`, and
   links `tests/Shared/Golden.cs` and the valid plants exactly as
-  `Dse.Scenarios.Tests` links them (plan 5b's R62). `src/Dse.Control` still sees
-  `Dse.Io.Abstractions` and nothing else.
+  `Millrace.Scenarios.Tests` links them (plan 5b's R62). `src/Millrace.Control` still sees
+  `Millrace.Io.Abstractions` and nothing else.
 - **R76 — `TagRef` and `TagSpec` validate their names.** A blank pin name would
   otherwise surface as an `ArgumentException` from `TagBinding.ValidName` at
   `Build()`, far from the block that wrote it. Both records check the name in a
@@ -245,7 +245,7 @@ choice. Where one differs from the spec's wording, this plan wins and says why.
 ## File structure
 
 ```
-src/Dse.Io.Abstractions/
+src/Millrace.Io.Abstractions/
   TagRef.cs                  new — a plant tag a block reads or commands
   TagSpec.cs                 new — a tag a block owns
   TagNameRules.cs            new — internal; the shared name check
@@ -253,14 +253,14 @@ src/Dse.Io.Abstractions/
   ScanInputs.cs              new — what one scan is given
   ScanOutputs.cs             new — what one scan answers
   IScanBlock.cs              new — the contract
-src/Dse.Core/
+src/Millrace.Core/
   Control/OwnedTag.cs        new — internal; a block-owned port, binding and store
   Control/ScanBlockPlan.cs   new — internal; a validated block, ready to run
   Control/ScanBlockRuntime.cs new — internal; one scan's read/scan/store/write/log
-  SimulationBuilder.cs       + AddScanBlock, CollectBlocks, DSE013–DSE015
+  SimulationBuilder.cs       + AddScanBlock, CollectBlocks, MR013–MR015
   Simulation.cs              + ScanBlockCount, ScanEvent
-src/Dse.Control/             new project
-  Dse.Control.csproj
+src/Millrace.Control/             new project
+  Millrace.Control.csproj
   Condition.cs               a Bool condition with its normal polarity
   BlockWrite.cs              a tag and the value to command
   Timer.cs  TimerMode.cs
@@ -268,45 +268,45 @@ src/Dse.Control/             new project
   Interlock.cs
   Alarm.cs  AlarmLimit.cs  AlarmLimitKind.cs
   Sequencer.cs  SequenceStep.cs  StepTransition.cs  PredicateOperator.cs
-src/Dse.Scenarios/ScenarioLoader.cs        DSE202 for an enormous timeStepMs
-src/Dse.Configuration/
-  Loading/StructureStage.cs                DSE103 for enormous and sub-tick
-  DiagnosticsReference.cs                  trailer DSE001–DSE011 → DSE001–DSE015
-tests/Dse.Io.Abstractions.Tests/ScanBlockContractTests.cs      new
-tests/Dse.Core.Tests/
+src/Millrace.Scenarios/ScenarioLoader.cs        MR202 for an enormous timeStepMs
+src/Millrace.Configuration/
+  Loading/StructureStage.cs                MR103 for enormous and sub-tick
+  DiagnosticsReference.cs                  trailer MR001–MR011 → MR001–MR015
+tests/Millrace.Io.Abstractions.Tests/ScanBlockContractTests.cs      new
+tests/Millrace.Core.Tests/
   Fakes/EchoBlock.cs                       new — the stub block
   ScanBlockValidationTests.cs              new
   ScanBlockHostTests.cs                    new
-tests/Dse.Control.Tests/                   new project
-  Dse.Control.Tests.csproj                 + Dse.Realtime in Task 9, Golden.cs and the plants in Task 10
+tests/Millrace.Control.Tests/                   new project
+  Millrace.Control.Tests.csproj                 + Millrace.Realtime in Task 9, Golden.cs and the plants in Task 10
   Scan.cs                                  the pure harness
   Fakes/Vessel.cs                          the small plant for host tests
   TimerTests.cs  PermissiveTests.cs  InterlockTests.cs
   AlarmTests.cs  SequencerTests.cs
   HostTests.cs   WorkedExampleTests.cs  DocumentationTests.cs
   Golden/conveyor-control.log              generated in Task 10
-tests/Dse.Configuration.Tests/ParseAndStructureTests.cs        + 4
-tests/Dse.Configuration.Tests/DiagnosticsReferenceTests.cs     + 1
-tests/Dse.Scenarios.Tests/ScenarioParseTests.cs                + 1
-tests/Dse.Cli.Tests/
+tests/Millrace.Configuration.Tests/ParseAndStructureTests.cs        + 4
+tests/Millrace.Configuration.Tests/DiagnosticsReferenceTests.cs     + 1
+tests/Millrace.Scenarios.Tests/ScenarioParseTests.cs                + 1
+tests/Millrace.Cli.Tests/
   Plants/sub-tick.json  Scenarios/huge-step.json               new fixtures
   ValidateCommandTests.cs  RunCommandTests.cs                  + 1 each
 docs/control-blocks.md                     new
 docs/architecture.md                       + "The control layer"
 docs/configuration-diagnostics.md          regenerated
 README.md                                  status and module list
-Dse.sln                                    + Dse.Control, Dse.Control.Tests
+Millrace.sln                                    + Millrace.Control, Millrace.Control.Tests
 ```
 
 ## Task map
 
 | # | Task | Deliverable | Tests after |
 |---|---|---|---|
-| 1 | The parked crashes | `DSE202` and `DSE103` instead of exit 134 | 954 |
+| 1 | The parked crashes | `MR202` and `MR103` instead of exit 134 | 954 |
 | 2 | The contract | `TagRef`, `TagSpec`, `BlockEvent`, `IScanBlock`, `ScanInputs`, `ScanOutputs` | 968 |
-| 3 | Host: validation | `AddScanBlock`, `DSE013`–`DSE015`, owned tags in the directory | 987 |
+| 3 | Host: validation | `AddScanBlock`, `MR013`–`MR015`, owned tags in the directory | 987 |
 | 4 | Host: the scan | `ScanEvent`, the timing rule pinned tick-exactly, determinism | 1001 |
-| 5 | `Dse.Control` + `Timer` | the project and TON/TOF/TP | 1016 |
+| 5 | `Millrace.Control` + `Timer` | the project and TON/TOF/TP | 1016 |
 | 6 | `Permissive` + `Interlock` | first-out, latch, reset, trip writes | 1035 |
 | 7 | `Alarm` | limits, deadband, on-delay, the four-state pair | 1056 |
 | 8 | `Sequencer` | six operators, `After`, timeouts, five commands | 1083 |
@@ -316,15 +316,15 @@ Dse.sln                                    + Dse.Control, Dse.Control.Tests
 
 Per-task deltas, reconciled against `[Fact]` methods and `[Theory]` rows:
 7, 14, 19 (17 facts + a two-row theory), 14, 15, 19 (8 + 11), 21, 27 (21 facts +
-a six-row theory), 8, 3, 2. `tests/Dse.Control.Tests` runs 15, 34, 55, 82, 90,
+a six-row theory), 8, 3, 2. `tests/Millrace.Control.Tests` runs 15, 34, 55, 82, 90,
 93 and 94 tests at the end of Tasks 5 to 11. Per project at the end: 37
-`Dse.Io.Abstractions`, 416 `Dse.Core`, 56 `Dse.Realtime`, 126 `Dse.Components`,
-137 `Dse.Configuration`, 161 `Dse.Scenarios`, 69 `Dse.Cli`, 94 `Dse.Control`.
+`Millrace.Io.Abstractions`, 416 `Millrace.Core`, 56 `Millrace.Realtime`, 126 `Millrace.Components`,
+137 `Millrace.Configuration`, 161 `Millrace.Scenarios`, 69 `Millrace.Cli`, 94 `Millrace.Control`.
 
 Tasks are sequential. Starting point: **947** tests
-(23 `Dse.Io.Abstractions` / 383 `Dse.Core` / 56 `Dse.Realtime` /
-126 `Dse.Components` / 132 `Dse.Configuration` / 160 `Dse.Scenarios` /
-67 `Dse.Cli`). Suggested models, following plans 3–5b: every task here creates
+(23 `Millrace.Io.Abstractions` / 383 `Millrace.Core` / 56 `Millrace.Realtime` /
+126 `Millrace.Components` / 132 `Millrace.Configuration` / 160 `Millrace.Scenarios` /
+67 `Millrace.Cli`). Suggested models, following plans 3–5b: every task here creates
 or edits logic and wants the larger model; so does every reviewer, and Task 11's
 prose check against the source.
 
@@ -339,20 +339,20 @@ without checking it is at least one tick. Reproduce each from the shipped
 binary, then fix it where the value is read.
 
 **Files:**
-- Modify: `src/Dse.Scenarios/ScenarioLoader.cs` (`ReadTimeStep`)
-- Modify: `src/Dse.Configuration/Loading/StructureStage.cs` (`ReadDefaults`)
-- Create: `tests/Dse.Cli.Tests/Plants/sub-tick.json`
-- Create: `tests/Dse.Cli.Tests/Scenarios/huge-step.json`
-- Test: `tests/Dse.Scenarios.Tests/ScenarioParseTests.cs`,
-  `tests/Dse.Configuration.Tests/ParseAndStructureTests.cs`,
-  `tests/Dse.Cli.Tests/ValidateCommandTests.cs`,
-  `tests/Dse.Cli.Tests/RunCommandTests.cs`
+- Modify: `src/Millrace.Scenarios/ScenarioLoader.cs` (`ReadTimeStep`)
+- Modify: `src/Millrace.Configuration/Loading/StructureStage.cs` (`ReadDefaults`)
+- Create: `tests/Millrace.Cli.Tests/Plants/sub-tick.json`
+- Create: `tests/Millrace.Cli.Tests/Scenarios/huge-step.json`
+- Test: `tests/Millrace.Scenarios.Tests/ScenarioParseTests.cs`,
+  `tests/Millrace.Configuration.Tests/ParseAndStructureTests.cs`,
+  `tests/Millrace.Cli.Tests/ValidateCommandTests.cs`,
+  `tests/Millrace.Cli.Tests/RunCommandTests.cs`
 
 **Interfaces:**
 - Consumes: `ScenarioDiagnostics.Error(string code, string path, string message,
   string fix) → ConfigDiagnostic` (internal) and `ScenarioDiagnostics.BadValue`
-  = `"DSE202"`; `LoadState.Error(string code, string path, string message,
-  string fix)` and `ConfigDiagnostics.BadParameter` = `"DSE103"`;
+  = `"MR202"`; `LoadState.Error(string code, string path, string message,
+  string fix)` and `ConfigDiagnostics.BadParameter` = `"MR103"`;
   `Cli.Run(params string[]) → CliRun(int ExitCode, string Out, string Err)`,
   `Cli.Plant(string)`, `Cli.Scenario(string)`, `ExitCodes.PlantInvalid` = 1.
 - Produces: no new public API. Two new private constants,
@@ -364,13 +364,13 @@ binary, then fix it where the value is read.
 Run, from the repository root:
 
 ```bash
-dotnet build Dse.sln -c Release --nologo
+dotnet build Millrace.sln -c Release --nologo
 ```
 
 Expected: `0 Warning(s)`, `0 Error(s)`.
 
 ```bash
-mkdir -p /tmp/dse-5c && cp tests/Dse.Configuration.Tests/Plants/valid/conveyor-line.json /tmp/dse-5c/ && printf '{\n  "plant": "conveyor-line.json",\n  "timeStepMs": 1e30,\n  "duration": 1\n}\n' > /tmp/dse-5c/overflow.json && dotnet run --project src/Dse.Cli -c Release --no-build -- run /tmp/dse-5c/overflow.json; echo "EXIT=$?"
+mkdir -p /tmp/millrace-5c && cp tests/Millrace.Configuration.Tests/Plants/valid/conveyor-line.json /tmp/millrace-5c/ && printf '{\n  "plant": "conveyor-line.json",\n  "timeStepMs": 1e30,\n  "duration": 1\n}\n' > /tmp/millrace-5c/overflow.json && dotnet run --project src/Millrace.Cli -c Release --no-build -- run /tmp/millrace-5c/overflow.json; echo "EXIT=$?"
 ```
 
 Expected: `Unhandled exception. System.OverflowException: TimeSpan overflowed
@@ -378,7 +378,7 @@ because the duration is too long.` with `ScenarioLoader.ReadTimeStep` in the
 stack, and `EXIT=134`.
 
 ```bash
-sed 's/"timeStepMs": 10/"timeStepMs": 0.00001/' /tmp/dse-5c/conveyor-line.json > /tmp/dse-5c/subtick.json && dotnet run --project src/Dse.Cli -c Release --no-build -- validate /tmp/dse-5c/subtick.json; echo "EXIT=$?"
+sed 's/"timeStepMs": 10/"timeStepMs": 0.00001/' /tmp/millrace-5c/conveyor-line.json > /tmp/millrace-5c/subtick.json && dotnet run --project src/Millrace.Cli -c Release --no-build -- validate /tmp/millrace-5c/subtick.json; echo "EXIT=$?"
 ```
 
 Expected: `Unhandled exception. System.ArgumentOutOfRangeException: The time
@@ -386,7 +386,7 @@ step must be positive.` with `SimulationClock..ctor` in the stack, and
 `EXIT=134`.
 
 ```bash
-sed 's/"timeStepMs": 10/"timeStepMs": 1e30/' /tmp/dse-5c/conveyor-line.json > /tmp/dse-5c/hugeplant.json && dotnet run --project src/Dse.Cli -c Release --no-build -- validate /tmp/dse-5c/hugeplant.json; echo "EXIT=$?"
+sed 's/"timeStepMs": 10/"timeStepMs": 1e30/' /tmp/millrace-5c/conveyor-line.json > /tmp/millrace-5c/hugeplant.json && dotnet run --project src/Millrace.Cli -c Release --no-build -- validate /tmp/millrace-5c/hugeplant.json; echo "EXIT=$?"
 ```
 
 Expected: `System.OverflowException` with `StructureStage.ReadDefaults` in the
@@ -395,8 +395,8 @@ stack, and `EXIT=134`. This is the third crash, which the spec does not name
 
 - [ ] **Step 2: Write the failing tests**
 
-In `tests/Dse.Scenarios.Tests/ScenarioParseTests.cs`, add one row to the
-`[Theory] ABadTopLevelValueIsDse202` (at line 116 today; its rows already
+In `tests/Millrace.Scenarios.Tests/ScenarioParseTests.cs`, add one row to the
+`[Theory] ABadTopLevelValueIsMr202` (at line 116 today; its rows already
 include `"timeStepMs": 0`, `1e-9` and `0.00001`, and it asserts the code, the
 path and the message as a tuple). Put the new row immediately after the
 `0.00001` row:
@@ -405,7 +405,7 @@ path and the message as a tuple). Put the new row immediately after the
     [InlineData("""{ "plant": "p.json", "duration": 10, "timeStepMs": 1e30 }""", "$.timeStepMs", "\"timeStepMs\" is 1E+30 ms, which is longer than a day.")]
 ```
 
-In `tests/Dse.Configuration.Tests/ParseAndStructureTests.cs`, add two rows to
+In `tests/Millrace.Configuration.Tests/ParseAndStructureTests.cs`, add two rows to
 `BadDefaultsAreParameterErrors`, after the existing `"timeStepMs": "10"` row:
 
 ```csharp
@@ -422,7 +422,7 @@ and add two facts immediately after that theory's method:
         ConfigDiagnostic d = Plants.Only(
             Plants.Minimal.Replace("\"timeStepMs\": 10", "\"timeStepMs\": 0.00001", StringComparison.Ordinal));
 
-        Assert.Equal("DSE103", d.Code);
+        Assert.Equal("MR103", d.Code);
         Assert.Equal("$.defaults.timeStepMs", d.Path);
         Assert.Equal("\"timeStepMs\" must be at least one tick (0.0001 ms).", d.Message);
         Assert.Equal("Use the simulation step in milliseconds, such as 10.", d.Fix);
@@ -434,14 +434,14 @@ and add two facts immediately after that theory's method:
         ConfigDiagnostic d = Plants.Only(
             Plants.Minimal.Replace("\"timeStepMs\": 10", "\"timeStepMs\": 1e30", StringComparison.Ordinal));
 
-        Assert.Equal("DSE103", d.Code);
+        Assert.Equal("MR103", d.Code);
         Assert.Equal("$.defaults.timeStepMs", d.Path);
         Assert.Equal("\"timeStepMs\" is 1E+30 ms, which is longer than a day.", d.Message);
         Assert.Equal("Use the simulation step in milliseconds, such as 10.", d.Fix);
     }
 ```
 
-Create `tests/Dse.Cli.Tests/Plants/sub-tick.json` — `minimal.json` with a
+Create `tests/Millrace.Cli.Tests/Plants/sub-tick.json` — `minimal.json` with a
 sub-tick step:
 
 ```json
@@ -462,7 +462,7 @@ sub-tick step:
 }
 ```
 
-Create `tests/Dse.Cli.Tests/Scenarios/huge-step.json`:
+Create `tests/Millrace.Cli.Tests/Scenarios/huge-step.json`:
 
 ```json
 {
@@ -472,7 +472,7 @@ Create `tests/Dse.Cli.Tests/Scenarios/huge-step.json`:
 }
 ```
 
-Add to `tests/Dse.Cli.Tests/ValidateCommandTests.cs`, at the end of the class:
+Add to `tests/Millrace.Cli.Tests/ValidateCommandTests.cs`, at the end of the class:
 
 ```csharp
     [Fact]
@@ -482,12 +482,12 @@ Add to `tests/Dse.Cli.Tests/ValidateCommandTests.cs`, at the end of the class:
 
         Assert.Equal(ExitCodes.PlantInvalid, run.ExitCode);
         Assert.Empty(run.Out);
-        Assert.Contains("DSE103 $.defaults.timeStepMs", run.Err, StringComparison.Ordinal);
+        Assert.Contains("MR103 $.defaults.timeStepMs", run.Err, StringComparison.Ordinal);
         Assert.Contains("at least one tick", run.Err, StringComparison.Ordinal);
     }
 ```
 
-Add to `tests/Dse.Cli.Tests/RunCommandTests.cs`, at the end of the class:
+Add to `tests/Millrace.Cli.Tests/RunCommandTests.cs`, at the end of the class:
 
 ```csharp
     [Fact]
@@ -497,26 +497,26 @@ Add to `tests/Dse.Cli.Tests/RunCommandTests.cs`, at the end of the class:
 
         Assert.Equal(ExitCodes.PlantInvalid, run.ExitCode);
         Assert.Empty(run.Out);
-        Assert.Contains("DSE202 $.timeStepMs", run.Err, StringComparison.Ordinal);
+        Assert.Contains("MR202 $.timeStepMs", run.Err, StringComparison.Ordinal);
         Assert.Contains("longer than a day", run.Err, StringComparison.Ordinal);
     }
 ```
 
 - [ ] **Step 3: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo --filter "FullyQualifiedName~ParseAndStructureTests"`
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo --filter "FullyQualifiedName~ParseAndStructureTests"`
 Expected: FAIL — the three new plant cases crash the test host or report no
 diagnostic.
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo --filter "FullyQualifiedName~ScenarioParseTests"`
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo --filter "FullyQualifiedName~ScenarioParseTests"`
 Expected: FAIL with `System.OverflowException` on the `1e30` row.
 
-Run: `dotnet test tests/Dse.Cli.Tests --nologo --filter "FullyQualifiedName~ValidateCommandTests|FullyQualifiedName~RunCommandTests"`
+Run: `dotnet test tests/Millrace.Cli.Tests --nologo --filter "FullyQualifiedName~ValidateCommandTests|FullyQualifiedName~RunCommandTests"`
 Expected: FAIL on the two new facts.
 
 - [ ] **Step 4: Bound the scenario time step**
 
-In `src/Dse.Scenarios/ScenarioLoader.cs`, add the constant beside the other
+In `src/Millrace.Scenarios/ScenarioLoader.cs`, add the constant beside the other
 private constants of the class:
 
 ```csharp
@@ -573,7 +573,7 @@ and replace the body of `ReadTimeStep` with:
 
 - [ ] **Step 5: Bound the plant time step**
 
-In `src/Dse.Configuration/Loading/StructureStage.cs`, add the constant beside
+In `src/Millrace.Configuration/Loading/StructureStage.cs`, add the constant beside
 the class's other private statics:
 
 ```csharp
@@ -626,57 +626,57 @@ null;` paragraph) with:
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo`
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo`
 Expected: PASS, 136 tests.
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo`
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo`
 Expected: PASS, 161 tests.
 
-Run: `dotnet test tests/Dse.Cli.Tests --nologo`
+Run: `dotnet test tests/Millrace.Cli.Tests --nologo`
 Expected: PASS, 69 tests.
 
 - [ ] **Step 7: Re-run the three crashes from the binary**
 
 ```bash
-dotnet build Dse.sln -c Release --nologo
+dotnet build Millrace.sln -c Release --nologo
 ```
 
 Expected: `0 Warning(s)`, `0 Error(s)`.
 
 ```bash
-dotnet run --project src/Dse.Cli -c Release --no-build -- run /tmp/dse-5c/overflow.json; echo "EXIT=$?"
+dotnet run --project src/Millrace.Cli -c Release --no-build -- run /tmp/millrace-5c/overflow.json; echo "EXIT=$?"
 ```
 
-Expected: `DSE202 $.timeStepMs` on stderr with the `longer than a day` message
+Expected: `MR202 $.timeStepMs` on stderr with the `longer than a day` message
 and a `Fix:` line, and `EXIT=1`.
 
 ```bash
-dotnet run --project src/Dse.Cli -c Release --no-build -- validate /tmp/dse-5c/subtick.json; echo "EXIT=$?"
+dotnet run --project src/Millrace.Cli -c Release --no-build -- validate /tmp/millrace-5c/subtick.json; echo "EXIT=$?"
 ```
 
-Expected: `DSE103 $.defaults.timeStepMs`, `at least one tick`, `EXIT=1`.
+Expected: `MR103 $.defaults.timeStepMs`, `at least one tick`, `EXIT=1`.
 
 ```bash
-dotnet run --project src/Dse.Cli -c Release --no-build -- validate /tmp/dse-5c/hugeplant.json; echo "EXIT=$?"
+dotnet run --project src/Millrace.Cli -c Release --no-build -- validate /tmp/millrace-5c/hugeplant.json; echo "EXIT=$?"
 ```
 
-Expected: `DSE103 $.defaults.timeStepMs`, `longer than a day`, `EXIT=1`.
+Expected: `MR103 $.defaults.timeStepMs`, `longer than a day`, `EXIT=1`.
 
 Paste all three outputs into the task report.
 
 - [ ] **Step 8: Run everything**
 
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 947 + 7 = **954** tests. Report the number the runner prints.
 
 - [ ] **Step 9: Commit**
 
 ```bash
-git add src/Dse.Scenarios/ScenarioLoader.cs src/Dse.Configuration/Loading/StructureStage.cs
+git add src/Millrace.Scenarios/ScenarioLoader.cs src/Millrace.Configuration/Loading/StructureStage.cs
 ```
 
 ```bash
-git add tests/Dse.Scenarios.Tests/ScenarioParseTests.cs tests/Dse.Configuration.Tests/ParseAndStructureTests.cs tests/Dse.Cli.Tests/ValidateCommandTests.cs tests/Dse.Cli.Tests/RunCommandTests.cs tests/Dse.Cli.Tests/Plants/sub-tick.json tests/Dse.Cli.Tests/Scenarios/huge-step.json
+git add tests/Millrace.Scenarios.Tests/ScenarioParseTests.cs tests/Millrace.Configuration.Tests/ParseAndStructureTests.cs tests/Millrace.Cli.Tests/ValidateCommandTests.cs tests/Millrace.Cli.Tests/RunCommandTests.cs tests/Millrace.Cli.Tests/Plants/sub-tick.json tests/Millrace.Cli.Tests/Scenarios/huge-step.json
 ```
 
 ```bash
@@ -685,7 +685,7 @@ fix(loaders): bound a time step instead of overflowing or aborting
 
 A timeStepMs of 1e30 overflowed TimeSpan in both loaders and a positive
 sub-tick step passed the plant loader and aborted in SimulationClock, all
-three as exit 134. They are DSE202 and DSE103 now, before tick 0.
+three as exit 134. They are MR202 and MR103 now, before tick 0.
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 MSG
@@ -696,20 +696,20 @@ MSG
 
 ### Task 2: The contract — `IScanBlock` and the two scan structs
 
-Everything `Dse.Control` is allowed to see. Six small files in
-`Dse.Io.Abstractions`, no dependency on `Dse.Core`, and a test suite that builds
+Everything `Millrace.Control` is allowed to see. Six small files in
+`Millrace.Io.Abstractions`, no dependency on `Millrace.Core`, and a test suite that builds
 a block and scans it with nothing but these types — which is the proof that a
 block author needs no engine.
 
 **Files:**
-- Create: `src/Dse.Io.Abstractions/TagNameRules.cs`
-- Create: `src/Dse.Io.Abstractions/TagRef.cs`
-- Create: `src/Dse.Io.Abstractions/TagSpec.cs`
-- Create: `src/Dse.Io.Abstractions/BlockEvent.cs`
-- Create: `src/Dse.Io.Abstractions/ScanInputs.cs`
-- Create: `src/Dse.Io.Abstractions/ScanOutputs.cs`
-- Create: `src/Dse.Io.Abstractions/IScanBlock.cs`
-- Test: `tests/Dse.Io.Abstractions.Tests/ScanBlockContractTests.cs`
+- Create: `src/Millrace.Io.Abstractions/TagNameRules.cs`
+- Create: `src/Millrace.Io.Abstractions/TagRef.cs`
+- Create: `src/Millrace.Io.Abstractions/TagSpec.cs`
+- Create: `src/Millrace.Io.Abstractions/BlockEvent.cs`
+- Create: `src/Millrace.Io.Abstractions/ScanInputs.cs`
+- Create: `src/Millrace.Io.Abstractions/ScanOutputs.cs`
+- Create: `src/Millrace.Io.Abstractions/IScanBlock.cs`
+- Test: `tests/Millrace.Io.Abstractions.Tests/ScanBlockContractTests.cs`
 
 **Interfaces:**
 - Consumes: `TagValue.Bool(bool, TagQuality = default)`,
@@ -738,12 +738,12 @@ block author needs no engine.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/Dse.Io.Abstractions.Tests/ScanBlockContractTests.cs`:
+Create `tests/Millrace.Io.Abstractions.Tests/ScanBlockContractTests.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Io.Abstractions.Tests;
+namespace Millrace.Io.Abstractions.Tests;
 
 public class ScanBlockContractTests
 {
@@ -960,20 +960,20 @@ public class ScanBlockContractTests
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `dotnet test tests/Dse.Io.Abstractions.Tests --nologo --filter FullyQualifiedName~ScanBlockContractTests`
+Run: `dotnet test tests/Millrace.Io.Abstractions.Tests --nologo --filter FullyQualifiedName~ScanBlockContractTests`
 Expected: FAIL — the project does not build: `TagRef`, `TagSpec`, `BlockEvent`,
 `ScanInputs`, `ScanOutputs` and `IScanBlock` do not exist.
 
 - [ ] **Step 3: Write the contract**
 
-`src/Dse.Io.Abstractions/TagNameRules.cs`:
+`src/Millrace.Io.Abstractions/TagNameRules.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// The one place a tag or pin name is checked. The rules match
-/// <c>TagBinding.ValidName</c> in <c>Dse.Core</c>, which cannot be referenced
+/// <c>TagBinding.ValidName</c> in <c>Millrace.Core</c>, which cannot be referenced
 /// from here; if one changes, both change.
 /// </summary>
 internal static class TagNameRules
@@ -1001,15 +1001,15 @@ internal static class TagNameRules
 }
 ```
 
-`src/Dse.Io.Abstractions/TagRef.cs`:
+`src/Millrace.Io.Abstractions/TagRef.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// A plant tag a scan block reads or commands, by the full name
-/// <c>dse tags</c> prints. The kind must match the tag's; the host reports a
-/// mismatch as DSE014 rather than converting.
+/// <c>millrace tags</c> prints. The kind must match the tag's; the host reports a
+/// mismatch as MR014 rather than converting.
 /// </summary>
 /// <param name="Name">The tag's full name, such as <c>CV001.Start</c>.</param>
 /// <param name="Kind">The kind the block expects.</param>
@@ -1020,10 +1020,10 @@ public sealed record TagRef(string Name, TagKind Kind)
 }
 ```
 
-`src/Dse.Io.Abstractions/TagSpec.cs`:
+`src/Millrace.Io.Abstractions/TagSpec.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// A tag a scan block owns, named relative to the block: the host publishes it
@@ -1042,10 +1042,10 @@ public sealed record TagSpec(string Name, TagKind Kind, string Unit = "", string
 }
 ```
 
-`src/Dse.Io.Abstractions/BlockEvent.cs`:
+`src/Millrace.Io.Abstractions/BlockEvent.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// One thing a scan block wants in the event log. The host records it with the
@@ -1057,10 +1057,10 @@ namespace Dse.Io;
 public readonly record struct BlockEvent(string Code, string Message);
 ```
 
-`src/Dse.Io.Abstractions/ScanInputs.cs`:
+`src/Millrace.Io.Abstractions/ScanInputs.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// What one scan is given. Values are as of the end of the previous tick — the
@@ -1134,10 +1134,10 @@ public readonly struct ScanInputs
 }
 ```
 
-`src/Dse.Io.Abstractions/ScanOutputs.cs`:
+`src/Millrace.Io.Abstractions/ScanOutputs.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// What one scan answers: values for the tags the block owns, values to command
@@ -1234,10 +1234,10 @@ public struct ScanOutputs
 }
 ```
 
-`src/Dse.Io.Abstractions/IScanBlock.cs`:
+`src/Millrace.Io.Abstractions/IScanBlock.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// A control block: a pure function of the plant it reads and the state it
@@ -1278,19 +1278,19 @@ public interface IScanBlock
 
 - [ ] **Step 4: Run the test to verify it passes**
 
-Run: `dotnet test tests/Dse.Io.Abstractions.Tests --nologo --filter FullyQualifiedName~ScanBlockContractTests`
+Run: `dotnet test tests/Millrace.Io.Abstractions.Tests --nologo --filter FullyQualifiedName~ScanBlockContractTests`
 Expected: PASS, 14 tests.
 
 - [ ] **Step 5: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 954 + 14 = **968** tests. Report the number the runner prints.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Io.Abstractions/TagNameRules.cs src/Dse.Io.Abstractions/TagRef.cs src/Dse.Io.Abstractions/TagSpec.cs src/Dse.Io.Abstractions/BlockEvent.cs src/Dse.Io.Abstractions/ScanInputs.cs src/Dse.Io.Abstractions/ScanOutputs.cs src/Dse.Io.Abstractions/IScanBlock.cs tests/Dse.Io.Abstractions.Tests/ScanBlockContractTests.cs
+git add src/Millrace.Io.Abstractions/TagNameRules.cs src/Millrace.Io.Abstractions/TagRef.cs src/Millrace.Io.Abstractions/TagSpec.cs src/Millrace.Io.Abstractions/BlockEvent.cs src/Millrace.Io.Abstractions/ScanInputs.cs src/Millrace.Io.Abstractions/ScanOutputs.cs src/Millrace.Io.Abstractions/IScanBlock.cs tests/Millrace.Io.Abstractions.Tests/ScanBlockContractTests.cs
 ```
 
 ```bash
@@ -1299,7 +1299,7 @@ feat(io): add the scan-block contract
 
 IScanBlock, ScanInputs and ScanOutputs are everything a control block may
 see: values in, values and events out, three pin classes, no engine. A
-block can be written and scanned against Dse.Io.Abstractions alone.
+block can be written and scanned against Millrace.Io.Abstractions alone.
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 MSG
@@ -1308,7 +1308,7 @@ MSG
 
 ---
 
-### Task 3: The host, part one — `AddScanBlock`, `DSE013`–`DSE015`, owned tags
+### Task 3: The host, part one — `AddScanBlock`, `MR013`–`MR015`, owned tags
 
 A block is attached at build time and checked then. This task adds the builder
 surface, the three diagnostics, and the machinery that turns a `TagSpec` into a
@@ -1317,12 +1317,12 @@ tags (R66). Nothing runs yet: `Simulation` gains a block count and stores the
 plans, and Task 4 makes them scan.
 
 **Files:**
-- Create: `src/Dse.Core/Control/OwnedTag.cs`
-- Create: `src/Dse.Core/Control/ScanBlockPlan.cs`
-- Modify: `src/Dse.Core/SimulationBuilder.cs`
-- Modify: `src/Dse.Core/Simulation.cs` (constructor, `ScanBlockCount`)
-- Create: `tests/Dse.Core.Tests/Fakes/EchoBlock.cs`
-- Test: `tests/Dse.Core.Tests/ScanBlockValidationTests.cs`
+- Create: `src/Millrace.Core/Control/OwnedTag.cs`
+- Create: `src/Millrace.Core/Control/ScanBlockPlan.cs`
+- Modify: `src/Millrace.Core/SimulationBuilder.cs`
+- Modify: `src/Millrace.Core/Simulation.cs` (constructor, `ScanBlockCount`)
+- Create: `tests/Millrace.Core.Tests/Fakes/EchoBlock.cs`
+- Test: `tests/Millrace.Core.Tests/ScanBlockValidationTests.cs`
 
 **Interfaces:**
 - Consumes: `IScanBlock`, `TagRef`, `TagSpec` (Task 2);
@@ -1340,23 +1340,23 @@ plans, and Task 4 makes them scan.
 - Produces:
   - `public SimulationBuilder AddScanBlock(IScanBlock block)`
   - `public int Simulation.ScanBlockCount { get; }`
-  - `internal sealed class Dse.Core.Control.OwnedTag` with `string Name`,
+  - `internal sealed class Millrace.Core.Control.OwnedTag` with `string Name`,
     `TagBinding Binding`, `void Store(TagValue value)`,
     `static OwnedTag Output(string blockId, string fullName, TagSpec spec)`,
     `static OwnedTag Command(string blockId, string fullName, TagSpec spec)`
-  - `internal sealed class Dse.Core.Control.ScanBlockPlan` with
+  - `internal sealed class Millrace.Core.Control.ScanBlockPlan` with
     `ScanBlockPlan(IScanBlock block, long periodTicks, OwnedTag[] outputs, OwnedTag[] commands)`,
     `IScanBlock Block`, `long PeriodTicks`, `OwnedTag[] Outputs`, `OwnedTag[] Commands`
   - `internal Simulation(ISimComponent[] components, FlowGraph flow, SimulationOptions options, TagImage io, ScanBlockPlan[] blocks)`
 
 - [ ] **Step 1: Write the stub block**
 
-Create `tests/Dse.Core.Tests/Fakes/EchoBlock.cs`:
+Create `tests/Millrace.Core.Tests/Fakes/EchoBlock.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Core.Tests.Fakes;
+namespace Millrace.Core.Tests.Fakes;
 
 /// <summary>
 /// The stub control block the host tests use. Its pins are declared fluently,
@@ -1472,17 +1472,17 @@ public sealed class EchoBlock : IScanBlock
 
 - [ ] **Step 2: Write the failing test**
 
-Create `tests/Dse.Core.Tests/ScanBlockValidationTests.cs`:
+Create `tests/Millrace.Core.Tests/ScanBlockValidationTests.cs`:
 
 ```csharp
-using Dse.Core.Io;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Time;
-using Dse.Core.Validation;
-using Dse.Io;
+using Millrace.Core.Io;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Time;
+using Millrace.Core.Validation;
+using Millrace.Io;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class ScanBlockValidationTests
 {
@@ -1564,125 +1564,125 @@ public class ScanBlockValidationTests
     }
 
     [Fact]
-    public void AZeroScanPeriodIsDse013()
+    public void AZeroScanPeriodIsMr013()
     {
         SimulationBuilder builder = Plant().AddScanBlock(
             new EchoBlock("B", TimeSpan.Zero).Reads("T.Enable"));
 
         ValidationError error = Only(builder);
-        Assert.Equal("DSE013", error.Code);
+        Assert.Equal("MR013", error.Code);
         Assert.Equal(
             "Block 'B' has a scan period of 0 ms. A scan period must be positive and a whole number of 10 ms steps.",
             error.Message);
     }
 
     [Fact]
-    public void AScanPeriodThatIsNotAMultipleOfTheStepIsDse013()
+    public void AScanPeriodThatIsNotAMultipleOfTheStepIsMr013()
     {
         SimulationBuilder builder = Plant().AddScanBlock(
             new EchoBlock("B", TimeSpan.FromMilliseconds(15)).Reads("T.Enable"));
 
         ValidationError error = Only(builder);
-        Assert.Equal("DSE013", error.Code);
+        Assert.Equal("MR013", error.Code);
         Assert.Equal(
             "Block 'B' scans every 15 ms, which is not a whole number of 10 ms steps. Use a period that is a multiple of the time step.",
             error.Message);
     }
 
     [Fact]
-    public void AnUnknownInputTagIsDse014()
+    public void AnUnknownInputTagIsMr014()
     {
         SimulationBuilder builder = Plant().AddScanBlock(
             new EchoBlock("B", TimeSpan.FromMilliseconds(20)).Reads("T.Nope"));
 
         ValidationError error = Only(builder);
-        Assert.Equal("DSE014", error.Code);
+        Assert.Equal("MR014", error.Code);
         Assert.Equal(
-            "Block 'B' reads tag 'T.Nope', which the plant does not have. Check the name against 'dse tags', or bind the port it should read.",
+            "Block 'B' reads tag 'T.Nope', which the plant does not have. Check the name against 'millrace tags', or bind the port it should read.",
             error.Message);
     }
 
     [Fact]
-    public void AnInputOfTheWrongKindIsDse014()
+    public void AnInputOfTheWrongKindIsMr014()
     {
         SimulationBuilder builder = Plant().AddScanBlock(
             new EchoBlock("B", TimeSpan.FromMilliseconds(20)).Reads("T.Output"));
 
         ValidationError error = Only(builder);
-        Assert.Equal("DSE014", error.Code);
+        Assert.Equal("MR014", error.Code);
         Assert.Equal(
             "Block 'B' reads tag 'T.Output' as a Bool, but the plant publishes a Double. Declare the pin with the kind the tag has.",
             error.Message);
     }
 
     [Fact]
-    public void AnUnknownWriteTagIsDse014()
+    public void AnUnknownWriteTagIsMr014()
     {
         SimulationBuilder builder = Plant().AddScanBlock(
             new EchoBlock("B", TimeSpan.FromMilliseconds(20)).Reads("T.Enable").MayWrite("T.Nope"));
 
         ValidationError error = Only(builder);
-        Assert.Equal("DSE014", error.Code);
+        Assert.Equal("MR014", error.Code);
         Assert.Equal(
-            "Block 'B' commands tag 'T.Nope', which the plant does not have. Check the name against 'dse tags', or bind the port it should command.",
+            "Block 'B' commands tag 'T.Nope', which the plant does not have. Check the name against 'millrace tags', or bind the port it should command.",
             error.Message);
     }
 
     [Fact]
-    public void AWriteToAReadOnlyTagIsDse014()
+    public void AWriteToAReadOnlyTagIsMr014()
     {
         SimulationBuilder builder = Plant().AddScanBlock(
             new EchoBlock("B", TimeSpan.FromMilliseconds(20)).Reads("T.Enable").MayWrite("T.Output", TagKind.Double));
 
         ValidationError error = Only(builder);
-        Assert.Equal("DSE014", error.Code);
+        Assert.Equal("MR014", error.Code);
         Assert.Equal(
             "Block 'B' commands tag 'T.Output', which is read-only. Command a read-write tag, or bind that port as a writable tag.",
             error.Message);
     }
 
     [Fact]
-    public void AWriteOfTheWrongKindIsDse014()
+    public void AWriteOfTheWrongKindIsMr014()
     {
         SimulationBuilder builder = Plant().AddScanBlock(
             new EchoBlock("B", TimeSpan.FromMilliseconds(20)).Reads("T.Enable").MayWrite("T.Setpoint"));
 
         ValidationError error = Only(builder);
-        Assert.Equal("DSE014", error.Code);
+        Assert.Equal("MR014", error.Code);
         Assert.Equal(
             "Block 'B' commands tag 'T.Setpoint' as a Bool, but the plant publishes a Double. Declare the pin with the kind the tag has.",
             error.Message);
     }
 
     [Fact]
-    public void ABlockIdThatIsAlreadyAComponentIdIsDse015()
+    public void ABlockIdThatIsAlreadyAComponentIdIsMr015()
     {
         SimulationBuilder builder = Plant().AddScanBlock(
             new EchoBlock("F", TimeSpan.FromMilliseconds(20)).Reads("T.Enable").Publishes("Q"));
 
         ValidationError error = Only(builder);
-        Assert.Equal("DSE015", error.Code);
+        Assert.Equal("MR015", error.Code);
         Assert.Equal(
             "Block id 'F' is already a component id. Ids must be unique across components and blocks; rename one of them.",
             error.Message);
     }
 
     [Fact]
-    public void TwoBlocksWithTheSameIdIsDse015()
+    public void TwoBlocksWithTheSameIdIsMr015()
     {
         SimulationBuilder builder = Plant()
             .AddScanBlock(new EchoBlock("B", TimeSpan.FromMilliseconds(20)).Reads("T.Enable").Publishes("Q"))
             .AddScanBlock(new EchoBlock("B", TimeSpan.FromMilliseconds(20)).Reads("T.Enable").Publishes("R"));
 
         ValidationError error = Only(builder);
-        Assert.Equal("DSE015", error.Code);
+        Assert.Equal("MR015", error.Code);
         Assert.Equal(
             "Duplicate block id 'B'. Ids must be unique across components and blocks; rename one of them.",
             error.Message);
     }
 
     [Fact]
-    public void AnOwnedTagThatCollidesWithAPlantTagIsDse015()
+    public void AnOwnedTagThatCollidesWithAPlantTagIsMr015()
     {
         var thermostat = new Thermostat("T");
         SimulationBuilder builder = new SimulationBuilder(Options)
@@ -1691,20 +1691,20 @@ public class ScanBlockValidationTests
             .AddScanBlock(new EchoBlock("B", TimeSpan.FromMilliseconds(20)).Reads("T.Enable").Publishes("Q"));
 
         ValidationError error = Only(builder);
-        Assert.Equal("DSE015", error.Code);
+        Assert.Equal("MR015", error.Code);
         Assert.Equal(
             "Block 'B' owns tag 'B.Q', which the plant already has. Rename the block or the pin; a block's tag is its id followed by the pin name.",
             error.Message);
     }
 
     [Fact]
-    public void ABlockThatDeclaresOnePinNameTwiceIsDse015()
+    public void ABlockThatDeclaresOnePinNameTwiceIsMr015()
     {
         SimulationBuilder builder = Plant().AddScanBlock(
             new EchoBlock("B", TimeSpan.FromMilliseconds(20)).Reads("T.Enable").Publishes("Q").Accepts("Q"));
 
         ValidationError error = Only(builder);
-        Assert.Equal("DSE015", error.Code);
+        Assert.Equal("MR015", error.Code);
         Assert.Equal(
             "Block 'B' declares tag 'B.Q' twice. Give each output and command its own name.",
             error.Message);
@@ -1755,30 +1755,30 @@ public class ScanBlockValidationTests
             new EchoBlock("B", TimeSpan.FromMilliseconds(20)).Reads("T.Nope"));
 
         SimulationValidationException error = Assert.Throws<SimulationValidationException>(() => builder.Build());
-        Assert.Equal("DSE014", Assert.Single(error.Result.Errors).Code);
+        Assert.Equal("MR014", Assert.Single(error.Result.Errors).Code);
     }
 }
 ```
 
 `SimulationValidationException.Result` is a `ValidationResult`; both already
-exist in `Dse.Core.Validation`.
+exist in `Millrace.Core.Validation`.
 
 - [ ] **Step 3: Run the test to verify it fails**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo --filter FullyQualifiedName~ScanBlockValidationTests`
+Run: `dotnet test tests/Millrace.Core.Tests --nologo --filter FullyQualifiedName~ScanBlockValidationTests`
 Expected: FAIL — the project does not build: `AddScanBlock` and `ScanBlockCount`
 do not exist.
 
 - [ ] **Step 4: Write the owned tag**
 
-Create `src/Dse.Core/Control/OwnedTag.cs`:
+Create `src/Millrace.Core/Control/OwnedTag.cs`:
 
 ```csharp
-using Dse.Core.Graph;
-using Dse.Core.Io;
-using Dse.Io;
+using Millrace.Core.Graph;
+using Millrace.Core.Io;
+using Millrace.Io;
 
-namespace Dse.Core.Control;
+namespace Millrace.Core.Control;
 
 /// <summary>
 /// A tag a scan block owns: a port nothing else in the plant touches, the
@@ -1877,12 +1877,12 @@ internal sealed class OwnedTag
 
 - [ ] **Step 5: Write the block plan**
 
-Create `src/Dse.Core/Control/ScanBlockPlan.cs`:
+Create `src/Millrace.Core/Control/ScanBlockPlan.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Core.Control;
+namespace Millrace.Core.Control;
 
 /// <summary>
 /// A block that passed validation, with everything the runtime needs that only
@@ -1915,11 +1915,11 @@ internal sealed class ScanBlockPlan
 
 - [ ] **Step 6: Add the builder surface and the three checks**
 
-In `src/Dse.Core/SimulationBuilder.cs`, add to the using block at the top:
+In `src/Millrace.Core/SimulationBuilder.cs`, add to the using block at the top:
 
 ```csharp
 using System.Globalization;
-using Dse.Core.Control;
+using Millrace.Core.Control;
 ```
 
 Add the field beside `_explicitTags`:
@@ -1933,9 +1933,9 @@ Add the method immediately after `Bind`:
 ```csharp
     /// <summary>
     /// Attaches a control block (spec 5c §3). The block is checked at
-    /// <see cref="Build"/>: its period against the time step (DSE013), its
-    /// inputs and writes against the tag directory (DSE014), and its id and
-    /// owned tag names against everything else in the plant (DSE015). Its
+    /// <see cref="Build"/>: its period against the time step (MR013), its
+    /// inputs and writes against the tag directory (MR014), and its id and
+    /// owned tag names against everything else in the plant (MR015). Its
     /// outputs and commands become ordinary tags.
     /// </summary>
     public SimulationBuilder AddScanBlock(IScanBlock block)
@@ -2036,7 +2036,7 @@ Add the three checks as private members, after `CollectTags`:
             if (block.ScanPeriod <= TimeSpan.Zero)
             {
                 errors.Add(new ValidationError(
-                    "DSE013",
+                    "MR013",
                     string.Create(CultureInfo.InvariantCulture,
                         $"Block '{block.Id}' has a scan period of {block.ScanPeriod.TotalMilliseconds} ms. " +
                         $"A scan period must be positive and a whole number of {stepMs} ms steps."),
@@ -2045,7 +2045,7 @@ Add the three checks as private members, after `CollectTags`:
             else if (block.ScanPeriod.Ticks % stepTicks != 0L)
             {
                 errors.Add(new ValidationError(
-                    "DSE013",
+                    "MR013",
                     string.Create(CultureInfo.InvariantCulture,
                         $"Block '{block.Id}' scans every {block.ScanPeriod.TotalMilliseconds} ms, which is not a " +
                         $"whole number of {stepMs} ms steps. Use a period that is a multiple of the time step."),
@@ -2055,7 +2055,7 @@ Add the three checks as private members, after `CollectTags`:
             if (componentIds.Contains(block.Id))
             {
                 errors.Add(new ValidationError(
-                    "DSE015",
+                    "MR015",
                     $"Block id '{block.Id}' is already a component id. Ids must be unique across components and " +
                     $"blocks; rename one of them.",
                     [block.Id]));
@@ -2063,7 +2063,7 @@ Add the three checks as private members, after `CollectTags`:
             else if (!blockIds.Add(block.Id))
             {
                 errors.Add(new ValidationError(
-                    "DSE015",
+                    "MR015",
                     $"Duplicate block id '{block.Id}'. Ids must be unique across components and blocks; rename " +
                     $"one of them.",
                     [block.Id]));
@@ -2103,7 +2103,7 @@ Add the three checks as private members, after `CollectTags`:
         return plans;
     }
 
-    /// <summary>Creates one owned tag, or reports DSE015 and creates nothing.</summary>
+    /// <summary>Creates one owned tag, or reports MR015 and creates nothing.</summary>
     private static void AddOwned(
         IScanBlock block,
         TagSpec spec,
@@ -2119,7 +2119,7 @@ Add the three checks as private members, after `CollectTags`:
         if (!ownNames.Add(name))
         {
             errors.Add(new ValidationError(
-                "DSE015",
+                "MR015",
                 $"Block '{block.Id}' declares tag '{name}' twice. Give each output and command its own name.",
                 [block.Id]));
             return;
@@ -2128,7 +2128,7 @@ Add the three checks as private members, after `CollectTags`:
         if (byName.ContainsKey(name))
         {
             errors.Add(new ValidationError(
-                "DSE015",
+                "MR015",
                 $"Block '{block.Id}' owns tag '{name}', which the plant already has. Rename the block or the " +
                 $"pin; a block's tag is its id followed by the pin name.",
                 [block.Id]));
@@ -2144,7 +2144,7 @@ Add the three checks as private members, after `CollectTags`:
         owned.Add(tag);
     }
 
-    /// <summary>Checks one input or write pin against the tag it names (DSE014).</summary>
+    /// <summary>Checks one input or write pin against the tag it names (MR014).</summary>
     private static void CheckPin(
         IScanBlock block,
         TagRef pin,
@@ -2157,9 +2157,9 @@ Add the three checks as private members, after `CollectTags`:
         if (!byName.TryGetValue(pin.Name, out TagBinding? binding))
         {
             errors.Add(new ValidationError(
-                "DSE014",
+                "MR014",
                 $"Block '{block.Id}' {verb} tag '{pin.Name}', which the plant does not have. Check the name " +
-                $"against 'dse tags', or bind the port it should {(commanded ? "command" : "read")}.",
+                $"against 'millrace tags', or bind the port it should {(commanded ? "command" : "read")}.",
                 [block.Id]));
             return;
         }
@@ -2167,7 +2167,7 @@ Add the three checks as private members, after `CollectTags`:
         if (binding.Kind != pin.Kind)
         {
             errors.Add(new ValidationError(
-                "DSE014",
+                "MR014",
                 $"Block '{block.Id}' {verb} tag '{pin.Name}' as a {pin.Kind}, but the plant publishes a " +
                 $"{binding.Kind}. Declare the pin with the kind the tag has.",
                 [block.Id]));
@@ -2177,7 +2177,7 @@ Add the three checks as private members, after `CollectTags`:
         if (commanded && binding.Access != TagAccess.ReadWrite)
         {
             errors.Add(new ValidationError(
-                "DSE014",
+                "MR014",
                 $"Block '{block.Id}' commands tag '{pin.Name}', which is read-only. Command a read-write tag, " +
                 $"or bind that port as a writable tag.",
                 [block.Id]));
@@ -2187,7 +2187,7 @@ Add the three checks as private members, after `CollectTags`:
 
 - [ ] **Step 7: Carry the plans into the simulation**
 
-In `src/Dse.Core/Simulation.cs`, add `using Dse.Core.Control;` to the using
+In `src/Millrace.Core/Simulation.cs`, add `using Millrace.Core.Control;` to the using
 block, add the field beside `_faultTargets`:
 
 ```csharp
@@ -2224,31 +2224,31 @@ after `Components`:
 
 - [ ] **Step 8: Run the test to verify it passes**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo --filter FullyQualifiedName~ScanBlockValidationTests`
+Run: `dotnet test tests/Millrace.Core.Tests --nologo --filter FullyQualifiedName~ScanBlockValidationTests`
 Expected: PASS, 19 tests (17 facts and a two-row theory).
 
 - [ ] **Step 9: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 968 + 19 = **987** tests. Report the number the runner prints.
 
 - [ ] **Step 10: Commit**
 
 ```bash
-git add src/Dse.Core/Control/OwnedTag.cs src/Dse.Core/Control/ScanBlockPlan.cs src/Dse.Core/SimulationBuilder.cs src/Dse.Core/Simulation.cs
+git add src/Millrace.Core/Control/OwnedTag.cs src/Millrace.Core/Control/ScanBlockPlan.cs src/Millrace.Core/SimulationBuilder.cs src/Millrace.Core/Simulation.cs
 ```
 
 ```bash
-git add tests/Dse.Core.Tests/Fakes/EchoBlock.cs tests/Dse.Core.Tests/ScanBlockValidationTests.cs
+git add tests/Millrace.Core.Tests/Fakes/EchoBlock.cs tests/Millrace.Core.Tests/ScanBlockValidationTests.cs
 ```
 
 ```bash
 git commit -m "$(cat <<'MSG'
 feat(core): validate and publish a scan block's tags
 
-AddScanBlock checks a block's period (DSE013), its inputs and writes
-(DSE014) and its id and owned names (DSE015), then turns its outputs and
+AddScanBlock checks a block's period (MR013), its inputs and writes
+(MR014) and its id and owned names (MR015), then turns its outputs and
 commands into ordinary read-only and read-write tags.
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
@@ -2265,9 +2265,9 @@ as of the end of tick *N−1*; its outputs are published at the end of tick *N*;
 a write it queued lands at phase 1 of tick *N+1*.
 
 **Files:**
-- Create: `src/Dse.Core/Control/ScanBlockRuntime.cs`
-- Modify: `src/Dse.Core/Simulation.cs` (build the runtimes, schedule, `ScanEvent`)
-- Test: `tests/Dse.Core.Tests/ScanBlockHostTests.cs`
+- Create: `src/Millrace.Core/Control/ScanBlockRuntime.cs`
+- Modify: `src/Millrace.Core/Simulation.cs` (build the runtimes, schedule, `ScanEvent`)
+- Test: `tests/Millrace.Core.Tests/ScanBlockHostTests.cs`
 
 **Interfaces:**
 - Consumes: `ScanBlockPlan`, `OwnedTag` (Task 3); `ScanInputs`, `ScanOutputs`,
@@ -2277,23 +2277,23 @@ a write it queued lands at phase 1 of tick *N+1*.
   `EventQueue.Schedule(long dueTick, ISimEvent) → long`;
   `SimulationClock.TickCount/Now/DeltaSeconds`.
 - Produces:
-  - `internal sealed class Dse.Core.Control.ScanBlockRuntime` with
+  - `internal sealed class Millrace.Core.Control.ScanBlockRuntime` with
     `ScanBlockRuntime(ScanBlockPlan plan, TagImage io, EventLog log)`,
     `long PeriodTicks`, `void Scan(long tick, DateTimeOffset now, double deltaSeconds)`
   - no new public API beyond Task 3's `ScanBlockCount`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/Dse.Core.Tests/ScanBlockHostTests.cs`:
+Create `tests/Millrace.Core.Tests/ScanBlockHostTests.cs`:
 
 ```csharp
-using Dse.Core.Logging;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Time;
-using Dse.Io;
+using Millrace.Core.Logging;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Time;
+using Millrace.Io;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class ScanBlockHostTests
 {
@@ -2523,20 +2523,20 @@ public class ScanBlockHostTests
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo --filter FullyQualifiedName~ScanBlockHostTests`
+Run: `dotnet test tests/Millrace.Core.Tests --nologo --filter FullyQualifiedName~ScanBlockHostTests`
 Expected: FAIL — `TheFirstScanRunsAtTickZero` reports an empty `ScanTicks`:
 nothing schedules a scan yet.
 
 - [ ] **Step 3: Write the runtime**
 
-Create `src/Dse.Core/Control/ScanBlockRuntime.cs`:
+Create `src/Millrace.Core/Control/ScanBlockRuntime.cs`:
 
 ```csharp
-using Dse.Core.Io;
-using Dse.Core.Logging;
-using Dse.Io;
+using Millrace.Core.Io;
+using Millrace.Core.Logging;
+using Millrace.Io;
 
-namespace Dse.Core.Control;
+namespace Millrace.Core.Control;
 
 /// <summary>
 /// One block, running. Resolves its pins to image indices once, then does the
@@ -2641,7 +2641,7 @@ internal sealed class ScanBlockRuntime
 
 - [ ] **Step 4: Schedule the scans**
 
-In `src/Dse.Core/Simulation.cs`, add the field beside `_blockPlans`:
+In `src/Millrace.Core/Simulation.cs`, add the field beside `_blockPlans`:
 
 ```csharp
     private readonly ScanBlockRuntime[] _blocks;
@@ -2684,27 +2684,27 @@ Add the event class beside `WriteEvent`, inside `Simulation`:
     }
 ```
 
-The period is at least one tick (DSE013 and `Math.Max(1L, …)` in Task 3), so the
+The period is at least one tick (MR013 and `Math.Max(1L, …)` in Task 3), so the
 rescheduled event is never due on the tick that is draining and the drain always
 terminates.
 
 - [ ] **Step 5: Run the test to verify it passes**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo --filter FullyQualifiedName~ScanBlockHostTests`
+Run: `dotnet test tests/Millrace.Core.Tests --nologo --filter FullyQualifiedName~ScanBlockHostTests`
 Expected: PASS, 14 tests.
 
 - [ ] **Step 6: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 987 + 14 = **1001** tests. The four 5b golden logs must still
-match — they are in `Dse.Scenarios.Tests`, which runs plants with no blocks.
+match — they are in `Millrace.Scenarios.Tests`, which runs plants with no blocks.
 Report the number the runner prints.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/Dse.Core/Control/ScanBlockRuntime.cs src/Dse.Core/Simulation.cs tests/Dse.Core.Tests/ScanBlockHostTests.cs
+git add src/Millrace.Core/Control/ScanBlockRuntime.cs src/Millrace.Core/Simulation.cs tests/Millrace.Core.Tests/ScanBlockHostTests.cs
 ```
 
 ```bash
@@ -2722,30 +2722,30 @@ MSG
 
 ---
 
-### Task 5: `Dse.Control` and the `Timer`
+### Task 5: `Millrace.Control` and the `Timer`
 
 The new project, its test project with the pure scan harness every later task
 uses, and the first block: IEC 61131-3 TON, TOF and TP.
 
 **Files:**
-- Create: `src/Dse.Control/Dse.Control.csproj`
-- Create: `src/Dse.Control/TimerMode.cs`
-- Create: `src/Dse.Control/Timer.cs`
-- Create: `tests/Dse.Control.Tests/Dse.Control.Tests.csproj`
-- Create: `tests/Dse.Control.Tests/Scan.cs`
-- Test: `tests/Dse.Control.Tests/TimerTests.cs`
-- Modify: `Dse.sln`
+- Create: `src/Millrace.Control/Millrace.Control.csproj`
+- Create: `src/Millrace.Control/TimerMode.cs`
+- Create: `src/Millrace.Control/Timer.cs`
+- Create: `tests/Millrace.Control.Tests/Millrace.Control.Tests.csproj`
+- Create: `tests/Millrace.Control.Tests/Scan.cs`
+- Test: `tests/Millrace.Control.Tests/TimerTests.cs`
+- Modify: `Millrace.sln`
 
 **Interfaces:**
 - Consumes: `IScanBlock`, `TagRef`, `TagSpec`, `ScanInputs`, `ScanOutputs`,
-  `BlockEvent`, `TagValue`, `TagKind` (Task 2, `Dse.Io.Abstractions`).
+  `BlockEvent`, `TagValue`, `TagKind` (Task 2, `Millrace.Io.Abstractions`).
 - Produces:
-  - `public enum Dse.Control.TimerMode { OnDelay, OffDelay, Pulse }`
-  - `public sealed class Dse.Control.Timer : IScanBlock` with
+  - `public enum Millrace.Control.TimerMode { OnDelay, OffDelay, Pulse }`
+  - `public sealed class Millrace.Control.Timer : IScanBlock` with
     `Timer(string id, TimerMode mode, string input, TimeSpan preset, TimeSpan scanPeriod)`,
     `TimerMode Mode`, `TimeSpan Preset`; outputs `Q` (Bool) then `ET` (Double,
     unit `s`); no writes, no commands
-  - `internal sealed class Dse.Control.Tests.Scan` with
+  - `internal sealed class Millrace.Control.Tests.Scan` with
     `Scan(IScanBlock block, double deltaSeconds = 0.01)`,
     `Scan Set(string tag, bool|double|long value)`,
     `Scan Command(string pin, bool value)`, `Scan Once()`, `Scan Times(int count)`,
@@ -2757,7 +2757,7 @@ uses, and the first block: IEC 61131-3 TON, TOF and TP.
 
 - [ ] **Step 1: Create the two projects**
 
-Create `src/Dse.Control/Dse.Control.csproj`:
+Create `src/Millrace.Control/Millrace.Control.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -2769,13 +2769,13 @@ Create `src/Dse.Control/Dse.Control.csproj`:
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Dse.Io.Abstractions\Dse.Io.Abstractions.csproj" />
+    <ProjectReference Include="..\Millrace.Io.Abstractions\Millrace.Io.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>
 ```
 
-Create `tests/Dse.Control.Tests/Dse.Control.Tests.csproj`:
+Create `tests/Millrace.Control.Tests/Millrace.Control.Tests.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -2799,37 +2799,37 @@ Create `tests/Dse.Control.Tests/Dse.Control.Tests.csproj`:
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Dse.Control\Dse.Control.csproj" />
-    <ProjectReference Include="..\..\src\Dse.Core\Dse.Core.csproj" />
-    <ProjectReference Include="..\..\src\Dse.Components\Dse.Components.csproj" />
-    <ProjectReference Include="..\..\src\Dse.Configuration\Dse.Configuration.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Control\Millrace.Control.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Core\Millrace.Core.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Components\Millrace.Components.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Configuration\Millrace.Configuration.csproj" />
   </ItemGroup>
 
 </Project>
 ```
 
-`Dse.Scenarios` is deliberately absent (R75). Two more things arrive where they
-are first used: `Dse.Realtime` in Task 9, and `tests/Shared/Golden.cs` with the
+`Millrace.Scenarios` is deliberately absent (R75). Two more things arrive where they
+are first used: `Millrace.Realtime` in Task 9, and `tests/Shared/Golden.cs` with the
 linked plants in Task 10.
 
 Add both to the solution, one command per call:
 
 ```bash
-dotnet sln Dse.sln add src/Dse.Control/Dse.Control.csproj --solution-folder src
+dotnet sln Millrace.sln add src/Millrace.Control/Millrace.Control.csproj --solution-folder src
 ```
 
 ```bash
-dotnet sln Dse.sln add tests/Dse.Control.Tests/Dse.Control.Tests.csproj --solution-folder tests
+dotnet sln Millrace.sln add tests/Millrace.Control.Tests/Millrace.Control.Tests.csproj --solution-folder tests
 ```
 
 - [ ] **Step 2: Write the scan harness**
 
-Create `tests/Dse.Control.Tests/Scan.cs`:
+Create `tests/Millrace.Control.Tests/Scan.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Control.Tests;
+namespace Millrace.Control.Tests;
 
 /// <summary>
 /// Scans a block the way the host does, with no <c>Simulation</c>: the values
@@ -3029,12 +3029,12 @@ internal sealed class Scan
 
 - [ ] **Step 3: Write the failing test**
 
-Create `tests/Dse.Control.Tests/TimerTests.cs`:
+Create `tests/Millrace.Control.Tests/TimerTests.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Control.Tests;
+namespace Millrace.Control.Tests;
 
 public class TimerTests
 {
@@ -3244,16 +3244,16 @@ public class TimerTests
 
 - [ ] **Step 4: Run the test to verify it fails**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo`
 Expected: FAIL — the project does not build: `Timer` and `TimerMode` do not
 exist.
 
 - [ ] **Step 5: Write the timer**
 
-Create `src/Dse.Control/TimerMode.cs`:
+Create `src/Millrace.Control/TimerMode.cs`:
 
 ```csharp
-namespace Dse.Control;
+namespace Millrace.Control;
 
 /// <summary>The three IEC 61131-3 timers.</summary>
 public enum TimerMode
@@ -3269,12 +3269,12 @@ public enum TimerMode
 }
 ```
 
-Create `src/Dse.Control/Timer.cs`:
+Create `src/Millrace.Control/Timer.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Control;
+namespace Millrace.Control;
 
 /// <summary>
 /// An IEC 61131-3 timer over one Bool tag. <c>ET</c> accumulates the scan
@@ -3416,31 +3416,31 @@ public sealed class Timer : IScanBlock
 
 - [ ] **Step 6: Run the test to verify it passes**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo`
 Expected: PASS, 15 tests.
 
 - [ ] **Step 7: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
 Run: `grep -rn "PackageReference" src/` — expect no output.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 1001 + 15 = **1016** tests. Report the number the runner prints.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/Dse.Control/Dse.Control.csproj src/Dse.Control/TimerMode.cs src/Dse.Control/Timer.cs Dse.sln
+git add src/Millrace.Control/Millrace.Control.csproj src/Millrace.Control/TimerMode.cs src/Millrace.Control/Timer.cs Millrace.sln
 ```
 
 ```bash
-git add tests/Dse.Control.Tests/Dse.Control.Tests.csproj tests/Dse.Control.Tests/Scan.cs tests/Dse.Control.Tests/TimerTests.cs
+git add tests/Millrace.Control.Tests/Millrace.Control.Tests.csproj tests/Millrace.Control.Tests/Scan.cs tests/Millrace.Control.Tests/TimerTests.cs
 ```
 
 ```bash
 git commit -m "$(cat <<'MSG'
-feat(control): add Dse.Control and the IEC 61131-3 timer
+feat(control): add Millrace.Control and the IEC 61131-3 timer
 
-The new project references Dse.Io.Abstractions and nothing else. Timer
+The new project references Millrace.Io.Abstractions and nothing else. Timer
 covers TON, TOF and TP; ET accumulates the scan period, so it is
 quantised to it exactly as a PLC's is.
 
@@ -3459,35 +3459,35 @@ re-evaluated every scan and never latches, an interlock latches and clears only
 on a reset while everything is healthy.
 
 **Files:**
-- Create: `src/Dse.Control/Condition.cs`
-- Create: `src/Dse.Control/BlockWrite.cs`
-- Create: `src/Dse.Control/Permissive.cs`
-- Create: `src/Dse.Control/Interlock.cs`
-- Test: `tests/Dse.Control.Tests/PermissiveTests.cs`
-- Test: `tests/Dse.Control.Tests/InterlockTests.cs`
+- Create: `src/Millrace.Control/Condition.cs`
+- Create: `src/Millrace.Control/BlockWrite.cs`
+- Create: `src/Millrace.Control/Permissive.cs`
+- Create: `src/Millrace.Control/Interlock.cs`
+- Test: `tests/Millrace.Control.Tests/PermissiveTests.cs`
+- Test: `tests/Millrace.Control.Tests/InterlockTests.cs`
 
 **Interfaces:**
 - Consumes: the contract of Task 2; `Scan` of Task 5.
 - Produces:
-  - `public sealed record Dse.Control.Condition(string Tag, bool Normal)`
-  - `public sealed record Dse.Control.BlockWrite(string Tag, TagValue Value)`
-  - `public sealed class Dse.Control.Permissive : IScanBlock` with
+  - `public sealed record Millrace.Control.Condition(string Tag, bool Normal)`
+  - `public sealed record Millrace.Control.BlockWrite(string Tag, TagValue Value)`
+  - `public sealed class Millrace.Control.Permissive : IScanBlock` with
     `Permissive(string id, IReadOnlyList<Condition> conditions, TimeSpan scanPeriod)`;
     outputs `Ok` (Bool) then `FirstOut` (Int64); no writes, no commands;
     events `PERMISSIVE_LOST`, `PERMISSIVE_OK`
-  - `public sealed class Dse.Control.Interlock : IScanBlock` with
+  - `public sealed class Millrace.Control.Interlock : IScanBlock` with
     `Interlock(string id, IReadOnlyList<Condition> conditions, IReadOnlyList<BlockWrite> tripWrites, TimeSpan scanPeriod)`;
     outputs `Ok`, `Tripped` (Bool) then `FirstOut` (Int64); command `Reset`
     (Bool); events `INTERLOCK_TRIP`, `INTERLOCK_RESET`
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `tests/Dse.Control.Tests/PermissiveTests.cs`:
+Create `tests/Millrace.Control.Tests/PermissiveTests.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Control.Tests;
+namespace Millrace.Control.Tests;
 
 public class PermissiveTests
 {
@@ -3599,12 +3599,12 @@ public class PermissiveTests
 }
 ```
 
-Create `tests/Dse.Control.Tests/InterlockTests.cs`:
+Create `tests/Millrace.Control.Tests/InterlockTests.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Control.Tests;
+namespace Millrace.Control.Tests;
 
 public class InterlockTests
 {
@@ -3769,16 +3769,16 @@ public class InterlockTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo`
 Expected: FAIL — the project does not build: `Condition`, `BlockWrite`,
 `Permissive` and `Interlock` do not exist.
 
 - [ ] **Step 3: Write the two shared records**
 
-Create `src/Dse.Control/Condition.cs`:
+Create `src/Millrace.Control/Condition.cs`:
 
 ```csharp
-namespace Dse.Control;
+namespace Millrace.Control;
 
 /// <summary>
 /// One Bool tag a permissive or an interlock watches, with the value that means
@@ -3790,12 +3790,12 @@ namespace Dse.Control;
 public sealed record Condition(string Tag, bool Normal);
 ```
 
-Create `src/Dse.Control/BlockWrite.cs`:
+Create `src/Millrace.Control/BlockWrite.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Control;
+namespace Millrace.Control;
 
 /// <summary>
 /// A tag a block commands and the value it commands on it: an interlock's trip
@@ -3808,12 +3808,12 @@ public sealed record BlockWrite(string Tag, TagValue Value);
 
 - [ ] **Step 4: Write the permissive**
 
-Create `src/Dse.Control/Permissive.cs`:
+Create `src/Millrace.Control/Permissive.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Control;
+namespace Millrace.Control;
 
 /// <summary>
 /// The conditions something needs before it may start. <c>Ok</c> is
@@ -3920,12 +3920,12 @@ public sealed class Permissive : IScanBlock
 
 - [ ] **Step 5: Write the interlock**
 
-Create `src/Dse.Control/Interlock.cs`:
+Create `src/Millrace.Control/Interlock.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Control;
+namespace Millrace.Control;
 
 /// <summary>
 /// The conditions that stop a running thing. Any abnormal condition latches
@@ -4074,23 +4074,23 @@ public sealed class Interlock : IScanBlock
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo`
 Expected: PASS, 34 tests (15 timer, 8 permissive, 11 interlock).
 
 - [ ] **Step 7: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 1016 + 19 = **1035** tests. Report the number the runner prints.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/Dse.Control/Condition.cs src/Dse.Control/BlockWrite.cs src/Dse.Control/Permissive.cs src/Dse.Control/Interlock.cs
+git add src/Millrace.Control/Condition.cs src/Millrace.Control/BlockWrite.cs src/Millrace.Control/Permissive.cs src/Millrace.Control/Interlock.cs
 ```
 
 ```bash
-git add tests/Dse.Control.Tests/PermissiveTests.cs tests/Dse.Control.Tests/InterlockTests.cs
+git add tests/Millrace.Control.Tests/PermissiveTests.cs tests/Millrace.Control.Tests/InterlockTests.cs
 ```
 
 ```bash
@@ -4122,17 +4122,17 @@ outstanding. Four states, all reachable and all readable (R72).
 | false | false | cleared, unacknowledged |
 
 **Files:**
-- Create: `src/Dse.Control/AlarmLimitKind.cs`
-- Create: `src/Dse.Control/AlarmLimit.cs`
-- Create: `src/Dse.Control/Alarm.cs`
-- Test: `tests/Dse.Control.Tests/AlarmTests.cs`
+- Create: `src/Millrace.Control/AlarmLimitKind.cs`
+- Create: `src/Millrace.Control/AlarmLimit.cs`
+- Create: `src/Millrace.Control/Alarm.cs`
+- Test: `tests/Millrace.Control.Tests/AlarmTests.cs`
 
 **Interfaces:**
 - Consumes: the contract of Task 2; `Scan` of Task 5.
 - Produces:
-  - `public enum Dse.Control.AlarmLimitKind { LoLo, Lo, Hi, HiHi }`
-  - `public sealed record Dse.Control.AlarmLimit(AlarmLimitKind Kind, double Value, double Deadband, TimeSpan OnDelay)`
-  - `public sealed class Dse.Control.Alarm : IScanBlock` with
+  - `public enum Millrace.Control.AlarmLimitKind { LoLo, Lo, Hi, HiHi }`
+  - `public sealed record Millrace.Control.AlarmLimit(AlarmLimitKind Kind, double Value, double Deadband, TimeSpan OnDelay)`
+  - `public sealed class Millrace.Control.Alarm : IScanBlock` with
     `Alarm(string id, string input, IReadOnlyList<AlarmLimit> limits, TimeSpan scanPeriod)`;
     outputs `<Kind>.Active` then `<Kind>.Acked` per limit, limits in ascending
     kind order; command `Ack` (Bool); no writes; events `ALARM_RAISED`,
@@ -4140,12 +4140,12 @@ outstanding. Four states, all reachable and all readable (R72).
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/Dse.Control.Tests/AlarmTests.cs`:
+Create `tests/Millrace.Control.Tests/AlarmTests.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Control.Tests;
+namespace Millrace.Control.Tests;
 
 public class AlarmTests
 {
@@ -4450,16 +4450,16 @@ public class AlarmTests
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo`
 Expected: FAIL — the project does not build: `Alarm`, `AlarmLimit` and
 `AlarmLimitKind` do not exist.
 
 - [ ] **Step 3: Write the limit kinds**
 
-Create `src/Dse.Control/AlarmLimitKind.cs`:
+Create `src/Millrace.Control/AlarmLimitKind.cs`:
 
 ```csharp
-namespace Dse.Control;
+namespace Millrace.Control;
 
 /// <summary>
 /// The four limits an analog alarm may carry, declared in ascending order so
@@ -4482,10 +4482,10 @@ public enum AlarmLimitKind
 }
 ```
 
-Create `src/Dse.Control/AlarmLimit.cs`:
+Create `src/Millrace.Control/AlarmLimit.cs`:
 
 ```csharp
-namespace Dse.Control;
+namespace Millrace.Control;
 
 /// <summary>
 /// One configured limit. The alarm raises when the value crosses
@@ -4501,13 +4501,13 @@ public sealed record AlarmLimit(AlarmLimitKind Kind, double Value, double Deadba
 
 - [ ] **Step 4: Write the alarm**
 
-Create `src/Dse.Control/Alarm.cs`:
+Create `src/Millrace.Control/Alarm.cs`:
 
 ```csharp
 using System.Globalization;
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Control;
+namespace Millrace.Control;
 
 /// <summary>
 /// An analog alarm over one Double tag. Each configured limit publishes the
@@ -4690,19 +4690,19 @@ public sealed class Alarm : IScanBlock
 
 - [ ] **Step 5: Run the test to verify it passes**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo`
 Expected: PASS, 55 tests (15 timer, 8 permissive, 11 interlock, 21 alarm).
 
 - [ ] **Step 6: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 1035 + 21 = **1056** tests. Report the number the runner prints.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/Dse.Control/AlarmLimitKind.cs src/Dse.Control/AlarmLimit.cs src/Dse.Control/Alarm.cs tests/Dse.Control.Tests/AlarmTests.cs
+git add src/Millrace.Control/AlarmLimitKind.cs src/Millrace.Control/AlarmLimit.cs src/Millrace.Control/Alarm.cs tests/Millrace.Control.Tests/AlarmTests.cs
 ```
 
 ```bash
@@ -4728,25 +4728,25 @@ it. A step's transition is evaluated on the scan *after* the one that enters it,
 because the entry writes have not landed yet (R79).
 
 **Files:**
-- Create: `src/Dse.Control/PredicateOperator.cs`
-- Create: `src/Dse.Control/StepTransition.cs`
-- Create: `src/Dse.Control/SequenceStep.cs`
-- Create: `src/Dse.Control/Sequencer.cs`
-- Test: `tests/Dse.Control.Tests/SequencerTests.cs`
+- Create: `src/Millrace.Control/PredicateOperator.cs`
+- Create: `src/Millrace.Control/StepTransition.cs`
+- Create: `src/Millrace.Control/SequenceStep.cs`
+- Create: `src/Millrace.Control/Sequencer.cs`
+- Test: `tests/Millrace.Control.Tests/SequencerTests.cs`
 
 **Interfaces:**
 - Consumes: the contract of Task 2; `BlockWrite` of Task 6; `Scan` of Task 5.
 - Produces:
-  - `public enum Dse.Control.PredicateOperator { Equal, NotEqual, Less, LessOrEqual, Greater, GreaterOrEqual }`
-  - `public sealed class Dse.Control.StepTransition` with
+  - `public enum Millrace.Control.PredicateOperator { Equal, NotEqual, Less, LessOrEqual, Greater, GreaterOrEqual }`
+  - `public sealed class Millrace.Control.StepTransition` with
     `static StepTransition When(string tag, PredicateOperator op, TagValue value)`,
     `static StepTransition After(TimeSpan delay)`, `string? Tag`,
     `PredicateOperator Operator`, `TagValue Value`, `TimeSpan Delay`, `bool IsTimed`
-  - `public sealed class Dse.Control.SequenceStep` with
+  - `public sealed class Millrace.Control.SequenceStep` with
     `SequenceStep(string name, IReadOnlyList<BlockWrite> entryWrites, StepTransition transition, TimeSpan? timeout = null)`,
     `string Name`, `IReadOnlyList<BlockWrite> EntryWrites`,
     `StepTransition Transition`, `TimeSpan? Timeout`
-  - `public sealed class Dse.Control.Sequencer : IScanBlock` with
+  - `public sealed class Millrace.Control.Sequencer : IScanBlock` with
     `Sequencer(string id, IReadOnlyList<SequenceStep> steps, TimeSpan scanPeriod, IReadOnlyList<BlockWrite>? abortWrites = null)`;
     outputs `Step` (Int64), `Running`, `Held`, `Complete`, `Faulted` (Bool),
     `StepTime` (Double, unit `s`); commands `Start`, `Hold`, `Resume`, `Abort`,
@@ -4755,12 +4755,12 @@ because the entry writes have not landed yet (R79).
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/Dse.Control.Tests/SequencerTests.cs`:
+Create `tests/Millrace.Control.Tests/SequencerTests.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Control.Tests;
+namespace Millrace.Control.Tests;
 
 public class SequencerTests
 {
@@ -5128,16 +5128,16 @@ public class SequencerTests
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo`
 Expected: FAIL — the project does not build: `Sequencer`, `SequenceStep`,
 `StepTransition` and `PredicateOperator` do not exist.
 
 - [ ] **Step 3: Write the transition types**
 
-Create `src/Dse.Control/PredicateOperator.cs`:
+Create `src/Millrace.Control/PredicateOperator.cs`:
 
 ```csharp
-namespace Dse.Control;
+namespace Millrace.Control;
 
 /// <summary>How a step's predicate compares a tag with a value.</summary>
 public enum PredicateOperator
@@ -5162,12 +5162,12 @@ public enum PredicateOperator
 }
 ```
 
-Create `src/Dse.Control/StepTransition.cs`:
+Create `src/Millrace.Control/StepTransition.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Control;
+namespace Millrace.Control;
 
 /// <summary>
 /// What ends a step: a comparison against a plant tag, or a delay on the step
@@ -5230,10 +5230,10 @@ public sealed class StepTransition
 }
 ```
 
-Create `src/Dse.Control/SequenceStep.cs`:
+Create `src/Millrace.Control/SequenceStep.cs`:
 
 ```csharp
-namespace Dse.Control;
+namespace Millrace.Control;
 
 /// <summary>
 /// One step of a linear sequence: what it commands on entry, what ends it, and
@@ -5289,13 +5289,13 @@ public sealed class SequenceStep
 
 - [ ] **Step 4: Write the sequencer**
 
-Create `src/Dse.Control/Sequencer.cs`:
+Create `src/Millrace.Control/Sequencer.cs`:
 
 ```csharp
 using System.Globalization;
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Control;
+namespace Millrace.Control;
 
 /// <summary>
 /// A linear sequence. <c>Start</c> from idle enters step 1; each step commands
@@ -5587,20 +5587,20 @@ public sealed class Sequencer : IScanBlock
 
 - [ ] **Step 5: Run the test to verify it passes**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo`
 Expected: PASS, 82 tests (15 timer, 8 permissive, 11 interlock, 21 alarm,
 21 sequencer facts and a six-row sequencer theory).
 
 - [ ] **Step 6: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 1056 + 27 = **1083** tests. Report the number the runner prints.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/Dse.Control/PredicateOperator.cs src/Dse.Control/StepTransition.cs src/Dse.Control/SequenceStep.cs src/Dse.Control/Sequencer.cs tests/Dse.Control.Tests/SequencerTests.cs
+git add src/Millrace.Control/PredicateOperator.cs src/Millrace.Control/StepTransition.cs src/Millrace.Control/SequenceStep.cs src/Millrace.Control/Sequencer.cs tests/Millrace.Control.Tests/SequencerTests.cs
 ```
 
 ```bash
@@ -5628,15 +5628,15 @@ log says.
 
 Two of the eight are about the rest of the engine rather than about a block:
 spec 1's success criterion 1 says a block's outputs must be "visible in
-`dse tags`, `LiveState`, tick frames and the scenario recorder with no change to
-`Dse.Realtime`". `dse tags` and the directory are covered in Task 3; the other
+`millrace tags`, `LiveState`, tick frames and the scenario recorder with no change to
+`Millrace.Realtime`". `millrace tags` and the directory are covered in Task 3; the other
 three are covered here, through a real `RealtimeHub` and a real
 `IActionRecorder`.
 
 **Files:**
-- Create: `tests/Dse.Control.Tests/Fakes/Vessel.cs`
-- Modify: `tests/Dse.Control.Tests/Dse.Control.Tests.csproj` (add `Dse.Realtime`)
-- Test: `tests/Dse.Control.Tests/HostTests.cs`
+- Create: `tests/Millrace.Control.Tests/Fakes/Vessel.cs`
+- Modify: `tests/Millrace.Control.Tests/Millrace.Control.Tests.csproj` (add `Millrace.Realtime`)
+- Test: `tests/Millrace.Control.Tests/HostTests.cs`
 
 **Interfaces:**
 - Consumes: `SimulationBuilder(SimulationOptions)`, `.Add(ISimNode)`,
@@ -5656,32 +5656,32 @@ three are covered here, through a real `RealtimeHub` and a real
   `IActionRecorder.Wrote(long tick, string tag, TagValue value)`,
   `.Faulted(long, string, string, FaultArguments)`, `.Cleared(long, string, string)`;
   every block of Tasks 5–8.
-- Produces: `public sealed class Dse.Control.Tests.Fakes.Vessel` with
+- Produces: `public sealed class Millrace.Control.Tests.Fakes.Vessel` with
   `Vessel(string id, double ratePerSecond)`, tags `Fill` (Bool RW), `Trip`
   (Bool RW), `Level` (Double RO, unit `%`, range 0–100), `Running` (Bool RO),
   `Tripped` (Bool RO).
 
-- [ ] **Step 1: Write the small plant and reference `Dse.Realtime`**
+- [ ] **Step 1: Write the small plant and reference `Millrace.Realtime`**
 
-In `tests/Dse.Control.Tests/Dse.Control.Tests.csproj`, add one line to the
-`ProjectReference` group, after `Dse.Configuration`:
+In `tests/Millrace.Control.Tests/Millrace.Control.Tests.csproj`, add one line to the
+`ProjectReference` group, after `Millrace.Configuration`:
 
 ```xml
-    <ProjectReference Include="..\..\src\Dse.Realtime\Dse.Realtime.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Realtime\Millrace.Realtime.csproj" />
 ```
 
-`src/Dse.Control` still cannot see `Dse.Realtime`, and does not want to: this is
+`src/Millrace.Control` still cannot see `Millrace.Realtime`, and does not want to: this is
 the test project proving the *engine's* seam, exactly as plan 5b's R61 added the
-same reference to `Dse.Scenarios.Tests` in the task that first needed it.
+same reference to `Millrace.Scenarios.Tests` in the task that first needed it.
 
-Create `tests/Dse.Control.Tests/Fakes/Vessel.cs`:
+Create `tests/Millrace.Control.Tests/Fakes/Vessel.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
-using Dse.Core.Io;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
+using Millrace.Core.Io;
 
-namespace Dse.Control.Tests.Fakes;
+namespace Millrace.Control.Tests.Fakes;
 
 /// <summary>
 /// A tank that fills while it is commanded to and is not tripped. Small enough
@@ -5735,23 +5735,23 @@ public sealed class Vessel : ComponentBase, ITagProvider
 ```
 
 If `ComponentBase.AddInput<T>` has a different parameter shape from
-`AddInput<bool>("Fill")`, copy the shape `tests/Dse.Core.Tests/Fakes/Thermostat.cs`
+`AddInput<bool>("Fill")`, copy the shape `tests/Millrace.Core.Tests/Fakes/Thermostat.cs`
 uses and report the correction.
 
 - [ ] **Step 2: Write the failing test**
 
-Create `tests/Dse.Control.Tests/HostTests.cs`:
+Create `tests/Millrace.Control.Tests/HostTests.cs`:
 
 ```csharp
-using Dse.Control.Tests.Fakes;
-using Dse.Core;
-using Dse.Core.Faults;
-using Dse.Core.Logging;
-using Dse.Core.Time;
-using Dse.Io;
-using Dse.Realtime;
+using Millrace.Control.Tests.Fakes;
+using Millrace.Core;
+using Millrace.Core.Faults;
+using Millrace.Core.Logging;
+using Millrace.Core.Time;
+using Millrace.Io;
+using Millrace.Realtime;
 
-namespace Dse.Control.Tests;
+namespace Millrace.Control.Tests;
 
 public class HostTests
 {
@@ -6007,14 +6007,14 @@ public class HostTests
 
 - [ ] **Step 3: Run the test to verify it fails**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo --filter FullyQualifiedName~HostTests`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo --filter FullyQualifiedName~HostTests`
 Expected: FAIL — the project does not build: `Vessel` does not exist.
 
 - [ ] **Step 4: Run the test to verify it passes**
 
 Write `Fakes/Vessel.cs` (Step 1) and run again.
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo --filter FullyQualifiedName~HostTests`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo --filter FullyQualifiedName~HostTests`
 Expected: PASS, 8 tests. If a tick-exact expectation in
 `ATimerOverAPlantPublishesQAndElapsedTime`,
 `ABlockOutputReachesTheRealtimeLiveStateAndItsTickFrames` or
@@ -6024,14 +6024,14 @@ range.
 
 - [ ] **Step 5: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 1083 + 8 = **1091** tests. Report the number the runner prints.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add tests/Dse.Control.Tests/Dse.Control.Tests.csproj tests/Dse.Control.Tests/Fakes/Vessel.cs tests/Dse.Control.Tests/HostTests.cs
+git add tests/Millrace.Control.Tests/Millrace.Control.Tests.csproj tests/Millrace.Control.Tests/Fakes/Vessel.cs tests/Millrace.Control.Tests/HostTests.cs
 ```
 
 ```bash
@@ -6059,7 +6059,7 @@ one.
 
 **The measurements the alarm limits come from.** Run on `6efd7b0` with a
 scratch program that loaded
-`tests/Dse.Configuration.Tests/Plants/valid/conveyor-line.json`, reset the
+`tests/Millrace.Configuration.Tests/Plants/valid/conveyor-line.json`, reset the
 safety relay at 1 s, started the belt at 5 s, injected `CV001.Motor`
 `thermal-bias` `amount=0.8` at 40 s, and sampled `CV001.Current` every tick for
 120 s:
@@ -6077,7 +6077,7 @@ safety relay at 1 s, started the belt at 5 s, injected `CV001.Motor`
 The same run is reproducible from this repository at any time with:
 
 ```bash
-dotnet run --project src/Dse.Cli -c Release -- run tests/Dse.Scenarios.Tests/Scenarios/valid/conveyor-start-and-fault.json
+dotnet run --project src/Millrace.Cli -c Release -- run tests/Millrace.Scenarios.Tests/Scenarios/valid/conveyor-start-and-fault.json
 ```
 
 which prints the committed 5b log for the same plant and shows
@@ -6100,10 +6100,10 @@ step R73 requires:
   `CV001.Start = false`.
 
 **Files:**
-- Modify: `tests/Dse.Control.Tests/Dse.Control.Tests.csproj` (link
+- Modify: `tests/Millrace.Control.Tests/Millrace.Control.Tests.csproj` (link
   `tests/Shared/Golden.cs` and the valid plants)
-- Test: `tests/Dse.Control.Tests/WorkedExampleTests.cs`
-- Create: `tests/Dse.Control.Tests/Golden/conveyor-control.log` (generated)
+- Test: `tests/Millrace.Control.Tests/WorkedExampleTests.cs`
+- Create: `tests/Millrace.Control.Tests/Golden/conveyor-control.log` (generated)
 
 **Interfaces:**
 - Consumes: `PlantLoader.Load(string json, ComponentCatalogue catalogue, LoadOptions options) → LoadResult`
@@ -6111,12 +6111,12 @@ step R73 requires:
   `new CatalogueBuilder().Add<ComponentsModule>().Build()`;
   `Simulation.InjectFaultAt(TimeSpan, string, string, FaultArguments?)`;
   `FaultArguments(params FaultArgument[])` and `FaultArgument(string Name, double Value)`;
-  `Dse.Tests.Shared.Golden.Assert(string relativePath, string actual)`.
+  `Millrace.Tests.Shared.Golden.Assert(string relativePath, string actual)`.
 - Produces: no new source. One committed golden log.
 
 - [ ] **Step 1: Link the shared helper and the plants**
 
-In `tests/Dse.Control.Tests/Dse.Control.Tests.csproj`, add two item groups
+In `tests/Millrace.Control.Tests/Millrace.Control.Tests.csproj`, add two item groups
 before the `ProjectReference` group:
 
 ```xml
@@ -6125,25 +6125,25 @@ before the `ProjectReference` group:
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\Dse.Configuration.Tests\Plants\valid\*.json"
+    <None Include="..\Millrace.Configuration.Tests\Plants\valid\*.json"
           Link="Plants\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 ```
 
 - [ ] **Step 2: Write the worked example**
 
-Create `tests/Dse.Control.Tests/WorkedExampleTests.cs`:
+Create `tests/Millrace.Control.Tests/WorkedExampleTests.cs`:
 
 ```csharp
-using Dse.Components;
-using Dse.Configuration;
-using Dse.Core;
-using Dse.Core.Catalogue;
-using Dse.Core.Faults;
-using Dse.Io;
-using Dse.Tests.Shared;
+using Millrace.Components;
+using Millrace.Configuration;
+using Millrace.Core;
+using Millrace.Core.Catalogue;
+using Millrace.Core.Faults;
+using Millrace.Io;
+using Millrace.Tests.Shared;
 
-namespace Dse.Control.Tests;
+namespace Millrace.Control.Tests;
 
 /// <summary>
 /// Spec 5c §5's worked example: the conveyor plant under a permissive, an
@@ -6253,7 +6253,7 @@ public class WorkedExampleTests
             Assert.True(sim.IO.Directory.TryFind(name, out _), $"The directory has no tag '{name}'.");
         }
 
-        // 25 plant tags (dse tags conveyor-line.json) plus 22 owned ones.
+        // 25 plant tags (millrace tags conveyor-line.json) plus 22 owned ones.
         Assert.Equal(47, sim.IO.Directory.Count);
     }
 
@@ -6284,7 +6284,7 @@ public class WorkedExampleTests
 
 - [ ] **Step 3: Run the tests to see the golden is missing**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo --filter FullyQualifiedName~WorkedExampleTests`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo --filter FullyQualifiedName~WorkedExampleTests`
 Expected: `TheBlocksOwnTagsJoinThePlantsDirectory` and
 `TheWorkedExampleRunsTwiceByteIdentically` PASS;
 `TheWorkedExampleMatchesItsGolden` FAILS with `Golden file '…/Golden/conveyor-control.log'
@@ -6296,11 +6296,11 @@ directory listing and correct the plan's number.
 Run:
 
 ```bash
-DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Control.Tests --nologo --filter FullyQualifiedName~TheWorkedExampleMatchesItsGolden
+MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Control.Tests --nologo --filter FullyQualifiedName~TheWorkedExampleMatchesItsGolden
 ```
 
 Then **read the whole file** with your file-reading tool:
-`tests/Dse.Control.Tests/Golden/conveyor-control.log`.
+`tests/Millrace.Control.Tests/Golden/conveyor-control.log`.
 
 - [ ] **Step 5: Check the golden against this checklist and report it**
 
@@ -6336,20 +6336,20 @@ last ten lines into the task report.
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo`
 Expected: PASS, 93 tests.
 
 - [ ] **Step 7: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 1091 + 3 = **1094** tests. The four 5b goldens are untouched.
 Report the number the runner prints.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add tests/Dse.Control.Tests/Dse.Control.Tests.csproj tests/Dse.Control.Tests/WorkedExampleTests.cs tests/Dse.Control.Tests/Golden/conveyor-control.log
+git add tests/Millrace.Control.Tests/Millrace.Control.Tests.csproj tests/Millrace.Control.Tests/WorkedExampleTests.cs tests/Millrace.Control.Tests/Golden/conveyor-control.log
 ```
 
 ```bash
@@ -6377,10 +6377,10 @@ its widened trailer range.
 - Create: `docs/control-blocks.md`
 - Modify: `docs/architecture.md` (a new final section)
 - Modify: `README.md`
-- Modify: `src/Dse.Configuration/DiagnosticsReference.cs` (the trailer)
+- Modify: `src/Millrace.Configuration/DiagnosticsReference.cs` (the trailer)
 - Modify: `docs/configuration-diagnostics.md` (generated)
-- Test: `tests/Dse.Configuration.Tests/DiagnosticsReferenceTests.cs`
-- Test: `tests/Dse.Control.Tests/DocumentationTests.cs`
+- Test: `tests/Millrace.Configuration.Tests/DiagnosticsReferenceTests.cs`
+- Test: `tests/Millrace.Control.Tests/DocumentationTests.cs`
 
 **Interfaces:**
 - Consumes: `DiagnosticsReference.Render()` and
@@ -6389,7 +6389,7 @@ its widened trailer range.
 
 - [ ] **Step 1: Write the failing tests**
 
-Add to `tests/Dse.Configuration.Tests/DiagnosticsReferenceTests.cs`, at the end
+Add to `tests/Millrace.Configuration.Tests/DiagnosticsReferenceTests.cs`, at the end
 of the class:
 
 ```csharp
@@ -6398,23 +6398,23 @@ of the class:
     {
         string page = DiagnosticsReference.Render();
 
-        Assert.Contains("## DSE001–DSE015 — plant validation\n", page, StringComparison.Ordinal);
-        Assert.Contains("DSE013", page, StringComparison.Ordinal);
-        Assert.Contains("DSE014", page, StringComparison.Ordinal);
-        Assert.Contains("DSE015", page, StringComparison.Ordinal);
+        Assert.Contains("## MR001–MR015 — plant validation\n", page, StringComparison.Ordinal);
+        Assert.Contains("MR013", page, StringComparison.Ordinal);
+        Assert.Contains("MR014", page, StringComparison.Ordinal);
+        Assert.Contains("MR015", page, StringComparison.Ordinal);
 
-        // Plan 5a ruled there is no DSE012, and the page must never print it as
+        // Plan 5a ruled there is no MR012, and the page must never print it as
         // though it were a code. The trailer says "The numbering skips 012."
-        Assert.DoesNotContain("DSE012", page, StringComparison.Ordinal);
+        Assert.DoesNotContain("MR012", page, StringComparison.Ordinal);
     }
 ```
 
-Create `tests/Dse.Control.Tests/DocumentationTests.cs`:
+Create `tests/Millrace.Control.Tests/DocumentationTests.cs`:
 
 ```csharp
 using System.Runtime.CompilerServices;
 
-namespace Dse.Control.Tests;
+namespace Millrace.Control.Tests;
 
 public class DocumentationTests
 {
@@ -6430,7 +6430,7 @@ public class DocumentationTests
                      "INTERLOCK_TRIP", "INTERLOCK_RESET",
                      "ALARM_RAISED", "ALARM_CLEARED", "ALARM_ACKED",
                      "STEP_ENTERED", "SEQUENCE_COMPLETE", "SEQUENCE_FAULTED", "SEQUENCE_ABORTED",
-                     "DSE013", "DSE014", "DSE015",
+                     "MR013", "MR014", "MR015",
                      "AddScanBlock", "IScanBlock", "ScanInputs", "ScanOutputs",
                  })
         {
@@ -6448,34 +6448,34 @@ public class DocumentationTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo --filter FullyQualifiedName~DiagnosticsReferenceTests`
-Expected: FAIL — the trailer still says `DSE001–DSE011`.
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo --filter FullyQualifiedName~DiagnosticsReferenceTests`
+Expected: FAIL — the trailer still says `MR001–MR011`.
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo --filter FullyQualifiedName~DocumentationTests`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo --filter FullyQualifiedName~DocumentationTests`
 Expected: FAIL with `FileNotFoundException` — `docs/control-blocks.md` does not
 exist.
 
 - [ ] **Step 3: Widen the trailer**
 
-In `src/Dse.Configuration/DiagnosticsReference.cs`, replace the
+In `src/Millrace.Configuration/DiagnosticsReference.cs`, replace the
 `ConfigurationTrailer` constant with:
 
 ```csharp
     private const string ConfigurationTrailer =
-        "## DSE001–DSE015 — plant validation\n\n" +
-        "Codes below DSE100 come from `SimulationBuilder.Validate()` and mean the same for a plant built in code:\n" +
+        "## MR001–MR015 — plant validation\n\n" +
+        "Codes below MR100 come from `SimulationBuilder.Validate()` and mean the same for a plant built in code:\n" +
         "duplicate ids, unconnected required inputs, algebraic loops, belts too fast for their cells, incompatible\n" +
         "flow links, tag conflicts — and, for a control block attached with `AddScanBlock`, a scan period that is\n" +
-        "not a positive whole number of time steps (DSE013), a pin naming a tag the plant does not have, publishes\n" +
-        "with another kind or will not accept a command (DSE014), and a block id or owned tag name that collides\n" +
-        "with something the plant already has (DSE015). The numbering skips 012. The loader passes them through\n" +
+        "not a positive whole number of time steps (MR013), a pin naming a tag the plant does not have, publishes\n" +
+        "with another kind or will not accept a command (MR014), and a block id or owned tag name that collides\n" +
+        "with something the plant already has (MR015). The numbering skips 012. The loader passes them through\n" +
         "with the path of the first component involved; their message is split at its first sentence into message\n" +
         "and fix. See `docs/architecture.md` and `docs/control-blocks.md`.\n";
 ```
 
-The sentence is "The numbering skips 012", not "There is no DSE012", so that the
-page never prints `DSE012` as though it were a code and Step 1's
-`Assert.DoesNotContain("DSE012", page)` can stand.
+The sentence is "The numbering skips 012", not "There is no MR012", so that the
+page never prints `MR012` as though it were a code and Step 1's
+`Assert.DoesNotContain("MR012", page)` can stand.
 
 - [ ] **Step 4: Write `docs/control-blocks.md`**
 
@@ -6485,11 +6485,11 @@ Create `docs/control-blocks.md`:
 # Control blocks
 
 A control block is a PLC rung: a small, stateful, pure function of the tags it
-reads, scanned at its own period, whose outputs are ordinary tags. `Dse.Control`
+reads, scanned at its own period, whose outputs are ordinary tags. `Millrace.Control`
 carries five of them — a timer, a permissive, an interlock, an alarm and a
-sequencer — and `Dse.Core` carries the host that scans them.
+sequencer — and `Millrace.Core` carries the host that scans them.
 
-`Dse.Control` references `Dse.Io.Abstractions` and nothing else. A block cannot
+`Millrace.Control` references `Millrace.Io.Abstractions` and nothing else. A block cannot
 see a `Simulation`, a directory, a binding, a clock or an event log, which is
 why a block's unit tests need none of them.
 
@@ -6544,15 +6544,15 @@ builder.AddScanBlock(new Interlock(
 Blocks are attached **in code**. Describing them in the plant JSON — a
 `controllers` section, catalogue descriptors, a loader stage and schema — is a
 later plan: the block API gets a shakedown before it is frozen into a file
-format. `dse run` therefore cannot attach blocks yet.
+format. `millrace run` therefore cannot attach blocks yet.
 
 `Build()` checks every block:
 
 | code | check |
 |---|---|
-| DSE013 | `ScanPeriod` is a positive whole number of time steps. |
-| DSE014 | Every `Inputs` and `Writes` entry names a tag the plant has, with the same kind; every `Writes` entry is read-write. |
-| DSE015 | The block id is unique across components and blocks, and no owned tag name collides with an existing tag. |
+| MR013 | `ScanPeriod` is a positive whole number of time steps. |
+| MR014 | Every `Inputs` and `Writes` entry names a tag the plant has, with the same kind; every `Writes` entry is read-write. |
+| MR015 | The block id is unique across components and blocks, and no owned tag name collides with an existing tag. |
 
 `Inputs` and `Writes` are resolved against the plant's tags **and every block's
 owned tags**, whichever order the blocks were added, so an interlock may list
@@ -6724,7 +6724,7 @@ deliberately do not, and document that it holds), and make every event message a
 sentence ending in a full stop — the event log is a golden-file format, and its
 bytes are a contract.
 
-`tests/Dse.Control.Tests/Scan.cs` shows the pattern for a pure test: values in,
+`tests/Millrace.Control.Tests/Scan.cs` shows the pattern for a pure test: values in,
 published values, writes and events out, no `Simulation`.
 
 ## What is not here
@@ -6739,14 +6739,14 @@ plans.
 Run:
 
 ```bash
-DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Configuration.Tests --nologo --filter FullyQualifiedName~TheCommittedReferencePageIsCurrent
+MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Configuration.Tests --nologo --filter FullyQualifiedName~TheCommittedReferencePageIsCurrent
 ```
 
 Then **read** `docs/configuration-diagnostics.md` and confirm the trailer now
-reads `## DSE001–DSE015 — plant validation` and that nothing above it changed:
+reads `## MR001–MR015 — plant validation` and that nothing above it changed:
 `git diff --stat docs/configuration-diagnostics.md` must show one file, and
 `git diff docs/configuration-diagnostics.md` must touch only the trailer.
-`docs/scenario-diagnostics.md` quotes the range `DSE100–DSE112`, not this one,
+`docs/scenario-diagnostics.md` quotes the range `MR100–MR112`, not this one,
 so it is unchanged — confirm with `git status --short docs/`.
 
 - [ ] **Step 6: Add the architecture section**
@@ -6757,18 +6757,18 @@ In `docs/architecture.md`, append a new section at the end of the file, after
 ```markdown
 ## The control layer
 
-A control block is a PLC rung: `Dse.Control` holds five of them — a timer, a
+A control block is a PLC rung: `Millrace.Control` holds five of them — a timer, a
 permissive, an interlock, an alarm and a sequencer — and sees
-`Dse.Io.Abstractions` and nothing else. A block is a pure `IScanBlock`: values
+`Millrace.Io.Abstractions` and nothing else. A block is a pure `IScanBlock`: values
 and two elapsed times in, values, writes and events out. It never sees a
 `Simulation`, a directory, a binding, a clock or a log, which is why its unit
 tests need none of them.
 
-`SimulationBuilder.AddScanBlock` checks each block at `Build()` — `DSE013` for
-the period, `DSE014` for the pins, `DSE015` for the names — and turns its
+`SimulationBuilder.AddScanBlock` checks each block at `Build()` — `MR013` for
+the period, `MR014` for the pins, `MR015` for the names — and turns its
 declared outputs and commands into ordinary tags over ordinary ports: an output
 is an `OutputPort<T>` behind a read-only binding, a command an `InputPort<T>`
-behind a writable one. Nothing in `TagImage`, `Dse.Realtime` or the scenario
+behind a writable one. Nothing in `TagImage`, `Millrace.Realtime` or the scenario
 recorder had to learn what a block is. `Simulation` then schedules one
 self-rescheduling `ScanEvent` per block, first due at tick 0, drained in phase 1
 in schedule order.
@@ -6795,7 +6795,7 @@ In `README.md`, in the **Status** section, replace the sentence
 
 ```
 Scenarios are files too: a plant, the engine overrides, a duration and a
-timeline of writes and fault injections, replayed by `dse run` against a
+timeline of writes and fault injections, replayed by `millrace run` against a
 committed golden event log, and recordable from a live run. The control blocks
 and the reference samples are planned.
 ```
@@ -6804,13 +6804,13 @@ with
 
 ```
 Scenarios are files too: a plant, the engine overrides, a duration and a
-timeline of writes and fault injections, replayed by `dse run` against a
+timeline of writes and fault injections, replayed by `millrace run` against a
 committed golden event log, and recordable from a live run.
 
 On top of that sits the control layer: a scan-block contract in
-`Dse.Io.Abstractions`, a host in `Dse.Core` that scans each block at its own
+`Millrace.Io.Abstractions`, a host in `Millrace.Core` that scans each block at its own
 period through the event queue and publishes its outputs as ordinary tags, and
-`Dse.Control` — a timer, a permissive, an interlock, an alarm and a sequencer,
+`Millrace.Control` — a timer, a permissive, an interlock, an alarm and a sequencer,
 which reference the I/O contract alone. Blocks are attached in code for now;
 describing them in the plant file, and the reference samples, are planned.
 ```
@@ -6849,26 +6849,26 @@ See [scenarios](docs/scenarios.md), [control blocks](docs/control-blocks.md),
 
 - [ ] **Step 8: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo`
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo`
 Expected: PASS, 137 tests.
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo`
 Expected: PASS, 94 tests.
 
 - [ ] **Step 9: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 1094 + 2 = **1096** tests. Report the number the runner prints.
 
 - [ ] **Step 10: Commit**
 
 ```bash
-git add docs/control-blocks.md docs/architecture.md docs/configuration-diagnostics.md README.md src/Dse.Configuration/DiagnosticsReference.cs
+git add docs/control-blocks.md docs/architecture.md docs/configuration-diagnostics.md README.md src/Millrace.Configuration/DiagnosticsReference.cs
 ```
 
 ```bash
-git add tests/Dse.Configuration.Tests/DiagnosticsReferenceTests.cs tests/Dse.Control.Tests/DocumentationTests.cs
+git add tests/Millrace.Configuration.Tests/DiagnosticsReferenceTests.cs tests/Millrace.Control.Tests/DocumentationTests.cs
 ```
 
 ```bash
@@ -6877,7 +6877,7 @@ docs: document the control layer
 
 A page for the contract, the timing rule and the five blocks; a section
 in the architecture; the README's status and module list; and the
-diagnostics reference regenerated for DSE013 to DSE015.
+diagnostics reference regenerated for MR013 to MR015.
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 MSG
@@ -6893,14 +6893,14 @@ criteria (section 1) with a command, and put the output in the report:
 
 | Criterion | How |
 |---|---|
-| a block written against `Dse.Io.Abstractions` alone scans at its own period, reads the plant sampled and stale, and its outputs are ordinary tags | Task 2's `ABlockNeedsNothingButTheseTypesToScan`; `dotnet test --filter "FullyQualifiedName~ScanBlockHostTests"`; `grep -n "ProjectReference" src/Dse.Control/Dse.Control.csproj` shows one line, `Dse.Io.Abstractions` |
-| each block has a pure suite needing no `Simulation`, plus a host-level test | `dotnet test tests/Dse.Control.Tests --nologo` — 94 tests; `grep -rn "Simulation" tests/Dse.Control.Tests/TimerTests.cs tests/Dse.Control.Tests/PermissiveTests.cs tests/Dse.Control.Tests/InterlockTests.cs tests/Dse.Control.Tests/AlarmTests.cs tests/Dse.Control.Tests/SequencerTests.cs` prints nothing |
-| a block's outputs are visible in `LiveState`, tick frames and the recorder, with no change to `Dse.Realtime` | Task 9's `ABlockOutputReachesTheRealtimeLiveStateAndItsTickFrames` and `ABlockWriteIsRecordedOnTheTickItLands`; `git diff --stat 6efd7b0 -- src/Dse.Realtime/` prints nothing |
+| a block written against `Millrace.Io.Abstractions` alone scans at its own period, reads the plant sampled and stale, and its outputs are ordinary tags | Task 2's `ABlockNeedsNothingButTheseTypesToScan`; `dotnet test --filter "FullyQualifiedName~ScanBlockHostTests"`; `grep -n "ProjectReference" src/Millrace.Control/Millrace.Control.csproj` shows one line, `Millrace.Io.Abstractions` |
+| each block has a pure suite needing no `Simulation`, plus a host-level test | `dotnet test tests/Millrace.Control.Tests --nologo` — 94 tests; `grep -rn "Simulation" tests/Millrace.Control.Tests/TimerTests.cs tests/Millrace.Control.Tests/PermissiveTests.cs tests/Millrace.Control.Tests/InterlockTests.cs tests/Millrace.Control.Tests/AlarmTests.cs tests/Millrace.Control.Tests/SequencerTests.cs` prints nothing |
+| a block's outputs are visible in `LiveState`, tick frames and the recorder, with no change to `Millrace.Realtime` | Task 9's `ABlockOutputReachesTheRealtimeLiveStateAndItsTickFrames` and `ABlockWriteIsRecordedOnTheTickItLands`; `git diff --stat 6efd7b0 -- src/Millrace.Realtime/` prints nothing |
 | the worked example runs to a committed golden showing the sequence stepping, the alarm raising, the interlock tripping and holding the run command low, and the sequence's end | Task 10 Step 5's checklist, answered row by row with lines copied from the generated file |
-| a plant with no blocks behaves exactly as before: the 947 existing tests and the four 5b goldens are unchanged | `dotnet test Dse.sln --nologo` and `git diff --stat 6efd7b0 -- tests/Dse.Scenarios.Tests/Golden/` prints nothing |
-| zero external package references anywhere under `src/`; `Dse.Control` references only `Dse.Io.Abstractions` | `grep -rn "PackageReference" src/` prints nothing; the csproj grep above |
+| a plant with no blocks behaves exactly as before: the 947 existing tests and the four 5b goldens are unchanged | `dotnet test Millrace.sln --nologo` and `git diff --stat 6efd7b0 -- tests/Millrace.Scenarios.Tests/Golden/` prints nothing |
+| zero external package references anywhere under `src/`; `Millrace.Control` references only `Millrace.Io.Abstractions` | `grep -rn "PackageReference" src/` prints nothing; the csproj grep above |
 | the two parked crash paths are diagnostics, not exit 134 | Task 1 Step 7's three commands, all exit 1 |
-| Release build, zero warnings | `dotnet build Dse.sln -c Release --nologo` |
+| Release build, zero warnings | `dotnet build Millrace.sln -c Release --nologo` |
 | the generated pages are current | `dotnet test --filter "FullyQualifiedName~DiagnosticsReferenceTests|FullyQualifiedName~ScenarioDiagnosticsReferenceTests|FullyQualifiedName~DocumentationTests"` |
 
 Record, as plans 1–5b did, a **"Rulings made during execution"** section at the
@@ -6908,7 +6908,7 @@ end of this file for every place the code had to differ from the plan, and a
 **"Parked follow-ups"** list from the final review. The parked list starts with:
 
 - **Blocks in the plant file** — a `controllers` section, catalogue descriptors
-  for blocks, a loader stage, schema and diagnostics, and `dse run` attaching
+  for blocks, a loader stage, schema and diagnostics, and `millrace run` attaching
   them. The whole reason 5c attaches in code.
 - **A recording of a run with blocks replays the blocks' own writes** (R77).
   `ScenarioRecorder` sees a block's write because it lands through
@@ -6930,21 +6930,21 @@ above; this section records what was checked and what was found.
 
 | Spec section | Requirement | Task |
 |---|---|---|
-| 1 Scope | five blocks in a new `Dse.Control` | 5, 6, 7, 8 |
-| 1 Scope | a scan host in `Dse.Core` scheduling through the event queue | 3, 4 |
+| 1 Scope | five blocks in a new `Millrace.Control` | 5, 6, 7, 8 |
+| 1 Scope | a scan host in `Millrace.Core` scheduling through the event queue | 3, 4 |
 | 1 Scope | alarm state as tags the alarm block owns | 7 (`<Kind>.Active`/`.Acked` are `Outputs`) |
 | 1 Scope | the two crash paths parked by 5b | 1 (three, not two — R65) |
-| 1 Scope | blocks attached in code; `dse run` cannot attach them; the golden is a test golden and the docs say so | 10 (a `Dse.Control.Tests` golden), 11 (`docs/control-blocks.md`, "Attaching a block") |
+| 1 Scope | blocks attached in code; `millrace run` cannot attach them; the golden is a test golden and the docs say so | 10 (a `Millrace.Control.Tests` golden), 11 (`docs/control-blocks.md`, "Attaching a block") |
 | 1 Success 1 | a block against the abstractions alone; ordinary tags | 2, 3, 4 |
-| 1 Success 1 | outputs visible in `dse tags`, `LiveState`, tick frames and the recorder, with no change to `Dse.Realtime` | 3 (the directory, which is what `dse tags` prints), 9 (`ABlockOutputReachesTheRealtimeLiveStateAndItsTickFrames`, `ABlockWriteIsRecordedOnTheTickItLands`); `src/Dse.Realtime` appears in no task's file list |
+| 1 Success 1 | outputs visible in `millrace tags`, `LiveState`, tick frames and the recorder, with no change to `Millrace.Realtime` | 3 (the directory, which is what `millrace tags` prints), 9 (`ABlockOutputReachesTheRealtimeLiveStateAndItsTickFrames`, `ABlockWriteIsRecordedOnTheTickItLands`); `src/Millrace.Realtime` appears in no task's file list |
 | 1 Success 2 | a pure suite per block plus a host-level test | 5–8 (pure), 9 (host) |
 | 1 Success 3 | the worked example's golden, produced and read | 10 |
 | 1 Success 4 | 947 tests and the four 5b goldens unchanged | every task's "run everything" step; the Completion check's `git diff --stat` |
-| 1 Success 5 | zero packages under `src/`; `Dse.Control` sees only the abstractions | Global Constraints; checked in Task 5 Step 7 and the Completion check |
+| 1 Success 5 | zero packages under `src/`; `Millrace.Control` sees only the abstractions | Global Constraints; checked in Task 5 Step 7 and the Completion check |
 | 2 The contract | `TagRef`, `TagSpec`, `BlockEvent`, `IScanBlock` verbatim | 2 |
 | 2 `ScanInputs` members | `Input`, `Command`, `Tick`, `Now`, `DeltaSeconds`, `Elapsed` | 2 |
 | 2 `ScanOutputs` members | `Set`, `Write`, `Raise`; an unset output holds; no allocation | 2 (+ `Reset`/`TryOutput`/`TryWrite`/`Events` for the host and the pure tests, R67; R68 on the message string) |
-| 3 `AddScanBlock` and the DSE013–DSE015 table | | 3 |
+| 3 `AddScanBlock` and the MR013–MR015 table | | 3 |
 | 3 Owned tags become directory entries, outputs read-only, commands read-write, with the unit and description | | 3 (`OwnedTag`, R66) |
 | 3 A command is an ordinary tag write the 5b recorder captures | | 4 (`ACommandIsWritableAndTheBlockSeesItOneScanLater`), R77 |
 | 3 `Build()` schedules one `ScanEvent` per block at tick 0; each reschedules; phase 1; add order among equals | | 4 (R70) |
@@ -6961,18 +6961,18 @@ above; this section records what was checked and what was found.
 | 5 Composition through tags only; no wiring API; one scan late | | 3 (two-pass validation, R69), 4 (`ABlockReadsAnotherBlocksOutputOneScanLate`), 11 |
 | 5 Operators are writes | | 4, 11 |
 | 5 The worked example: PERM01, INT01, CUR01, SEQ01, limits from a measured run, the scenario's two actions | | 10 (R73 adds the interlock-reset step; R74 reports where the current excursion really is) |
-| 6 `Dse.Core.Tests`: validation per code; the stub block's timing tests; determinism | | 3, 4 |
-| 6 `Dse.Control.Tests`: pure suites per block; a host test per block; the golden; run twice identically | | 5–10 |
+| 6 `Millrace.Core.Tests`: validation per code; the stub block's timing tests; determinism | | 3, 4 |
+| 6 `Millrace.Control.Tests`: pure suites per block; a host test per block; the golden; run twice identically | | 5–10 |
 | 7 Documentation: `control-blocks.md`, architecture, README, regenerated diagnostics with the new range | | 11 |
 | 8 The parked crash paths, with tests reproducing from the binary first | | 1 |
-| 9 Layout table | | 5 (projects), 9 (`Dse.Realtime`), 10 (`Golden.cs`, the plants), R75 (the test project's references) |
+| 9 Layout table | | 5 (projects), 9 (`Millrace.Realtime`), 10 (`Golden.cs`, the plants), R75 (the test project's references) |
 
 No requirement is unimplemented. Three places where this plan does not do what
 the spec's words say, each argued from a measurement or from the source and each
 recorded as a ruling: **R73** (the worked example needs an interlock-reset step,
 because `INT01` trips at tick 0), **R74** (the alarm raises on the start inrush,
 because `thermal-bias` does not raise the current), and **R75** (the test
-project does not reference `Dse.Scenarios`, because nothing in 5c can use it).
+project does not reference `Millrace.Scenarios`, because nothing in 5c can use it).
 **R65** adds a third crash the spec did not name.
 
 ### 2. Placeholder scan
@@ -7062,7 +7062,7 @@ Three inconsistencies found and fixed during this review:
   adds to Task 9 and the one it adds to Task 7, the chain is
   **947 → 954 → 968 → 987 → 1001 → 1016 → 1035 → 1056 → 1083 → 1091 → 1094 →
   1096**, and the task map now carries the per-task deltas, the per-project
-  totals and `Dse.Control.Tests`' running total so the next drift is visible.
+  totals and `Millrace.Control.Tests`' running total so the next drift is visible.
 - **Collection expressions in `Assert.Equal`.** Several assertions in Tasks 3
   and 4 were written `Assert.Equal([0L, 2L], block.ScanTicks)`, where a
   collection expression can bind either to `Assert.Equal<T>(T, T)` with
@@ -7071,7 +7071,7 @@ Three inconsistencies found and fixed during this review:
   applies to the `.Select(…).ToArray()` assertions in Tasks 7, 8 and 9.
 - **`SimulationValidationException`'s member.** Task 3's test read
   `error.Result.Errors` behind a hedge. Confirmed against
-  `src/Dse.Core/Validation/SimulationValidationException.cs`: the property is
+  `src/Millrace.Core/Validation/SimulationValidationException.cs`: the property is
   `Result`, of type `ValidationResult`, with `Errors`. The hedge is gone.
 
 ### 4. Amendments after the independent review
@@ -7094,9 +7094,9 @@ above; recorded here so the execution reports know what moved.
   end of it, so the first 100 ms scan that could see it is tick 300 — and
   `RunFor(3 s)` covers ticks 0 to 299. The write is at 2700 ms now, with the
   tick arithmetic in a comment beside it.
-- **The `DSE012` assertion contradicted the trailer.** Task 11's new test
-  asserts the page never prints `DSE012`, while the draft trailer said "There is
-  no DSE012." The trailer now says "The numbering skips 012", the assertion
+- **The `MR012` assertion contradicted the trailer.** Task 11's new test
+  asserts the page never prints `MR012`, while the draft trailer said "There is
+  no MR012." The trailer now says "The numbering skips 012", the assertion
   stands, and Step 3 says why the sentence is phrased that way.
 - **`LoLo` had no behavioural test** — only the pin-order one. Task 7 gains
   `ALoLoLimitRaisesClearsAndIsAcknowledged`, which walks a `LoLo` limit through
@@ -7108,9 +7108,9 @@ above; recorded here so the execution reports know what moved.
   sink, asserting `PERM01.Ok` reaches `LiveState` with `LastChangeTick == 20`
   and its event reaches `RecentEvents`; and an `IActionRecorder` spy asserting
   an interlock's trip write is recorded as `("V1.Fill", 61, "false")`, which
-  pins R77 rather than merely asserting it. `tests/Dse.Control.Tests` therefore
-  references `Dse.Realtime`, added in Task 9 where it is first needed; R75, the
-  file-structure tree and the layout row all say so, and `src/Dse.Control` is
+  pins R77 rather than merely asserting it. `tests/Millrace.Control.Tests` therefore
+  references `Millrace.Realtime`, added in Task 9 where it is first needed; R75, the
+  file-structure tree and the layout row all say so, and `src/Millrace.Control` is
   unchanged.
 - **R68 claimed more than is true.** A queued write goes through
   `TagImage.Write`, whose `ConcurrentQueue.Enqueue` allocates. The ruling and
@@ -7121,8 +7121,8 @@ above; recorded here so the execution reports know what moved.
   `0 … n−1`; a rescheduled `ScanEvent` takes a fresh sequence number and sorts
   *after* a same-tick `WriteAt`. Reworded, with the reason it is harmless: a
   scan reads the published image, never the live ports.
-- Cosmetic: Task 1 now names the real theory, `ABadTopLevelValueIsDse202`
-  (`tests/Dse.Scenarios.Tests/ScenarioParseTests.cs:116`); Task 5's "Produces"
+- Cosmetic: Task 1 now names the real theory, `ABadTopLevelValueIsMr202`
+  (`tests/Millrace.Scenarios.Tests/ScenarioParseTests.cs:116`); Task 5's "Produces"
   block lists `double DeltaSeconds`; and `docs/control-blocks.md`'s
   `CUR01.Hi.Active` is kept — it is what the id rule produces, and the spec's
   `CV001.Current.Hi.Active` is being corrected there instead.

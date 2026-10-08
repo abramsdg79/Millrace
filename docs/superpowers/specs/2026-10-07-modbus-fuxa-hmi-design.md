@@ -32,10 +32,10 @@ choice:
   each tag true for 0.5 s; Start and Stop reset their sequencer first.
   Pull-keys and e-stops are toggles. "Interlock and safety resets" are two
   plant-wide buttons.
-- **`dse serve` (R199, R200)**: `--port 0` picks a free port; a port that
+- **`millrace serve` (R199, R200)**: `--port 0` picks a free port; a port that
   cannot be opened exits 3; a scenario must name the plant served; SIGINT
-  and SIGTERM stop it with exit 0. `dse serve` also takes `--assembly`.
-  `ScenarioRunner.Bind` is added to `Dse.Scenarios` for it.
+  and SIGTERM stop it with exit 0. `millrace serve` also takes `--assembly`.
+  `ScenarioRunner.Bind` is added to `Millrace.Scenarios` for it.
 - **`fuxa-init` loads the project only into a FUXA that does not have it
   (R208)**, so editor changes survive a restart; `docker compose down -v`
   resets.
@@ -44,8 +44,8 @@ choice:
   spec was not.
 ## 1. Scope
 
-The first external consumer of DSE: a real SCADA watching and operating a
-simulated plant. DSE gains a Modbus TCP server and a real-time host command;
+The first external consumer of Millrace: a real SCADA watching and operating a
+simulated plant. Millrace gains a Modbus TCP server and a real-time host command;
 the open-source web SCADA **FUXA** connects to it as a Modbus master and shows
 the mine-conveyor sample as an operator HMI — a mimic, alarms and trends —
 started with one `docker compose up`.
@@ -56,7 +56,7 @@ started with one `docker compose up`.
 |---|---|
 | UI | **FUXA** (github.com/frangoteam/FUXA, MIT, web SCADA/HMI, Docker image `frangoteam/fuxa`), rather than an own web HMI or a terminal UI: the quickest path to a real SCADA screen, connected the way a plant SCADA would be, and editable afterwards in FUXA's editor. |
 | Protocol | **Modbus TCP**, rather than OPC UA: a server is small and dependency-free in .NET, FUXA's client supports it natively, and OPC UA would bring the OPC Foundation stack, certificates and its licensing. |
-| Placement | **This repository**: `src/Dse.Modbus` (+ tests) in `Dse.sln`, `dse serve` and `dse modbus-map` in `Dse.Cli`, and `hmi/fuxa/` for the compose stack and the FUXA project. |
+| Placement | **This repository**: `src/Millrace.Modbus` (+ tests) in `Millrace.sln`, `millrace serve` and `millrace modbus-map` in `Millrace.Cli`, and `hmi/fuxa/` for the compose stack and the FUXA project. |
 | Plant | **The mine conveyors first**; a wheel-line HMI is a follow-up. |
 
 ### Facts about FUXA this design relies on (researched 2026-10-07, FUXA 1.3.5)
@@ -81,7 +81,7 @@ started with one `docker compose up`.
 
 ### Success criteria
 
-1. **Register map (`Dse.Modbus`).** Built from a plant's tag directory, in
+1. **Register map (`Millrace.Modbus`).** Built from a plant's tag directory, in
    directory order, deterministic for a given plant:
 
    | Tag kind and access | Modbus area | Encoding |
@@ -96,33 +96,33 @@ started with one `docker compose up`.
    Access is the tag directory's published access, so a claimed tag (6d)
    maps to a read-only area. Within each area, addresses are assigned from 0
    in directory order, 2 registers per register-mapped tag.
-2. **Server (`Dse.Modbus`).** A Modbus TCP server (MBAP framing; any unit
+2. **Server (`Millrace.Modbus`).** A Modbus TCP server (MBAP framing; any unit
    id is accepted and echoed in the response, as one plant is one slave) with function
    codes 1, 2, 3, 4, 5, 6, 15 and 16. Reads come from the tag image's
-   published snapshot (thread-safe). Writes go through `Dse.Realtime`'s
+   published snapshot (thread-safe). Writes go through `Millrace.Realtime`'s
    `CommandBus`; a write to an address no read-write tag occupies, or a
    partial write of a 2-register value, answers exception 02 (illegal data
    address); a non-finite or otherwise invalid value answers 03 (illegal data
    value); an unsupported function answers 01. Several clients may connect at
    once. No external package.
-3. **Host (`Dse.Cli`).**
-   - `dse serve <plant.json> [--scenario <file>] [--port <n>] [--speed <x>]`
+3. **Host (`Millrace.Cli`).**
+   - `millrace serve <plant.json> [--scenario <file>] [--port <n>] [--speed <x>]`
      loads the plant (and the scenario's timeline, if given), runs it with
      `SimulationRunner` in real time (or `--speed` times real time) until
      Ctrl+C, serves Modbus TCP on the port (default 5020), and prints the
      address it listens on. Exit codes follow the CLI's existing conventions.
-   - `dse modbus-map <plant.json> [--format text|csv|fuxa]` prints the
+   - `millrace modbus-map <plant.json> [--format text|csv|fuxa]` prints the
      register map: text and CSV list area, address (1-based as a SCADA shows
      it, and 0-based wire offset), type, tag, access, unit and description;
      `fuxa` prints the FUXA device `tags` object for the plant.
 4. **FUXA stack (`hmi/fuxa/`).**
-   - `docker-compose.yml` with three services: `dse` (built from a Dockerfile
-     in the repo, running `dse serve samples/mine-conveyors/plant.json
+   - `docker-compose.yml` with three services: `millrace` (built from a Dockerfile
+     in the repo, running `millrace serve samples/mine-conveyors/plant.json
      --port 5020`), `fuxa` (`frangoteam/fuxa` pinned to a version tag, port
      1881, named volumes for `_appdata`, `_db`, `_logs`), and `fuxa-init` (a
      one-shot curl container that waits for FUXA's API and POSTs the project).
-   - `mine-conveyors.fuxap.json`: a `ModbusTCP` device at `dse:5020`, slave
-     1, polling 200 ms, whose `tags` are exactly `dse modbus-map … --format
+   - `mine-conveyors.fuxap.json`: a `ModbusTCP` device at `millrace:5020`, slave
+     1, polling 200 ms, whose `tags` are exactly `millrace modbus-map … --format
      fuxa`; and three views:
      - **Overview** — a mimic of ore source → CV001 → chute → CV002 → chute →
        CV003 showing, per belt, a running/stopped/tripped state colour, speed
@@ -141,11 +141,11 @@ started with one `docker compose up`.
      concurrent clients.
    - Register map: deterministic addresses; claimed tags read-only; Float32 and
      Int32 encodings, Int64 saturation.
-   - End to end: `dse serve` on the mine plant at a high `--speed`, a minimal
+   - End to end: `millrace serve` on the mine plant at a high `--speed`, a minimal
      test-side Modbus client writes the start-sequence coil and reads CV001's
      speed rising past its at-speed value.
    - In sync: the committed FUXA project's device `tags` equal
-     `dse modbus-map … --format fuxa`.
+     `millrace modbus-map … --format fuxa`.
 6. **Smoke check (scripted, documented, run by the plan, not in
    `dotnet test`).** `docker compose up`, the init POST succeeds, FUXA's REST
    API returns live values for CV001's speed, and a headless-browser
@@ -153,9 +153,9 @@ started with one `docker compose up`.
    start-sequence button starts the belts.
 7. **Docs.** `hmi/fuxa/README.md`: prerequisites (Docker), run, open
    http://localhost:1881, what each button does and which sample scenario it
-   mirrors, the register map (generated by `dse modbus-map`), and the limits
+   mirrors, the register map (generated by `millrace modbus-map`), and the limits
    (local demo, no auth, edits in FUXA's editor stay in its volume until
-   exported). `docs/` and the root README mention `dse serve` and the HMI;
+   exported). `docs/` and the root README mention `millrace serve` and the HMI;
    `CHANGELOG.md` gains an "Unreleased" entry.
 
 ## 2. Out of scope

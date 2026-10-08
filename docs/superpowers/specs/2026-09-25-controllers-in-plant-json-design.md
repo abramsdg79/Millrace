@@ -14,11 +14,11 @@ resolved in the build stage after a first `Validate()` of the plant alone, not i
 the instantiate stage (R80); the plant's tags come from a new
 `SimulationBuilder.PlantTags()` (R81); a controller id follows the component id
 rule (R87); a component/block type clash is rejected when it is added (R91);
-group definitions are PascalCase (R88); a tag of the wrong kind is `DSE114`
+group definitions are PascalCase (R88); a tag of the wrong kind is `MR114`
 (R83); durations are capped at a year and `scanPeriodMs` at a day (R86);
-`DSE013` lands on `.scanPeriodMs` (R92); the diagnostics trailer keeps its
-`DSE001–DSE015` heading (R96); conformance also compares an owned tag's unit and
-description (R102); every plugin descriptor defect is `DSE111` (R100); §7 states
+`MR013` lands on `.scanPeriodMs` (R92); the diagnostics trailer keeps its
+`MR001–MR015` heading (R96); conformance also compares an owned tag's unit and
+description (R102); every plugin descriptor defect is `MR111` (R100); §7 states
 the measured golden change. The sections below read as amended.
 
 ## 1. Scope
@@ -28,7 +28,7 @@ permissive, interlock, alarm, sequencer — in the plant JSON: a `controllers`
 section, a block entry kind in the catalogue, a module that registers the five,
 two new parameter kinds, loader support, schema, diagnostics and CLI output. A
 plant with interlocks, alarms and a start-up sequence then validates, lists its
-tags and runs under `dse run` with no C#. The plan also closes R77 (a recording
+tags and runs under `millrace run` with no C#. The plan also closes R77 (a recording
 must not capture a block's own writes) and attributes block writes in the event
 log.
 
@@ -46,7 +46,7 @@ since plan 4; the reference samples (plan 6).
 | R77 — a recording of a run with blocks | **The recorder never sees a block's writes.** A recording is the external inputs only; replay re-derives block writes by re-running the blocks. |
 | Event-log attribution | A block's write logs `Set to false by INT01.`; every other write keeps `Set to false.` unchanged. |
 | Where blocks live in the file | An own `controllers` section, sibling of `components`, with the component envelope (`id`, `type`, `parameters`) plus `scanPeriodMs`. |
-| Where block descriptors live | A new catalogue entry kind, `BlockDescriptor`, in `Dse.Core/Catalogue`; the five are registered by `ControlModule` in a **new project `Dse.Control.Catalogue`**, so `Dse.Control` keeps referencing only `Dse.Io.Abstractions`. Plugins may register block types through `--assembly`. |
+| Where block descriptors live | A new catalogue entry kind, `BlockDescriptor`, in `Millrace.Core/Catalogue`; the five are registered by `ControlModule` in a **new project `Millrace.Control.Catalogue`**, so `Millrace.Control` keeps referencing only `Millrace.Io.Abstractions`. Plugins may register block types through `--assembly`. |
 | Scan period | `scanPeriodMs`, **required**, no default. |
 | Durations | Seconds, suffixed `S` (`presetS`, `timeoutS`, `delayS`, `onDelayS`); only the scan period is in milliseconds, like `timeStepMs` and a PLC task. |
 | Resolving a value's kind | Each block descriptor declares its owned tags as a function of id and parameters; the loader resolves every tag and converts every value before constructing any block. |
@@ -54,8 +54,8 @@ since plan 4; the reference samples (plan 6).
 
 ### Success criteria
 
-1. Every 5c block is declarable in a plant file; `dse validate`, `dse tags` and
-   `dse run` handle a plant with blocks, with no C#.
+1. Every 5c block is declarable in a plant file; `millrace validate`, `millrace tags` and
+   `millrace run` handle a plant with blocks, with no C#.
 2. The 5c worked example built from JSON and built in code produce
    byte-identical event logs.
 3. A recording of a run with blocks contains only the external actions, and
@@ -66,7 +66,7 @@ since plan 4; the reference samples (plan 6).
    catalogue and schema export goldens change only by the additions of §3.5
    and §4.6 — plus, in the schema golden, the `description` line that lists
    the catalogue's modules.
-5. `Dse.Control` references only `Dse.Io.Abstractions`; no package reference
+5. `Millrace.Control` references only `Millrace.Io.Abstractions`; no package reference
    under `src/`.
 6. Release build with zero warnings; every existing test passes (updated only
    where criterion 4 allows, or where a decision above inverts what it asserts —
@@ -77,15 +77,15 @@ since plan 4; the reference samples (plan 6).
 
 | project | change |
 |---|---|
-| `src/Dse.Io.Abstractions` | none |
-| `src/Dse.Control` | none — no new reference, no change to a block's behaviour |
-| `src/Dse.Core` | `Catalogue`: `BlockDescriptor`, `CatalogueBuilder.AddBlock`, `ComponentCatalogue.Blocks`/`TryGetBlock`/`ModuleOf`, parameter kinds `Tag` and `Value`, block export, conformance for blocks. `Io`/`Control`: the write origin (§5). |
-| **`src/Dse.Control.Catalogue`** (new) | references `Dse.Core` and `Dse.Control`; `ControlModule : ICatalogueModule`, the five descriptors and factories, the `transition` object slot. No packages. |
-| `src/Dse.Configuration` | references `Dse.Control.Catalogue`; `controllers` in every stage that needs it; schema; `DSE113`–`DSE115`. |
-| `src/Dse.Cli` | the default catalogue becomes `ComponentsModule` + `ControlModule`; `validate`'s `controllers` count. |
-| `src/Dse.Scenarios` | none in code; the recorder's contract narrows through `IActionRecorder` (§5). |
-| `src/Dse.Realtime` | none. |
-| `tests/Dse.Control.Catalogue.Tests` (new) | conformance and reflection sweep for `ControlModule`. |
+| `src/Millrace.Io.Abstractions` | none |
+| `src/Millrace.Control` | none — no new reference, no change to a block's behaviour |
+| `src/Millrace.Core` | `Catalogue`: `BlockDescriptor`, `CatalogueBuilder.AddBlock`, `ComponentCatalogue.Blocks`/`TryGetBlock`/`ModuleOf`, parameter kinds `Tag` and `Value`, block export, conformance for blocks. `Io`/`Control`: the write origin (§5). |
+| **`src/Millrace.Control.Catalogue`** (new) | references `Millrace.Core` and `Millrace.Control`; `ControlModule : ICatalogueModule`, the five descriptors and factories, the `transition` object slot. No packages. |
+| `src/Millrace.Configuration` | references `Millrace.Control.Catalogue`; `controllers` in every stage that needs it; schema; `MR113`–`MR115`. |
+| `src/Millrace.Cli` | the default catalogue becomes `ComponentsModule` + `ControlModule`; `validate`'s `controllers` count. |
+| `src/Millrace.Scenarios` | none in code; the recorder's contract narrows through `IActionRecorder` (§5). |
+| `src/Millrace.Realtime` | none. |
+| `tests/Millrace.Control.Catalogue.Tests` (new) | conformance and reflection sweep for `ControlModule`. |
 
 ## 3. The catalogue
 
@@ -126,9 +126,9 @@ Conversion, the 5b scenario rule applied to a known target:
 
 | JSON | target Bool | target Int64 | target Double |
 |---|---|---|---|
-| `true` / `false` | Bool | DSE114 | DSE114 |
-| integer-valued number (`3`, `3.0`, `3e0`) | DSE114 | Int64 | Double |
-| other number (`1.5`) | DSE114 | DSE114 | Double |
+| `true` / `false` | Bool | MR114 | MR114 |
+| integer-valued number (`3`, `3.0`, `3e0`) | MR114 | Int64 | Double |
+| other number (`1.5`) | MR114 | MR114 | Double |
 
 ### 3.3 Shared definitions
 
@@ -157,7 +157,7 @@ other group definition, and the alarm limit and sequencer step groups are
 
 Every duration (`presetS`, `onDelayS`, `timeoutS`, `delayS`) is at most one year
 (31 536 000 s): `TimeSpan.FromSeconds` overflows near 9.2e11 s, and without a
-bound an absurd value would surface as an overflow rather than a `DSE103`.
+bound an absurd value would surface as an overflow rather than a `MR103`.
 
 Owned-tag names, kinds, units and descriptions are the 5c blocks' own; the
 descriptor declares them, the conformance check (§3.5) proves the declaration.
@@ -165,7 +165,7 @@ What only the constructor can see — alarm limit values that do not ascend
 with their kinds (the constructor sorts limits by kind, so the order they are
 listed in never matters) or a kind given twice,
 a Bool `when` with an ordering operator, an empty step name — stays the
-constructor's check and surfaces as `DSE111`, as a component's does.
+constructor's check and surfaces as `MR111`, as a component's does.
 
 The worked example's interlock and part of its sequencer:
 
@@ -234,24 +234,24 @@ No new stage; the existing ones gain a controllers pass.
 
 1. **Parse** — unchanged.
 2. **Structure** — each entry is walked against its block descriptor exactly as
-   a component is: unknown type (`DSE102`), parameter missing / unknown /
+   a component is: unknown type (`MR102`), parameter missing / unknown /
    wrong JSON type / out of range and `scanPeriodMs` missing or out of range
-   (`DSE103`), unknown key (`DSE101`), and an id equal to another controller's
-   or to a component's (`DSE107`).
+   (`MR103`), unknown key (`MR101`), and an id equal to another controller's
+   or to a component's (`MR107`).
 3. **References** — nothing: blocks name tags, not components.
 4. **Instantiate** — components only, unchanged.
 5. **Wire** — unchanged.
 6. **Build** — three steps. (a) Components and binds are added and
    `Validate()` runs on the plant alone; any error stops the stage there, so a
-   plant's own tag conflict (`DSE009`, `DSE010`) is reported as itself, never
-   as a controller's `DSE113`/`DSE115`. (b) The tag resolution of §4.4, then
+   plant's own tag conflict (`MR009`, `MR010`) is reported as itself, never
+   as a controller's `MR113`/`MR115`. (b) The tag resolution of §4.4, then
    each block's factory in file order. An `ArgumentException` from a block
-   constructor is `DSE111` at the entry's path; any other factory or `OwnedTags`
+   constructor is `MR111` at the entry's path; any other factory or `OwnedTags`
    failure — an exception, a null result, a block with an id or scan period it
-   was not given — is `DSE111` naming the module. (c) `AddScanBlock` for each
-   block in file order and `Validate()` again: Core's `DSE013`–`DSE015` pass
-   through, and `PathOf` learns controller ids — `DSE013` lands on
-   `$.controllers[i].scanPeriodMs`, `DSE014` and `DSE015` on
+   was not given — is `MR111` naming the module. (c) `AddScanBlock` for each
+   block in file order and `Validate()` again: Core's `MR013`–`MR015` pass
+   through, and `PathOf` learns controller ids — `MR013` lands on
+   `$.controllers[i].scanPeriodMs`, `MR014` and `MR015` on
    `$.controllers[i]`.
 
 Tag resolution cannot sit in Instantiate: the builder is created in Build,
@@ -276,42 +276,42 @@ table from:
 - every controller's `OwnedTags(id, parameters)`.
 
 A name given twice keeps its first entry (plant tags come first); Core reports
-the clash as `DSE015`.
+the clash as `MR015`.
 
 Then, for every `Tag` parameter in every controller, with its JSON path:
 
 | failure | code |
 |---|---|
-| the name is not in the table | `DSE113`, with the nearest name suggested (the catalogue's `Suggest`) |
-| a `Value` does not convert to the tag's kind (§3.2), or the tag is not of the kind the parameter requires (a condition on a Double tag) | `DSE114` |
-| the tag is a `write`'s target and is read-only | `DSE115` |
+| the name is not in the table | `MR113`, with the nearest name suggested (the catalogue's `Suggest`) |
+| a `Value` does not convert to the tag's kind (§3.2), or the tag is not of the kind the parameter requires (a condition on a Double tag) | `MR114` |
+| the tag is a `write`'s target and is read-only | `MR115` |
 
 A `Value` whose tag did not resolve is not reported a second time. Every such
-error is collected before the stage stops. Core's `DSE014` stays as
+error is collected before the stage stops. Core's `MR014` stays as
 the backstop for code-built plants and is not expected to fire for a plant that
 passed this stage.
 
 ### 4.5 Diagnostics
 
-`DSE112` is already `TagCannotBind`; the new codes are:
+`MR112` is already `TagCannotBind`; the new codes are:
 
 | code | meaning |
 |---|---|
-| DSE113 | A controller names a tag the plant does not have. |
-| DSE114 | A controller's tag or value is of the wrong kind. |
-| DSE115 | A controller writes a read-only tag. |
+| MR113 | A controller names a tag the plant does not have. |
+| MR114 | A controller's tag or value is of the wrong kind. |
+| MR115 | A controller writes a read-only tag. |
 
 Each with a message and a fix, e.g.
 
 ```
-DSE113 $.controllers[3].parameters.steps[1].writes[0].tag
+MR113 $.controllers[3].parameters.steps[1].writes[0].tag
   'CV001.Strat' is not a tag in this plant.
   Fix: use a tag the plant has — 'CV001.Start' is closest.
 ```
 
-`docs/configuration-diagnostics.md` is regenerated: `DSE113`–`DSE115` join its
-table, and the titles of `DSE102` and `DSE107` widen to cover controllers. Its
-trailer keeps the heading `DSE001–DSE015 — plant validation`, because it
+`docs/configuration-diagnostics.md` is regenerated: `MR113`–`MR115` join its
+table, and the titles of `MR102` and `MR107` widen to cover controllers. Its
+trailer keeps the heading `MR001–MR015 — plant validation`, because it
 describes Core's pass-through codes, which do not change; it gains a sentence on
 controllers.
 
@@ -331,8 +331,8 @@ controllers.
 - `Tag` as a plain string and `Value` as `{ "type": ["boolean", "number"] }`,
   each description saying the loader resolves it.
 
-`DSE101`–`DSE103` controller fixtures are structural (the schema rejects them);
-`DSE107`, `DSE111`, `DSE113`–`DSE115` and `DSE013` are semantic (the schema
+`MR101`–`MR103` controller fixtures are structural (the schema rejects them);
+`MR107`, `MR111`, `MR113`–`MR115` and `MR013` are semantic (the schema
 accepts them). The agreement test asserts both, as for components. The schema
 golden is regenerated and read; besides the additions, its `description` line,
 which lists the catalogue's modules, changes.
@@ -359,7 +359,7 @@ again". Faults and clears are unchanged; a block cannot inject either.
 
 Consequences: `ScenarioRecorder` over a run with blocks records only the
 scenario's (or bus's) writes, faults and clears (R77 closed); replay re-derives
-every block write. `LiveState`, tick frames and `Dse.Realtime.ICommandRecorder`
+every block write. `LiveState`, tick frames and `Millrace.Realtime.ICommandRecorder`
 are unchanged — a block write never passes through the bus, and its effect
 reaches frames like any other tag's.
 
@@ -367,35 +367,35 @@ reaches frames like any other tag's.
 
 - The default catalogue is `ComponentsModule` + `ControlModule`; `--assembly`
   modules may register block types.
-- `dse validate`: the text summary gains a `controllers   N` line after the
+- `millrace validate`: the text summary gains a `controllers   N` line after the
   `tags` line and the JSON summary a `"controllers": N` member after
   `"explicitTags"`, both always present (`PlantSummary.Controllers`, defaulted to
   0 so the 5a constructor still compiles). Existing
   expectations are updated for exactly that.
-- `dse tags`: unchanged in code; block-owned tags appear because they are
+- `millrace tags`: unchanged in code; block-owned tags appear because they are
   directory entries.
-- `dse catalog export` / `dse schema export`: the additions of §3.5 and §4.6;
+- `millrace catalog export` / `millrace schema export`: the additions of §3.5 and §4.6;
   `catalog export`'s help line ("every component, transform, hold and material
   type") names block types too; the `--assembly` help says the shipped catalogue
   includes the control blocks.
-- `dse run`: unchanged in code; a plant with `controllers` runs, and a scenario
+- `millrace run`: unchanged in code; a plant with `controllers` runs, and a scenario
   may `write` a block command (`SEQ01.Start`, `INT01.Reset`, `CUR01.Ack`) —
-  `DSE206` already resolves block tags against the built plant.
+  `MR206` already resolves block tags against the built plant.
 - `validate` and `tags` stay stdout-only (ruling below).
 
 ## 7. The worked example
 
 The 5c worked example — the `conveyor-line` plant with `PERM01`, `INT01`,
 `CUR01` and `SEQ01` — becomes a plant file,
-`tests/Dse.Configuration.Tests/Plants/valid/conveyor-control.json`, and its
+`tests/Millrace.Configuration.Tests/Plants/valid/conveyor-control.json`, and its
 timeline a scenario file beside the CLI tests.
 
 - **Round trip:** the JSON-built plant and the 5c code-built plant, run over the
   same timeline, produce byte-identical `EventLog.ToText()`. The test lives in
-  `Dse.Control.Tests`, beside the code-built example it compares with.
-- **CLI golden:** `dse run <scenario> --expect conveyor-control.log` exits 0
+  `Millrace.Control.Tests`, beside the code-built example it compares with.
+- **CLI golden:** `millrace run <scenario> --expect conveyor-control.log` exits 0
   in-process.
-- **The 5c golden** `tests/Dse.Control.Tests/Golden/conveyor-control.log` is
+- **The 5c golden** `tests/Millrace.Control.Tests/Golden/conveyor-control.log` is
   regenerated with the attribution, read, and checked: the only differences are
   a ` by <id>` suffix on the `WRITE` lines a block issued. Measured on the 5c
   golden, that is exactly ten of its 40 lines — `INT01`'s two trip writes (lines
@@ -405,7 +405,7 @@ timeline a scenario file beside the CLI tests.
 
 ## 8. Testing
 
-`Dse.Core.Tests`
+`Millrace.Core.Tests`
 - A write with an origin logs `… by <id>.`, is not seen by the recorder, and
   keeps its enqueue order against an external write on the same tick (last
   wins); a write without one is byte-unchanged.
@@ -418,35 +418,35 @@ timeline a scenario file beside the CLI tests.
 - `SimulationBuilder.PlantTags()` equals the built directory (less block-owned
   tags) and publishes a writable tag on a driven input as read-only.
 
-`Dse.Control.Catalogue.Tests` (new)
+`Millrace.Control.Catalogue.Tests` (new)
 - `CatalogueConformance.Check` over `ControlModule` returns no mismatch, with
   alarm fixtures of one and four limits.
-- A reflection sweep finds no public concrete `IScanBlock` in `Dse.Control`
+- A reflection sweep finds no public concrete `IScanBlock` in `Millrace.Control`
   without a descriptor.
 
-`Dse.Configuration.Tests`
+`Millrace.Configuration.Tests`
 - `valid/conveyor-control.json` loads clean (the round trip of §7 is in
-  `Dse.Control.Tests`); an empty `controllers` array is valid.
-- One invalid fixture per case: `DSE102` unknown block type; `DSE103` missing
-  `scanPeriodMs`, an unknown `op`, a negative `presetS`; `DSE101` unknown key in
-  a controller; `DSE107` a block id equal to a component id; `DSE111` alarm
-  limit values that do not ascend with their kinds; `DSE113` unknown tag with a
-  suggestion; `DSE114` `1.5` to an Int64 tag and `true` to a Double tag;
-  `DSE115` a write to a read-only tag; `DSE013` a scan period that is not a
+  `Millrace.Control.Tests`); an empty `controllers` array is valid.
+- One invalid fixture per case: `MR102` unknown block type; `MR103` missing
+  `scanPeriodMs`, an unknown `op`, a negative `presetS`; `MR101` unknown key in
+  a controller; `MR107` a block id equal to a component id; `MR111` alarm
+  limit values that do not ascend with their kinds; `MR113` unknown tag with a
+  suggestion; `MR114` `1.5` to an Int64 tag and `true` to a Double tag;
+  `MR115` a write to a read-only tag; `MR013` a scan period that is not a
   whole number of steps, reported at the controller's `scanPeriodMs`.
-- A plant's own `DSE010` tag conflict is reported as itself, not as the
-  controller's `DSE113`; every plugin descriptor defect is `DSE111`; a
-  `scanPeriodMs` or duration of `1e30` is `DSE103`.
+- A plant's own `MR010` tag conflict is reported as itself, not as the
+  controller's `MR113`; every plugin descriptor defect is `MR111`; a
+  `scanPeriodMs` or duration of `1e30` is `MR103`.
 - A block naming another block's owned tag resolves regardless of file order.
 - Schema agreement over the new fixtures, the structural/semantic boundary
   asserted.
 
-`Dse.Scenarios.Tests`
+`Millrace.Scenarios.Tests`
 - Record the worked example's run: the recording holds exactly the scenario's
   actions; replaying it reproduces the original event log byte for byte.
 
-`Dse.Cli.Tests`
-- `validate` text and JSON with `controllers`; `dse run --expect` on the worked
+`Millrace.Cli.Tests`
+- `validate` text and JSON with `controllers`; `millrace run --expect` on the worked
   example; the catalogue and schema export goldens; a sample-module assembly
   that registers a block type, seen by `catalog export`, `schema export` and
   `validate`.
@@ -454,14 +454,14 @@ timeline a scenario file beside the CLI tests.
 ## 9. Documentation
 
 - `docs/control-blocks.md` — "Attaching a block" gains *In the plant file*; the
-  "attached in code, `dse run` cannot" limitation and the matching line in
+  "attached in code, `millrace run` cannot" limitation and the matching line in
   *What is not here* go; each block section gains its JSON form; the file-order
   rule; write attribution in the event log.
 - `docs/authoring-a-component.md` — *Registering a block*: the descriptor,
   `OwnedTags`, the factory, the module, and running the conformance check.
 - `docs/scenarios.md` — recordings contain external actions only.
-- `docs/configuration-diagnostics.md` — regenerated for `DSE113`–`DSE115`.
-- `docs/architecture.md`, `README.md` — `Dse.Control.Catalogue` in the module
+- `docs/configuration-diagnostics.md` — regenerated for `MR113`–`MR115`.
+- `docs/architecture.md`, `README.md` — `Millrace.Control.Catalogue` in the module
   list; controllers in the configuration section and the status.
 - `2026-09-20-catalogue-configuration-cli-design.md` §4.1 — amended: `--out` is
   accepted by `catalog export`, `schema export` and `run` only; `validate` and
@@ -473,8 +473,8 @@ timeline a scenario file beside the CLI tests.
   `SchemaAgreementTests.cs`).
 - **`--out` is not accepted by `validate` or `tags`**; the catalogue spec is
   amended rather than the code.
-- **`DSE112` is taken** (`TagCannotBind`); controller tag diagnostics are
-  `DSE113`–`DSE115`.
+- **`MR112` is taken** (`TagCannotBind`); controller tag diagnostics are
+  `MR113`–`MR115`.
 - The plan's rulings R80–R102 refine this document; the sections above have
   been amended to agree with them.
 

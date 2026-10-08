@@ -1,4 +1,4 @@
-# Scenarios, Replay and `dse run` Implementation Plan
+# Scenarios, Replay and `millrace run` Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -6,20 +6,20 @@
 a seed, a step and a timeline of writes, fault injections and clearances; a
 loader whose every error names its fix before tick 0; a runner that produces an
 event log; committed golden logs as the regression artifact; an in-process
-recorder proven by a record-and-replay round trip; and `dse run`, which
+recorder proven by a record-and-replay round trip; and `millrace run`, which
 distinguishes "the configuration is broken" (exit 1) from "the behaviour
 changed" (exit 4).
 
-**Architecture:** Two small seams in `Dse.Core` — `Simulation.WriteAt`/`WriteIn`
+**Architecture:** Two small seams in `Millrace.Core` — `Simulation.WriteAt`/`WriteIn`
 (a write that lands on exactly the tick it names, through a new
 `TagImage.ApplyNow`) and `IActionRecorder` (one recorder, called from the three
-places an action lands) — carry everything the rest needs. `Dse.Scenarios` is a
-new project over `Dse.Core` and `Dse.Configuration`: `ScenarioLoader.Parse` is a
-pure structural pass producing `DSE200`–`DSE204`; `ScenarioRunner.Run` loads the
-plant, schedules every action with its checks (`DSE203`, `DSE205`, `DSE206`) and
+places an action lands) — carry everything the rest needs. `Millrace.Scenarios` is a
+new project over `Millrace.Core` and `Millrace.Configuration`: `ScenarioLoader.Parse` is a
+pure structural pass producing `MR200`–`MR204`; `ScenarioRunner.Run` loads the
+plant, schedules every action with its checks (`MR203`, `MR205`, `MR206`) and
 runs; `ScenarioJson.Write` renders a `Scenario` deterministically;
 `ScenarioRecorder` turns a live run into one; `GoldenLog.Compare` judges a log
-against a committed one. `Dse.Cli` gains `run` and `ExitCodes.LogMismatch = 4`.
+against a committed one. `Millrace.Cli` gains `run` and `ExitCodes.LogMismatch = 4`.
 
 **Tech Stack:** .NET 10 (`net10.0`), C#, `System.Text.Json`, xUnit. No external
 runtime dependencies anywhere under `src/`.
@@ -31,7 +31,7 @@ and builds on `docs/superpowers/specs/2026-09-20-catalogue-configuration-cli-des
 
 **Plan sequence:** This is plan 5b. Plans 1–5a are merged on `master` at
 `ae46ba2` (751 tests green, Release build with `0 Warning(s)`). Plan 5c adds
-`Dse.Control` (interlock, permissive, sequencer, timer, alarm) and the questions
+`Millrace.Control` (interlock, permissive, sequencer, timer, alarm) and the questions
 that belong with it; plan 6 the two reference samples. Nothing in this plan may
 reference those subsystems: no controller, no alarm, no sample. `EventLog.ToText()`
 is used exactly as it stands and is **not** changed — every golden log in this
@@ -40,28 +40,28 @@ plan, and every one plan 5c writes, depends on its bytes.
 **Task shape.** The spec's nine suggested tasks are kept, in order, with two
 adjustments the code argued for:
 
-- **The invalid corpus is split in two directories, not one.** `DSE200`–`DSE204`
+- **The invalid corpus is split in two directories, not one.** `MR200`–`MR204`
   are found by `ScenarioLoader.Parse` with no plant and no file system, so they
-  are fixtures of Task 3 (`Scenarios/invalid/`). `DSE205` and `DSE206` need a
+  are fixtures of Task 3 (`Scenarios/invalid/`). `MR205` and `MR206` need a
   plant on disk and a built simulation, so they are fixtures of Task 5
   (`Scenarios/unrunnable/`). The "every code has a fixture" test therefore
   arrives with the last fixture, in Task 5, and no task needs plan 5a's
   shrinking `Pending` array.
 - **Task 6 (`GoldenLog`) comes after Task 5 (the runner), not before.** The
   runner's own corpus test uses `tests/Shared/Golden.cs`, which already exists;
-  `GoldenLog.Compare` exists for `dse run --expect` and is pure text, so it can
+  `GoldenLog.Compare` exists for `millrace run --expect` and is pure text, so it can
   be written and reviewed on its own between the runner and the recorder.
 
 ## Global Constraints
 
-- Target framework `net10.0` for every project. **`Dse.Scenarios` references
-  `Dse.Core` and `Dse.Configuration` and nothing else** — no `Dse.Components`,
-  no `Dse.Realtime`. `Dse.Cli` adds `Dse.Scenarios` to its existing references.
-  `Dse.Core` still references only `Dse.Io.Abstractions`. `Dse.Configuration`
-  references `Dse.Core` and `Dse.Components`. **Zero external runtime package
+- Target framework `net10.0` for every project. **`Millrace.Scenarios` references
+  `Millrace.Core` and `Millrace.Configuration` and nothing else** — no `Millrace.Components`,
+  no `Millrace.Realtime`. `Millrace.Cli` adds `Millrace.Scenarios` to its existing references.
+  `Millrace.Core` still references only `Millrace.Io.Abstractions`. `Millrace.Configuration`
+  references `Millrace.Core` and `Millrace.Components`. **Zero external runtime package
   references** in any shipping project: `grep -rn "PackageReference" src/` must
   print nothing. Test projects use the same test package versions as
-  `tests/Dse.Core.Tests/Dse.Core.Tests.csproj`; `Dse.Scenarios.Tests` adds no
+  `tests/Millrace.Core.Tests/Millrace.Core.Tests.csproj`; `Millrace.Scenarios.Tests` adds no
   package at all.
 - `Nullable` enabled, `TreatWarningsAsErrors` true, `GenerateDocumentationFile`
   true (a `<see cref>` to a type that does not exist yet is a **build error**;
@@ -78,7 +78,7 @@ adjustments the code argued for:
   `CatalogueJson.WriterOptions`, properties written in the order the code writes
   them, arrays in file or landing order, and the final text normalised through
   `CatalogueJson.Finish` to `\n` line endings with one trailing `\n`.
-- **Names.** Tag names are exactly what `dse tags <plant>` prints
+- **Names.** Tag names are exactly what `millrace tags <plant>` prints
   (`CV001.Start`, `FEED.Rate`) and match ordinally. Component ids for faults are
   the flattened leaf ids (`CV001.Motor`). Fault ids and argument names are what
   the catalogue declares (`thermal-bias`, `amount`).
@@ -95,8 +95,8 @@ adjustments the code argued for:
 - xUnit analyzers run under warnings-as-errors: prefer `Assert.Single`,
   `Assert.Contains`, `Assert.Empty` over `Assert.True(x.Any())` and
   `Assert.Equal(1, x.Count())`.
-- Licence: MIT. Namespaces: `Dse.Core`, `Dse.Core.Io`, `Dse.Scenarios`,
-  `Dse.Cli`, `Dse.Cli.Commands`, `Dse.Scenarios.Tests`.
+- Licence: MIT. Namespaces: `Millrace.Core`, `Millrace.Core.Io`, `Millrace.Scenarios`,
+  `Millrace.Cli`, `Millrace.Cli.Commands`, `Millrace.Scenarios.Tests`.
 - **Git, for every task.** One git command per `Bash` call. `git add` names
   paths explicitly — never `git add -A`, never `git add .`. **Never `git
   stash`.** Every commit message ends with a body trailer, on its own line after
@@ -108,8 +108,8 @@ adjustments the code argued for:
 
   Never put the trailer on the subject line.
 - Build and test commands, from the repository root:
-  `dotnet build Dse.sln -c Release --nologo` (expect `0 Warning(s)`, `0
-  Error(s)`) and `dotnet test Dse.sln --nologo`.
+  `dotnet build Millrace.sln -c Release --nologo` (expect `0 Warning(s)`, `0
+  Error(s)`) and `dotnet test Millrace.sln --nologo`.
 
 ## Decisions settled here (carry forward as rulings R50–R64)
 
@@ -134,17 +134,17 @@ choice. Where one differs from the spec's wording, this plan wins and says why.
   TimeSpan.TicksPerSecond))`, so "is it on a tick?" is `time.Ticks % step.Ticks
   == 0` — exact integer arithmetic, no epsilon. Seconds are written back as
   `time.Ticks / (double)TimeSpan.TicksPerSecond`. A time must be finite, `>= 0`
-  and `<= 1e9` seconds; beyond that it is `DSE202`.
+  and `<= 1e9` seconds; beyond that it is `MR202`.
 - **R53 — `Parse` checks tick alignment only when the scenario declares
   `timeStepMs`.** The step is otherwise the plant's, which `Parse` may not read.
   `at >= duration` is always checkable and is checked in `Parse`. The runner
   repeats **both** checks against the effective step, so a `Scenario` built in
   code (by `ScenarioRecorder`, or by a test) is checked just as a parsed one is.
-  `at >= 0` is **DSE202** in both places, never DSE203: the spec puts it in
+  `at >= 0` is **MR202** in both places, never MR203: the spec puts it in
   `Parse` as an out-of-range value, and the runner's copy — which only a
   code-built scenario can trip — uses the same code, path and wording.
 - **R54 — the ISO 8601 start-time formats are duplicated, deliberately.**
-  `StructureStage.TryParseStartTime` is `private` inside `Dse.Configuration`.
+  `StructureStage.TryParseStartTime` is `private` inside `Millrace.Configuration`.
   Exposing it would add public API that nothing else wants, and
   `InternalsVisibleTo` for eight lines of format strings is worse. `ScenarioLoader`
   carries its own copy with a comment naming the original. If one changes, both
@@ -161,14 +161,14 @@ choice. Where one differs from the spec's wording, this plan wins and says why.
   integer literal.** `JsonElement.TryGetInt64` returns false for `5.0` and for
   `1e2` (measured). So `5` may drive a `Bool`-free tag of either numeric kind,
   `5.0` and `5.5` drive a `Double` tag only, and `5.0` on an `Int64` tag is
-  `DSE206`. `docs/scenarios.md` says so.
+  `MR206`. `docs/scenarios.md` says so.
 - **R57 — the runner checks a write's tag itself before calling `WriteAt`, and
-  still catches.** Pre-checking the directory gives `DSE206` a message that
+  still catches.** Pre-checking the directory gives `MR206` a message that
   names the tag, its kind and the offending value, and a `Suggest` list of near
   names; the `try`/`catch` around every schedule call remains as the spec asks,
   so an engine exception can never escape as a crash. Fault and clear actions
   rely on the catch alone: `Simulation`'s own messages already name what exists.
-- **R58 — the JSON path of a fault's `DSE206` comes from the exception's
+- **R58 — the JSON path of a fault's `MR206` comes from the exception's
   `ParamName`.** `faultId` → `$.timeline[i].id`; `given` → `$.timeline[i].args`;
   anything else → `$.timeline[i].fault` (or `.clear`). Measured against
   `Simulation.Descriptor` and `FaultDescriptor.Resolve`.
@@ -182,19 +182,19 @@ choice. Where one differs from the spec's wording, this plan wins and says why.
   signature is `Render(string title, IReadOnlyList<DiagnosticInfo> codes, string?
   introduction = null, string? trailer = null)`, and the existing `Render()`
   passes the configuration page's introduction and trailer verbatim, so
-  `docs/configuration-diagnostics.md` stays **byte-identical**. `Dse.Scenarios`
+  `docs/configuration-diagnostics.md` stays **byte-identical**. `Millrace.Scenarios`
   supplies its own prose through `ScenarioDiagnosticsReference.Render()`. (The
   spec has since been amended to this signature; R60 records why.)
-- **R61 — `tests/Dse.Scenarios.Tests` references `Dse.Realtime` too.** The
-  spec's layout table lists `Dse.Scenarios`, `Dse.Components` and
+- **R61 — `tests/Millrace.Scenarios.Tests` references `Millrace.Realtime` too.** The
+  spec's layout table lists `Millrace.Scenarios`, `Millrace.Components` and
   `tests/Shared`, but section 8's record-and-replay proof drives the live run
-  through `CommandBus`, which lives in `Dse.Realtime`. The reference is added in
-  Task 7, where it is first needed. `src/Dse.Scenarios` still cannot see it.
+  through `CommandBus`, which lives in `Millrace.Realtime`. The reference is added in
+  Task 7, where it is first needed. `src/Millrace.Scenarios` still cannot see it.
   (The spec's layout table has since been amended to list it; R61 records why.)
-- **R62 — the valid plants are linked, not copied.** `Dse.Scenarios.Tests`
-  publishes `..\Dse.Configuration.Tests\Plants\valid\*.json` into its own
+- **R62 — the valid plants are linked, not copied.** `Millrace.Scenarios.Tests`
+  publishes `..\Millrace.Configuration.Tests\Plants\valid\*.json` into its own
   output as `Plants\*.json`. One corpus of plants, two test projects, no
-  divergence. `Plants\broken.json` is local to `Dse.Scenarios.Tests` because
+  divergence. `Plants\broken.json` is local to `Millrace.Scenarios.Tests` because
   nothing else wants it.
 - **R63 — the `.actual` file is written on any mismatch, in both formats, and
   `--format json` names it.** The spec's table describes the text row only.
@@ -207,12 +207,12 @@ choice. Where one differs from the spec's wording, this plan wins and says why.
 ## File structure
 
 ```
-src/Dse.Core/
+src/Millrace.Core/
   IActionRecorder.cs                     new — the one recording seam
   Simulation.cs                          + WriteAt/WriteIn, AttachActionRecorder, ActionRecorder, WriteEvent
   Io/TagImage.cs                         + ApplyNow, CheckWritable, SetActionRecorder
-src/Dse.Scenarios/                       new project
-  Dse.Scenarios.csproj
+src/Millrace.Scenarios/                       new project
+  Millrace.Scenarios.csproj
   ScenarioValueKind.cs  ScenarioValue.cs
   ScenarioAction.cs                      ScenarioAction, WriteAction, FaultAction, ClearAction
   Scenario.cs
@@ -223,32 +223,32 @@ src/Dse.Scenarios/                       new project
   LogComparison.cs  GoldenLog.cs
   ScenarioRecorder.cs
   ScenarioDiagnosticsReference.cs
-src/Dse.Configuration/
+src/Millrace.Configuration/
   DiagnosticsReference.cs                Render becomes parametric (R60)
-src/Dse.Cli/
+src/Millrace.Cli/
   ExitCodes.cs                           + LogMismatch = 4
   CommandTable.cs                        + --expect, + the run row, + exit code 4 in the help
   Commands/PlantFile.cs                  + TryRead, + ReportDiagnostics (reuse, same bytes out)
   Commands/RunScenario.cs                new
 tests/
-  Dse.Core.Tests/WriteAtTests.cs         new
-  Dse.Core.Tests/ActionRecorderTests.cs  new
-  Dse.Scenarios.Tests/                   new project
-    Dse.Scenarios.Tests.csproj  Corpus.cs  CorpusTests.cs
+  Millrace.Core.Tests/WriteAtTests.cs         new
+  Millrace.Core.Tests/ActionRecorderTests.cs  new
+  Millrace.Scenarios.Tests/                   new project
+    Millrace.Scenarios.Tests.csproj  Corpus.cs  CorpusTests.cs
     ScenarioModelTests.cs  ScenarioDiagnosticsTests.cs  ScenarioParseTests.cs
     ScenarioJsonTests.cs  ScenarioRunnerTests.cs  GoldenLogTests.cs
     ScenarioRecorderTests.cs  RecordAndReplayTests.cs  ScenarioDiagnosticsReferenceTests.cs
     Plants/broken.json
     Scenarios/valid/*.json  Scenarios/invalid/*.json  Scenarios/unrunnable/*.json
     Golden/*.log                         generated, read, committed
-  Dse.Cli.Tests/RunCommandTests.cs       new
-  Dse.Cli.Tests/Scenarios/*.json         new
+  Millrace.Cli.Tests/RunCommandTests.cs       new
+  Millrace.Cli.Tests/Scenarios/*.json         new
 docs/
   scenarios.md                           new — the format, the `at` rule, the golden workflow
   scenario-diagnostics.md                new — generated
   architecture.md                        + "Scenarios and replay"; phases 1, 4 and 5 corrected
-  README.md                              + `dse run`, + status
-Dse.sln                                  + two projects
+  README.md                              + `millrace run`, + status
+Millrace.sln                                  + two projects
 ```
 
 ## Task map
@@ -257,12 +257,12 @@ Dse.sln                                  + two projects
 |---|---|---|
 | 1 | `Simulation.WriteAt` | a write that lands on exactly the tick it names |
 | 2 | `IActionRecorder` | one recorder sees every action that took effect |
-| 3 | Scenario model and loader | the project, `Scenario`, `DSE200`–`DSE204`, the corpus |
+| 3 | Scenario model and loader | the project, `Scenario`, `MR200`–`MR204`, the corpus |
 | 4 | `ScenarioJson.Write` | deterministic rendering, text round trip |
 | 5 | `ScenarioRunner` | plant load, scheduling with checks, golden logs |
 | 6 | `GoldenLog.Compare` | where two logs diverged, with context |
 | 7 | `ScenarioRecorder` | a live run recorded, written, parsed and replayed |
-| 8 | `dse run` | every row of the spec's table, exit code 4 |
+| 8 | `millrace run` | every row of the spec's table, exit code 4 |
 | 9 | Documentation | generated reference, `docs/scenarios.md`, architecture, README |
 
 Tasks are sequential. Suggested models, following plans 3–5a: every task here
@@ -287,12 +287,12 @@ Order within a tick after this task, unchanged for queued writes:
    writes and faults interleaved exactly as they were scheduled.
 
 **Files:**
-- Modify: `src/Dse.Core/Io/TagImage.cs` (extract `Check`, add `CheckWritable` and `ApplyNow`)
-- Modify: `src/Dse.Core/Simulation.cs` (add `WriteAt`, `WriteIn`, private `WriteEvent`)
-- Test: `tests/Dse.Core.Tests/WriteAtTests.cs`
+- Modify: `src/Millrace.Core/Io/TagImage.cs` (extract `Check`, add `CheckWritable` and `ApplyNow`)
+- Modify: `src/Millrace.Core/Simulation.cs` (add `WriteAt`, `WriteIn`, private `WriteEvent`)
+- Test: `tests/Millrace.Core.Tests/WriteAtTests.cs`
 
 **Interfaces:**
-- Consumes: `TagDirectory.Find(string) → TagDescriptor` (throws `KeyNotFoundException`); `TagBinding.Apply(TagValue)`; `TickContext(long tick, double dt, DateTimeOffset simTime, EventLog log)` and its `Log(source, code, message)`; `EventQueue.Schedule(long dueTick, ISimEvent) → long`; `Dse.Core.Tests.Fakes.Thermostat` (tags `T.Setpoint` `Double` RW, `T.Enable` `Bool` RW, `T.Output` `Double` RO) and `Dse.Core.Tests.Fakes.Fuse` (fault `Fuse.Blow` = `"blow"`, parameter `resistance`, default `1e6`).
+- Consumes: `TagDirectory.Find(string) → TagDescriptor` (throws `KeyNotFoundException`); `TagBinding.Apply(TagValue)`; `TickContext(long tick, double dt, DateTimeOffset simTime, EventLog log)` and its `Log(source, code, message)`; `EventQueue.Schedule(long dueTick, ISimEvent) → long`; `Millrace.Core.Tests.Fakes.Thermostat` (tags `T.Setpoint` `Double` RW, `T.Enable` `Bool` RW, `T.Output` `Double` RO) and `Millrace.Core.Tests.Fakes.Fuse` (fault `Fuse.Blow` = `"blow"`, parameter `resistance`, default `1e6`).
 - Produces:
   - `public long Simulation.WriteAt(TimeSpan fromStart, string tag, TagValue value)`
   - `public long Simulation.WriteIn(TimeSpan delay, string tag, TagValue value)`
@@ -301,15 +301,15 @@ Order within a tick after this task, unchanged for queued writes:
 
 - [ ] **Step 1: Write the failing test**
 
-`tests/Dse.Core.Tests/WriteAtTests.cs`:
+`tests/Millrace.Core.Tests/WriteAtTests.cs`:
 
 ```csharp
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Time;
-using Dse.Io;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Time;
+using Millrace.Io;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class WriteAtTests
 {
@@ -442,12 +442,12 @@ public class WriteAtTests
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo --filter FullyQualifiedName~WriteAtTests`
+Run: `dotnet test tests/Millrace.Core.Tests --nologo --filter FullyQualifiedName~WriteAtTests`
 Expected: build FAILS — `Simulation` has no `WriteAt`.
 
 - [ ] **Step 3: Give `TagImage` the two new seams**
 
-In `src/Dse.Core/Io/TagImage.cs`, replace the body of `Write(int, TagValue)`
+In `src/Millrace.Core/Io/TagImage.cs`, replace the body of `Write(int, TagValue)`
 with a call to a new private `Check`, and add `CheckWritable` and `ApplyNow`
 beside it. The exception messages must not change — `IoIntegrationTests` and
 `CommandBus` callers depend on them.
@@ -510,7 +510,7 @@ beside it. The exception messages must not change — `IoIntegrationTests` and
 
 - [ ] **Step 4: Give `Simulation` the scheduled write**
 
-In `src/Dse.Core/Simulation.cs`, add the two methods immediately after
+In `src/Millrace.Core/Simulation.cs`, add the two methods immediately after
 `ClearFaultIn`:
 
 ```csharp
@@ -563,19 +563,19 @@ and the event class immediately before `private sealed class FaultEvent`:
 
 - [ ] **Step 5: Run the test to verify it passes**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo --filter FullyQualifiedName~WriteAtTests`
+Run: `dotnet test tests/Millrace.Core.Tests --nologo --filter FullyQualifiedName~WriteAtTests`
 Expected: PASS, 8 tests.
 
 - [ ] **Step 6: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 751 + 8 = 759 tests. Report the number the runner prints.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/Dse.Core/Simulation.cs src/Dse.Core/Io/TagImage.cs tests/Dse.Core.Tests/WriteAtTests.cs
+git add src/Millrace.Core/Simulation.cs src/Millrace.Core/Io/TagImage.cs tests/Millrace.Core.Tests/WriteAtTests.cs
 ```
 
 ```bash
@@ -606,14 +606,14 @@ on a descriptor's defaults staying put.
 also sees *rejected* commands, which is audit, not replay.
 
 **Files:**
-- Create: `src/Dse.Core/IActionRecorder.cs`
-- Modify: `src/Dse.Core/Io/TagImage.cs` (field, `SetActionRecorder`, two call sites)
-- Modify: `src/Dse.Core/Simulation.cs` (`ActionRecorder`, `AttachActionRecorder`, two call sites in `FaultEvent.Apply`)
-- Test: `tests/Dse.Core.Tests/ActionRecorderTests.cs`
+- Create: `src/Millrace.Core/IActionRecorder.cs`
+- Modify: `src/Millrace.Core/Io/TagImage.cs` (field, `SetActionRecorder`, two call sites)
+- Modify: `src/Millrace.Core/Simulation.cs` (`ActionRecorder`, `AttachActionRecorder`, two call sites in `FaultEvent.Apply`)
+- Test: `tests/Millrace.Core.Tests/ActionRecorderTests.cs`
 
 **Interfaces:**
 - Consumes: Task 1's `TagImage.ApplyNow` and `Simulation.WriteAt`; `FaultArguments` (`Count`, `this[int]`, `TryGet`, `ToString()`); `FaultArgument(string Name, double Value)`; `FaultDescriptor.Resolve(FaultArguments) → FaultArguments`.
-- Produces (namespace `Dse.Core`):
+- Produces (namespace `Millrace.Core`):
   - `public interface IActionRecorder` with
     `void Wrote(long tick, string tag, TagValue value);`
     `void Faulted(long tick, string componentId, string faultId, FaultArguments arguments);`
@@ -624,16 +624,16 @@ also sees *rejected* commands, which is audit, not replay.
 
 - [ ] **Step 1: Write the failing test**
 
-`tests/Dse.Core.Tests/ActionRecorderTests.cs`:
+`tests/Millrace.Core.Tests/ActionRecorderTests.cs`:
 
 ```csharp
-using Dse.Core.Faults;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Time;
-using Dse.Io;
+using Millrace.Core.Faults;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Time;
+using Millrace.Io;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class ActionRecorderTests
 {
@@ -758,18 +758,18 @@ public class ActionRecorderTests
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo --filter FullyQualifiedName~ActionRecorderTests`
+Run: `dotnet test tests/Millrace.Core.Tests --nologo --filter FullyQualifiedName~ActionRecorderTests`
 Expected: build FAILS — `IActionRecorder` does not exist.
 
 - [ ] **Step 3: Write the interface**
 
-`src/Dse.Core/IActionRecorder.cs`:
+`src/Millrace.Core/IActionRecorder.cs`:
 
 ```csharp
-using Dse.Core.Faults;
-using Dse.Io;
+using Millrace.Core.Faults;
+using Millrace.Io;
 
-namespace Dse.Core;
+namespace Millrace.Core;
 
 /// <summary>
 /// Sees every action that took effect, stamped with the tick it took effect on,
@@ -778,7 +778,7 @@ namespace Dse.Core;
 /// places an action lands, so nothing can slip past it.
 /// </summary>
 /// <remarks>
-/// Not to be confused with <c>Dse.Realtime.ICommandRecorder</c>, which also sees
+/// Not to be confused with <c>Millrace.Realtime.ICommandRecorder</c>, which also sees
 /// commands the bus <em>rejected</em>. That is an audit trail; this is a replay.
 /// </remarks>
 public interface IActionRecorder
@@ -796,7 +796,7 @@ public interface IActionRecorder
 
 - [ ] **Step 4: Call it from the two write sites**
 
-In `src/Dse.Core/Io/TagImage.cs`, add the field beside `_writes`:
+In `src/Millrace.Core/Io/TagImage.cs`, add the field beside `_writes`:
 
 ```csharp
     private IActionRecorder? _recorder;
@@ -841,7 +841,7 @@ and add one line to each of the two apply paths:
 
 - [ ] **Step 5: Attach it, and call it from the fault site**
 
-In `src/Dse.Core/Simulation.cs`, add beside `AttachFrameSink`:
+In `src/Millrace.Core/Simulation.cs`, add beside `AttachFrameSink`:
 
 ```csharp
     /// <summary>Where every action that takes effect is reported, or null when nothing is attached.</summary>
@@ -890,7 +890,7 @@ and replace `FaultEvent.Apply` with:
 
 - [ ] **Step 6: Run the test to verify it passes**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo --filter FullyQualifiedName~ActionRecorderTests`
+Run: `dotnet test tests/Millrace.Core.Tests --nologo --filter FullyQualifiedName~ActionRecorderTests`
 Expected: PASS, 6 tests.
 
 If `blow(resistance=1000000)` does not match, report the string
@@ -900,14 +900,14 @@ formatting is `double.ToString(CultureInfo.InvariantCulture)`, which prints
 
 - [ ] **Step 7: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 759 + 6 = 765 tests.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/Dse.Core/IActionRecorder.cs src/Dse.Core/Simulation.cs src/Dse.Core/Io/TagImage.cs tests/Dse.Core.Tests/ActionRecorderTests.cs
+git add src/Millrace.Core/IActionRecorder.cs src/Millrace.Core/Simulation.cs src/Millrace.Core/Io/TagImage.cs tests/Millrace.Core.Tests/ActionRecorderTests.cs
 ```
 
 ```bash
@@ -925,7 +925,7 @@ MSG
 
 ---
 
-### Task 3: `Dse.Scenarios` — the model, the diagnostics and `ScenarioLoader.Parse`
+### Task 3: `Millrace.Scenarios` — the model, the diagnostics and `ScenarioLoader.Parse`
 
 The new project and everything that can be decided without a plant: well-formed
 JSON, known keys, types, ranges, `duration > 0`, one shape per action with its
@@ -937,26 +937,26 @@ exactly, same `ConfigDiagnostic` record, same "a fix is not optional" rule):
 
 | Code | Title | When |
 |---|---|---|
-| DSE200 | Scenario is not valid JSON | Parse failure; the message carries the parser's line and column. |
-| DSE201 | Unknown key | A key the format does not define, at the top level or in an action. |
-| DSE202 | Value missing, of the wrong type, or out of range | `plant` absent, `duration` absent or `≤ 0`, `seed` negative, `startTime` without an offset, a non-numeric `arg`, a `value` that is not a JSON bool or number. |
-| DSE203 | Time is not on a tick, or not before the end | `at` or `duration` is not a multiple of the step; `at ≥ duration`. |
-| DSE204 | Action is malformed | None or more than one of `write`/`fault`/`clear`; `value` missing on a write; `id` missing on a fault or clear; `args` on a clear; `id` or `args` on a write. |
-| DSE205 | Plant file is invalid | Task 5. A wrapper line with the plant path; the plant's own diagnostics follow. |
-| DSE206 | Action does not bind to the plant | Task 5. Unknown tag, read-only tag, kind mismatch, unknown component, unknown fault id, undeclared fault argument. |
+| MR200 | Scenario is not valid JSON | Parse failure; the message carries the parser's line and column. |
+| MR201 | Unknown key | A key the format does not define, at the top level or in an action. |
+| MR202 | Value missing, of the wrong type, or out of range | `plant` absent, `duration` absent or `≤ 0`, `seed` negative, `startTime` without an offset, a non-numeric `arg`, a `value` that is not a JSON bool or number. |
+| MR203 | Time is not on a tick, or not before the end | `at` or `duration` is not a multiple of the step; `at ≥ duration`. |
+| MR204 | Action is malformed | None or more than one of `write`/`fault`/`clear`; `value` missing on a write; `id` missing on a fault or clear; `args` on a clear; `id` or `args` on a write. |
+| MR205 | Plant file is invalid | Task 5. A wrapper line with the plant path; the plant's own diagnostics follow. |
+| MR206 | Action does not bind to the plant | Task 5. Unknown tag, read-only tag, kind mismatch, unknown component, unknown fault id, undeclared fault argument. |
 
 **Files:**
-- Create: `src/Dse.Scenarios/Dse.Scenarios.csproj`
-- Create: `src/Dse.Scenarios/ScenarioValueKind.cs`, `ScenarioValue.cs`, `ScenarioAction.cs`, `Scenario.cs`
-- Create: `src/Dse.Scenarios/ScenarioDiagnostics.cs`, `ScenarioParseResult.cs`, `ScenarioLoader.cs`
-- Create: `tests/Dse.Scenarios.Tests/Dse.Scenarios.Tests.csproj`, `Corpus.cs`
-- Test: `tests/Dse.Scenarios.Tests/ScenarioModelTests.cs`, `ScenarioDiagnosticsTests.cs`, `ScenarioParseTests.cs`, `CorpusTests.cs`
-- Create: `tests/Dse.Scenarios.Tests/Scenarios/valid/*.json` (4 files), `Scenarios/invalid/*.json` (5 files)
-- Modify: `Dse.sln`
+- Create: `src/Millrace.Scenarios/Millrace.Scenarios.csproj`
+- Create: `src/Millrace.Scenarios/ScenarioValueKind.cs`, `ScenarioValue.cs`, `ScenarioAction.cs`, `Scenario.cs`
+- Create: `src/Millrace.Scenarios/ScenarioDiagnostics.cs`, `ScenarioParseResult.cs`, `ScenarioLoader.cs`
+- Create: `tests/Millrace.Scenarios.Tests/Millrace.Scenarios.Tests.csproj`, `Corpus.cs`
+- Test: `tests/Millrace.Scenarios.Tests/ScenarioModelTests.cs`, `ScenarioDiagnosticsTests.cs`, `ScenarioParseTests.cs`, `CorpusTests.cs`
+- Create: `tests/Millrace.Scenarios.Tests/Scenarios/valid/*.json` (4 files), `Scenarios/invalid/*.json` (5 files)
+- Modify: `Millrace.sln`
 
 **Interfaces:**
-- Consumes: `ConfigDiagnostic(string code, DiagnosticSeverity severity, string path, string message, string fix)` with `ToText()`; `DiagnosticInfo(string Code, string Title, string Explanation)`; `DiagnosticSeverity.Error`; `LoadOptions { TimeSpan? TimeStep; ulong? Seed; DateTimeOffset? StartTime; }` — all `Dse.Configuration`. `Suggest.Fix(string given, IEnumerable<string> candidates, string noun)`, `Suggest.Closest`, `Suggest.List` — `Dse.Core.Catalogue`. `FaultArgument(string Name, double Value)` — `Dse.Core.Faults`. `TagKind` and `TagValue` — `Dse.Io`.
-- Produces (namespace `Dse.Scenarios`):
+- Consumes: `ConfigDiagnostic(string code, DiagnosticSeverity severity, string path, string message, string fix)` with `ToText()`; `DiagnosticInfo(string Code, string Title, string Explanation)`; `DiagnosticSeverity.Error`; `LoadOptions { TimeSpan? TimeStep; ulong? Seed; DateTimeOffset? StartTime; }` — all `Millrace.Configuration`. `Suggest.Fix(string given, IEnumerable<string> candidates, string noun)`, `Suggest.Closest`, `Suggest.List` — `Millrace.Core.Catalogue`. `FaultArgument(string Name, double Value)` — `Millrace.Core.Faults`. `TagKind` and `TagValue` — `Millrace.Io`.
+- Produces (namespace `Millrace.Scenarios`):
   - `public enum ScenarioValueKind { Bool, Number, Integer }`
   - `public sealed record ScenarioValue` — `Kind`, `Boolean`, `Number`, `Integer`; factories `OfBool(bool)`, `OfNumber(double)`, `OfInteger(long)`; `TagValue? ToTagValue(TagKind kind)`; `ToString()` renders it as the file would
   - `public abstract record ScenarioAction(TimeSpan At)`
@@ -964,13 +964,13 @@ exactly, same `ConfigDiagnostic` record, same "a fix is not optional" rule):
   - `public sealed record FaultAction(TimeSpan At, string ComponentId, string FaultId, IReadOnlyList<FaultArgument> Arguments) : ScenarioAction(At)`
   - `public sealed record ClearAction(TimeSpan At, string ComponentId, string FaultId) : ScenarioAction(At)`
   - `public sealed record Scenario(string PlantPath, ulong? Seed, DateTimeOffset? StartTime, TimeSpan? TimeStep, TimeSpan Duration, IReadOnlyList<ScenarioAction> Timeline)` with `string ResolvePlantPath(string scenarioFilePath)` and `LoadOptions ToLoadOptions()`
-  - `public static class ScenarioDiagnostics` — constants `Syntax = "DSE200"`, `UnknownKey = "DSE201"`, `BadValue = "DSE202"`, `BadTime = "DSE203"`, `BadAction = "DSE204"`, `PlantInvalid = "DSE205"`, `DoesNotBind = "DSE206"`; `All`; `internal` factories `Error`, `OffTick`, `NotBeforeTheEnd`, `Seconds`
+  - `public static class ScenarioDiagnostics` — constants `Syntax = "MR200"`, `UnknownKey = "MR201"`, `BadValue = "MR202"`, `BadTime = "MR203"`, `BadAction = "MR204"`, `PlantInvalid = "MR205"`, `DoesNotBind = "MR206"`; `All`; `internal` factories `Error`, `OffTick`, `NotBeforeTheEnd`, `Seconds`
   - `public sealed class ScenarioParseResult` — `Diagnostics`, `IsValid`, `Scenario`, `ToText()`
   - `public static class ScenarioLoader { public static ScenarioParseResult Parse(string json); }`
 
 - [ ] **Step 1: Create the two projects and add them to the solution**
 
-`src/Dse.Scenarios/Dse.Scenarios.csproj`:
+`src/Millrace.Scenarios/Millrace.Scenarios.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -980,16 +980,16 @@ exactly, same `ConfigDiagnostic` record, same "a fix is not optional" rule):
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Dse.Core\Dse.Core.csproj" />
-    <ProjectReference Include="..\Dse.Configuration\Dse.Configuration.csproj" />
+    <ProjectReference Include="..\Millrace.Core\Millrace.Core.csproj" />
+    <ProjectReference Include="..\Millrace.Configuration\Millrace.Configuration.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <InternalsVisibleTo Include="Dse.Scenarios.Tests" />
+    <InternalsVisibleTo Include="Millrace.Scenarios.Tests" />
   </ItemGroup>
 </Project>
 ```
 
-`tests/Dse.Scenarios.Tests/Dse.Scenarios.Tests.csproj` — the plants are linked
+`tests/Millrace.Scenarios.Tests/Millrace.Scenarios.Tests.csproj` — the plants are linked
 from the configuration corpus (R62), so the two projects cannot drift:
 
 ```xml
@@ -1020,36 +1020,36 @@ from the configuration corpus (R62), so the two projects cannot drift:
   <ItemGroup>
     <None Include="Scenarios\**\*.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Plants\*.json" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\Dse.Configuration.Tests\Plants\valid\*.json"
+    <None Include="..\Millrace.Configuration.Tests\Plants\valid\*.json"
           Link="Plants\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Dse.Scenarios\Dse.Scenarios.csproj" />
-    <ProjectReference Include="..\..\src\Dse.Components\Dse.Components.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Scenarios\Millrace.Scenarios.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Components\Millrace.Components.csproj" />
   </ItemGroup>
 
 </Project>
 ```
 
 ```bash
-dotnet sln Dse.sln add src/Dse.Scenarios/Dse.Scenarios.csproj --solution-folder src
+dotnet sln Millrace.sln add src/Millrace.Scenarios/Millrace.Scenarios.csproj --solution-folder src
 ```
 
 ```bash
-dotnet sln Dse.sln add tests/Dse.Scenarios.Tests/Dse.Scenarios.Tests.csproj --solution-folder tests
+dotnet sln Millrace.sln add tests/Millrace.Scenarios.Tests/Millrace.Scenarios.Tests.csproj --solution-folder tests
 ```
 
 - [ ] **Step 2: Write the failing model and diagnostics tests**
 
-`tests/Dse.Scenarios.Tests/ScenarioModelTests.cs`:
+`tests/Millrace.Scenarios.Tests/ScenarioModelTests.cs`:
 
 ```csharp
-using Dse.Configuration;
-using Dse.Core.Faults;
-using Dse.Io;
+using Millrace.Configuration;
+using Millrace.Core.Faults;
+using Millrace.Io;
 
-namespace Dse.Scenarios.Tests;
+namespace Millrace.Scenarios.Tests;
 
 public class ScenarioModelTests
 {
@@ -1170,12 +1170,12 @@ public class ScenarioModelTests
 }
 ```
 
-`tests/Dse.Scenarios.Tests/ScenarioDiagnosticsTests.cs`:
+`tests/Millrace.Scenarios.Tests/ScenarioDiagnosticsTests.cs`:
 
 ```csharp
-using Dse.Configuration;
+using Millrace.Configuration;
 
-namespace Dse.Scenarios.Tests;
+namespace Millrace.Scenarios.Tests;
 
 public class ScenarioDiagnosticsTests
 {
@@ -1185,8 +1185,8 @@ public class ScenarioDiagnosticsTests
         string[] codes = ScenarioDiagnostics.All.Select(d => d.Code).ToArray();
 
         Assert.Equal(7, codes.Length);
-        Assert.Equal("DSE200", codes[0]);
-        Assert.Equal("DSE206", codes[^1]);
+        Assert.Equal("MR200", codes[0]);
+        Assert.Equal("MR206", codes[^1]);
         Assert.Equal(codes.Order(StringComparer.Ordinal), codes);
         Assert.Equal(codes.Length, codes.Distinct(StringComparer.Ordinal).Count());
         Assert.All(ScenarioDiagnostics.All, d =>
@@ -1206,15 +1206,15 @@ public class ScenarioDiagnosticsTests
 }
 ```
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo`
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo`
 Expected: build FAILS — `Scenario` does not exist.
 
 - [ ] **Step 3: Write the model**
 
-`src/Dse.Scenarios/ScenarioValueKind.cs`:
+`src/Millrace.Scenarios/ScenarioValueKind.cs`:
 
 ```csharp
-namespace Dse.Scenarios;
+namespace Millrace.Scenarios;
 
 /// <summary>Which JSON shape a write's value had. The tag's kind is not known until scheduling.</summary>
 public enum ScenarioValueKind
@@ -1230,13 +1230,13 @@ public enum ScenarioValueKind
 }
 ```
 
-`src/Dse.Scenarios/ScenarioValue.cs`:
+`src/Millrace.Scenarios/ScenarioValue.cs`:
 
 ```csharp
 using System.Globalization;
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Scenarios;
+namespace Millrace.Scenarios;
 
 /// <summary>
 /// A write's value exactly as the file gave it. It stays in this form until the
@@ -1293,12 +1293,12 @@ public sealed record ScenarioValue
 }
 ```
 
-`src/Dse.Scenarios/ScenarioAction.cs`:
+`src/Millrace.Scenarios/ScenarioAction.cs`:
 
 ```csharp
-using Dse.Core.Faults;
+using Millrace.Core.Faults;
 
-namespace Dse.Scenarios;
+namespace Millrace.Scenarios;
 
 /// <summary>
 /// One thing a scenario does, and when. <c>At</c> is the tick at which the plant
@@ -1322,12 +1322,12 @@ public sealed record FaultAction(
 public sealed record ClearAction(TimeSpan At, string ComponentId, string FaultId) : ScenarioAction(At);
 ```
 
-`src/Dse.Scenarios/Scenario.cs`:
+`src/Millrace.Scenarios/Scenario.cs`:
 
 ```csharp
-using Dse.Configuration;
+using Millrace.Configuration;
 
-namespace Dse.Scenarios;
+namespace Millrace.Scenarios;
 
 /// <summary>
 /// A run, as a file describes it: which plant, how the engine is set up, how
@@ -1372,13 +1372,13 @@ public sealed record Scenario(
 
 - [ ] **Step 4: Write the diagnostics table**
 
-`src/Dse.Scenarios/ScenarioDiagnostics.cs`:
+`src/Millrace.Scenarios/ScenarioDiagnostics.cs`:
 
 ```csharp
 using System.Globalization;
-using Dse.Configuration;
+using Millrace.Configuration;
 
-namespace Dse.Scenarios;
+namespace Millrace.Scenarios;
 
 /// <summary>
 /// Every scenario diagnostic code. The reference page in docs/ is generated
@@ -1387,25 +1387,25 @@ namespace Dse.Scenarios;
 public static class ScenarioDiagnostics
 {
     /// <summary>The scenario file could not be parsed.</summary>
-    public const string Syntax = "DSE200";
+    public const string Syntax = "MR200";
 
     /// <summary>A key the format does not define.</summary>
-    public const string UnknownKey = "DSE201";
+    public const string UnknownKey = "MR201";
 
     /// <summary>A value is missing, of the wrong type, or out of range.</summary>
-    public const string BadValue = "DSE202";
+    public const string BadValue = "MR202";
 
     /// <summary>A time is not on a tick, or an action is not before the end of the run.</summary>
-    public const string BadTime = "DSE203";
+    public const string BadTime = "MR203";
 
     /// <summary>An action does not have exactly one shape with its required companions.</summary>
-    public const string BadAction = "DSE204";
+    public const string BadAction = "MR204";
 
     /// <summary>The plant the scenario names has errors of its own.</summary>
-    public const string PlantInvalid = "DSE205";
+    public const string PlantInvalid = "MR205";
 
     /// <summary>An action names something the plant does not have.</summary>
-    public const string DoesNotBind = "DSE206";
+    public const string DoesNotBind = "MR206";
 
     /// <summary>The codes, in order, with what each means.</summary>
     public static IReadOnlyList<DiagnosticInfo> All { get; } =
@@ -1449,18 +1449,18 @@ public static class ScenarioDiagnostics
 
 - [ ] **Step 5: Run the model and diagnostics tests**
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo`
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo`
 Expected: PASS, 19 tests (8 facts + 3 theories of 3 rows in `ScenarioModelTests`, 2 facts in `ScenarioDiagnosticsTests`). Report the number the runner prints.
 
 - [ ] **Step 6: Write the failing parser tests**
 
-`tests/Dse.Scenarios.Tests/ScenarioParseTests.cs`:
+`tests/Millrace.Scenarios.Tests/ScenarioParseTests.cs`:
 
 ```csharp
-using Dse.Configuration;
-using Dse.Core.Faults;
+using Millrace.Configuration;
+using Millrace.Core.Faults;
 
-namespace Dse.Scenarios.Tests;
+namespace Millrace.Scenarios.Tests;
 
 public class ScenarioParseTests
 {
@@ -1522,41 +1522,41 @@ public class ScenarioParseTests
     }
 
     [Fact]
-    public void BrokenJsonIsDse200WithAPosition()
+    public void BrokenJsonIsMr200WithAPosition()
     {
         ConfigDiagnostic diagnostic = Only("""{ "plant": "p.json", "duration": """);
 
-        Assert.Equal(("DSE200", "$"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal(("MR200", "$"), (diagnostic.Code, diagnostic.Path));
         Assert.StartsWith("The scenario is not valid JSON at line ", diagnostic.Message, StringComparison.Ordinal);
         Assert.StartsWith("Correct the JSON at that position.", diagnostic.Fix, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void ANonObjectIsDse202()
+    public void ANonObjectIsMr202()
     {
         ConfigDiagnostic diagnostic = Only("[ ]");
 
-        Assert.Equal(("DSE202", "$", "A scenario file is a JSON object."), (diagnostic.Code, diagnostic.Path, diagnostic.Message));
+        Assert.Equal(("MR202", "$", "A scenario file is a JSON object."), (diagnostic.Code, diagnostic.Path, diagnostic.Message));
     }
 
     [Fact]
-    public void AnUnknownTopLevelKeyIsDse201AndNamesTheNearest()
+    public void AnUnknownTopLevelKeyIsMr201AndNamesTheNearest()
     {
         ConfigDiagnostic diagnostic = Only("""{ "plant": "p.json", "duration": 10, "seedd": 3 }""");
 
-        Assert.Equal(("DSE201", "$.seedd"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal(("MR201", "$.seedd"), (diagnostic.Code, diagnostic.Path));
         Assert.Equal("'seedd' is not a key a scenario has.", diagnostic.Message);
         Assert.Contains("'seed' is closest.", diagnostic.Fix, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void AnUnknownActionKeyIsDse201()
+    public void AnUnknownActionKeyIsMr201()
     {
         ConfigDiagnostic diagnostic = Only(Json("""
             "timeline": [ { "at": 1, "write": "T", "value": true, "vaue": 2 } ]
             """));
 
-        Assert.Equal(("DSE201", "$.timeline[0].vaue"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal(("MR201", "$.timeline[0].vaue"), (diagnostic.Code, diagnostic.Path));
         Assert.Contains("'value' is closest.", diagnostic.Fix, StringComparison.Ordinal);
     }
 
@@ -1570,11 +1570,11 @@ public class ScenarioParseTests
     [InlineData("""{ "plant": "p.json", "duration": 10, "timeStepMs": 0 }""", "$.timeStepMs", "\"timeStepMs\" must be a number greater than zero.")]
     [InlineData("""{ "plant": "p.json", "duration": 10, "startTime": "2026-01-01T06:00:00" }""", "$.startTime", "\"startTime\" must be an ISO 8601 date and time with an offset.")]
     [InlineData("""{ "plant": "p.json", "duration": 10, "timeline": 3 }""", "$.timeline", "\"timeline\" must be an array of actions.")]
-    public void ABadTopLevelValueIsDse202(string json, string path, string message)
+    public void ABadTopLevelValueIsMr202(string json, string path, string message)
     {
         ConfigDiagnostic diagnostic = Only(json);
 
-        Assert.Equal(("DSE202", path, message), (diagnostic.Code, diagnostic.Path, diagnostic.Message));
+        Assert.Equal(("MR202", path, message), (diagnostic.Code, diagnostic.Path, diagnostic.Message));
         Assert.EndsWith(".", diagnostic.Fix, StringComparison.Ordinal);
     }
 
@@ -1598,11 +1598,11 @@ public class ScenarioParseTests
     [InlineData("""{ "at": 1, "write": "T", "value": true, "id": "f" }""", "$.timeline[0].id", "\"id\" belongs to a fault or a clear, not to a write.")]
     [InlineData("""{ "at": 1, "write": "T", "value": true, "args": { "x": 1 } }""", "$.timeline[0].args", "\"args\" belongs to a fault, not to a write.")]
     [InlineData("""3""", "$.timeline[0]", "A timeline entry is an object.")]
-    public void AMalformedActionIsDse204(string action, string path, string message)
+    public void AMalformedActionIsMr204(string action, string path, string message)
     {
         ConfigDiagnostic diagnostic = Only(Json($"\"timeline\": [ {action} ]"));
 
-        Assert.Equal(("DSE204", path, message), (diagnostic.Code, diagnostic.Path, diagnostic.Message));
+        Assert.Equal(("MR204", path, message), (diagnostic.Code, diagnostic.Path, diagnostic.Message));
         Assert.EndsWith(".", diagnostic.Fix, StringComparison.Ordinal);
     }
 
@@ -1617,28 +1617,28 @@ public class ScenarioParseTests
     [InlineData("""{ "at": 1, "fault": "C", "id": 3 }""", "$.timeline[0].id", "\"id\" must be the name of a fault.")]
     [InlineData("""{ "at": 1, "fault": "C", "id": "f", "args": 3 }""", "$.timeline[0].args", "\"args\" must be an object of numbers.")]
     [InlineData("""{ "at": 1, "fault": "C", "id": "f", "args": { "amount": "lots" } }""", "$.timeline[0].args.amount", "Fault argument 'amount' must be a number.")]
-    public void ABadActionValueIsDse202(string action, string path, string message)
+    public void ABadActionValueIsMr202(string action, string path, string message)
     {
         ConfigDiagnostic diagnostic = Only(Json($"\"timeline\": [ {action} ]"));
 
-        Assert.Equal(("DSE202", path, message), (diagnostic.Code, diagnostic.Path, diagnostic.Message));
+        Assert.Equal(("MR202", path, message), (diagnostic.Code, diagnostic.Path, diagnostic.Message));
         Assert.EndsWith(".", diagnostic.Fix, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void AnActionAtTheEndOfTheRunIsDse203()
+    public void AnActionAtTheEndOfTheRunIsMr203()
     {
         ConfigDiagnostic diagnostic = Only(Json("""
             "timeline": [ { "at": 10, "write": "T", "value": true } ]
             """));
 
-        Assert.Equal(("DSE203", "$.timeline[0].at"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal(("MR203", "$.timeline[0].at"), (diagnostic.Code, diagnostic.Path));
         Assert.Equal("An action at 10 s is not before the end of the run at 10 s.", diagnostic.Message);
         Assert.StartsWith("Move the action earlier", diagnostic.Fix, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void ADeclaredStepMakesAnOffTickActionDse203()
+    public void ADeclaredStepMakesAnOffTickActionMr203()
     {
         ConfigDiagnostic diagnostic = Only("""
             {
@@ -1647,16 +1647,16 @@ public class ScenarioParseTests
             }
             """);
 
-        Assert.Equal(("DSE203", "$.timeline[0].at"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal(("MR203", "$.timeline[0].at"), (diagnostic.Code, diagnostic.Path));
         Assert.Equal("The action time 5.005 s is not a whole number of 10 ms steps.", diagnostic.Message);
     }
 
     [Fact]
-    public void ADeclaredStepMakesAnOffTickDurationDse203()
+    public void ADeclaredStepMakesAnOffTickDurationMr203()
     {
         ConfigDiagnostic diagnostic = Only("""{ "plant": "p.json", "timeStepMs": 100, "duration": 10.55 }""");
 
-        Assert.Equal(("DSE203", "$.duration"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal(("MR203", "$.duration"), (diagnostic.Code, diagnostic.Path));
         Assert.Equal("The duration 10.55 s is not a whole number of 100 ms steps.", diagnostic.Message);
     }
 
@@ -1684,7 +1684,7 @@ public class ScenarioParseTests
             """);
 
         Assert.Equal(
-            new[] { "DSE202", "DSE202", "DSE204", "DSE202" },
+            new[] { "MR202", "MR202", "MR204", "MR202" },
             result.Diagnostics.Select(d => d.Code));
         Assert.Equal(
             new[] { "$.plant", "$.duration", "$.timeline[0]", "$.timeline[1].value" },
@@ -1735,17 +1735,17 @@ public class ScenarioParseTests
 }
 ```
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo --filter FullyQualifiedName~ScenarioParseTests`
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo --filter FullyQualifiedName~ScenarioParseTests`
 Expected: build FAILS — `ScenarioLoader` does not exist.
 
 - [ ] **Step 7: Write the parse result**
 
-`src/Dse.Scenarios/ScenarioParseResult.cs`:
+`src/Millrace.Scenarios/ScenarioParseResult.cs`:
 
 ```csharp
-using Dse.Configuration;
+using Millrace.Configuration;
 
-namespace Dse.Scenarios;
+namespace Millrace.Scenarios;
 
 /// <summary>
 /// What a scenario file came to: the scenario, or every structural reason it is
@@ -1776,16 +1776,16 @@ public sealed class ScenarioParseResult
 
 - [ ] **Step 8: Write the loader**
 
-`src/Dse.Scenarios/ScenarioLoader.cs`:
+`src/Millrace.Scenarios/ScenarioLoader.cs`:
 
 ```csharp
 using System.Globalization;
 using System.Text.Json;
-using Dse.Configuration;
-using Dse.Core.Catalogue;
-using Dse.Core.Faults;
+using Millrace.Configuration;
+using Millrace.Core.Catalogue;
+using Millrace.Core.Faults;
 
-namespace Dse.Scenarios;
+namespace Millrace.Scenarios;
 
 /// <summary>
 /// Turns scenario text into a <see cref="Scenario"/>, or into every structural
@@ -1809,7 +1809,7 @@ public static class ScenarioLoader
     private static readonly string[] ActionKeys = ["at", "write", "value", "fault", "clear", "id", "args"];
 
     // The same forms the plant loader's defaults.startTime accepts; see
-    // Dse.Configuration.Loading.StructureStage.TryParseStartTime (R54). If one
+    // Millrace.Configuration.Loading.StructureStage.TryParseStartTime (R54). If one
     // changes, change both.
     private static readonly string[] StartTimeUtcFormats =
     [
@@ -2213,7 +2213,7 @@ public static class ScenarioLoader
                 ScenarioDiagnostics.BadAction,
                 path,
                 missing,
-                "Add \"id\": \"thermal-bias\"; `dse catalog export` lists each component's fault ids."));
+                "Add \"id\": \"thermal-bias\"; `millrace catalog export` lists each component's fault ids."));
             return null;
         }
 
@@ -2302,7 +2302,7 @@ public static class ScenarioLoader
 
 - [ ] **Step 9: Run the parser tests**
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo --filter FullyQualifiedName~ScenarioParseTests`
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo --filter FullyQualifiedName~ScenarioParseTests`
 Expected: PASS, 43 tests (15 facts + theory rows 9 + 9 + 10). Report the number the runner prints.
 
 If a message does not match, **report which** and change the test only after
@@ -2310,7 +2310,7 @@ checking the source string is the one this plan specifies.
 
 - [ ] **Step 10: Write the corpus files**
 
-`tests/Dse.Scenarios.Tests/Scenarios/valid/conveyor-start-and-fault.json` — the
+`tests/Millrace.Scenarios.Tests/Scenarios/valid/conveyor-start-and-fault.json` — the
 spec's own example, over the conveyor plant, with the plant's start time and
 step and the scenario's own seed:
 
@@ -2327,7 +2327,7 @@ step and the scenario's own seed:
 }
 ```
 
-`tests/Dse.Scenarios.Tests/Scenarios/valid/minimal-feed-throttled.json`:
+`tests/Millrace.Scenarios.Tests/Scenarios/valid/minimal-feed-throttled.json`:
 
 ```json
 {
@@ -2340,7 +2340,7 @@ step and the scenario's own seed:
 }
 ```
 
-`tests/Dse.Scenarios.Tests/Scenarios/valid/instrumented-belt-drift.json` — the
+`tests/Millrace.Scenarios.Tests/Scenarios/valid/instrumented-belt-drift.json` — the
 plant declares neither a seed nor a start time, so this scenario supplies all
 three overrides:
 
@@ -2359,7 +2359,7 @@ three overrides:
 }
 ```
 
-`tests/Dse.Scenarios.Tests/Scenarios/valid/item-line-blinded-counter.json`:
+`tests/Millrace.Scenarios.Tests/Scenarios/valid/item-line-blinded-counter.json`:
 
 ```json
 {
@@ -2373,7 +2373,7 @@ three overrides:
 }
 ```
 
-`tests/Dse.Scenarios.Tests/Scenarios/invalid/DSE200-unterminated-timeline.json`:
+`tests/Millrace.Scenarios.Tests/Scenarios/invalid/MR200-unterminated-timeline.json`:
 
 ```json
 {
@@ -2383,7 +2383,7 @@ three overrides:
 }
 ```
 
-`tests/Dse.Scenarios.Tests/Scenarios/invalid/DSE201-unknown-key.json`:
+`tests/Millrace.Scenarios.Tests/Scenarios/invalid/MR201-unknown-key.json`:
 
 ```json
 {
@@ -2393,7 +2393,7 @@ three overrides:
 }
 ```
 
-`tests/Dse.Scenarios.Tests/Scenarios/invalid/DSE202-duration-is-zero.json`:
+`tests/Millrace.Scenarios.Tests/Scenarios/invalid/MR202-duration-is-zero.json`:
 
 ```json
 {
@@ -2402,7 +2402,7 @@ three overrides:
 }
 ```
 
-`tests/Dse.Scenarios.Tests/Scenarios/invalid/DSE203-off-tick-action.json`:
+`tests/Millrace.Scenarios.Tests/Scenarios/invalid/MR203-off-tick-action.json`:
 
 ```json
 {
@@ -2415,7 +2415,7 @@ three overrides:
 }
 ```
 
-`tests/Dse.Scenarios.Tests/Scenarios/invalid/DSE204-two-shapes-in-one-action.json`:
+`tests/Millrace.Scenarios.Tests/Scenarios/invalid/MR204-two-shapes-in-one-action.json`:
 
 ```json
 {
@@ -2429,14 +2429,14 @@ three overrides:
 
 - [ ] **Step 11: Write the corpus helper and its tests**
 
-`tests/Dse.Scenarios.Tests/Corpus.cs` — public because xUnit's `MemberData`
+`tests/Millrace.Scenarios.Tests/Corpus.cs` — public because xUnit's `MemberData`
 reads it:
 
 ```csharp
-using Dse.Components;
-using Dse.Core.Catalogue;
+using Millrace.Components;
+using Millrace.Core.Catalogue;
 
-namespace Dse.Scenarios.Tests;
+namespace Millrace.Scenarios.Tests;
 
 /// <summary>The scenario files under Scenarios/, copied beside the test assembly, and the plants they name.</summary>
 public static class Corpus
@@ -2466,12 +2466,12 @@ public static class Corpus
 }
 ```
 
-`tests/Dse.Scenarios.Tests/CorpusTests.cs`:
+`tests/Millrace.Scenarios.Tests/CorpusTests.cs`:
 
 ```csharp
-using Dse.Configuration;
+using Millrace.Configuration;
 
-namespace Dse.Scenarios.Tests;
+namespace Millrace.Scenarios.Tests;
 
 public class CorpusTests
 {
@@ -2505,11 +2505,11 @@ public class CorpusTests
     /// </summary>
     public static IEnumerable<object[]> InvalidPaths() =>
     [
-        ["DSE200-unterminated-timeline.json", "DSE200", "$"],
-        ["DSE201-unknown-key.json", "DSE201", "$.seedd"],
-        ["DSE202-duration-is-zero.json", "DSE202", "$.duration"],
-        ["DSE203-off-tick-action.json", "DSE203", "$.timeline[0].at"],
-        ["DSE204-two-shapes-in-one-action.json", "DSE204", "$.timeline[0]"],
+        ["MR200-unterminated-timeline.json", "MR200", "$"],
+        ["MR201-unknown-key.json", "MR201", "$.seedd"],
+        ["MR202-duration-is-zero.json", "MR202", "$.duration"],
+        ["MR203-off-tick-action.json", "MR203", "$.timeline[0].at"],
+        ["MR204-two-shapes-in-one-action.json", "MR204", "$.timeline[0]"],
     ];
 
     [Theory]
@@ -2554,14 +2554,14 @@ public class CorpusTests
 
 - [ ] **Step 12: Run the corpus tests**
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo`
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo`
 Expected: PASS, 19 + 43 + 19 = 81 tests (the corpus adds 4 + 4 + 5 rows, the
 fixture-table guard, and 5 more rows). Report the number the runner prints.
 
 - [ ] **Step 13: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 765 + 81 = 846 tests.
 
 Run: `grep -rn "PackageReference" src/` — expect no output.
@@ -2569,7 +2569,7 @@ Run: `grep -rn "PackageReference" src/` — expect no output.
 - [ ] **Step 14: Commit**
 
 ```bash
-git add Dse.sln src/Dse.Scenarios tests/Dse.Scenarios.Tests
+git add Millrace.sln src/Millrace.Scenarios tests/Millrace.Scenarios.Tests
 ```
 
 ```bash
@@ -2577,7 +2577,7 @@ git commit -m "$(cat <<'MSG'
 feat(scenarios): add the scenario model and its structural loader
 
 ScenarioLoader.Parse finds every structural problem in a scenario file —
-DSE200 to DSE204 — with a JSON path and a fix, and touches neither the
+MR200 to MR204 — with a JSON path and a fix, and touches neither the
 file system nor a plant. A corpus of four valid and five invalid files
 pins the codes.
 
@@ -2600,8 +2600,8 @@ a list, and a positional record compares a list by reference, so record equality
 would be false for any scenario with fault arguments.
 
 **Files:**
-- Create: `src/Dse.Scenarios/ScenarioJson.cs`
-- Test: `tests/Dse.Scenarios.Tests/ScenarioJsonTests.cs`
+- Create: `src/Millrace.Scenarios/ScenarioJson.cs`
+- Test: `tests/Millrace.Scenarios.Tests/ScenarioJsonTests.cs`
 
 **Interfaces:**
 - Consumes: Task 3's `Scenario`, `ScenarioAction` and friends, `ScenarioValue`, `ScenarioLoader.Parse`, `ScenarioDiagnostics.Seconds(TimeSpan) → double`; `CatalogueJson.WriterOptions` (`Indented = true`, `UnsafeRelaxedJsonEscaping`) and `CatalogueJson.Finish(MemoryStream) → string`.
@@ -2609,12 +2609,12 @@ would be false for any scenario with fault arguments.
 
 - [ ] **Step 1: Write the failing test**
 
-`tests/Dse.Scenarios.Tests/ScenarioJsonTests.cs`:
+`tests/Millrace.Scenarios.Tests/ScenarioJsonTests.cs`:
 
 ```csharp
-using Dse.Core.Faults;
+using Millrace.Core.Faults;
 
-namespace Dse.Scenarios.Tests;
+namespace Millrace.Scenarios.Tests;
 
 public class ScenarioJsonTests
 {
@@ -2793,20 +2793,20 @@ public class ScenarioJsonTests
 }
 ```
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo --filter FullyQualifiedName~ScenarioJsonTests`
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo --filter FullyQualifiedName~ScenarioJsonTests`
 Expected: build FAILS — `ScenarioJson` does not exist.
 
 - [ ] **Step 2: Write the writer**
 
-`src/Dse.Scenarios/ScenarioJson.cs`:
+`src/Millrace.Scenarios/ScenarioJson.cs`:
 
 ```csharp
 using System.Globalization;
 using System.Text.Json;
-using Dse.Core.Catalogue;
-using Dse.Core.Faults;
+using Millrace.Core.Catalogue;
+using Millrace.Core.Faults;
 
-namespace Dse.Scenarios;
+namespace Millrace.Scenarios;
 
 /// <summary>
 /// A scenario as deterministic JSON: same scenario, same bytes. The key order
@@ -2963,7 +2963,7 @@ public static class ScenarioJson
 
 - [ ] **Step 3: Run the test to verify it passes**
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo --filter FullyQualifiedName~ScenarioJsonTests`
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo --filter FullyQualifiedName~ScenarioJsonTests`
 Expected: PASS, 12 tests (10 facts + a theory of 2 rows).
 
 If the exact document in the first test differs, **print the actual document**
@@ -2972,14 +2972,14 @@ and the plan asserts it as measured, not as hoped.
 
 - [ ] **Step 4: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 846 + 12 = 858 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Scenarios/ScenarioJson.cs tests/Dse.Scenarios.Tests/ScenarioJsonTests.cs
+git add src/Millrace.Scenarios/ScenarioJson.cs tests/Millrace.Scenarios.Tests/ScenarioJsonTests.cs
 ```
 
 ```bash
@@ -3002,48 +3002,48 @@ MSG
 The whole point of the plan: a scenario and a plant go in, an event log comes
 out, and every way the pair can disagree is a diagnostic reported **before tick
 0**. The runner is pure given the two texts, so a test runs a whole scenario
-from strings and `dse run` is a thin shell around it.
+from strings and `millrace run` is a thin shell around it.
 
 Order of work, and it matters:
 
 1. `PlantLoader.Load(plantJson, catalogue, scenario.ToLoadOptions())`. Invalid →
-   one `DSE205` naming the plant, then the plant's own diagnostics **unchanged**.
+   one `MR205` naming the plant, then the plant's own diagnostics **unchanged**.
 2. `Build()`, and take the effective step from `load.Options.TimeStep` — the
    scenario's override if it gave one, else the plant's `defaults`, else 10 ms.
 3. The duration is a whole number of steps.
 4. Every action, in order: at a whole number of steps, before the end, and
    bound — `WriteAt`, `InjectFaultAt` or `ClearFaultAt`, each of which resolves
-   its names now and throws on a bad one, which becomes `DSE206`.
+   its names now and throws on a bad one, which becomes `MR206`.
 5. Any diagnostic at all → return with no log. Otherwise `RunFor(duration)`.
 
 **Files:**
-- Create: `src/Dse.Scenarios/RunSummary.cs`, `ScenarioRunResult.cs`, `ScenarioRunner.cs`
-- Modify: `tests/Dse.Scenarios.Tests/Corpus.cs` (two run helpers, the `Unrunnable` member)
-- Modify: `tests/Dse.Scenarios.Tests/CorpusTests.cs` (the run, golden, unrunnable and coverage tests)
-- Create: `tests/Dse.Scenarios.Tests/Plants/broken.json`
-- Create: `tests/Dse.Scenarios.Tests/Scenarios/unrunnable/DSE205-plant-is-invalid.json`, `Scenarios/unrunnable/DSE206-unknown-tag.json`
-- Create: `tests/Dse.Scenarios.Tests/Golden/*.log` (four, generated)
-- Test: `tests/Dse.Scenarios.Tests/ScenarioRunnerTests.cs`
+- Create: `src/Millrace.Scenarios/RunSummary.cs`, `ScenarioRunResult.cs`, `ScenarioRunner.cs`
+- Modify: `tests/Millrace.Scenarios.Tests/Corpus.cs` (two run helpers, the `Unrunnable` member)
+- Modify: `tests/Millrace.Scenarios.Tests/CorpusTests.cs` (the run, golden, unrunnable and coverage tests)
+- Create: `tests/Millrace.Scenarios.Tests/Plants/broken.json`
+- Create: `tests/Millrace.Scenarios.Tests/Scenarios/unrunnable/MR205-plant-is-invalid.json`, `Scenarios/unrunnable/MR206-unknown-tag.json`
+- Create: `tests/Millrace.Scenarios.Tests/Golden/*.log` (four, generated)
+- Test: `tests/Millrace.Scenarios.Tests/ScenarioRunnerTests.cs`
 
 **Interfaces:**
 - Consumes: `PlantLoader.Load(string json, ComponentCatalogue catalogue, LoadOptions? options = null) → LoadResult`; `LoadResult.IsValid`, `.Diagnostics`, `.Builder` (`SimulationBuilder?`), `.Options` (`SimulationOptions?`); `SimulationBuilder.Build() → Simulation`; `SimulationOptions.TimeStep`; `Simulation.IO.Directory` (`TryFind(string, out TagDescriptor)`, `Tags`), `.WriteAt`, `.InjectFaultAt`, `.ClearFaultAt`, `.RunFor`, `.Clock.TickCount`, `.Events`; `TagDescriptor.Name/Kind/Access`; `FaultArguments(params FaultArgument[])`; `Suggest.Fix`; `Golden.Assert(string relativePath, string actual)`.
-- Produces (namespace `Dse.Scenarios`):
+- Produces (namespace `Millrace.Scenarios`):
   - `public sealed record RunSummary(long Ticks, int Events, int ActionsScheduled)`
   - `public sealed class ScenarioRunResult` — `Diagnostics`, `IsValid`, `Events` (`EventLog?`), `Summary` (`RunSummary?`), `ToText()`
   - `public static class ScenarioRunner { public static ScenarioRunResult Run(Scenario scenario, string plantJson, ComponentCatalogue catalogue); }`
-- Produces (test-only, `Dse.Scenarios.Tests.Corpus`):
+- Produces (test-only, `Millrace.Scenarios.Tests.Corpus`):
   - `public static ScenarioRunResult Run(string scenarioJson, string plantFile)`
   - `public static (ScenarioParseResult Parsed, ScenarioRunResult? Result) RunFile(string kind, string name)`
   - `public static IEnumerable<object[]> Unrunnable()`
 
 - [ ] **Step 1: Write the failing runner tests**
 
-`tests/Dse.Scenarios.Tests/ScenarioRunnerTests.cs`:
+`tests/Millrace.Scenarios.Tests/ScenarioRunnerTests.cs`:
 
 ```csharp
-using Dse.Configuration;
+using Millrace.Configuration;
 
-namespace Dse.Scenarios.Tests;
+namespace Millrace.Scenarios.Tests;
 
 public class ScenarioRunnerTests
 {
@@ -3110,7 +3110,7 @@ public class ScenarioRunnerTests
     }
 
     [Fact]
-    public void AnInvalidPlantIsDse205ThenThePlantsOwnDiagnostics()
+    public void AnInvalidPlantIsMr205ThenThePlantsOwnDiagnostics()
     {
         ScenarioRunResult result = Corpus.Run("""{ "plant": "broken.json", "duration": 1 }""", "broken.json");
 
@@ -3118,10 +3118,10 @@ public class ScenarioRunnerTests
         Assert.Null(result.Events);
         Assert.Null(result.Summary);
         ConfigDiagnostic first = result.Diagnostics[0];
-        Assert.Equal(("DSE205", "$.plant"), (first.Code, first.Path));
+        Assert.Equal(("MR205", "$.plant"), (first.Code, first.Path));
         Assert.Equal("The plant 'broken.json' has 2 errors of its own; they follow.", first.Message);
         Assert.StartsWith("Fix the plant file", first.Fix, StringComparison.Ordinal);
-        Assert.Equal(new[] { "DSE103", "DSE102" }, result.Diagnostics.Skip(1).Select(d => d.Code));
+        Assert.Equal(new[] { "MR103", "MR102" }, result.Diagnostics.Skip(1).Select(d => d.Code));
     }
 
     [Fact]
@@ -3136,7 +3136,7 @@ public class ScenarioRunnerTests
         ScenarioRunResult result = ScenarioRunner.Run(
             scenario, File.ReadAllText(Corpus.PlantPath("minimal.json")), Corpus.Catalogue);
 
-        Assert.Equal(new[] { "DSE203", "DSE203" }, result.Diagnostics.Select(d => d.Code));
+        Assert.Equal(new[] { "MR203", "MR203" }, result.Diagnostics.Select(d => d.Code));
         Assert.Equal(
             new[]
             {
@@ -3147,67 +3147,67 @@ public class ScenarioRunnerTests
     }
 
     [Fact]
-    public void AnOffTickActionOnThePlantsOwnStepIsDse203()
+    public void AnOffTickActionOnThePlantsOwnStepIsMr203()
     {
         ConfigDiagnostic diagnostic = Only("minimal.json", """
             "duration": 10,
             "timeline": [ { "at": 1.005, "write": "FEED.Enabled", "value": false } ]
             """);
 
-        Assert.Equal(("DSE203", "$.timeline[0].at"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal(("MR203", "$.timeline[0].at"), (diagnostic.Code, diagnostic.Path));
         Assert.Equal("The action time 1.005 s is not a whole number of 10 ms steps.", diagnostic.Message);
     }
 
     [Fact]
-    public void AnOffTickDurationOnThePlantsOwnStepIsDse203()
+    public void AnOffTickDurationOnThePlantsOwnStepIsMr203()
     {
         ConfigDiagnostic diagnostic = Only("minimal.json", "\"duration\": 10.005");
 
-        Assert.Equal(("DSE203", "$.duration"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal(("MR203", "$.duration"), (diagnostic.Code, diagnostic.Path));
         Assert.Equal("The duration 10.005 s is not a whole number of 10 ms steps.", diagnostic.Message);
     }
 
     [Fact]
-    public void AnUnknownTagIsDse206AndSuggestsTheNearest()
+    public void AnUnknownTagIsMr206AndSuggestsTheNearest()
     {
         ConfigDiagnostic diagnostic = Only("minimal.json", """
             "duration": 10,
             "timeline": [ { "at": 1, "write": "FEED.Ratte", "value": 5 } ]
             """);
 
-        Assert.Equal(("DSE206", "$.timeline[0].write"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal(("MR206", "$.timeline[0].write"), (diagnostic.Code, diagnostic.Path));
         Assert.Equal("There is no tag 'FEED.Ratte' in this plant.", diagnostic.Message);
         Assert.Contains("'FEED.Rate' is closest.", diagnostic.Fix, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void AReadOnlyTagIsDse206()
+    public void AReadOnlyTagIsMr206()
     {
         ConfigDiagnostic diagnostic = Only("minimal.json", """
             "duration": 10,
             "timeline": [ { "at": 1, "write": "PILE.Full", "value": true } ]
             """);
 
-        Assert.Equal(("DSE206", "$.timeline[0].write"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal(("MR206", "$.timeline[0].write"), (diagnostic.Code, diagnostic.Path));
         Assert.Equal("Tag 'PILE.Full' is read-only; a scenario cannot write it.", diagnostic.Message);
         Assert.StartsWith("Write a tag whose access is ReadWrite;", diagnostic.Fix, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void AValueOfTheWrongKindIsDse206()
+    public void AValueOfTheWrongKindIsMr206()
     {
         ConfigDiagnostic diagnostic = Only("minimal.json", """
             "duration": 10,
             "timeline": [ { "at": 1, "write": "FEED.Enabled", "value": 5 } ]
             """);
 
-        Assert.Equal(("DSE206", "$.timeline[0].value"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal(("MR206", "$.timeline[0].value"), (diagnostic.Code, diagnostic.Path));
         Assert.Equal("Tag 'FEED.Enabled' is a Bool tag; 5 is not a Bool value.", diagnostic.Message);
         Assert.Equal("Write true or false.", diagnostic.Fix);
     }
 
     [Fact]
-    public void AFractionOnAnIntegerTagIsDse206()
+    public void AFractionOnAnIntegerTagIsMr206()
     {
         ConfigDiagnostic diagnostic = Only("item-line.json", """
             "duration": 10,
@@ -3215,68 +3215,68 @@ public class ScenarioRunnerTests
             """);
 
         // BIN.Count is read-only, so the access check fires first: that is the order the runner promises.
-        Assert.Equal(("DSE206", "$.timeline[0].write"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal(("MR206", "$.timeline[0].write"), (diagnostic.Code, diagnostic.Path));
         Assert.Equal("Tag 'BIN.Count' is read-only; a scenario cannot write it.", diagnostic.Message);
     }
 
     [Fact]
-    public void AnUnknownComponentIsDse206AtTheShapeKey()
+    public void AnUnknownComponentIsMr206AtTheShapeKey()
     {
         ConfigDiagnostic diagnostic = Only("minimal.json", """
             "duration": 10,
             "timeline": [ { "at": 1, "fault": "NOPE", "id": "blockage" } ]
             """);
 
-        Assert.Equal(("DSE206", "$.timeline[0].fault"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal(("MR206", "$.timeline[0].fault"), (diagnostic.Code, diagnostic.Path));
         Assert.StartsWith("No component 'NOPE' in the plant.", diagnostic.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("(Parameter", diagnostic.Message, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void AComponentWithNoFaultsIsDse206()
+    public void AComponentWithNoFaultsIsMr206()
     {
         ConfigDiagnostic diagnostic = Only("minimal.json", """
             "duration": 10,
             "timeline": [ { "at": 1, "fault": "PILE", "id": "blockage" } ]
             """);
 
-        Assert.Equal(("DSE206", "$.timeline[0].fault"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal(("MR206", "$.timeline[0].fault"), (diagnostic.Code, diagnostic.Path));
         Assert.StartsWith("Component 'PILE' is not an IFaultTarget", diagnostic.Message, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void AnUnknownFaultIdIsDse206AtTheIdPath()
+    public void AnUnknownFaultIdIsMr206AtTheIdPath()
     {
         ConfigDiagnostic diagnostic = Only("minimal.json", """
             "duration": 10,
             "timeline": [ { "at": 1, "fault": "CHUTE", "id": "blokage" } ]
             """);
 
-        Assert.Equal(("DSE206", "$.timeline[0].id"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal(("MR206", "$.timeline[0].id"), (diagnostic.Code, diagnostic.Path));
         Assert.Equal("'CHUTE' supports no fault 'blokage'. Supported: blockage.", diagnostic.Message);
     }
 
     [Fact]
-    public void AnUndeclaredFaultArgumentIsDse206AtTheArgsPath()
+    public void AnUndeclaredFaultArgumentIsMr206AtTheArgsPath()
     {
         ConfigDiagnostic diagnostic = Only("minimal.json", """
             "duration": 10,
             "timeline": [ { "at": 1, "fault": "CHUTE", "id": "blockage", "args": { "amount": 1 } } ]
             """);
 
-        Assert.Equal(("DSE206", "$.timeline[0].args"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal(("MR206", "$.timeline[0].args"), (diagnostic.Code, diagnostic.Path));
         Assert.Equal("Fault 'blockage' has no parameter 'amount'. Declared: none.", diagnostic.Message);
     }
 
     [Fact]
-    public void AClearOfAnUnknownFaultIsDse206AtTheClearPath()
+    public void AClearOfAnUnknownFaultIsMr206AtTheClearPath()
     {
         ConfigDiagnostic diagnostic = Only("minimal.json", """
             "duration": 10,
             "timeline": [ { "at": 1, "clear": "NOPE", "id": "blockage" } ]
             """);
 
-        Assert.Equal(("DSE206", "$.timeline[0].clear"), (diagnostic.Code, diagnostic.Path));
+        Assert.Equal(("MR206", "$.timeline[0].clear"), (diagnostic.Code, diagnostic.Path));
     }
 
     [Fact]
@@ -3291,7 +3291,7 @@ public class ScenarioRunnerTests
             ]
             """);
 
-        Assert.Equal(new[] { "DSE206", "DSE203", "DSE206" }, result.Diagnostics.Select(d => d.Code));
+        Assert.Equal(new[] { "MR206", "MR203", "MR206" }, result.Diagnostics.Select(d => d.Code));
         Assert.Equal(
             new[] { "$.timeline[0].write", "$.timeline[1].at", "$.timeline[2].id" },
             result.Diagnostics.Select(d => d.Path));
@@ -3304,7 +3304,7 @@ public class ScenarioRunnerTests
 
 - [ ] **Step 2: Write the broken plant and the unrunnable fixtures**
 
-`tests/Dse.Scenarios.Tests/Plants/broken.json` — a negative capacity and a
+`tests/Millrace.Scenarios.Tests/Plants/broken.json` — a negative capacity and a
 misspelt type, exactly two errors:
 
 ```json
@@ -3325,7 +3325,7 @@ misspelt type, exactly two errors:
 }
 ```
 
-`tests/Dse.Scenarios.Tests/Scenarios/unrunnable/DSE205-plant-is-invalid.json`:
+`tests/Millrace.Scenarios.Tests/Scenarios/unrunnable/MR205-plant-is-invalid.json`:
 
 ```json
 {
@@ -3334,7 +3334,7 @@ misspelt type, exactly two errors:
 }
 ```
 
-`tests/Dse.Scenarios.Tests/Scenarios/unrunnable/DSE206-unknown-tag.json`:
+`tests/Millrace.Scenarios.Tests/Scenarios/unrunnable/MR206-unknown-tag.json`:
 
 ```json
 {
@@ -3348,7 +3348,7 @@ misspelt type, exactly two errors:
 
 - [ ] **Step 3: Extend the corpus helper**
 
-Add to `tests/Dse.Scenarios.Tests/Corpus.cs`, inside `public static class Corpus`:
+Add to `tests/Millrace.Scenarios.Tests/Corpus.cs`, inside `public static class Corpus`:
 
 ```csharp
     public static IEnumerable<object[]> Unrunnable() => Names("unrunnable");
@@ -3381,7 +3381,7 @@ Add to `tests/Dse.Scenarios.Tests/Corpus.cs`, inside `public static class Corpus
 
 - [ ] **Step 4: Add the corpus run, golden, unrunnable and coverage tests**
 
-Append to `tests/Dse.Scenarios.Tests/CorpusTests.cs`, inside `public class CorpusTests`:
+Append to `tests/Millrace.Scenarios.Tests/CorpusTests.cs`, inside `public class CorpusTests`:
 
 ```csharp
     [Theory]
@@ -3432,17 +3432,17 @@ Append to `tests/Dse.Scenarios.Tests/CorpusTests.cs`, inside `public class Corpu
     }
 ```
 
-and add `using Dse.Tests.Shared;` to the top of the file.
+and add `using Millrace.Tests.Shared;` to the top of the file.
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo`
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo`
 Expected: build FAILS — `ScenarioRunner` does not exist.
 
 - [ ] **Step 5: Write the result types**
 
-`src/Dse.Scenarios/RunSummary.cs`:
+`src/Millrace.Scenarios/RunSummary.cs`:
 
 ```csharp
-namespace Dse.Scenarios;
+namespace Millrace.Scenarios;
 
 /// <summary>What a run came to, in three numbers.</summary>
 /// <param name="Ticks">Ticks executed: the duration divided by the time step.</param>
@@ -3451,13 +3451,13 @@ namespace Dse.Scenarios;
 public sealed record RunSummary(long Ticks, int Events, int ActionsScheduled);
 ```
 
-`src/Dse.Scenarios/ScenarioRunResult.cs`:
+`src/Millrace.Scenarios/ScenarioRunResult.cs`:
 
 ```csharp
-using Dse.Configuration;
-using Dse.Core.Logging;
+using Millrace.Configuration;
+using Millrace.Core.Logging;
 
-namespace Dse.Scenarios;
+namespace Millrace.Scenarios;
 
 /// <summary>
 /// The outcome of running a scenario: either a log and a summary, or every
@@ -3492,17 +3492,17 @@ public sealed class ScenarioRunResult
 
 - [ ] **Step 6: Write the runner**
 
-`src/Dse.Scenarios/ScenarioRunner.cs`:
+`src/Millrace.Scenarios/ScenarioRunner.cs`:
 
 ```csharp
 using System.Globalization;
-using Dse.Configuration;
-using Dse.Core;
-using Dse.Core.Catalogue;
-using Dse.Core.Faults;
-using Dse.Io;
+using Millrace.Configuration;
+using Millrace.Core;
+using Millrace.Core.Catalogue;
+using Millrace.Core.Faults;
+using Millrace.Io;
 
-namespace Dse.Scenarios;
+namespace Millrace.Scenarios;
 
 /// <summary>
 /// Runs a scenario against a plant. Pure given the two texts — the caller reads
@@ -3512,7 +3512,7 @@ namespace Dse.Scenarios;
 public static class ScenarioRunner
 {
     private const string BindFix =
-        "Use a component, a fault and arguments the plant declares; `dse catalog export` lists every component's faults.";
+        "Use a component, a fault and arguments the plant declares; `millrace catalog export` lists every component's faults.";
 
     public static ScenarioRunResult Run(Scenario scenario, string plantJson, ComponentCatalogue catalogue)
     {
@@ -3563,7 +3563,7 @@ public static class ScenarioRunner
                 "$.plant",
                 string.Create(CultureInfo.InvariantCulture,
                     $"The plant '{scenario.PlantPath}' has {errors} error{(errors == 1 ? string.Empty : "s")} of its own; they follow."),
-                "Fix the plant file and run the scenario again; `dse validate` reports exactly these errors."),
+                "Fix the plant file and run the scenario again; `millrace validate` reports exactly these errors."),
         };
 
         diagnostics.AddRange(load.Diagnostics);
@@ -3576,7 +3576,7 @@ public static class ScenarioRunner
         ScenarioAction action = scenario.Timeline[index];
         string path = string.Create(CultureInfo.InvariantCulture, $"$.timeline[{index}]");
 
-        // "at >= 0" is DSE202 wherever it is checked (spec 3): the parser rejects
+        // "at >= 0" is MR202 wherever it is checked (spec 3): the parser rejects
         // a negative number as an out-of-range value, and so does this, for a
         // Scenario built in code rather than parsed.
         if (action.At < TimeSpan.Zero)
@@ -3648,7 +3648,7 @@ public static class ScenarioRunner
                 ScenarioDiagnostics.DoesNotBind,
                 $"{path}.write",
                 $"Tag '{tag.Name}' is read-only; a scenario cannot write it.",
-                "Write a tag whose access is ReadWrite; `dse tags <plant>` shows each tag's access."));
+                "Write a tag whose access is ReadWrite; `millrace tags <plant>` shows each tag's access."));
             return;
         }
 
@@ -3672,7 +3672,7 @@ public static class ScenarioRunner
 
     /// <summary>
     /// Schedules one action, turning the engine's own "no such thing" into
-    /// DSE206 at the JSON path of the part that was wrong (R58). The engine's
+    /// MR206 at the JSON path of the part that was wrong (R58). The engine's
     /// messages already name what exists, so they are the message.
     /// </summary>
     private static void Attempt(List<ConfigDiagnostic> diagnostics, string path, string key, Action schedule)
@@ -3708,13 +3708,13 @@ public static class ScenarioRunner
 
 - [ ] **Step 7: Run the runner tests, without the goldens**
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo --filter FullyQualifiedName~ScenarioRunnerTests`
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo --filter FullyQualifiedName~ScenarioRunnerTests`
 Expected: PASS, 18 tests.
 
 Two expectations here are measurements, not predictions. If either differs,
 **report the actual string** and correct the test to it:
 - `"The plant 'broken.json' has 2 errors of its own; they follow."` — the count
-  comes from `broken.json` producing exactly `DSE103` then `DSE102`.
+  comes from `broken.json` producing exactly `MR103` then `MR102`.
 - `"'CHUTE' supports no fault 'blokage'. Supported: blockage."` and
   `"Fault 'blockage' has no parameter 'amount'. Declared: none."` — these are
   `Simulation`'s and `FaultDescriptor`'s own words.
@@ -3722,10 +3722,10 @@ Two expectations here are measurements, not predictions. If either differs,
 - [ ] **Step 8: Generate the golden logs, then read them**
 
 ```bash
-DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Scenarios.Tests --nologo --filter FullyQualifiedName~CorpusTests
+MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Scenarios.Tests --nologo --filter FullyQualifiedName~CorpusTests
 ```
 
-Four files appear under `tests/Dse.Scenarios.Tests/Golden/`. **Read all four**
+Four files appear under `tests/Millrace.Scenarios.Tests/Golden/`. **Read all four**
 (`cat` each one, or open it) before committing anything. Then verify this
 checklist and **put the answers in the task report** — the run's own behaviour
 is not predicted here, only the lines the scenario's actions must produce:
@@ -3756,21 +3756,21 @@ cause is in the code or the scenario file, and the report must say which.
 - [ ] **Step 9: Run the corpus tests against the committed goldens**
 
 ```bash
-dotnet test tests/Dse.Scenarios.Tests --nologo
+dotnet test tests/Millrace.Scenarios.Tests --nologo
 ```
 
 Expected: PASS, 81 + 18 + 4 + 4 + 2 + 1 = 110 tests. Report the number.
 
 - [ ] **Step 10: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 858 + 29 = 887 tests.
 
 - [ ] **Step 11: Commit**
 
 ```bash
-git add src/Dse.Scenarios tests/Dse.Scenarios.Tests
+git add src/Millrace.Scenarios tests/Millrace.Scenarios.Tests
 ```
 
 ```bash
@@ -3778,9 +3778,9 @@ git commit -m "$(cat <<'MSG'
 feat(scenarios): run a scenario against a plant, with every check first
 
 ScenarioRunner loads the plant, binds every action against the built
-simulation and refuses to tick if anything is wrong: DSE205 wraps the
-plant's own diagnostics, DSE206 names the tag, component, fault or
-argument that does not exist, DSE203 the time that is not on a tick.
+simulation and refuses to tick if anything is wrong: MR205 wraps the
+plant's own diagnostics, MR206 names the tag, component, fault or
+argument that does not exist, MR203 the time that is not on a tick.
 Four committed golden logs pin the behaviour of the four valid plants.
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
@@ -3792,7 +3792,7 @@ MSG
 
 ### Task 6: `GoldenLog.Compare` — where two logs diverged
 
-`dse run --expect` and the tests must judge a mismatch the same way, so the
+`millrace run --expect` and the tests must judge a mismatch the same way, so the
 judgement lives beside the runner rather than in the command. Both texts are
 normalised first — `\r\n` to `\n`, exactly one trailing newline — because a log
 that travelled through a Windows checkout is not a behaviour change. On a
@@ -3803,12 +3803,12 @@ golden" is the honest version, and it is what `tests/Shared/Golden.cs` already
 does.
 
 **Files:**
-- Create: `src/Dse.Scenarios/LogComparison.cs`, `src/Dse.Scenarios/GoldenLog.cs`
-- Test: `tests/Dse.Scenarios.Tests/GoldenLogTests.cs`
+- Create: `src/Millrace.Scenarios/LogComparison.cs`, `src/Millrace.Scenarios/GoldenLog.cs`
+- Test: `tests/Millrace.Scenarios.Tests/GoldenLogTests.cs`
 
 **Interfaces:**
 - Consumes: nothing beyond the BCL.
-- Produces (namespace `Dse.Scenarios`):
+- Produces (namespace `Millrace.Scenarios`):
   - `public sealed record LogComparison(bool Matched, int FirstDifferentLine, int ExpectedLines, int ActualLines, string Report)` — `FirstDifferentLine` is 1-based and 0 when matched; `Report` always ends in `\n`
   - `public static class GoldenLog`
     - `public static string Normalise(string text)` — `\n` endings, exactly one trailing newline, or empty for an empty log
@@ -3816,10 +3816,10 @@ does.
 
 - [ ] **Step 1: Write the failing test**
 
-`tests/Dse.Scenarios.Tests/GoldenLogTests.cs`:
+`tests/Millrace.Scenarios.Tests/GoldenLogTests.cs`:
 
 ```csharp
-namespace Dse.Scenarios.Tests;
+namespace Millrace.Scenarios.Tests;
 
 public class GoldenLogTests
 {
@@ -3957,15 +3957,15 @@ public class GoldenLogTests
 }
 ```
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo --filter FullyQualifiedName~GoldenLogTests`
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo --filter FullyQualifiedName~GoldenLogTests`
 Expected: build FAILS — `GoldenLog` does not exist.
 
 - [ ] **Step 2: Write the comparison record**
 
-`src/Dse.Scenarios/LogComparison.cs`:
+`src/Millrace.Scenarios/LogComparison.cs`:
 
 ```csharp
-namespace Dse.Scenarios;
+namespace Millrace.Scenarios;
 
 /// <summary>
 /// What comparing a run's log with a committed one came to. A mismatch reports
@@ -3987,13 +3987,13 @@ public sealed record LogComparison(
 
 - [ ] **Step 3: Write the comparison**
 
-`src/Dse.Scenarios/GoldenLog.cs`:
+`src/Millrace.Scenarios/GoldenLog.cs`:
 
 ```csharp
 using System.Globalization;
 using System.Text;
 
-namespace Dse.Scenarios;
+namespace Millrace.Scenarios;
 
 /// <summary>
 /// Judges a run's event log against a committed one. The command line and the
@@ -4069,7 +4069,7 @@ public static class GoldenLog
 
 - [ ] **Step 4: Run the test to verify it passes**
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo --filter FullyQualifiedName~GoldenLogTests`
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo --filter FullyQualifiedName~GoldenLogTests`
 Expected: PASS, 18 tests (9 facts + theory rows 3 + 6).
 
 The exact report in `TheFirstDifferenceIsReportedWithContextFromBothTexts` is
@@ -4079,14 +4079,14 @@ the actual report and correct the test to it, saying so.
 
 - [ ] **Step 5: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 887 + 18 = 905 tests.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Scenarios/LogComparison.cs src/Dse.Scenarios/GoldenLog.cs tests/Dse.Scenarios.Tests/GoldenLogTests.cs
+git add src/Millrace.Scenarios/LogComparison.cs src/Millrace.Scenarios/GoldenLog.cs tests/Millrace.Scenarios.Tests/GoldenLogTests.cs
 ```
 
 ```bash
@@ -4123,49 +4123,49 @@ Recording has no CLI surface in 5b. Nothing external drives a run yet; the seam
 is proven here and is ready for the first adapter.
 
 **Files:**
-- Create: `src/Dse.Scenarios/ScenarioRecorder.cs`
-- Modify: `tests/Dse.Scenarios.Tests/Dse.Scenarios.Tests.csproj` (add `Dse.Realtime`, R61)
-- Test: `tests/Dse.Scenarios.Tests/ScenarioRecorderTests.cs`, `RecordAndReplayTests.cs`
+- Create: `src/Millrace.Scenarios/ScenarioRecorder.cs`
+- Modify: `tests/Millrace.Scenarios.Tests/Millrace.Scenarios.Tests.csproj` (add `Millrace.Realtime`, R61)
+- Test: `tests/Millrace.Scenarios.Tests/ScenarioRecorderTests.cs`, `RecordAndReplayTests.cs`
 
 **Interfaces:**
-- Consumes: `IActionRecorder` and `Simulation.AttachActionRecorder` (Task 2); `SimulationOptions` (`Seed` `ulong`, `StartTime`, `TimeStep`); `FaultArguments` (`Count`, `this[int]`); `CommandBus(ITagWriter writer, ICommandRecorder? recorder = null)` and `CommandOutcome.Accepted` from `Dse.Realtime`; `PlantLoader.Load`; `ScenarioJson.Write`; `ScenarioLoader.Parse`; `ScenarioRunner.Run`.
-- Produces (namespace `Dse.Scenarios`):
+- Consumes: `IActionRecorder` and `Simulation.AttachActionRecorder` (Task 2); `SimulationOptions` (`Seed` `ulong`, `StartTime`, `TimeStep`); `FaultArguments` (`Count`, `this[int]`); `CommandBus(ITagWriter writer, ICommandRecorder? recorder = null)` and `CommandOutcome.Accepted` from `Millrace.Realtime`; `PlantLoader.Load`; `ScenarioJson.Write`; `ScenarioLoader.Parse`; `ScenarioRunner.Run`.
+- Produces (namespace `Millrace.Scenarios`):
   - `public sealed class ScenarioRecorder : IActionRecorder`
     - `public int Count { get; }`
     - `public Scenario ToScenario(string plantPath, SimulationOptions options, TimeSpan duration)`
 
 - [ ] **Step 1: Add the real-time reference**
 
-In `tests/Dse.Scenarios.Tests/Dse.Scenarios.Tests.csproj`, add to the project
+In `tests/Millrace.Scenarios.Tests/Millrace.Scenarios.Tests.csproj`, add to the project
 reference group:
 
 ```xml
-    <ProjectReference Include="..\..\src\Dse.Realtime\Dse.Realtime.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Realtime\Millrace.Realtime.csproj" />
 ```
 
 so that group reads:
 
 ```xml
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Dse.Scenarios\Dse.Scenarios.csproj" />
-    <ProjectReference Include="..\..\src\Dse.Components\Dse.Components.csproj" />
-    <ProjectReference Include="..\..\src\Dse.Realtime\Dse.Realtime.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Scenarios\Millrace.Scenarios.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Components\Millrace.Components.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Realtime\Millrace.Realtime.csproj" />
   </ItemGroup>
 ```
 
-`src/Dse.Scenarios` gains nothing: it still references `Dse.Core` and
-`Dse.Configuration` only.
+`src/Millrace.Scenarios` gains nothing: it still references `Millrace.Core` and
+`Millrace.Configuration` only.
 
 - [ ] **Step 2: Write the failing recorder tests**
 
-`tests/Dse.Scenarios.Tests/ScenarioRecorderTests.cs`:
+`tests/Millrace.Scenarios.Tests/ScenarioRecorderTests.cs`:
 
 ```csharp
-using Dse.Core.Faults;
-using Dse.Core.Time;
-using Dse.Io;
+using Millrace.Core.Faults;
+using Millrace.Core.Time;
+using Millrace.Io;
 
-namespace Dse.Scenarios.Tests;
+namespace Millrace.Scenarios.Tests;
 
 public class ScenarioRecorderTests
 {
@@ -4276,15 +4276,15 @@ public class ScenarioRecorderTests
 }
 ```
 
-`tests/Dse.Scenarios.Tests/RecordAndReplayTests.cs`:
+`tests/Millrace.Scenarios.Tests/RecordAndReplayTests.cs`:
 
 ```csharp
-using Dse.Configuration;
-using Dse.Core;
-using Dse.Core.Faults;
-using Dse.Realtime;
+using Millrace.Configuration;
+using Millrace.Core;
+using Millrace.Core.Faults;
+using Millrace.Realtime;
 
-namespace Dse.Scenarios.Tests;
+namespace Millrace.Scenarios.Tests;
 
 public class RecordAndReplayTests
 {
@@ -4376,20 +4376,20 @@ public class RecordAndReplayTests
 }
 ```
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo --filter FullyQualifiedName~Record`
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo --filter FullyQualifiedName~Record`
 Expected: build FAILS — `ScenarioRecorder` does not exist.
 
 - [ ] **Step 3: Write the recorder**
 
-`src/Dse.Scenarios/ScenarioRecorder.cs`:
+`src/Millrace.Scenarios/ScenarioRecorder.cs`:
 
 ```csharp
-using Dse.Core;
-using Dse.Core.Faults;
-using Dse.Core.Time;
-using Dse.Io;
+using Millrace.Core;
+using Millrace.Core.Faults;
+using Millrace.Core.Time;
+using Millrace.Io;
 
-namespace Dse.Scenarios;
+namespace Millrace.Scenarios;
 
 /// <summary>
 /// Accumulates every action that took effect, in landing order, and turns the
@@ -4486,7 +4486,7 @@ public sealed class ScenarioRecorder : IActionRecorder
 
 - [ ] **Step 4: Run the tests**
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo --filter FullyQualifiedName~Record`
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo --filter FullyQualifiedName~Record`
 Expected: PASS, 9 tests (7 in `ScenarioRecorderTests`, 2 in `RecordAndReplayTests`).
 
 `TheReplayOfARecordedRunIsByteIdenticalToIt` is the plan's load-bearing test. If
@@ -4501,14 +4501,14 @@ options did not round-trip.
 
 - [ ] **Step 5: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 905 + 9 = 914 tests.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Scenarios/ScenarioRecorder.cs tests/Dse.Scenarios.Tests
+git add src/Millrace.Scenarios/ScenarioRecorder.cs tests/Millrace.Scenarios.Tests
 ```
 
 ```bash
@@ -4528,9 +4528,9 @@ MSG
 
 ---
 
-### Task 8: `dse run` — the command, and exit code 4
+### Task 8: `millrace run` — the command, and exit code 4
 
-`dse run <scenario.json> [--expect <golden.log>] [--out <file>] [--format text|json] [--assembly <path>]...`
+`millrace run <scenario.json> [--expect <golden.log>] [--out <file>] [--format text|json] [--assembly <path>]...`
 
 | case | stdout | stderr | exit |
 |---|---|---|---|
@@ -4548,19 +4548,19 @@ MSG
 behaviour is unchanged. They are different questions, which is the whole reason
 exit 4 exists.
 
-There is no `--update`. `dse run s.json --out golden.log` is how a golden is
+There is no `--update`. `millrace run s.json --out golden.log` is how a golden is
 made or remade, on purpose, and the change is reviewed in version control.
 
 **Files:**
-- Modify: `src/Dse.Cli/ExitCodes.cs`, `src/Dse.Cli/CommandTable.cs`, `src/Dse.Cli/Dse.Cli.csproj`
-- Modify: `src/Dse.Cli/Commands/PlantFile.cs` (extract `TryRead` and `ReportDiagnostics`; output bytes unchanged)
-- Create: `src/Dse.Cli/Commands/RunScenario.cs`
-- Modify: `tests/Dse.Cli.Tests/Cli.cs` (a `Scenario` path helper, and `Built` moved here), `tests/Dse.Cli.Tests/PluginTests.cs` (use it), `tests/Dse.Cli.Tests/Dse.Cli.Tests.csproj` (copy `Scenarios/`)
-- Create: `tests/Dse.Cli.Tests/Scenarios/*.json` (5 files)
-- Test: `tests/Dse.Cli.Tests/RunCommandTests.cs`
+- Modify: `src/Millrace.Cli/ExitCodes.cs`, `src/Millrace.Cli/CommandTable.cs`, `src/Millrace.Cli/Millrace.Cli.csproj`
+- Modify: `src/Millrace.Cli/Commands/PlantFile.cs` (extract `TryRead` and `ReportDiagnostics`; output bytes unchanged)
+- Create: `src/Millrace.Cli/Commands/RunScenario.cs`
+- Modify: `tests/Millrace.Cli.Tests/Cli.cs` (a `Scenario` path helper, and `Built` moved here), `tests/Millrace.Cli.Tests/PluginTests.cs` (use it), `tests/Millrace.Cli.Tests/Millrace.Cli.Tests.csproj` (copy `Scenarios/`)
+- Create: `tests/Millrace.Cli.Tests/Scenarios/*.json` (5 files)
+- Test: `tests/Millrace.Cli.Tests/RunCommandTests.cs`
 
 **Interfaces:**
-- Consumes: `ScenarioLoader.Parse`, `ScenarioParseResult` (`Scenario`, `Diagnostics`, `ToText()`), `Scenario.ResolvePlantPath`, `ScenarioRunner.Run`, `ScenarioRunResult` (`IsValid`, `Diagnostics`, `Events`, `Summary`, `ToText()`), `RunSummary.Events`/`.Ticks`, `GoldenLog.Normalise`/`.Compare`, `LogComparison` — all `Dse.Scenarios`. `CliContext` (`Out`, `Err`, `Json`, `Catalogue`, `CommandLine`), `CommandTable.Out`/`.Format`/`.Assembly`, `CatalogueJson.WriterOptions`/`.Finish`/`.Camel`, `SimEventRecord`.
+- Consumes: `ScenarioLoader.Parse`, `ScenarioParseResult` (`Scenario`, `Diagnostics`, `ToText()`), `Scenario.ResolvePlantPath`, `ScenarioRunner.Run`, `ScenarioRunResult` (`IsValid`, `Diagnostics`, `Events`, `Summary`, `ToText()`), `RunSummary.Events`/`.Ticks`, `GoldenLog.Normalise`/`.Compare`, `LogComparison` — all `Millrace.Scenarios`. `CliContext` (`Out`, `Err`, `Json`, `Catalogue`, `CommandLine`), `CommandTable.Out`/`.Format`/`.Assembly`, `CatalogueJson.WriterOptions`/`.Finish`/`.Camel`, `SimEventRecord`.
 - Produces:
   - `public const int ExitCodes.LogMismatch = 4;`
   - `internal static readonly OptionSpec CommandTable.Expect`
@@ -4571,7 +4571,7 @@ made or remade, on purpose, and the change is reviewed in version control.
 
 - [ ] **Step 1: Write the failing test**
 
-First, the fixtures. `tests/Dse.Cli.Tests/Scenarios/minimal.json`:
+First, the fixtures. `tests/Millrace.Cli.Tests/Scenarios/minimal.json`:
 
 ```json
 {
@@ -4583,7 +4583,7 @@ First, the fixtures. `tests/Dse.Cli.Tests/Scenarios/minimal.json`:
 }
 ```
 
-`tests/Dse.Cli.Tests/Scenarios/no-duration.json`:
+`tests/Millrace.Cli.Tests/Scenarios/no-duration.json`:
 
 ```json
 {
@@ -4591,7 +4591,7 @@ First, the fixtures. `tests/Dse.Cli.Tests/Scenarios/minimal.json`:
 }
 ```
 
-`tests/Dse.Cli.Tests/Scenarios/broken-plant.json`:
+`tests/Millrace.Cli.Tests/Scenarios/broken-plant.json`:
 
 ```json
 {
@@ -4600,7 +4600,7 @@ First, the fixtures. `tests/Dse.Cli.Tests/Scenarios/minimal.json`:
 }
 ```
 
-`tests/Dse.Cli.Tests/Scenarios/missing-plant.json`:
+`tests/Millrace.Cli.Tests/Scenarios/missing-plant.json`:
 
 ```json
 {
@@ -4609,7 +4609,7 @@ First, the fixtures. `tests/Dse.Cli.Tests/Scenarios/minimal.json`:
 }
 ```
 
-`tests/Dse.Cli.Tests/Scenarios/sample.json`:
+`tests/Millrace.Cli.Tests/Scenarios/sample.json`:
 
 ```json
 {
@@ -4618,13 +4618,13 @@ First, the fixtures. `tests/Dse.Cli.Tests/Scenarios/minimal.json`:
 }
 ```
 
-In `tests/Dse.Cli.Tests/Dse.Cli.Tests.csproj`, add beside the `Plants` item:
+In `tests/Millrace.Cli.Tests/Millrace.Cli.Tests.csproj`, add beside the `Plants` item:
 
 ```xml
     <None Include="Scenarios\**\*.json" CopyToOutputDirectory="PreserveNewest" />
 ```
 
-In `tests/Dse.Cli.Tests/Cli.cs`, add two helpers (the second is moved verbatim
+In `tests/Millrace.Cli.Tests/Cli.cs`, add two helpers (the second is moved verbatim
 from `PluginTests`, so both files can use it):
 
 ```csharp
@@ -4641,27 +4641,27 @@ from `PluginTests`, so both files can use it):
     }
 ```
 
-and in `tests/Dse.Cli.Tests/PluginTests.cs` delete its private `Built` method
+and in `tests/Millrace.Cli.Tests/PluginTests.cs` delete its private `Built` method
 and its XML comment, leaving the two fields as:
 
 ```csharp
-    private static readonly string Sample = Cli.Built("Dse.Cli.Tests.SampleModule");
-    private static readonly string Clash = Cli.Built("Dse.Cli.Tests.ClashModule");
+    private static readonly string Sample = Cli.Built("Millrace.Cli.Tests.SampleModule");
+    private static readonly string Clash = Cli.Built("Millrace.Cli.Tests.ClashModule");
 ```
 
-`tests/Dse.Cli.Tests/RunCommandTests.cs`:
+`tests/Millrace.Cli.Tests/RunCommandTests.cs`:
 
 ```csharp
 using System.Text.Json;
 
-namespace Dse.Cli.Tests;
+namespace Millrace.Cli.Tests;
 
 public class RunCommandTests
 {
-    private static readonly string Sample = Cli.Built("Dse.Cli.Tests.SampleModule");
+    private static readonly string Sample = Cli.Built("Millrace.Cli.Tests.SampleModule");
 
     private static string TempPath(string extension) =>
-        Path.Combine(Path.GetTempPath(), $"dse-run-{Guid.NewGuid():N}{extension}");
+        Path.Combine(Path.GetTempPath(), $"millrace-run-{Guid.NewGuid():N}{extension}");
 
     [Fact]
     public void AScenarioRunsAndPrintsItsEventLog()
@@ -4744,20 +4744,20 @@ public class RunCommandTests
 
         Assert.Equal(ExitCodes.PlantInvalid, run.ExitCode);
         Assert.Empty(run.Out);
-        Assert.Contains("DSE202 $.duration", run.Err, StringComparison.Ordinal);
+        Assert.Contains("MR202 $.duration", run.Err, StringComparison.Ordinal);
         Assert.Contains("  Fix: ", run.Err, StringComparison.Ordinal);
         Assert.EndsWith("1 error in no-duration.json\n", run.Err, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void AnInvalidPlantIsExitOneAndLeadsWithDse205()
+    public void AnInvalidPlantIsExitOneAndLeadsWithMr205()
     {
         CliRun run = Cli.Run("run", Cli.Scenario("broken-plant.json"));
 
         Assert.Equal(ExitCodes.PlantInvalid, run.ExitCode);
         Assert.Empty(run.Out);
-        Assert.StartsWith("DSE205 $.plant", run.Err, StringComparison.Ordinal);
-        Assert.Contains("DSE102", run.Err, StringComparison.Ordinal);
+        Assert.StartsWith("MR205 $.plant", run.Err, StringComparison.Ordinal);
+        Assert.Contains("MR102", run.Err, StringComparison.Ordinal);
         Assert.EndsWith("3 errors in broken-plant.json\n", run.Err, StringComparison.Ordinal);
     }
 
@@ -4793,7 +4793,7 @@ public class RunCommandTests
     [Fact]
     public void AnUnwritableOutIsExitThree()
     {
-        string file = Path.Combine(Path.GetTempPath(), $"dse-run-{Guid.NewGuid():N}", "log.txt");
+        string file = Path.Combine(Path.GetTempPath(), $"millrace-run-{Guid.NewGuid():N}", "log.txt");
 
         CliRun run = Cli.Run("run", Cli.Scenario("minimal.json"), "--out", file);
 
@@ -4849,7 +4849,7 @@ public class RunCommandTests
         Assert.Equal(0L, root.GetProperty("ticks").GetInt64());
         Assert.Empty(root.GetProperty("events").EnumerateArray());
         JsonElement diagnostic = Assert.Single(root.GetProperty("diagnostics").EnumerateArray());
-        Assert.Equal("DSE202", diagnostic.GetProperty("code").GetString());
+        Assert.Equal("MR202", diagnostic.GetProperty("code").GetString());
         Assert.Equal("error", diagnostic.GetProperty("severity").GetString());
     }
 
@@ -4886,8 +4886,8 @@ public class RunCommandTests
 
         Assert.Equal(ExitCodes.Ok, with.ExitCode);
         Assert.Equal(ExitCodes.PlantInvalid, without.ExitCode);
-        Assert.Contains("DSE205", without.Err, StringComparison.Ordinal);
-        Assert.Contains("DSE102", without.Err, StringComparison.Ordinal);
+        Assert.Contains("MR205", without.Err, StringComparison.Ordinal);
+        Assert.Contains("MR102", without.Err, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -4928,18 +4928,18 @@ public class RunCommandTests
 }
 ```
 
-Run: `dotnet test tests/Dse.Cli.Tests --nologo --filter FullyQualifiedName~RunCommandTests`
+Run: `dotnet test tests/Millrace.Cli.Tests --nologo --filter FullyQualifiedName~RunCommandTests`
 Expected: build FAILS — `ExitCodes.LogMismatch` does not exist.
 
 - [ ] **Step 2: Add the project reference and the exit code**
 
-In `src/Dse.Cli/Dse.Cli.csproj`, add to the project reference group:
+In `src/Millrace.Cli/Millrace.Cli.csproj`, add to the project reference group:
 
 ```xml
-    <ProjectReference Include="..\Dse.Scenarios\Dse.Scenarios.csproj" />
+    <ProjectReference Include="..\Millrace.Scenarios\Millrace.Scenarios.csproj" />
 ```
 
-In `src/Dse.Cli/ExitCodes.cs`, add:
+In `src/Millrace.Cli/ExitCodes.cs`, add:
 
 ```csharp
     /// <summary>The scenario ran, and its event log differs from the one <c>--expect</c> named.</summary>
@@ -4948,7 +4948,7 @@ In `src/Dse.Cli/ExitCodes.cs`, add:
 
 - [ ] **Step 3: Add the option, the command row and the help line**
 
-In `src/Dse.Cli/CommandTable.cs`, add the option beside the others:
+In `src/Millrace.Cli/CommandTable.cs`, add the option beside the others:
 
 ```csharp
     public static readonly OptionSpec Expect = new(
@@ -4970,7 +4970,7 @@ and replace the exit-code line in `GeneralHelp`:
 
 - [ ] **Step 4: Extract the shared reading and reporting**
 
-In `src/Dse.Cli/Commands/PlantFile.cs`, replace `TryBuild`'s reading block and
+In `src/Millrace.Cli/Commands/PlantFile.cs`, replace `TryBuild`'s reading block and
 `ReportInvalid` so the two pieces `run` needs are public, leaving every byte the
 existing commands write unchanged:
 
@@ -5035,17 +5035,17 @@ existing commands write unchanged:
 
 - [ ] **Step 5: Write the command**
 
-`src/Dse.Cli/Commands/RunScenario.cs`:
+`src/Millrace.Cli/Commands/RunScenario.cs`:
 
 ```csharp
 using System.Globalization;
 using System.Text.Json;
-using Dse.Configuration;
-using Dse.Core.Catalogue;
-using Dse.Core.Logging;
-using Dse.Scenarios;
+using Millrace.Configuration;
+using Millrace.Core.Catalogue;
+using Millrace.Core.Logging;
+using Millrace.Scenarios;
 
-namespace Dse.Cli.Commands;
+namespace Millrace.Cli.Commands;
 
 /// <summary>
 /// Runs a scenario against the plant it names. The command is a shell:
@@ -5249,49 +5249,49 @@ internal static class RunScenario
 
 - [ ] **Step 6: Run the command tests**
 
-Run: `dotnet test tests/Dse.Cli.Tests --nologo --filter FullyQualifiedName~RunCommandTests`
+Run: `dotnet test tests/Millrace.Cli.Tests --nologo --filter FullyQualifiedName~RunCommandTests`
 Expected: PASS, 21 tests (17 facts + a theory of 4 rows).
 
-`AnInvalidPlantIsExitOneAndLeadsWithDse205` expects **3 errors** — one `DSE205`
-plus the two in `tests/Dse.Cli.Tests/Plants/broken.json`. Measure it; if the
+`AnInvalidPlantIsExitOneAndLeadsWithMr205` expects **3 errors** — one `MR205`
+plus the two in `tests/Millrace.Cli.Tests/Plants/broken.json`. Measure it; if the
 count differs, report the diagnostics the command printed and correct the test.
 
 - [ ] **Step 7: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 914 + 21 = 935 tests.
 
 Then walk the golden workflow by hand and paste the output in the report. Use
 the CLI test corpus, whose scenarios and plants are both **in the source tree**
-(`tests/Dse.Cli.Tests/Scenarios/minimal.json` names `../Plants/minimal.json`,
-which is a committed file). The `Dse.Scenarios.Tests` corpus cannot be used
+(`tests/Millrace.Cli.Tests/Scenarios/minimal.json` names `../Plants/minimal.json`,
+which is a committed file). The `Millrace.Scenarios.Tests` corpus cannot be used
 here: R62 links its plants into the build output only, so a scenario there
 resolves its plant to a path that does not exist in the source tree and the
 command would exit 3.
 
 ```bash
-dotnet run --project src/Dse.Cli -- run tests/Dse.Cli.Tests/Scenarios/minimal.json --out /tmp/dse-run-check.log
+dotnet run --project src/Millrace.Cli -- run tests/Millrace.Cli.Tests/Scenarios/minimal.json --out /tmp/millrace-run-check.log
 ```
 
 ```bash
-dotnet run --project src/Dse.Cli -- run tests/Dse.Cli.Tests/Scenarios/minimal.json --expect /tmp/dse-run-check.log
+dotnet run --project src/Millrace.Cli -- run tests/Millrace.Cli.Tests/Scenarios/minimal.json --expect /tmp/millrace-run-check.log
 ```
 
 Expected: the first prints nothing and exits 0; the second prints
-`Matched /tmp/dse-run-check.log (<N> events).` and exits 0. Check both with
-`echo $?`. That the *committed* goldens under `tests/Dse.Scenarios.Tests/Golden`
+`Matched /tmp/millrace-run-check.log (<N> events).` and exits 0. Check both with
+`echo $?`. That the *committed* goldens under `tests/Millrace.Scenarios.Tests/Golden`
 still match is what `CorpusTests` asserts, in the test run above.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/Dse.Cli tests/Dse.Cli.Tests
+git add src/Millrace.Cli tests/Millrace.Cli.Tests
 ```
 
 ```bash
 git commit -m "$(cat <<'MSG'
-feat(cli): add `dse run`, with exit 4 for a changed event log
+feat(cli): add `millrace run`, with exit 4 for a changed event log
 
 A scenario runs from the command line and prints its log; --expect
 compares it with a committed golden and exits 4, writing the actual log
@@ -5311,8 +5311,8 @@ Three pages and a README paragraph. Two of them are generated from code and
 pinned by a golden test, so they cannot drift; one is hand-written because it
 explains a workflow, not a table.
 
-`DiagnosticsReference.Render` becomes parametric (R60) so `Dse.Scenarios` can
-render its own page without `Dse.Configuration` ever seeing it. The
+`DiagnosticsReference.Render` becomes parametric (R60) so `Millrace.Scenarios` can
+render its own page without `Millrace.Configuration` ever seeing it. The
 configuration page must come out **byte-identical** — its golden test is the
 proof.
 
@@ -5320,10 +5320,10 @@ The stale "not yet implemented" text for tick phases 4 and 5 is corrected here:
 both shipped in plan 4, and phase 1 now has two halves worth naming.
 
 **Files:**
-- Modify: `src/Dse.Configuration/DiagnosticsReference.cs`
-- Create: `src/Dse.Scenarios/ScenarioDiagnosticsReference.cs`
-- Test: `tests/Dse.Scenarios.Tests/ScenarioDiagnosticsReferenceTests.cs`
-- Modify: `tests/Dse.Configuration.Tests/DiagnosticsReferenceTests.cs`
+- Modify: `src/Millrace.Configuration/DiagnosticsReference.cs`
+- Create: `src/Millrace.Scenarios/ScenarioDiagnosticsReference.cs`
+- Test: `tests/Millrace.Scenarios.Tests/ScenarioDiagnosticsReferenceTests.cs`
+- Modify: `tests/Millrace.Configuration.Tests/DiagnosticsReferenceTests.cs`
 - Create: `docs/scenario-diagnostics.md` (generated), `docs/scenarios.md`
 - Modify: `docs/architecture.md`, `README.md`
 
@@ -5336,19 +5336,19 @@ both shipped in plan 4, and phase 1 now has two halves worth naming.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Scenarios.Tests/ScenarioDiagnosticsReferenceTests.cs`:
+`tests/Millrace.Scenarios.Tests/ScenarioDiagnosticsReferenceTests.cs`:
 
 ```csharp
-using Dse.Tests.Shared;
+using Millrace.Tests.Shared;
 
-namespace Dse.Scenarios.Tests;
+namespace Millrace.Scenarios.Tests;
 
 public class ScenarioDiagnosticsReferenceTests
 {
     [Fact]
     public void TheCommittedReferencePageIsCurrent()
     {
-        // Two levels up from this file is the repository root. Regenerate with DSE_UPDATE_GOLDEN=1.
+        // Two levels up from this file is the repository root. Regenerate with MILLRACE_UPDATE_GOLDEN=1.
         Golden.Assert("../../docs/scenario-diagnostics.md", ScenarioDiagnosticsReference.Render());
     }
 
@@ -5359,14 +5359,14 @@ public class ScenarioDiagnosticsReferenceTests
 
         Assert.All(ScenarioDiagnostics.All, d => Assert.Contains($"## {d.Code} — {d.Title}\n", page, StringComparison.Ordinal));
         Assert.StartsWith("# Scenario diagnostics\n", page, StringComparison.Ordinal);
-        Assert.Contains("| DSE206 | Action does not bind to the plant |\n", page, StringComparison.Ordinal);
+        Assert.Contains("| MR206 | Action does not bind to the plant |\n", page, StringComparison.Ordinal);
         Assert.EndsWith("\n", page, StringComparison.Ordinal);
         Assert.DoesNotContain('\r', page);
     }
 }
 ```
 
-Append to `tests/Dse.Configuration.Tests/DiagnosticsReferenceTests.cs`, inside
+Append to `tests/Millrace.Configuration.Tests/DiagnosticsReferenceTests.cs`, inside
 `public class DiagnosticsReferenceTests`:
 
 ```csharp
@@ -5375,29 +5375,29 @@ Append to `tests/Dse.Configuration.Tests/DiagnosticsReferenceTests.cs`, inside
     {
         string page = DiagnosticsReference.Render(
             "Example diagnostics",
-            [new DiagnosticInfo("DSE900", "Something is wrong", "It went wrong.")]);
+            [new DiagnosticInfo("MR900", "Something is wrong", "It went wrong.")]);
 
         Assert.Equal(
             "# Example diagnostics\n\n"
-            + "| Code | Meaning |\n|---|---|\n| DSE900 | Something is wrong |\n\n"
-            + "## DSE900 — Something is wrong\n\nIt went wrong.\n\n",
+            + "| Code | Meaning |\n|---|---|\n| MR900 | Something is wrong |\n\n"
+            + "## MR900 — Something is wrong\n\nIt went wrong.\n\n",
             page);
     }
 ```
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo --filter FullyQualifiedName~ScenarioDiagnosticsReferenceTests`
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo --filter FullyQualifiedName~ScenarioDiagnosticsReferenceTests`
 Expected: build FAILS — `ScenarioDiagnosticsReference` does not exist.
 
 - [ ] **Step 2: Make `DiagnosticsReference.Render` parametric**
 
-Replace `src/Dse.Configuration/DiagnosticsReference.cs` entirely. The two
+Replace `src/Millrace.Configuration/DiagnosticsReference.cs` entirely. The two
 constants are the existing page's prose, moved verbatim — do not reword them,
 or the golden test fails and the diff will not say why.
 
 ```csharp
 using System.Text;
 
-namespace Dse.Configuration;
+namespace Millrace.Configuration;
 
 /// <summary>
 /// Renders a diagnostics reference page from a code table, so a page cannot
@@ -5410,8 +5410,8 @@ public static class DiagnosticsReference
 {
     private const string ConfigurationIntroduction =
         "<!-- Generated from ConfigDiagnostics.All by DiagnosticsReference.Render(). Do not edit by hand:\n" +
-        "     run the Dse.Configuration tests with DSE_UPDATE_GOLDEN=1, read the result, commit it. -->\n\n" +
-        "`dse validate` and `PlantLoader.Load` report every problem in a plant file as a diagnostic with four\n" +
+        "     run the Millrace.Configuration tests with MILLRACE_UPDATE_GOLDEN=1, read the result, commit it. -->\n\n" +
+        "`millrace validate` and `PlantLoader.Load` report every problem in a plant file as a diagnostic with four\n" +
         "parts: a **code**, a **JSON path** into the file (`$.components[3].parameters.motor.ratedPowerW`), a\n" +
         "**message** saying what is wrong, and a **fix** saying what to do. A diagnostic without a fix cannot be\n" +
         "constructed.\n\n" +
@@ -5420,8 +5420,8 @@ public static class DiagnosticsReference
         "what is reported may therefore reveal errors from a later stage.\n\n";
 
     private const string ConfigurationTrailer =
-        "## DSE001–DSE011 — plant validation\n\n" +
-        "Codes below DSE100 come from `SimulationBuilder.Validate()` and mean the same for a plant built in code:\n" +
+        "## MR001–MR011 — plant validation\n\n" +
+        "Codes below MR100 come from `SimulationBuilder.Validate()` and mean the same for a plant built in code:\n" +
         "duplicate ids, unconnected required inputs, algebraic loops, belts too fast for their cells, incompatible\n" +
         "flow links, tag conflicts. The loader passes them through with the path of the first component involved;\n" +
         "their message is split at its first sentence into message and fix. See `docs/architecture.md`.\n";
@@ -5476,33 +5476,33 @@ public static class DiagnosticsReference
 
 - [ ] **Step 3: Write the scenario page renderer**
 
-`src/Dse.Scenarios/ScenarioDiagnosticsReference.cs`:
+`src/Millrace.Scenarios/ScenarioDiagnosticsReference.cs`:
 
 ```csharp
-using Dse.Configuration;
+using Millrace.Configuration;
 
-namespace Dse.Scenarios;
+namespace Millrace.Scenarios;
 
 /// <summary>Renders docs/scenario-diagnostics.md from <see cref="ScenarioDiagnostics.All"/>, so the page cannot drift from the codes.</summary>
 public static class ScenarioDiagnosticsReference
 {
     private const string Introduction =
         "<!-- Generated from ScenarioDiagnostics.All by ScenarioDiagnosticsReference.Render(). Do not edit by hand:\n" +
-        "     run the Dse.Scenarios tests with DSE_UPDATE_GOLDEN=1, read the result, commit it. -->\n\n" +
-        "`dse run`, `ScenarioLoader.Parse` and `ScenarioRunner.Run` report every problem in a scenario file as a\n" +
+        "     run the Millrace.Scenarios tests with MILLRACE_UPDATE_GOLDEN=1, read the result, commit it. -->\n\n" +
+        "`millrace run`, `ScenarioLoader.Parse` and `ScenarioRunner.Run` report every problem in a scenario file as a\n" +
         "diagnostic with four parts: a **code**, a **JSON path** into the file (`$.timeline[1].args.amount`), a\n" +
         "**message** saying what is wrong, and a **fix** saying what to do. It is the same `ConfigDiagnostic` a\n" +
         "plant file's problems arrive as, and a diagnostic without a fix cannot be constructed.\n\n" +
-        "Checking happens in two passes. `ScenarioLoader.Parse` is structural and needs no plant: DSE200 to\n" +
-        "DSE204, and DSE203 for a time that is not on the step the scenario itself declared. `ScenarioRunner`\n" +
-        "then loads the plant and binds every action against the built simulation: DSE205, DSE206, and DSE203\n" +
+        "Checking happens in two passes. `ScenarioLoader.Parse` is structural and needs no plant: MR200 to\n" +
+        "MR204, and MR203 for a time that is not on the step the scenario itself declared. `ScenarioRunner`\n" +
+        "then loads the plant and binds every action against the built simulation: MR205, MR206, and MR203\n" +
         "against the step the plant actually runs at. **Every check happens before tick 0**, so a scenario that\n" +
         "is wrong never produces a partial event log.\n\n";
 
     private const string Trailer =
-        "## DSE100–DSE112 — the plant's own diagnostics\n\n" +
-        "A scenario names a plant, and that plant is loaded by the same loader `dse validate` uses. When the\n" +
-        "plant has errors of its own they follow the DSE205 line unchanged, with their codes, their paths and\n" +
+        "## MR100–MR112 — the plant's own diagnostics\n\n" +
+        "A scenario names a plant, and that plant is loaded by the same loader `millrace validate` uses. When the\n" +
+        "plant has errors of its own they follow the MR205 line unchanged, with their codes, their paths and\n" +
         "their fixes. See [configuration diagnostics](configuration-diagnostics.md).\n";
 
     /// <summary>The page, ending in a newline.</summary>
@@ -5514,7 +5514,7 @@ public static class ScenarioDiagnosticsReference
 - [ ] **Step 4: Generate the page, read it, and check the configuration page did not move**
 
 ```bash
-DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Scenarios.Tests --nologo --filter FullyQualifiedName~ScenarioDiagnosticsReferenceTests
+MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Scenarios.Tests --nologo --filter FullyQualifiedName~ScenarioDiagnosticsReferenceTests
 ```
 
 ```bash
@@ -5528,7 +5528,7 @@ says exactly where, and the constants are what changes, never the golden.
 
 Read `docs/scenario-diagnostics.md` before committing it. It must have a
 `# Scenario diagnostics` title, a seven-row table, a section per code, and the
-`DSE100–DSE112` trailer.
+`MR100–MR112` trailer.
 
 - [ ] **Step 5: Write `docs/scenarios.md`**
 
@@ -5538,13 +5538,13 @@ Read `docs/scenario-diagnostics.md` before committing it. It must have a
 A scenario is a JSON file that says which plant to run, how the engine is set
 up, how long to run, and what happens while it runs. It is the unit of
 regression testing: run one twice and the event log is byte-identical; commit
-that log and `dse run --expect` tells you the day the behaviour changes.
+that log and `millrace run --expect` tells you the day the behaviour changes.
 
 ```bash
-dse run scenario.json                              # print the event log
-dse run scenario.json --out golden.log             # make or remake a golden
-dse run scenario.json --expect golden.log          # exit 0 if unchanged, 4 if not
-dse run scenario.json --format json                # the same run, as records
+millrace run scenario.json                              # print the event log
+millrace run scenario.json --out golden.log             # make or remake a golden
+millrace run scenario.json --expect golden.log          # exit 0 if unchanged, 4 if not
+millrace run scenario.json --format json                # the same run, as records
 ```
 
 ## The file
@@ -5591,9 +5591,9 @@ An action has an `at` and exactly one of three shapes.
 | fault | `fault` (component id), `id` (fault id), `args` (optional object of numbers) | Inject the fault. An argument the descriptor declares and the file omits takes the descriptor's default. |
 | clear | `clear` (component id), `id` | Clear the fault. |
 
-Tag names are the directory's names, exactly as `dse tags <plant>` prints them
+Tag names are the directory's names, exactly as `millrace tags <plant>` prints them
 (`CV001.Start`, `FEED.Rate`). Component ids for faults are the flattened leaf
-ids (`CV001.Motor`), and `dse catalog export` lists each type's fault ids and
+ids (`CV001.Motor`), and `millrace catalog export` lists each type's fault ids and
 arguments.
 
 A value's JSON type must fit the tag's kind:
@@ -5617,7 +5617,7 @@ during the phase-1 event drain of the tick it named.
 Two constraints follow, both checked before tick 0:
 
 - **`at` must fall exactly on a tick.** At a 10 ms step, `60.5` is fine and
-  `60.005` is `DSE203`, which names the step and the offending time.
+  `60.005` is `MR203`, which names the step and the offending time.
 - **`at` must be less than `duration`.** `duration: 120` at 10 ms runs ticks
   0 to 11999; an action at 120 s would land on tick 12000, which never runs.
 
@@ -5626,10 +5626,10 @@ external writer queued lands first, then the scenario's actions in order.
 
 ## The golden workflow
 
-1. Write the scenario and run it: `dse run s.json`. Look at the log.
-2. When it says what you meant, save it: `dse run s.json --out s.log`.
+1. Write the scenario and run it: `millrace run s.json`. Look at the log.
+2. When it says what you meant, save it: `millrace run s.json --out s.log`.
 3. Commit both files. The log is the assertion.
-4. Later, `dse run s.json --expect s.log`. Exit 0 means nothing changed. Exit 4
+4. Later, `millrace run s.json --expect s.log`. Exit 0 means nothing changed. Exit 4
    means the behaviour changed: standard error names the first differing line
    with three lines of context from both logs, and the whole new log is written
    beside the golden as `s.log.actual`.
@@ -5728,8 +5728,8 @@ At the end of the file, after the **Catalogue, schema and loader** section, add:
 ## Scenarios and replay
 
 A scenario is a JSON file: a plant to run, the three engine overrides, a
-duration, and a timeline of writes, fault injections and clearances. `Dse.Scenarios`
-sees `Dse.Core` and `Dse.Configuration` and nothing else.
+duration, and a timeline of writes, fault injections and clearances. `Millrace.Scenarios`
+sees `Millrace.Core` and `Millrace.Configuration` and nothing else.
 
     ScenarioLoader.Parse   structural: shape, types, ranges — no plant, no file system
     ScenarioRunner.Run     load the plant, bind every action, then and only then tick
@@ -5738,14 +5738,14 @@ sees `Dse.Core` and `Dse.Configuration` and nothing else.
     ScenarioRecorder       a live run, as a scenario
 
 The two passes are the point. Everything that can be known without a plant is
-`DSE200`–`DSE204`; everything that needs one is `DSE205` (the plant has its own
-errors, which follow unchanged) and `DSE206` (this action names something the
+`MR200`–`MR204`; everything that needs one is `MR205` (the plant has its own
+errors, which follow unchanged) and `MR206` (this action names something the
 plant does not have). Both run to completion and collect every problem, and
 `RunFor` is not called if there is a single one — **a bad scenario never
 produces a partial log**.
 
 The event log is the regression artifact, and `EventLog.ToText()` is its format
-by contract. `dse run --expect golden.log` exits 4, not 1, when the two differ:
+by contract. `millrace run --expect golden.log` exits 4, not 1, when the two differ:
 "the configuration is broken" and "the behaviour changed" are different
 questions, and a script should not have to guess which it got.
 
@@ -5756,7 +5756,7 @@ original landed, so `Simulation.WriteAt` applies through `TagImage.ApplyNow`
 during the event drain, logging the identical `WRITE` record. `IActionRecorder`
 watches all three landing sites — the queued-write drain, `ApplyNow` and
 `FaultEvent.Apply` — so a recording captures actions by where they took effect,
-not by where they came from. `Dse.Realtime`'s `ICommandRecorder` is a different
+not by where they came from. `Millrace.Realtime`'s `ICommandRecorder` is a different
 thing and stays: it also sees commands the bus *rejected*, which is an audit
 trail, not a replay.
 
@@ -5776,7 +5776,7 @@ with:
 
 ```markdown
 Scenarios are files too: a plant, the engine overrides, a duration and a
-timeline of writes and fault injections, replayed by `dse run` against a
+timeline of writes and fault injections, replayed by `millrace run` against a
 committed golden event log, and recordable from a live run. The control blocks
 and the reference samples are planned.
 ```
@@ -5784,7 +5784,7 @@ and the reference samples are planned.
 In the **Command line** block, which already has four, add a fifth line:
 
 ```markdown
-dotnet run --project src/Dse.Cli -- run scenario.json --expect golden.log  # replay a scenario; exit 4 if the log changed
+dotnet run --project src/Millrace.Cli -- run scenario.json --expect golden.log  # replay a scenario; exit 4 if the log changed
 ```
 
 and replace the closing sentence:
@@ -5823,23 +5823,23 @@ that were wrong **before** committing, correcting the prose, never the code:
 
 - `docs/scenarios.md` says `5.0` does not fit an `Int64` tag. Confirm with the
   Task 3 test `NumbersKeepTheShapeTheFileWroteThem` and the Task 5 test
-  `AValueOfTheWrongKindIsDse206`.
+  `AValueOfTheWrongKindIsMr206`.
 - `docs/scenarios.md` says the engine's defaults are seed 0,
-  `2026-01-01T00:00:00Z` and 10 ms. Check `src/Dse.Core/Time/SimulationOptions.cs`.
+  `2026-01-01T00:00:00Z` and 10 ms. Check `src/Millrace.Core/Time/SimulationOptions.cs`.
 - `docs/architecture.md` phase 4 says "diffed … into a `DirtyMask` … published
   with a volatile swap". Check `TagImage.Publish`.
-- `docs/architecture.md` says `Dse.Scenarios` references `Dse.Core` and
-  `Dse.Configuration` only. Check `src/Dse.Scenarios/Dse.Scenarios.csproj`.
+- `docs/architecture.md` says `Millrace.Scenarios` references `Millrace.Core` and
+  `Millrace.Configuration` only. Check `src/Millrace.Scenarios/Millrace.Scenarios.csproj`.
 - The `README.md` scenario example must run. Save the plant example and the
   scenario example beside each other as real files in a scratch directory and
-  run `dse run` on the pair; the scenario must not report a diagnostic. If it
+  run `millrace run` on the pair; the scenario must not report a diagnostic. If it
   does, fix the example, not the loader. (The README plant has no `CV001.Motor`
   fault target unless the conveyor is in it — it is; `CV001` is a `conveyor`.)
 
 - [ ] **Step 9: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, 935 + 3 = 938 tests.
 
 Run: `git status --short docs` — `docs/configuration-diagnostics.md` must not appear.
@@ -5847,11 +5847,11 @@ Run: `git status --short docs` — `docs/configuration-diagnostics.md` must not 
 - [ ] **Step 10: Commit**
 
 ```bash
-git add src/Dse.Configuration/DiagnosticsReference.cs src/Dse.Scenarios/ScenarioDiagnosticsReference.cs
+git add src/Millrace.Configuration/DiagnosticsReference.cs src/Millrace.Scenarios/ScenarioDiagnosticsReference.cs
 ```
 
 ```bash
-git add tests/Dse.Scenarios.Tests/ScenarioDiagnosticsReferenceTests.cs tests/Dse.Configuration.Tests/DiagnosticsReferenceTests.cs
+git add tests/Millrace.Scenarios.Tests/ScenarioDiagnosticsReferenceTests.cs tests/Millrace.Configuration.Tests/DiagnosticsReferenceTests.cs
 ```
 
 ```bash
@@ -5862,8 +5862,8 @@ git add docs/scenarios.md docs/scenario-diagnostics.md docs/architecture.md READ
 git commit -m "$(cat <<'MSG'
 docs: add the scenario format, the generated scenario diagnostics and the tick correction
 
-DiagnosticsReference.Render becomes parametric so Dse.Scenarios renders
-its own page without Dse.Configuration knowing about it; the
+DiagnosticsReference.Render becomes parametric so Millrace.Scenarios renders
+its own page without Millrace.Configuration knowing about it; the
 configuration page is byte-identical. docs/scenarios.md explains the
 format, the `at` rule and the golden workflow, and architecture.md's
 "not yet implemented" text for tick phases 4 and 5 — both shipped in plan
@@ -5883,20 +5883,20 @@ criteria (section 1) with a command, and put the output in the report:
 
 | Criterion | How |
 |---|---|
-| a scenario over a valid plant runs from the command line and prints the log; twice gives byte-identical logs | Task 8 Step 7's two commands over `tests/Dse.Cli.Tests/Scenarios/minimal.json` — `--out /tmp/dse-run-check.log`, then `--expect /tmp/dse-run-check.log` giving `Matched … (N events).` and `echo $?` → 0. (Not a `Dse.Scenarios.Tests` scenario: R62 puts its plants in the build output only.) |
+| a scenario over a valid plant runs from the command line and prints the log; twice gives byte-identical logs | Task 8 Step 7's two commands over `tests/Millrace.Cli.Tests/Scenarios/minimal.json` — `--out /tmp/millrace-run-check.log`, then `--expect /tmp/millrace-run-check.log` giving `Matched … (N events).` and `echo $?` → 0. (Not a `Millrace.Scenarios.Tests` scenario: R62 puts its plants in the build output only.) |
 | the committed golden logs still match | `dotnet test --filter FullyQualifiedName~CorpusTests` |
 | `--expect` tells "broken" (1) from "changed" (4), and says where | `dotnet test --filter "FullyQualifiedName~RunCommandTests"` |
 | every way a scenario can be wrong is reported before tick 0, with a code, a path and a fix; no partial log | `dotnet test --filter "FullyQualifiedName~CorpusTests|FullyQualifiedName~ScenarioParseTests|FullyQualifiedName~ScenarioRunnerTests"` |
 | a live run driven by `CommandBus` and direct injections records, writes, parses, replays, and the logs are byte-identical | `dotnet test --filter FullyQualifiedName~RecordAndReplayTests` |
 | zero external package references under `src/` | `grep -rn "PackageReference" src/` prints nothing |
-| Release build, zero warnings; the original 751 tests still pass | `dotnet build Dse.sln -c Release --nologo` and `dotnet test Dse.sln --nologo` |
+| Release build, zero warnings; the original 751 tests still pass | `dotnet build Millrace.sln -c Release --nologo` and `dotnet test Millrace.sln --nologo` |
 | the generated pages are current | `dotnet test --filter "FullyQualifiedName~DiagnosticsReferenceTests|FullyQualifiedName~ScenarioDiagnosticsReferenceTests"` |
 
 Record, as plans 1–5a did, a **"Rulings made during execution"** section at the
 end of this file for every place the code had to differ from the plan, and a
 **"Parked follow-ups"** list from the final review. The spec's own parked list
 is unchanged by this plan: dispatcher failure observability, frame pooling, CSV
-telemetry export, `--speed` for a paced `dse run`, and a hand-written JSON
+telemetry export, `--speed` for a paced `millrace run`, and a hand-written JSON
 Schema for scenario files.
 
 ---
@@ -5921,30 +5921,30 @@ above; this section records what was checked and what was found.
 | 2 Actions | write/fault/clear, values by tag kind | 3 (`ScenarioValue`, `ReadAction`), 5 (`Bind`) |
 | 2 Rules for `at` | on a tick, `at < duration`, the plant sees it then, file order | 1 (the engine rule), 3 (R53 parse checks), 5 (runner checks) |
 | 2 Ids and names | flattened leaf ids, directory tag names | 3 corpus, 5 tests, `docs/scenarios.md` |
-| 2 Deliberately absent | no `$schema`, no assertions, no inline plant, no comment | 3 (`TopLevelKeys` has six entries; `DSE201` rejects the rest) |
+| 2 Deliberately absent | no `$schema`, no assertions, no inline plant, no comment | 3 (`TopLevelKeys` has six entries; `MR201` rejects the rest) |
 | 3 `ScenarioLoader.Parse` | pure, structural, `ScenarioParseResult` | 3 |
 | 3 `Scenario` record and `ResolvePlantPath` | | 3 |
-| 3 Plant load, `DSE205` | wrapper then the plant's own, unchanged | 5 |
-| 3 Scheduling with checks, `DSE206`, collect all | | 5 |
-| 3 Codes table `DSE200`–`DSE206` | | 3 (table and `ScenarioDiagnostics.All`), 5 (205, 206) |
+| 3 Plant load, `MR205` | wrapper then the plant's own, unchanged | 5 |
+| 3 Scheduling with checks, `MR206`, collect all | | 5 |
+| 3 Codes table `MR200`–`MR206` | | 3 (table and `ScenarioDiagnostics.All`), 5 (205, 206) |
 | 3 `DiagnosticsReference.Render` parametric; a second page | | 9 (R60) |
 | 4 `ScenarioRunner.Run`, `RunSummary`, `Events`, `IsValid` | | 5 |
 | 4 `GoldenLog.Compare`, normalisation, first divergence, context, counts | | 6 |
-| 5 `dse run`, every table row, `--format json`, no `--update` | | 8 |
+| 5 `millrace run`, every table row, `--format json`, no `--update` | | 8 |
 | 5 `ExitCodes.LogMismatch = 4` | | 8 |
 | 5 reuses `PlantFile`'s reading and rendering; `--assembly` works | | 8 |
 | 6.1 `WriteAt`/`WriteIn`, `ApplyNow`, order within a tick | | 1 |
 | 6.2 `IActionRecorder`, `AttachActionRecorder`, three landing sites, resolved arguments, second attach throws | | 2 |
 | 7 `ScenarioRecorder.ToScenario`, `ScenarioJson.Write`, round trip, no CLI surface | | 4, 7 |
-| 8 Testing — `Dse.Core.Tests` list (three bullets) | | 1 (the `WriteAt` bullet and the determinism bullet), 2 (the `IActionRecorder` bullet) |
-| 8 Testing — `Dse.Scenarios.Tests` list | | 3, 4, 5, 6, 7, 9 |
+| 8 Testing — `Millrace.Core.Tests` list (three bullets) | | 1 (the `WriteAt` bullet and the determinism bullet), 2 (the `IActionRecorder` bullet) |
+| 8 Testing — `Millrace.Scenarios.Tests` list | | 3, 4, 5, 6, 7, 9 |
 | 8 Testing — the invalid corpus asserts **code and JSON path** | | 3 (`CorpusTests.InvalidPaths`, one row per fixture, guarded by `EveryInvalidFixtureHasARow`) |
-| 8 Testing — `Dse.Cli.Tests` list | | 8 |
+| 8 Testing — `Millrace.Cli.Tests` list | | 8 |
 | 9 Documentation — four items | | 9 |
-| 10 Layout table | | 3 (projects), 8 (`Dse.Cli` reference), R61 (the test project's extra) |
+| 10 Layout table | | 3 (projects), 8 (`Millrace.Cli` reference), R61 (the test project's extra) |
 
 No gap found. Two additions the spec did not name, both recorded as rulings:
-`Plants/broken.json` in `Dse.Scenarios.Tests` (R62) and the `Dse.Realtime`
+`Plants/broken.json` in `Millrace.Scenarios.Tests` (R62) and the `Millrace.Realtime`
 reference in the test project (R61).
 
 ### 2. Placeholder scan
@@ -5976,7 +5976,7 @@ Checked every name used across task boundaries against its definition.
 - `Scenario(PlantPath, Seed, StartTime, TimeStep, Duration, Timeline)`,
   `.ResolvePlantPath`, `.ToLoadOptions` — 3, used in 4, 5, 7, 8.
 - `ScenarioDiagnostics.Error/OffTick/NotBeforeTheEnd/Seconds` are `internal`
-  and used only inside `Dse.Scenarios` (loader, runner, `ScenarioJson`).
+  and used only inside `Millrace.Scenarios` (loader, runner, `ScenarioJson`).
   `ScenarioJson` calling `ScenarioDiagnostics.Seconds` crosses files, not
   assemblies. Consistent.
 - `ScenarioParseResult.Scenario/Diagnostics/IsValid/ToText` and
@@ -6019,10 +6019,10 @@ A separate reviewer checked spec coverage and 31 claims this plan makes about
 the existing source (all 31 correct) and found eight things to fix. All are
 fixed above; recorded here so the execution reports know what moved:
 
-- **A negative `at` is DSE202 everywhere.** `ScenarioRunner.Schedule` reported
-  it as DSE203 while `ScenarioLoader` reported it as DSE202. Spec 3 puts
+- **A negative `at` is MR202 everywhere.** `ScenarioRunner.Schedule` reported
+  it as MR203 while `ScenarioLoader` reported it as MR202. Spec 3 puts
   `at >= 0` in the parser as an out-of-range value, so the runner's copy — which
-  only a code-built `Scenario` can trip — now uses DSE202 with the same path and
+  only a code-built `Scenario` can trip — now uses MR202 with the same path and
   wording. R53 says so explicitly.
 - **`ScenarioJson.Write`'s "Produces" line** claimed parameter `scenario` for
   every throw; the unknown-action-shape throw uses `action`. Both are listed.
@@ -6032,13 +6032,13 @@ fixed above; recorded here so the execution reports know what moved:
 - **Test counts.** `GoldenLogTests` is 18, not 17; `RunCommandTests` is 21, not
   20; Task 3 is 81 with the new rows. The chain is now
   751 → 759 → 765 → 846 → 858 → 887 → 905 → 914 → 935 → 938.
-- **The by-hand `dse run` check** pointed at a `Dse.Scenarios.Tests` scenario,
+- **The by-hand `millrace run` check** pointed at a `Millrace.Scenarios.Tests` scenario,
   whose plant R62 links into the build output only, so it would have exited 3
   from the source tree. Task 8 Step 7 and the completion check now use
-  `tests/Dse.Cli.Tests/Scenarios/minimal.json`, whose plant is committed, and
+  `tests/Millrace.Cli.Tests/Scenarios/minimal.json`, whose plant is committed, and
   demonstrate the `--out` then `--expect` workflow; the committed goldens are
   covered by `CorpusTests` instead.
 - Cosmetic: `Cli.Scenario`/`Cli.Built` are `public` members of an `internal`
   class, as `Cli.Plant` already is; `CorpusTests.cs` is in the file-structure
   tree; the README edit adds a fifth command-line row, not a fourth; and the
-  spec-coverage row for `Dse.Core.Tests` names its three bullets correctly.
+  spec-coverage row for `Millrace.Core.Tests` names its three bullets correctly.

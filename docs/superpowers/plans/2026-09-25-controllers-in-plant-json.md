@@ -4,16 +4,16 @@
 
 **Goal:** Let a plant file declare the five 5c control blocks in a `controllers`
 section — catalogued, schema-checked, resolved and diagnosed like components —
-so `dse validate`, `dse tags` and `dse run` handle a controlled plant with no
+so `millrace validate`, `millrace tags` and `millrace run` handle a controlled plant with no
 C#; attribute every block write in the event log and keep block writes out of
 recordings (R77 closed).
 
 **Architecture:** A third catalogue entry kind, `BlockDescriptor`, sits beside
-`ComponentDescriptor` and `ObjectDescriptor` in `Dse.Core/Catalogue`, with two
+`ComponentDescriptor` and `ObjectDescriptor` in `Millrace.Core/Catalogue`, with two
 new parameter kinds, `Tag` and `Value`, that the existing `ParameterBinder`
 resolves against a tag table held by the `BindingContext`. A new project,
-`Dse.Control.Catalogue`, registers the five blocks and the `transition` slot
-through `ControlModule`, so `Dse.Control` keeps seeing `Dse.Io.Abstractions`
+`Millrace.Control.Catalogue`, registers the five blocks and the `transition` slot
+through `ControlModule`, so `Millrace.Control` keeps seeing `Millrace.Io.Abstractions`
 alone. The loader reads `controllers` in its structure stage and resolves them
 in its build stage, once the plant alone has validated — against `SimulationBuilder.PlantTags()`, a new
 public Core query, plus every controller's declared owned tags — before any
@@ -31,9 +31,9 @@ runtime dependencies under `src/`. JsonSchema.Net 8.0.5 stays test-only.
 
 **Plan sequence:** This is plan 5d. Plans 1–5c are merged on `master`; this plan
 starts from `834758b` (the commit that added the 5d spec). Measured on that
-commit: **1108 tests**, all passing — 37 `Dse.Io.Abstractions` / 420 `Dse.Core`
-/ 126 `Dse.Components` / 56 `Dse.Realtime` / 137 `Dse.Configuration` / 161
-`Dse.Scenarios` / 69 `Dse.Cli` / 102 `Dse.Control`. Nothing here may reference
+commit: **1108 tests**, all passing — 37 `Millrace.Io.Abstractions` / 420 `Millrace.Core`
+/ 126 `Millrace.Components` / 56 `Millrace.Realtime` / 137 `Millrace.Configuration` / 161
+`Millrace.Scenarios` / 69 `Millrace.Cli` / 102 `Millrace.Control`. Nothing here may reference
 the reference samples of plan 6.
 
 **Task shape.** Sixteen tasks. The spec's suggested order is kept with three
@@ -50,7 +50,7 @@ changes the code forced:
   golden must move together, and the loader then builds on them.
 - **Four invalid fixtures move into the loader task (Task 11).**
   `CorpusTests.EveryConfigurationCodeHasAnInvalidPlant` fails the moment
-  `DSE113`–`DSE115` join `ConfigDiagnostics.All`, so the task that adds the codes
+  `MR113`–`MR115` join `ConfigDiagnostics.All`, so the task that adds the codes
   adds one fixture per code; Task 12 adds the rest of the corpus.
 
 ## Global Constraints
@@ -62,14 +62,14 @@ changes the code forced:
   formatting and parsing uses `CultureInfo.InvariantCulture`; messages that embed
   a number use `string.Create(CultureInfo.InvariantCulture, $"...")`.
 - **Zero package references under `src/`:** `grep -rn "PackageReference" src/`
-  prints nothing. **`Dse.Control` references `Dse.Io.Abstractions` and nothing
-  else** — `src/Dse.Control/Dse.Control.csproj` is not edited by this plan.
-  `Dse.Core` still references only `Dse.Io.Abstractions`. The new
-  `src/Dse.Control.Catalogue` references `Dse.Core` and `Dse.Control`. Test
-  projects use the package versions of `tests/Dse.Core.Tests/Dse.Core.Tests.csproj`
+  prints nothing. **`Millrace.Control` references `Millrace.Io.Abstractions` and nothing
+  else** — `src/Millrace.Control/Millrace.Control.csproj` is not edited by this plan.
+  `Millrace.Core` still references only `Millrace.Io.Abstractions`. The new
+  `src/Millrace.Control.Catalogue` references `Millrace.Core` and `Millrace.Control`. Test
+  projects use the package versions of `tests/Millrace.Core.Tests/Millrace.Core.Tests.csproj`
   (`coverlet.collector` 6.0.4, `Microsoft.NET.Test.Sdk` 17.14.1, `xunit` 2.9.3,
   `xunit.runner.visualstudio` 3.1.4); JsonSchema.Net 8.0.5 stays pinned in
-  `tests/Dse.Configuration.Tests` only.
+  `tests/Millrace.Configuration.Tests` only.
 - **Warnings are errors** (`Directory.Build.props`: `TreatWarningsAsErrors`,
   `EnforceCodeStyleInBuild`, `GenerateDocumentationFile`, `Nullable`). The
   Release build prints `0 Warning(s)` and `0 Error(s)`. A `<see cref>` to a type
@@ -91,7 +91,7 @@ changes the code forced:
   every golden depends on its bytes.
 - **Goldens are generated and read, never invented.** A golden (event log,
   catalogue export, plant schema, diagnostics page) is written by running its
-  test with `DSE_UPDATE_GOLDEN=1` (the mechanism in `tests/Shared/Golden.cs`),
+  test with `MILLRACE_UPDATE_GOLDEN=1` (the mechanism in `tests/Shared/Golden.cs`),
   then the whole file — or its whole `git diff` — is **read** with a file-reading
   tool and checked against the task's checklist, and the task report quotes what
   was checked. If a golden disagrees with the checklist, report the measurement
@@ -103,7 +103,7 @@ changes the code forced:
   scan at tick N sees the image published at the end of tick N−1; its outputs
   are visible from the end of tick N (read at N+1); its queued writes land at
   phase 1 of tick N+1.** A `WriteAt(t)` lands at phase 1 of tick `t / step`.
-- **Names.** Tag names are exactly what `dse tags <plant>` prints and match
+- **Names.** Tag names are exactly what `millrace tags <plant>` prints and match
   ordinally. A block's owned tag is `<block id>.<pin>` (`INT01.Ok`,
   `CUR01.HiHi.Active`). Block type names are kebab-case and share one namespace
   with component types. Group definitions are PascalCase (R88).
@@ -120,8 +120,8 @@ changes the code forced:
   the model that implements a given task: it is the same on every commit,
   whichever implementer model a task names. Never put it on the subject line.
 - **Commands**, from the repository root:
-  `dotnet build Dse.sln -c Release --nologo` (expect `0 Warning(s)`,
-  `0 Error(s)`) and `dotnet test Dse.sln --nologo` (expect the task's total).
+  `dotnet build Millrace.sln -c Release --nologo` (expect `0 Warning(s)`,
+  `0 Error(s)`) and `dotnet test Millrace.sln --nologo` (expect the task's total).
   `.superpowers/` is **not** git-ignored in this repository (measured: `git
   status` lists it as untracked); never add it.
 
@@ -131,36 +131,36 @@ The five inputs the spec implies but its test list does not pin, most likely to
 bite first. Each has its test in the owning task, named here.
 
 1. **A `scanPeriodMs` of `1e30`, `0.00001`, `0`, `-5`, `"100"` or none at all** —
-   the plant-file author expects a `DSE103` at `$.controllers[i].scanPeriodMs`,
+   the plant-file author expects a `MR103` at `$.controllers[i].scanPeriodMs`,
    not the exit-134 `OverflowException` that R65 found for `timeStepMs`.
    Test: Task 11, `ControllerTests.AScanPeriodIsAPositiveNumberOfAtMostADay`
    (six rows).
 2. **A duration of `1e30` s** (`presetS`, `timeoutS`, `delayS`, `onDelayS`) — the
-   author expects `DSE103` at the parameter, not an `OverflowException` out of
+   author expects `MR103` at the parameter, not an `OverflowException` out of
    `TimeSpan.FromSeconds` (measured: it overflows at `1e12` s) reported as a
    module defect. Tests: Task 8, `BlockFactoryTests.ADurationLongerThanAYearIsOutOfRange`;
-   Task 11, `ControllerTests.ADurationLongerThanAYearIsDse103AtTheParameter`.
+   Task 11, `ControllerTests.ADurationLongerThanAYearIsMr103AtTheParameter`.
 3. **A tag of the wrong kind where a block needs Bool or Double** (a permissive
-   condition on `CHUTE.Level`, an alarm on a Bool) — the author expects `DSE114`
-   at that parameter's path, not a `DSE014` at the whole entry after
+   condition on `CHUTE.Level`, an alarm on a Bool) — the author expects `MR114`
+   at that parameter's path, not a `MR014` at the whole entry after
    resolution claimed success. Tests: Task 4,
    `TagParameterTests.ATagOfTheWrongKindIsAnIssueAtTheTag`; Task 11,
    `ControllerTests.EveryTagErrorIsReportedBeforeAnyBlockIsBuilt`.
 4. **A write to a tag that looks writable but is not** — an input a signal link
    drives (its declared read-write tag is published read-only, R23) or another
-   block's output — the author expects `DSE115`, not a crash in `TagImage.Write`
+   block's output — the author expects `MR115`, not a crash in `TagImage.Write`
    mid-run. Tests: Task 2, `PlantTagsTests.AWritableTagOnADrivenInputIsReadOnly`;
-   Task 11, `ControllerTests.AWriteToAnInputASignalLinkDrivesIsDse115` and
-   `AWriteToAnotherBlocksOutputIsDse115`.
+   Task 11, `ControllerTests.AWriteToAnInputASignalLinkDrivesIsMr115` and
+   `AWriteToAnotherBlocksOutputIsMr115`.
 5. **One mistake, one diagnostic** — a value whose tag did not resolve gets no
-   second `DSE114`; a plant's own tag conflict is reported as `DSE009`/`DSE010`,
-   not as a controller's `DSE113`; and a plugin whose `OwnedTags` or factory
-   throws, returns null or builds a block with the wrong id gets one `DSE111`
+   second `MR114`; a plant's own tag conflict is reported as `MR009`/`MR010`,
+   not as a controller's `MR113`; and a plugin whose `OwnedTags` or factory
+   throws, returns null or builds a block with the wrong id gets one `MR111`
    naming the module, not a crash (R100). Tests: Task 4,
    `TagParameterTests.AnUnknownTagSuggestsTheNearestName`; Task 11,
    `ControllerTests.AnUnknownTagSuggestsTheNearestAndIsReportedOnce`,
    `APlantTagConflictIsReportedAsItselfNotAsAnUnknownTag` and
-   `AModuleDefectIsDse111NamingTheModule` (five rows).
+   `AModuleDefectIsMr111NamingTheModule` (five rows).
 
 ## Decisions settled here (rulings R80–R102)
 
@@ -176,18 +176,18 @@ choice. Where one differs from the spec's wording, this plan wins and says why.
   published read-only (R23, `SimulationBuilder.CollectTags`). So the resolution
   pass, `Loading/ControllerPass.cs`, runs inside `BuildStage.Run` in three
   steps: the components and binds are added and `Validate()` runs on the plant
-  alone — any error there (a `DSE009`/`DSE010` tag conflict, whose tag
+  alone — any error there (a `MR009`/`MR010` tag conflict, whose tag
   `PlantTags()` leaves out) is reported as itself and the stage stops, so a
-  controller naming that tag never gets a misleading `DSE113`/`DSE115`; then the
+  controller naming that tag never gets a misleading `MR113`/`MR115`; then the
   controllers are resolved and built; then the blocks are added and `Validate()`
-  runs again for `DSE013`–`DSE015`. There is still no new stage in
+  runs again for `MR013`–`MR015`. There is still no new stage in
   `PlantLoader.Stages`, and spec 4.4's guarantee — every tag and value resolved,
   every error collected, before any block is constructed — holds.
 - **R81 — `SimulationBuilder.PlantTags()` is the one definition of the plant's
   tags.** It returns `new TagDirectory(CollectTags(...)).Tags`: component tags,
   composite exposures and explicit binds, sorted and indexed exactly as `Build()`
   would, with R23 applied, and without block-owned tags. Tags `Validate()` would
-  reject (`DSE009`–`DSE011`) are left out, not reported. `ITagProvider`'s summary
+  reject (`MR009`–`MR011`) are left out, not reported. `ITagProvider`'s summary
   ("Called once, at `Build()`") becomes "called at `Validate()`, `Build()` and
   `PlantTags()`; return fresh bindings and change nothing" — already true of
   every provider, since `Validate()` followed by `Build()` calls it twice today.
@@ -201,38 +201,38 @@ choice. Where one differs from the spec's wording, this plan wins and says why.
   doc says so. Conformance calls it with construct-mode values, which is a
   superset.
 - **R83 — `Param.Tag` carries an optional required kind and a write flag; a tag
-  of the wrong kind is `DSE114` at the parameter.** Spec 3.2 converts only
+  of the wrong kind is `MR114` at the parameter.** Spec 3.2 converts only
   values, so a permissive condition naming a Double tag would pass resolution
-  and fail as Core's `DSE014` — contradicting spec 4.4 ("`DSE014` … is not
+  and fail as Core's `MR014` — contradicting spec 4.4 ("`MR014` … is not
   expected to fire for a plant that passed this stage"). `Param.Tag(name,
   description, TagKind? kind = null, bool writes = false)`: conditions and the
   timer input require Bool, the alarm input Double; a `write`'s tag has
-  `writes: true` and must be read-write (`DSE115`). `DSE114`'s title widens to
+  `writes: true` and must be read-write (`MR115`). `MR114`'s title widens to
   "A controller's tag or value is of the wrong kind".
 - **R84 — Without a tag table, a tag is a name and a value is provisional.**
   In check mode, and in construct mode on a `BindingContext` that was never
   given tags (conformance, a plain `Bind` call), `Tag` binds as its string and
   `Value` binds `true`/`false` as Bool and any finite number as Double. Only a
   context given a table through `BindingContext.UseTags` resolves. A value's
-  string, object or null is `DSE103` everywhere.
+  string, object or null is `MR103` everywhere.
 - **R85 — In the tag table the first entry for a name wins.** Plant tags go in
   before owned tags. A block's owned tag that duplicates a plant tag (a `tags`
-  bind named `PERM01.Ok`) is not a resolution error: Core's `DSE015` reports it
+  bind named `PERM01.Ok`) is not a resolution error: Core's `MR015` reports it
   at `Build`'s validation, and the loader places it on the controller (R92).
 - **R86 — Durations are bounded at one year; a scan period at one day and one
   tick.** Measured: `TimeSpan.FromSeconds(1e12)` and `TimeSpan.FromSeconds(1e30)`
   throw `OverflowException` (not an `ArgumentException`), which the loader would
   report as a module defect. Every `…S` duration is `Param.Double(…, "s", min: 0,
   max: 31_536_000)` (365 days; `ControlCatalogue.MaxSeconds`), so an absurd one is
-  `DSE103` at its path and the schema agrees. `scanPeriodMs` uses R65's bounds:
-  more than 86 400 000 ms is `DSE103` ("longer than a day"), checked before
-  `TimeSpan.FromMilliseconds`, and a period of zero ticks is `DSE103` ("at least
+  `MR103` at its path and the schema agrees. `scanPeriodMs` uses R65's bounds:
+  more than 86 400 000 ms is `MR103` ("longer than a day"), checked before
+  `TimeSpan.FromMilliseconds`, and a period of zero ticks is `MR103` ("at least
   one tick"); the schema declares `exclusiveMinimum: 0, maximum: 86400000`.
 - **R87 — A controller id follows the component id rule, not `TagNameRules`.**
   Spec 4.1 says `TagNameRules`, which allows dots. A dotted block id (`INT.01`)
   would make its tags `INT.01.Ok`, indistinguishable from a leaf tag, and
   `BuildStage.PathOf` splits ids at the first dot. So: non-empty, no dot, no
-  whitespace — `DSE103` otherwise — and the schema uses the component id pattern
+  whitespace — `MR103` otherwise — and the schema uses the component id pattern
   `^[^.\s]+$`.
 - **R88 — Group definitions are PascalCase, named after the records they
   build.** `GroupDefinition.Name` is documented "PascalCase, unique across a
@@ -247,12 +247,12 @@ choice. Where one differs from the spec's wording, this plan wins and says why.
   `abort` and a step's `writes` default to empty; `timeoutS` is optional. The
   alarm's "1–4 limits" is min 1 in the descriptor and max 4 in the constructor:
   `ParameterDescriptor` has no maximum count, and a fifth limit necessarily
-  repeats a kind, which `Alarm`'s constructor rejects (`DSE111`). No `MaxCount`
+  repeats a kind, which `Alarm`'s constructor rejects (`MR111`). No `MaxCount`
   is added.
 - **R90 — The catalogue export's `blocks` array sits between `components` and
   `objects`, and a block entry carries `type`, `module`, `description` and
   `parameters` — no owned-tag list.** Owned tags are a function of the
-  parameters (the alarm's follow its limits), not data; `dse tags` lists them for
+  parameters (the alarm's follow its limits), not data; `millrace tags` lists them for
   a real plant and `docs/control-blocks.md` per block. A parameter entry gains
   `tagKind`, `writes` and `tagParameter` when set. Placing `blocks` before
   `objects` makes the components-only golden change by exactly one inserted line,
@@ -261,16 +261,16 @@ choice. Where one differs from the spec's wording, this plan wins and says why.
   added, not at `Build()`.** Spec 3.1 says `Build()`; the code rejects every
   other clash at `Add`, so `AddBlock` and `Add(ComponentDescriptor)` check the
   other dictionary and name both modules.
-- **R92 — Where Core's block diagnostics land.** `DSE013` lands on
-  `$.controllers[i].scanPeriodMs`; `DSE014` and `DSE015` on `$.controllers[i]`.
-  The loader records no inner path for `DSE014`: after R80/R83 resolution a plant
+- **R92 — Where Core's block diagnostics land.** `MR013` lands on
+  `$.controllers[i].scanPeriodMs`; `MR014` and `MR015` on `$.controllers[i]`.
+  The loader records no inner path for `MR014`: after R80/R83 resolution a plant
   file cannot reach it.
-- **R93 — The JSON-versus-code round trip lives in `Dse.Control.Tests`.** Spec 8
-  lists it under `Dse.Configuration.Tests`, but the code-built worked example is
-  `WorkedExampleTests.Build()` in `Dse.Control.Tests`, which already loads plants
+- **R93 — The JSON-versus-code round trip lives in `Millrace.Control.Tests`.** Spec 8
+  lists it under `Millrace.Configuration.Tests`, but the code-built worked example is
+  `WorkedExampleTests.Build()` in `Millrace.Control.Tests`, which already loads plants
   through `PlantLoader` and links the valid corpus. Putting the round trip beside
   it avoids a second 80-line copy of the example.
-- **R94 — `ControlModule.Name` is `Dse.Control`; `controllers` is the last root
+- **R94 — `ControlModule.Name` is `Millrace.Control`; `controllers` is the last root
   property of the schema; a catalogue without blocks allows no controllers.**
   An empty `oneOf` is not valid JSON Schema (`schemaArray` has `minItems: 1`), so
   with no block types `controllers` is `{ "type": "array", "maxItems": 0 }`.
@@ -278,12 +278,12 @@ choice. Where one differs from the spec's wording, this plan wins and says why.
   positional constructor stays source-compatible (`WireAndBuildTests` builds
   `new PlantSummary(3, 0, 2, 0)`). `validate` prints `controllers   N` after the
   `tags` line; the JSON summary gains `"controllers"` after `"explicitTags"`.
-- **R96 — The diagnostics page trailer stays `DSE001–DSE015`.** Spec 4.5 says the
-  trailer "extends to DSE115"; the trailer describes Core's pass-through codes,
-  which do not change. `DSE113`–`DSE115` enter the page's table from
+- **R96 — The diagnostics page trailer stays `MR001–MR015`.** Spec 4.5 says the
+  trailer "extends to MR115"; the trailer describes Core's pass-through codes,
+  which do not change. `MR113`–`MR115` enter the page's table from
   `ConfigDiagnostics.All`; the trailer and introduction gain a sentence on
-  controllers. The titles of `DSE102` and `DSE107` and the explanations of
-  `DSE103` and `DSE111` widen to cover controllers.
+  controllers. The titles of `MR102` and `MR107` and the explanations of
+  `MR103` and `MR111` widen to cover controllers.
 - **R97 — A component may not declare a `Tag` or `Value` parameter.** The
   component pipeline has no tag table, so such a parameter would silently never
   resolve; `CatalogueBuilder.Add(ComponentDescriptor)` rejects it. Objects may
@@ -307,10 +307,10 @@ choice. Where one differs from the spec's wording, this plan wins and says why.
   `WorkedExampleTests`, whose `Catalogue` gains `ControlModule` and whose
   `Build()` moves its timeline into a shared `Drive()` (Task 13) — its three
   facts and their assertions are unchanged.
-- **R99 — `ScenarioRecorder`'s summary is reworded.** Spec 2 says `Dse.Scenarios`
+- **R99 — `ScenarioRecorder`'s summary is reworded.** Spec 2 says `Millrace.Scenarios`
   changes "none in code"; its XML summary says it "accumulates every action that
   took effect", which R77's closure makes false. Only the doc comment changes.
-- **R100 — Every defect in a plugin's block descriptor is `DSE111` naming the
+- **R100 — Every defect in a plugin's block descriptor is `MR111` naming the
   module.** Beyond a throwing `OwnedTags` or factory, `ControllerPass` catches an
   `OwnedTags` that returns null or a null tag, a factory that returns null, and a
   factory whose block has an id or a scan period other than the ones it was
@@ -320,7 +320,7 @@ choice. Where one differs from the spec's wording, this plan wins and says why.
   stage's `try` — predates this plan and stays out of scope.
 - **R101 — The schema golden's `description` line changes, and that is not an
   addition.** It lists the catalogue's modules ("Generated from the catalogue of
-  modules: Dse.Components, Dse.Control. …"), so adding `ControlModule` to the
+  modules: Millrace.Components, Millrace.Control. …"), so adding `ControlModule` to the
   configuration tests' catalogue rewrites one pre-existing line. Criterion 4's
   "only by the additions of §4" is read as allowing it; Task 10 checks it is the
   only rewritten line. The components-only catalogue golden changes by one
@@ -334,7 +334,7 @@ choice. Where one differs from the spec's wording, this plan wins and says why.
 ## File structure
 
 ```
-src/Dse.Core/
+src/Millrace.Core/
   Io/TagImage.cs                     + origin on the queue; ApplyNow logs "by <id>", skips the recorder
   Io/ITagProvider.cs                 summary: may be called more than once (R81)
   Control/ScanBlockRuntime.cs        enqueues with the block id
@@ -354,13 +354,13 @@ src/Dse.Core/
   Catalogue/CatalogueJson.cs         + blocks array, tagKind/writes/tagParameter
   Testing/CatalogueConformance.cs    + blocks
   Testing/ConformanceFixtures.cs     + BlockParameters (several per type)
-src/Dse.Control.Catalogue/           new project
-  Dse.Control.Catalogue.csproj
+src/Millrace.Control.Catalogue/           new project
+  Millrace.Control.Catalogue.csproj
   ControlModule.cs  ControlCatalogue.cs  TransitionCatalogue.cs
   TimerCatalogue.cs  PermissiveCatalogue.cs  InterlockCatalogue.cs
   AlarmCatalogue.cs  SequencerCatalogue.cs
-src/Dse.Configuration/
-  Dse.Configuration.csproj           + Dse.Control.Catalogue
+src/Millrace.Configuration/
+  Millrace.Configuration.csproj           + Millrace.Control.Catalogue
   PlantSchema.cs                     + controllers, block branches, Tag/Value
   Loading/PlantSchemas.cs            + "controllers", ControllerKeys
   Loading/LoadState.cs               + ControllerEntry, Controllers
@@ -368,41 +368,41 @@ src/Dse.Configuration/
   Loading/ControllerPass.cs          new (R80)
   Loading/BuildStage.cs              runs the pass; PathOf learns controllers
   Loading/InstantiateStage.cs        AsSentence becomes internal
-  ConfigDiagnostics.cs               + DSE113–DSE115; widened texts
+  ConfigDiagnostics.cs               + MR113–MR115; widened texts
   DiagnosticsReference.cs            intro and trailer sentences
   PlantSummary.cs  PlantLoader.cs    + Controllers
-src/Dse.Scenarios/ScenarioRecorder.cs  summary only (R99)
-src/Dse.Cli/
-  Dse.Cli.csproj  CliApp.cs  CommandTable.cs  Commands/Validate.cs
-tests/Dse.Core.Tests/
+src/Millrace.Scenarios/ScenarioRecorder.cs  summary only (R99)
+src/Millrace.Cli/
+  Millrace.Cli.csproj  CliApp.cs  CommandTable.cs  Commands/Validate.cs
+tests/Millrace.Core.Tests/
   ActionRecorderTests.cs  ScanBlockHostTests.cs  PlantTagsTests.cs (new)
   Catalogue/CatalogueModelTests.cs  Catalogue/TagParameterTests.cs (new)
   Catalogue/CatalogueConformanceTests.cs  Catalogue/CatalogueJsonTests.cs
-tests/Dse.Control.Catalogue.Tests/   new project
-  Dse.Control.Catalogue.Tests.csproj  Bind.cs  ControlFixtures.cs
+tests/Millrace.Control.Catalogue.Tests/   new project
+  Millrace.Control.Catalogue.Tests.csproj  Bind.cs  ControlFixtures.cs
   ControlCatalogueTests.cs  TransitionTests.cs  BlockFactoryTests.cs
   Golden/control-catalogue.json      generated in Task 9
-tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json   + one line (Task 9)
-tests/Dse.Configuration.Tests/
+tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json   + one line (Task 9)
+tests/Millrace.Configuration.Tests/
   Plants.cs  TestModule.cs  ControllerTests.cs (new)  PlantSchemaTests.cs
   SchemaAgreementTests.cs  ConfigDiagnosticTests.cs
   Golden/plant.schema.json           regenerated in Task 10
   Plants/valid/conveyor-control.json new (Task 12)
   Plants/invalid/                    + 12 fixtures (Tasks 11, 12)
-tests/Dse.Control.Tests/
-  Dse.Control.Tests.csproj  HostTests.cs  WorkedExampleTests.cs  DocumentationTests.cs
+tests/Millrace.Control.Tests/
+  Millrace.Control.Tests.csproj  HostTests.cs  WorkedExampleTests.cs  DocumentationTests.cs
   Golden/conveyor-control.log        regenerated in Task 1
-tests/Dse.Scenarios.Tests/
-  Dse.Scenarios.Tests.csproj  ControlledRecordAndReplayTests.cs (new)
-tests/Dse.Cli.Tests/
-  Dse.Cli.Tests.csproj  Cli.cs  ValidateCommandTests.cs  TagsCommandTests.cs
+tests/Millrace.Scenarios.Tests/
+  Millrace.Scenarios.Tests.csproj  ControlledRecordAndReplayTests.cs (new)
+tests/Millrace.Cli.Tests/
+  Millrace.Cli.Tests.csproj  Cli.cs  ValidateCommandTests.cs  TagsCommandTests.cs
   RunCommandTests.cs  PluginTests.cs  ExportCommandTests.cs
   Plants/sample-block.json  Scenarios/conveyor-control.json   new
-tests/Dse.Cli.Tests.SampleModule/Latch.cs  SampleCatalogueModule.cs
+tests/Millrace.Cli.Tests.SampleModule/Latch.cs  SampleCatalogueModule.cs
 docs/control-blocks.md  docs/authoring-a-component.md  docs/scenarios.md
 docs/architecture.md  README.md  docs/configuration-diagnostics.md (regenerated)
 docs/superpowers/specs/2026-09-20-catalogue-configuration-cli-design.md   §4.1 amended
-Dse.sln                              + Dse.Control.Catalogue, Dse.Control.Catalogue.Tests
+Millrace.sln                              + Millrace.Control.Catalogue, Millrace.Control.Catalogue.Tests
 ```
 
 ## Task map
@@ -414,12 +414,12 @@ Dse.sln                              + Dse.Control.Catalogue, Dse.Control.Catalo
 | 3 | `BlockDescriptor`, `AddBlock`, `ComponentCatalogue.Blocks` | sonnet | 1118 |
 | 4 | `Tag` and `Value` parameter kinds: binding, resolution, conversion | opus | 1140 |
 | 5 | Conformance for blocks | sonnet | 1147 |
-| 6 | `Dse.Control.Catalogue`: project, `ControlModule`, shared groups, `transition` slot | sonnet | 1156 |
+| 6 | `Millrace.Control.Catalogue`: project, `ControlModule`, shared groups, `transition` slot | sonnet | 1156 |
 | 7 | Timer, permissive and interlock descriptors | sonnet | 1162 |
 | 8 | Alarm and sequencer descriptors; the reflection sweep | sonnet | 1167 |
 | 9 | Catalogue export of blocks; two catalogue goldens | sonnet | 1170 |
 | 10 | Plant schema for controllers; schema golden | sonnet | 1175 |
-| 11 | Loader: `controllers` read, resolved, built; `DSE113`–`DSE115`; diagnostics page | opus | 1213 |
+| 11 | Loader: `controllers` read, resolved, built; `MR113`–`MR115`; diagnostics page | opus | 1213 |
 | 12 | The corpus: worked example plant, invalid fixtures, schema agreement | sonnet | 1237 |
 | 13 | The worked example from JSON, byte-identical to the code-built one | opus | 1239 |
 | 14 | Recording a controlled run replays byte for byte (R77) | sonnet | 1241 |
@@ -440,7 +440,7 @@ block id, or null). `ApplyNow` stays the one landing site: it logs
 otherwise, and calls `IActionRecorder.Wrote` only when there is none. Then the
 5c golden is regenerated and its diff read.
 
-**Measured on `834758b`** (read from `tests/Dse.Control.Tests/Golden/conveyor-control.log`
+**Measured on `834758b`** (read from `tests/Millrace.Control.Tests/Golden/conveyor-control.log`
 and `WorkedExampleTests.Build()`): the golden has 40 lines and 12 `WRITE` lines.
 Two are the test's own `WriteAt` of `SEQ01.Start` (lines 5 and 10). The other
 ten are block-issued: `INT01`'s trip writes (lines 3 and 33) and `SEQ01`'s step
@@ -452,14 +452,14 @@ N−1; its outputs are visible from the end of tick N; its queued writes land at
 phase 1 of tick N+1. A `WriteAt(t)` lands at phase 1 of tick `t / step`.
 
 **Files:**
-- Modify: `src/Dse.Core/Io/TagImage.cs` (`Write`, `ApplyNow`, `ApplyPendingWrites`, `PendingWrite`)
-- Modify: `src/Dse.Core/Control/ScanBlockRuntime.cs` (the write loop and the class remarks)
-- Modify: `src/Dse.Core/Simulation.cs` (`WriteEvent.Apply`)
-- Modify: `src/Dse.Core/IActionRecorder.cs` (summaries)
-- Modify: `src/Dse.Scenarios/ScenarioRecorder.cs` (summary only, R99)
-- Test: `tests/Dse.Core.Tests/ActionRecorderTests.cs`, `tests/Dse.Core.Tests/ScanBlockHostTests.cs`,
-  `tests/Dse.Control.Tests/HostTests.cs`
-- Regenerate: `tests/Dse.Control.Tests/Golden/conveyor-control.log`
+- Modify: `src/Millrace.Core/Io/TagImage.cs` (`Write`, `ApplyNow`, `ApplyPendingWrites`, `PendingWrite`)
+- Modify: `src/Millrace.Core/Control/ScanBlockRuntime.cs` (the write loop and the class remarks)
+- Modify: `src/Millrace.Core/Simulation.cs` (`WriteEvent.Apply`)
+- Modify: `src/Millrace.Core/IActionRecorder.cs` (summaries)
+- Modify: `src/Millrace.Scenarios/ScenarioRecorder.cs` (summary only, R99)
+- Test: `tests/Millrace.Core.Tests/ActionRecorderTests.cs`, `tests/Millrace.Core.Tests/ScanBlockHostTests.cs`,
+  `tests/Millrace.Control.Tests/HostTests.cs`
+- Regenerate: `tests/Millrace.Control.Tests/Golden/conveyor-control.log`
 
 **Interfaces:**
 - Consumes: `TagImage.Write(int index, TagValue value)` (public, `ITagWriter`),
@@ -474,7 +474,7 @@ phase 1 of tick N+1. A `WriteAt(t)` lands at phase 1 of tick `t / step`.
 
 - [ ] **Step 1: Write the failing Core tests**
 
-In `tests/Dse.Core.Tests/ActionRecorderTests.cs`, add `using Dse.Core.Logging;`
+In `tests/Millrace.Core.Tests/ActionRecorderTests.cs`, add `using Millrace.Core.Logging;`
 to the usings, and add these two facts at the end of the class:
 
 ```csharp
@@ -520,7 +520,7 @@ to the usings, and add these two facts at the end of the class:
     }
 ```
 
-In `tests/Dse.Core.Tests/ScanBlockHostTests.cs`, in
+In `tests/Millrace.Core.Tests/ScanBlockHostTests.cs`, in
 `AWriteQueuedByABlockLandsAtPhaseOneOfTheNextTick`, replace
 
 ```csharp
@@ -535,7 +535,7 @@ with
 
 - [ ] **Step 2: Update the two 5c host tests the decision inverts (R98)**
 
-In `tests/Dse.Control.Tests/HostTests.cs`, in
+In `tests/Millrace.Control.Tests/HostTests.cs`, in
 `AnInterlockOverAPlantTripsAndHoldsTheFillCommandLow`, replace
 
 ```csharp
@@ -584,20 +584,20 @@ Replace the whole method `ABlockWriteIsRecordedOnTheTickItLands` with:
 
 - [ ] **Step 3: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo --filter "FullyQualifiedName~ActionRecorderTests|FullyQualifiedName~ScanBlockHostTests"`
+Run: `dotnet test tests/Millrace.Core.Tests --nologo --filter "FullyQualifiedName~ActionRecorderTests|FullyQualifiedName~ScanBlockHostTests"`
 Expected: FAIL — `ABlockWriteIsLoggedByItsBlockAndNotRecorded`,
 `ABlockWriteAndAnExternalWriteOnOneTickLandInEnqueueOrder` and
 `AWriteQueuedByABlockLandsAtPhaseOneOfTheNextTick` fail on the message
 (`Expected: "Set to true by B."`, `Actual: "Set to true."`); every other test in
 the two classes passes.
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo --filter FullyQualifiedName~HostTests`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo --filter FullyQualifiedName~HostTests`
 Expected: FAIL — `AnInterlockOverAPlantTripsAndHoldsTheFillCommandLow` and
 `ABlockWriteIsNotRecorded`.
 
 - [ ] **Step 4: Give the write queue an origin**
 
-In `src/Dse.Core/Io/TagImage.cs`, replace the public `Write(int, TagValue)`:
+In `src/Millrace.Core/Io/TagImage.cs`, replace the public `Write(int, TagValue)`:
 
 ```csharp
     /// <inheritdoc/>
@@ -655,11 +655,11 @@ record at the end of the file with:
     private readonly record struct PendingWrite(int Index, TagValue Value, string? Origin);
 ```
 
-In `src/Dse.Core/Simulation.cs`, in `WriteEvent.Apply`, replace
+In `src/Millrace.Core/Simulation.cs`, in `WriteEvent.Apply`, replace
 `_simulation.IO.ApplyNow(_index, _value, in context);` with
 `_simulation.IO.ApplyNow(_index, _value, origin: null, in context);`.
 
-In `src/Dse.Core/Control/ScanBlockRuntime.cs`, replace
+In `src/Millrace.Core/Control/ScanBlockRuntime.cs`, replace
 `_io.Write(_writeIndices[i], value);` with
 `_io.Write(_writeIndices[i], value, _plan.Block.Id);`, and replace the second
 `<para>` of the class remarks with:
@@ -678,7 +678,7 @@ In `src/Dse.Core/Control/ScanBlockRuntime.cs`, replace
 
 - [ ] **Step 5: Narrow the recorder's contract in its documentation**
 
-In `src/Dse.Core/IActionRecorder.cs`, replace the interface summary and the
+In `src/Millrace.Core/IActionRecorder.cs`, replace the interface summary and the
 `Wrote` summary:
 
 ```csharp
@@ -697,7 +697,7 @@ In `src/Dse.Core/IActionRecorder.cs`, replace the interface summary and the
     void Wrote(long tick, string tag, TagValue value);
 ```
 
-In `src/Dse.Scenarios/ScenarioRecorder.cs`, replace the first sentence of the
+In `src/Millrace.Scenarios/ScenarioRecorder.cs`, replace the first sentence of the
 class summary (R99) so the summary reads:
 
 ```csharp
@@ -712,13 +712,13 @@ class summary (R99) so the summary reads:
 
 - [ ] **Step 6: Run the Core and host tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo`
+Run: `dotnet test tests/Millrace.Core.Tests --nologo`
 Expected: PASS, **422** tests.
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo --filter FullyQualifiedName~HostTests`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo --filter FullyQualifiedName~HostTests`
 Expected: PASS.
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo --filter FullyQualifiedName~TheWorkedExampleMatchesItsGolden`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo --filter FullyQualifiedName~TheWorkedExampleMatchesItsGolden`
 Expected: FAIL — `Output differs from golden file '…/Golden/conveyor-control.log'.`
 That is the attribution reaching the 5c golden.
 
@@ -727,17 +727,17 @@ That is the attribution reaching the 5c golden.
 Run:
 
 ```bash
-DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Control.Tests --nologo --filter FullyQualifiedName~TheWorkedExampleMatchesItsGolden
+MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Control.Tests --nologo --filter FullyQualifiedName~TheWorkedExampleMatchesItsGolden
 ```
 
 ```bash
-git diff --numstat tests/Dse.Control.Tests/Golden/conveyor-control.log
+git diff --numstat tests/Millrace.Control.Tests/Golden/conveyor-control.log
 ```
 
-Expected: `10	10	tests/Dse.Control.Tests/Golden/conveyor-control.log`.
+Expected: `10	10	tests/Millrace.Control.Tests/Golden/conveyor-control.log`.
 
 ```bash
-git diff --unified=0 tests/Dse.Control.Tests/Golden/conveyor-control.log
+git diff --unified=0 tests/Millrace.Control.Tests/Golden/conveyor-control.log
 ```
 
 **Read the whole diff**, then check it against this checklist and put the
@@ -761,15 +761,15 @@ the message suffix.
 
 - [ ] **Step 8: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, **1110** tests (Core 422, Control 102, the rest unchanged). The
 four 5b goldens are untouched — they have no blocks.
 
 - [ ] **Step 9: Commit**
 
 ```bash
-git add src/Dse.Core/Io/TagImage.cs src/Dse.Core/Control/ScanBlockRuntime.cs src/Dse.Core/Simulation.cs src/Dse.Core/IActionRecorder.cs src/Dse.Scenarios/ScenarioRecorder.cs tests/Dse.Core.Tests/ActionRecorderTests.cs tests/Dse.Core.Tests/ScanBlockHostTests.cs tests/Dse.Control.Tests/HostTests.cs tests/Dse.Control.Tests/Golden/conveyor-control.log
+git add src/Millrace.Core/Io/TagImage.cs src/Millrace.Core/Control/ScanBlockRuntime.cs src/Millrace.Core/Simulation.cs src/Millrace.Core/IActionRecorder.cs src/Millrace.Scenarios/ScenarioRecorder.cs tests/Millrace.Core.Tests/ActionRecorderTests.cs tests/Millrace.Core.Tests/ScanBlockHostTests.cs tests/Millrace.Control.Tests/HostTests.cs tests/Millrace.Control.Tests/Golden/conveyor-control.log
 ```
 
 ```bash
@@ -798,12 +798,12 @@ from Core, through a public `SimulationBuilder` query if none exists)". None
 exists (R81). `PlantTags()` runs the builder's own `CollectTags` and wraps the
 result in a `TagDirectory`, so the names, order, indices, kinds and accesses are
 `Build()`'s own — including R23's read-only downgrade of a writable tag on a
-driven input, which is what later makes `DSE115` right.
+driven input, which is what later makes `MR115` right.
 
 **Files:**
-- Modify: `src/Dse.Core/SimulationBuilder.cs` (new public method after `Validate()`)
-- Modify: `src/Dse.Core/Io/ITagProvider.cs` (the `DescribeTags` summary)
-- Create: `tests/Dse.Core.Tests/PlantTagsTests.cs`
+- Modify: `src/Millrace.Core/SimulationBuilder.cs` (new public method after `Validate()`)
+- Modify: `src/Millrace.Core/Io/ITagProvider.cs` (the `DescribeTags` summary)
+- Create: `tests/Millrace.Core.Tests/PlantTagsTests.cs`
 
 **Interfaces:**
 - Consumes: `private List<TagBinding> CollectTags(HashSet<string> componentIds, List<ValidationError> errors)`;
@@ -814,16 +814,16 @@ driven input, which is what later makes `DSE115` right.
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `tests/Dse.Core.Tests/PlantTagsTests.cs`:
+Create `tests/Millrace.Core.Tests/PlantTagsTests.cs`:
 
 ```csharp
-using Dse.Core.Io;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Time;
-using Dse.Io;
+using Millrace.Core.Io;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Time;
+using Millrace.Io;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class PlantTagsTests
 {
@@ -884,12 +884,12 @@ public class PlantTagsTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet build tests/Dse.Core.Tests --nologo`
+Run: `dotnet build tests/Millrace.Core.Tests --nologo`
 Expected: FAIL — `error CS1061: 'SimulationBuilder' does not contain a definition for 'PlantTags'`.
 
 - [ ] **Step 3: Add the query**
 
-In `src/Dse.Core/SimulationBuilder.cs`, immediately after
+In `src/Millrace.Core/SimulationBuilder.cs`, immediately after
 `public ValidationResult Validate() => Validate(out _, out _);`, add:
 
 ```csharp
@@ -899,7 +899,7 @@ In `src/Dse.Core/SimulationBuilder.cs`, immediately after
     /// explicit binds, sorted by name and indexed, with the access Build gives them
     /// (a writable tag on an input a link drives is read-only, R23) — without
     /// building anything. A block's owned tags are not included, and neither is a
-    /// tag <see cref="Validate()"/> would reject (DSE009–DSE011). The plant loader
+    /// tag <see cref="Validate()"/> would reject (MR009–MR011). The plant loader
     /// resolves a plant file's controllers against this list.
     /// </summary>
     public IReadOnlyList<TagDescriptor> PlantTags()
@@ -914,7 +914,7 @@ In `src/Dse.Core/SimulationBuilder.cs`, immediately after
     }
 ```
 
-In `src/Dse.Core/Io/ITagProvider.cs`, replace the `DescribeTags` summary with:
+In `src/Millrace.Core/Io/ITagProvider.cs`, replace the `DescribeTags` summary with:
 
 ```csharp
     /// <summary>
@@ -926,19 +926,19 @@ In `src/Dse.Core/Io/ITagProvider.cs`, replace the `DescribeTags` summary with:
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo --filter FullyQualifiedName~PlantTagsTests`
+Run: `dotnet test tests/Millrace.Core.Tests --nologo --filter FullyQualifiedName~PlantTagsTests`
 Expected: PASS, 3 tests.
 
 - [ ] **Step 5: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, **1113** tests (Core 425).
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Core/SimulationBuilder.cs src/Dse.Core/Io/ITagProvider.cs tests/Dse.Core.Tests/PlantTagsTests.cs
+git add src/Millrace.Core/SimulationBuilder.cs src/Millrace.Core/Io/ITagProvider.cs tests/Millrace.Core.Tests/PlantTagsTests.cs
 ```
 
 ```bash
@@ -967,14 +967,14 @@ takes the scan period. Component and block types share one namespace; a clash is
 rejected when it is added, naming both modules (R91).
 
 **Files:**
-- Create: `src/Dse.Core/Catalogue/BlockDescriptor.cs`
-- Modify: `src/Dse.Core/Catalogue/CatalogueBuilder.cs`
-- Modify: `src/Dse.Core/Catalogue/ComponentCatalogue.cs`
-- Test: `tests/Dse.Core.Tests/Catalogue/CatalogueModelTests.cs`
+- Create: `src/Millrace.Core/Catalogue/BlockDescriptor.cs`
+- Modify: `src/Millrace.Core/Catalogue/CatalogueBuilder.cs`
+- Modify: `src/Millrace.Core/Catalogue/ComponentCatalogue.cs`
+- Test: `tests/Millrace.Core.Tests/Catalogue/CatalogueModelTests.cs`
 
 **Interfaces:**
 - Consumes: `IScanBlock`, `TagSpec(string Name, TagKind Kind, string Unit = "", string Description = "")`
-  and `TagAccess` from `Dse.Io`; `CatalogueBuilder`'s private `RequireKebabCase`,
+  and `TagAccess` from `Millrace.Io`; `CatalogueBuilder`'s private `RequireKebabCase`,
   `RequireUniqueParameters`, `RequireMaterialStateNamesSibling`, `Duplicate` and
   `_current`; test fake `EchoBlock(id, period).Publishes(string name)`.
 - Produces:
@@ -987,8 +987,8 @@ rejected when it is added, naming both modules (R91).
 
 - [ ] **Step 1: Write the failing tests**
 
-In `tests/Dse.Core.Tests/Catalogue/CatalogueModelTests.cs`, add
-`using Dse.Core.Tests.Fakes;` and `using Dse.Io;` to the usings. Add these
+In `tests/Millrace.Core.Tests/Catalogue/CatalogueModelTests.cs`, add
+`using Millrace.Core.Tests.Fakes;` and `using Millrace.Io;` to the usings. Add these
 members after the existing `ModuleB` class:
 
 ```csharp
@@ -1077,17 +1077,17 @@ and these facts at the end of the class:
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet build tests/Dse.Core.Tests --nologo`
+Run: `dotnet build tests/Millrace.Core.Tests --nologo`
 Expected: FAIL — `error CS0246: The type or namespace name 'BlockDescriptor' could not be found`.
 
 - [ ] **Step 3: Write `BlockDescriptor`**
 
-Create `src/Dse.Core/Catalogue/BlockDescriptor.cs`:
+Create `src/Millrace.Core/Catalogue/BlockDescriptor.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Core.Catalogue;
+namespace Millrace.Core.Catalogue;
 
 /// <summary>
 /// Everything a tool or an agent needs to know about a control block type: its
@@ -1138,7 +1138,7 @@ public sealed class BlockDescriptor
 
 - [ ] **Step 4: Register blocks in the builder**
 
-In `src/Dse.Core/Catalogue/CatalogueBuilder.cs`:
+In `src/Millrace.Core/Catalogue/CatalogueBuilder.cs`:
 
 Add the dictionary after `_components`:
 
@@ -1204,7 +1204,7 @@ Add, after `Duplicate`:
 
 - [ ] **Step 5: Expose blocks from the catalogue**
 
-In `src/Dse.Core/Catalogue/ComponentCatalogue.cs`, add the field after
+In `src/Millrace.Core/Catalogue/ComponentCatalogue.cs`, add the field after
 `_components`:
 
 ```csharp
@@ -1261,20 +1261,20 @@ Add after `ModuleOf(ComponentDescriptor)`:
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo --filter FullyQualifiedName~CatalogueModelTests`
+Run: `dotnet test tests/Millrace.Core.Tests --nologo --filter FullyQualifiedName~CatalogueModelTests`
 Expected: PASS, including the five new facts.
 
 - [ ] **Step 7: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, **1118** tests (Core 430). The components golden is unchanged:
 nothing exports blocks yet.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/Dse.Core/Catalogue/BlockDescriptor.cs src/Dse.Core/Catalogue/CatalogueBuilder.cs src/Dse.Core/Catalogue/ComponentCatalogue.cs tests/Dse.Core.Tests/Catalogue/CatalogueModelTests.cs
+git add src/Millrace.Core/Catalogue/BlockDescriptor.cs src/Millrace.Core/Catalogue/CatalogueBuilder.cs src/Millrace.Core/Catalogue/ComponentCatalogue.cs tests/Millrace.Core.Tests/Catalogue/CatalogueModelTests.cs
 ```
 
 ```bash
@@ -1304,10 +1304,10 @@ mode on a context given a table (R84); a wrong-kind tag is an issue at the tag
 (R83); a value whose tag did not resolve is not reported twice.
 
 **Files:**
-- Modify: `src/Dse.Core/Catalogue/ParameterKind.cs`, `ParameterDescriptor.cs`, `Param.cs`,
+- Modify: `src/Millrace.Core/Catalogue/ParameterKind.cs`, `ParameterDescriptor.cs`, `Param.cs`,
   `ParameterValues.cs`, `BindingContext.cs`, `BindingIssue.cs`, `ParameterBinder.cs`,
   `CatalogueBuilder.cs`
-- Create: `tests/Dse.Core.Tests/Catalogue/TagParameterTests.cs`
+- Create: `tests/Millrace.Core.Tests/Catalogue/TagParameterTests.cs`
 
 **Interfaces:**
 - Consumes: `ParameterBinder.Bind(IReadOnlyList<ParameterDescriptor> schema, JsonElement json, string path, BindingContext context, bool construct, List<BindingIssue> issues)`;
@@ -1323,7 +1323,7 @@ mode on a context given a table (R84); a wrong-kind tag is an issue at the tag
     `bool TryGetTag(string name, out TagKind kind, out TagAccess access)`.
   - `BindingIssueKind.UnknownTag`, `WrongTagKind`, `ReadOnlyTag`.
   - Issue texts: `'{name}' is not a tag in this plant.` / fix `Use a tag the plant has — '{closest}' is closest.`
-    (or `Use a tag the plant has; ` + "`dse tags`" + ` lists them.`);
+    (or `Use a tag the plant has; ` + "`millrace tags`" + ` lists them.`);
     `'{name}' is {a kind} tag, but '{parameter}' needs {a kind} tag.`;
     `'{name}' is read-only, so a block cannot command it.`;
     `{raw} does not fit '{tag}', which is {a kind} tag.` with fix `Write true or false.` /
@@ -1331,15 +1331,15 @@ mode on a context given a table (R84); a wrong-kind tag is an issue at the tag
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `tests/Dse.Core.Tests/Catalogue/TagParameterTests.cs`:
+Create `tests/Millrace.Core.Tests/Catalogue/TagParameterTests.cs`:
 
 ```csharp
 using System.Text.Json;
-using Dse.Core.Catalogue;
-using Dse.Core.Graph;
-using Dse.Io;
+using Millrace.Core.Catalogue;
+using Millrace.Core.Graph;
+using Millrace.Io;
 
-namespace Dse.Core.Tests.Catalogue;
+namespace Millrace.Core.Tests.Catalogue;
 
 public class TagParameterTests
 {
@@ -1527,12 +1527,12 @@ public class TagParameterTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet build tests/Dse.Core.Tests --nologo`
+Run: `dotnet build tests/Millrace.Core.Tests --nologo`
 Expected: FAIL — `error CS0117: 'Param' does not contain a definition for 'Tag'`.
 
 - [ ] **Step 3: Add the kinds, the descriptor properties and the factories**
 
-In `src/Dse.Core/Catalogue/ParameterKind.cs`, append after `ObjectList,`:
+In `src/Millrace.Core/Catalogue/ParameterKind.cs`, append after `ObjectList,`:
 
 ```csharp
     /// <summary>The full name of a tag a block reads or commands; resolved by the loader.</summary>
@@ -1541,7 +1541,7 @@ In `src/Dse.Core/Catalogue/ParameterKind.cs`, append after `ObjectList,`:
     Value,
 ```
 
-In `src/Dse.Core/Catalogue/ParameterDescriptor.cs`, add `using Dse.Io;`, add
+In `src/Millrace.Core/Catalogue/ParameterDescriptor.cs`, add `using Millrace.Io;`, add
 these properties after `MaterialParameter`:
 
 ```csharp
@@ -1562,7 +1562,7 @@ and extend the `IsRequired` arm for references:
             or ParameterKind.Tag or ParameterKind.Value => !IsOptional,
 ```
 
-In `src/Dse.Core/Catalogue/Param.cs`, add `using Dse.Io;` and, after
+In `src/Millrace.Core/Catalogue/Param.cs`, add `using Millrace.Io;` and, after
 `MaterialState`:
 
 ```csharp
@@ -1586,7 +1586,7 @@ In `src/Dse.Core/Catalogue/Param.cs`, add `using Dse.Io;` and, after
     }
 ```
 
-In `src/Dse.Core/Catalogue/ParameterValues.cs`, add `using Dse.Io;` and, after
+In `src/Millrace.Core/Catalogue/ParameterValues.cs`, add `using Millrace.Io;` and, after
 `StateIndex`:
 
 ```csharp
@@ -1597,7 +1597,7 @@ In `src/Dse.Core/Catalogue/ParameterValues.cs`, add `using Dse.Io;` and, after
     public TagValue Value(string name) => Get<TagValue>(name);
 ```
 
-In `src/Dse.Core/Catalogue/BindingIssue.cs`, append to `BindingIssueKind` after
+In `src/Millrace.Core/Catalogue/BindingIssue.cs`, append to `BindingIssueKind` after
 `Rejected,`:
 
 ```csharp
@@ -1611,7 +1611,7 @@ In `src/Dse.Core/Catalogue/BindingIssue.cs`, append to `BindingIssueKind` after
 
 - [ ] **Step 4: Give the binding context a tag table**
 
-In `src/Dse.Core/Catalogue/BindingContext.cs`, add `using Dse.Io;`, a field
+In `src/Millrace.Core/Catalogue/BindingContext.cs`, add `using Millrace.Io;`, a field
 after `_nodes`:
 
 ```csharp
@@ -1631,7 +1631,7 @@ and, after `NodeIds`:
     /// <summary>
     /// The tags a <see cref="ParameterKind.Tag"/> parameter may name. Called once;
     /// a name given twice keeps its first entry — a plant tag before a block's
-    /// owned tag — and the builder reports the clash (DSE015).
+    /// owned tag — and the builder reports the clash (MR015).
     /// </summary>
     public BindingContext UseTags(IEnumerable<(string Name, TagKind Kind, TagAccess Access)> tags)
     {
@@ -1666,7 +1666,7 @@ and, after `NodeIds`:
 
 - [ ] **Step 5: Bind tags and values**
 
-In `src/Dse.Core/Catalogue/ParameterBinder.cs`, add `using Dse.Io;`.
+In `src/Millrace.Core/Catalogue/ParameterBinder.cs`, add `using Millrace.Io;`.
 
 In `BindObject`, change the ordering line so values bind after their tags:
 
@@ -1715,7 +1715,7 @@ Add these methods after `TryBindState`:
                     path,
                     $"'{name}' is not a tag in this plant.",
                     closest is null
-                        ? "Use a tag the plant has; `dse tags` lists them."
+                        ? "Use a tag the plant has; `millrace tags` lists them."
                         : $"Use a tag the plant has — '{closest}' is closest."));
                 return false;
             }
@@ -1726,7 +1726,7 @@ Add these methods after `TryBindState`:
                     BindingIssueKind.WrongTagKind,
                     path,
                     $"'{name}' is {A(kind)} tag, but '{parameter.Name}' needs {A(required)} tag.",
-                    $"Name {A(required)} tag; `dse tags` lists every tag with its kind."));
+                    $"Name {A(required)} tag; `millrace tags` lists every tag with its kind."));
                 return false;
             }
 
@@ -1736,7 +1736,7 @@ Add these methods after `TryBindState`:
                     BindingIssueKind.ReadOnlyTag,
                     path,
                     $"'{name}' is read-only, so a block cannot command it.",
-                    "Command a read-write tag; `dse tags` shows each tag's access. An input a signal link drives is read-only."));
+                    "Command a read-write tag; `millrace tags` shows each tag's access. An input a signal link drives is read-only."));
                 return false;
             }
         }
@@ -1836,7 +1836,7 @@ In `Example`, before `_ => "a value",`, add:
 
 - [ ] **Step 6: Guard the new kinds in the builder**
 
-In `src/Dse.Core/Catalogue/CatalogueBuilder.cs`:
+In `src/Millrace.Core/Catalogue/CatalogueBuilder.cs`:
 
 In `Add(ComponentDescriptor)`, after `RequireMaterialStateNamesSibling(...)`, add
 `RequireNoTagParameters(descriptor.Parameters, $"component '{descriptor.Type}'");`.
@@ -1898,13 +1898,13 @@ Add these methods after `RequireMaterialStateNamesSibling`:
 
 - [ ] **Step 7: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo --filter FullyQualifiedName~TagParameterTests`
+Run: `dotnet test tests/Millrace.Core.Tests --nologo --filter FullyQualifiedName~TagParameterTests`
 Expected: PASS, 22 tests (10 facts and 12 theory rows).
 
 - [ ] **Step 8: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, **1140** tests (Core 452). `ParameterBinderTests` is unchanged:
 no existing schema has a `Tag` or `Value`, so the reordering of `MaterialState`
 binding is behaviour-neutral.
@@ -1912,7 +1912,7 @@ binding is behaviour-neutral.
 - [ ] **Step 9: Commit**
 
 ```bash
-git add src/Dse.Core/Catalogue/ParameterKind.cs src/Dse.Core/Catalogue/ParameterDescriptor.cs src/Dse.Core/Catalogue/Param.cs src/Dse.Core/Catalogue/ParameterValues.cs src/Dse.Core/Catalogue/BindingContext.cs src/Dse.Core/Catalogue/BindingIssue.cs src/Dse.Core/Catalogue/ParameterBinder.cs src/Dse.Core/Catalogue/CatalogueBuilder.cs tests/Dse.Core.Tests/Catalogue/TagParameterTests.cs
+git add src/Millrace.Core/Catalogue/ParameterKind.cs src/Millrace.Core/Catalogue/ParameterDescriptor.cs src/Millrace.Core/Catalogue/Param.cs src/Millrace.Core/Catalogue/ParameterValues.cs src/Millrace.Core/Catalogue/BindingContext.cs src/Millrace.Core/Catalogue/BindingIssue.cs src/Millrace.Core/Catalogue/ParameterBinder.cs src/Millrace.Core/Catalogue/CatalogueBuilder.cs tests/Millrace.Core.Tests/Catalogue/TagParameterTests.cs
 ```
 
 ```bash
@@ -1946,9 +1946,9 @@ for components; a test pins that for blocks. A type may carry several fixtures; 
 there is more than one, labelled `type (fixture n)`.
 
 **Files:**
-- Modify: `src/Dse.Core/Testing/CatalogueConformance.cs`
-- Modify: `src/Dse.Core/Testing/ConformanceFixtures.cs`
-- Test: `tests/Dse.Core.Tests/Catalogue/CatalogueConformanceTests.cs`
+- Modify: `src/Millrace.Core/Testing/CatalogueConformance.cs`
+- Modify: `src/Millrace.Core/Testing/ConformanceFixtures.cs`
+- Test: `tests/Millrace.Core.Tests/Catalogue/CatalogueConformanceTests.cs`
 
 **Interfaces:**
 - Consumes: `ComponentCatalogue.Blocks`, `BlockDescriptor.OwnedTags` and `.Factory` (Task 3);
@@ -1964,8 +1964,8 @@ there is more than one, labelled `type (fixture n)`.
 
 - [ ] **Step 1: Write the failing tests**
 
-In `tests/Dse.Core.Tests/Catalogue/CatalogueConformanceTests.cs`, add
-`using Dse.Core.Tests.Fakes;` to the usings and add these members at the end of
+In `tests/Millrace.Core.Tests/Catalogue/CatalogueConformanceTests.cs`, add
+`using Millrace.Core.Tests.Fakes;` to the usings and add these members at the end of
 the class:
 
 ```csharp
@@ -2116,12 +2116,12 @@ the class:
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet build tests/Dse.Core.Tests --nologo`
+Run: `dotnet build tests/Millrace.Core.Tests --nologo`
 Expected: FAIL — `error CS1061: 'ConformanceFixtures' does not contain a definition for 'BlockParameters'`.
 
 - [ ] **Step 3: Let fixtures carry block parameters**
 
-In `src/Dse.Core/Testing/ConformanceFixtures.cs`, add a field after `_objects`:
+In `src/Millrace.Core/Testing/ConformanceFixtures.cs`, add a field after `_objects`:
 
 ```csharp
     private readonly Dictionary<string, List<string>> _blocks = new(StringComparer.Ordinal);
@@ -2158,7 +2158,7 @@ and after the second `ParametersFor`:
 
 - [ ] **Step 4: Check blocks**
 
-In `src/Dse.Core/Testing/CatalogueConformance.cs`, add `using System.Globalization;`,
+In `src/Millrace.Core/Testing/CatalogueConformance.cs`, add `using System.Globalization;`,
 and after the `ProbeId` constant:
 
 ```csharp
@@ -2255,19 +2255,19 @@ Add after `Compare`:
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo --filter FullyQualifiedName~CatalogueConformanceTests`
+Run: `dotnet test tests/Millrace.Core.Tests --nologo --filter FullyQualifiedName~CatalogueConformanceTests`
 Expected: PASS, including the seven new facts.
 
 - [ ] **Step 6: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, **1147** tests (Core 459).
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/Dse.Core/Testing/CatalogueConformance.cs src/Dse.Core/Testing/ConformanceFixtures.cs tests/Dse.Core.Tests/Catalogue/CatalogueConformanceTests.cs
+git add src/Millrace.Core/Testing/CatalogueConformance.cs src/Millrace.Core/Testing/ConformanceFixtures.cs tests/Millrace.Core.Tests/Catalogue/CatalogueConformanceTests.cs
 ```
 
 ```bash
@@ -2285,26 +2285,26 @@ MSG
 
 ---
 
-### Task 6: `Dse.Control.Catalogue` — the project, `ControlModule`, the shared groups and the `transition` slot
+### Task 6: `Millrace.Control.Catalogue` — the project, `ControlModule`, the shared groups and the `transition` slot
 
 Model: sonnet
 
-Spec 2 and 3.3. A new project that references `Dse.Core` and `Dse.Control`, so
-`Dse.Control` itself keeps seeing `Dse.Io.Abstractions` alone. This task
+Spec 2 and 3.3. A new project that references `Millrace.Core` and `Millrace.Control`, so
+`Millrace.Control` itself keeps seeing `Millrace.Io.Abstractions` alone. This task
 registers the two transition objects; Tasks 7 and 8 add the five blocks. A new
 test project runs conformance over the module.
 
 **Files:**
-- Create: `src/Dse.Control.Catalogue/Dse.Control.Catalogue.csproj`
-- Create: `src/Dse.Control.Catalogue/ControlModule.cs`
-- Create: `src/Dse.Control.Catalogue/ControlCatalogue.cs`
-- Create: `src/Dse.Control.Catalogue/TransitionCatalogue.cs`
-- Create: `tests/Dse.Control.Catalogue.Tests/Dse.Control.Catalogue.Tests.csproj`
-- Create: `tests/Dse.Control.Catalogue.Tests/ControlFixtures.cs`
-- Create: `tests/Dse.Control.Catalogue.Tests/Bind.cs`
-- Create: `tests/Dse.Control.Catalogue.Tests/ControlCatalogueTests.cs`
-- Create: `tests/Dse.Control.Catalogue.Tests/TransitionTests.cs`
-- Modify: `Dse.sln`
+- Create: `src/Millrace.Control.Catalogue/Millrace.Control.Catalogue.csproj`
+- Create: `src/Millrace.Control.Catalogue/ControlModule.cs`
+- Create: `src/Millrace.Control.Catalogue/ControlCatalogue.cs`
+- Create: `src/Millrace.Control.Catalogue/TransitionCatalogue.cs`
+- Create: `tests/Millrace.Control.Catalogue.Tests/Millrace.Control.Catalogue.Tests.csproj`
+- Create: `tests/Millrace.Control.Catalogue.Tests/ControlFixtures.cs`
+- Create: `tests/Millrace.Control.Catalogue.Tests/Bind.cs`
+- Create: `tests/Millrace.Control.Catalogue.Tests/ControlCatalogueTests.cs`
+- Create: `tests/Millrace.Control.Catalogue.Tests/TransitionTests.cs`
+- Modify: `Millrace.sln`
 
 **Interfaces:**
 - Consumes: `ObjectDescriptor(string slot, string type, string description, Func<ParameterValues, object> factory)`,
@@ -2314,8 +2314,8 @@ test project runs conformance over the module.
   `StepTransition.After(TimeSpan delay)`, `Condition(string Tag, bool Normal)`,
   `BlockWrite(string Tag, TagValue Value)`; `CatalogueConformance.Check`,
   `ConformanceFixtures.ObjectParameters`, `BindingContext.UseTags`.
-- Produces (namespace `Dse.Control.Catalogue`):
-  - `public sealed class ControlModule : ICatalogueModule` — `Name` = `"Dse.Control"` (R94).
+- Produces (namespace `Millrace.Control.Catalogue`):
+  - `public sealed class ControlModule : ICatalogueModule` — `Name` = `"Millrace.Control"` (R94).
   - `public static class ControlCatalogue` — `TransitionSlot` = `"transition"`, `MaxSeconds` =
     `31_536_000.0`, `GroupDefinition ConditionGroup` (`"Condition"`: `tag` Tag Bool, `normal` Bool),
     `GroupDefinition WriteGroup` (`"BlockWrite"`: `tag` Tag writes, `value` Value of `tag`);
@@ -2329,7 +2329,7 @@ test project runs conformance over the module.
 
 - [ ] **Step 1: Create the source project**
 
-Create `src/Dse.Control.Catalogue/Dse.Control.Catalogue.csproj`:
+Create `src/Millrace.Control.Catalogue/Millrace.Control.Catalogue.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -2341,24 +2341,24 @@ Create `src/Dse.Control.Catalogue/Dse.Control.Catalogue.csproj`:
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Dse.Core\Dse.Core.csproj" />
-    <ProjectReference Include="..\Dse.Control\Dse.Control.csproj" />
+    <ProjectReference Include="..\Millrace.Core\Millrace.Core.csproj" />
+    <ProjectReference Include="..\Millrace.Control\Millrace.Control.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Dse.Control.Catalogue.Tests" />
+    <InternalsVisibleTo Include="Millrace.Control.Catalogue.Tests" />
   </ItemGroup>
 
 </Project>
 ```
 
-Create `src/Dse.Control.Catalogue/ControlCatalogue.cs`:
+Create `src/Millrace.Control.Catalogue/ControlCatalogue.cs`:
 
 ```csharp
-using Dse.Core.Catalogue;
-using Dse.Io;
+using Millrace.Core.Catalogue;
+using Millrace.Io;
 
-namespace Dse.Control.Catalogue;
+namespace Millrace.Control.Catalogue;
 
 /// <summary>What the five block descriptors share: the condition and write groups, the transition slot, the duration bound.</summary>
 public static class ControlCatalogue
@@ -2403,12 +2403,12 @@ public static class ControlCatalogue
 }
 ```
 
-Create `src/Dse.Control.Catalogue/TransitionCatalogue.cs`:
+Create `src/Millrace.Control.Catalogue/TransitionCatalogue.cs`:
 
 ```csharp
-using Dse.Core.Catalogue;
+using Millrace.Core.Catalogue;
 
-namespace Dse.Control.Catalogue;
+namespace Millrace.Control.Catalogue;
 
 /// <summary>The two things that end a sequencer step, as objects in the <c>transition</c> slot.</summary>
 public static class TransitionCatalogue
@@ -2452,20 +2452,20 @@ public static class TransitionCatalogue
 }
 ```
 
-Create `src/Dse.Control.Catalogue/ControlModule.cs`:
+Create `src/Millrace.Control.Catalogue/ControlModule.cs`:
 
 ```csharp
-using Dse.Core.Catalogue;
+using Millrace.Core.Catalogue;
 
-namespace Dse.Control.Catalogue;
+namespace Millrace.Control.Catalogue;
 
 /// <summary>
-/// The five control blocks of <c>Dse.Control</c> and the sequencer's
+/// The five control blocks of <c>Millrace.Control</c> and the sequencer's
 /// <c>transition</c> slot, for a plant file's <c>controllers</c> section.
 /// </summary>
 public sealed class ControlModule : ICatalogueModule
 {
-    public string Name => "Dse.Control";
+    public string Name => "Millrace.Control";
 
     public void Register(CatalogueBuilder builder)
     {
@@ -2480,7 +2480,7 @@ public sealed class ControlModule : ICatalogueModule
 
 - [ ] **Step 2: Create the test project**
 
-Create `tests/Dse.Control.Catalogue.Tests/Dse.Control.Catalogue.Tests.csproj`:
+Create `tests/Millrace.Control.Catalogue.Tests/Millrace.Control.Catalogue.Tests.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -2504,19 +2504,19 @@ Create `tests/Dse.Control.Catalogue.Tests/Dse.Control.Catalogue.Tests.csproj`:
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Dse.Control.Catalogue\Dse.Control.Catalogue.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Control.Catalogue\Millrace.Control.Catalogue.csproj" />
   </ItemGroup>
 
 </Project>
 ```
 
-Create `tests/Dse.Control.Catalogue.Tests/ControlFixtures.cs`:
+Create `tests/Millrace.Control.Catalogue.Tests/ControlFixtures.cs`:
 
 ```csharp
-using Dse.Core.Catalogue;
-using Dse.Core.Testing;
+using Millrace.Core.Catalogue;
+using Millrace.Core.Testing;
 
-namespace Dse.Control.Catalogue.Tests;
+namespace Millrace.Control.Catalogue.Tests;
 
 /// <summary>The module under test and what conformance needs to build a probe of each type.</summary>
 internal static class ControlFixtures
@@ -2529,14 +2529,14 @@ internal static class ControlFixtures
 }
 ```
 
-Create `tests/Dse.Control.Catalogue.Tests/Bind.cs`:
+Create `tests/Millrace.Control.Catalogue.Tests/Bind.cs`:
 
 ```csharp
 using System.Text.Json;
-using Dse.Core.Catalogue;
-using Dse.Io;
+using Millrace.Core.Catalogue;
+using Millrace.Io;
 
-namespace Dse.Control.Catalogue.Tests;
+namespace Millrace.Control.Catalogue.Tests;
 
 /// <summary>Binds parameters the way the loader's controller pass does: construct mode, against a tag table.</summary>
 internal static class Bind
@@ -2571,12 +2571,12 @@ internal static class Bind
 
 - [ ] **Step 3: Write the tests**
 
-Create `tests/Dse.Control.Catalogue.Tests/ControlCatalogueTests.cs`:
+Create `tests/Millrace.Control.Catalogue.Tests/ControlCatalogueTests.cs`:
 
 ```csharp
-using Dse.Core.Testing;
+using Millrace.Core.Testing;
 
-namespace Dse.Control.Catalogue.Tests;
+namespace Millrace.Control.Catalogue.Tests;
 
 public class ControlCatalogueTests
 {
@@ -2591,13 +2591,13 @@ public class ControlCatalogueTests
 }
 ```
 
-Create `tests/Dse.Control.Catalogue.Tests/TransitionTests.cs`:
+Create `tests/Millrace.Control.Catalogue.Tests/TransitionTests.cs`:
 
 ```csharp
-using Dse.Core.Catalogue;
-using Dse.Io;
+using Millrace.Core.Catalogue;
+using Millrace.Io;
 
-namespace Dse.Control.Catalogue.Tests;
+namespace Millrace.Control.Catalogue.Tests;
 
 public class TransitionTests
 {
@@ -2647,40 +2647,40 @@ public class TransitionTests
 - [ ] **Step 4: Add both projects to the solution**
 
 ```bash
-dotnet sln Dse.sln add src/Dse.Control.Catalogue/Dse.Control.Catalogue.csproj --solution-folder src
+dotnet sln Millrace.sln add src/Millrace.Control.Catalogue/Millrace.Control.Catalogue.csproj --solution-folder src
 ```
 
 ```bash
-dotnet sln Dse.sln add tests/Dse.Control.Catalogue.Tests/Dse.Control.Catalogue.Tests.csproj --solution-folder tests
+dotnet sln Millrace.sln add tests/Millrace.Control.Catalogue.Tests/Millrace.Control.Catalogue.Tests.csproj --solution-folder tests
 ```
 
-Run: `dotnet sln Dse.sln list` — both new projects are listed.
+Run: `dotnet sln Millrace.sln list` — both new projects are listed.
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Control.Catalogue.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Catalogue.Tests --nologo`
 Expected: PASS, **9** tests (1 conformance, 6 operator rows, 2 facts).
 
-Run: `grep -n "ProjectReference" src/Dse.Control/Dse.Control.csproj`
-Expected: exactly one line, naming `Dse.Io.Abstractions.csproj`.
+Run: `grep -n "ProjectReference" src/Millrace.Control/Millrace.Control.csproj`
+Expected: exactly one line, naming `Millrace.Io.Abstractions.csproj`.
 
 - [ ] **Step 6: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, **1156** tests (Control.Catalogue 9).
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/Dse.Control.Catalogue/Dse.Control.Catalogue.csproj src/Dse.Control.Catalogue/ControlModule.cs src/Dse.Control.Catalogue/ControlCatalogue.cs src/Dse.Control.Catalogue/TransitionCatalogue.cs tests/Dse.Control.Catalogue.Tests/Dse.Control.Catalogue.Tests.csproj tests/Dse.Control.Catalogue.Tests/ControlFixtures.cs tests/Dse.Control.Catalogue.Tests/Bind.cs tests/Dse.Control.Catalogue.Tests/ControlCatalogueTests.cs tests/Dse.Control.Catalogue.Tests/TransitionTests.cs Dse.sln
+git add src/Millrace.Control.Catalogue/Millrace.Control.Catalogue.csproj src/Millrace.Control.Catalogue/ControlModule.cs src/Millrace.Control.Catalogue/ControlCatalogue.cs src/Millrace.Control.Catalogue/TransitionCatalogue.cs tests/Millrace.Control.Catalogue.Tests/Millrace.Control.Catalogue.Tests.csproj tests/Millrace.Control.Catalogue.Tests/ControlFixtures.cs tests/Millrace.Control.Catalogue.Tests/Bind.cs tests/Millrace.Control.Catalogue.Tests/ControlCatalogueTests.cs tests/Millrace.Control.Catalogue.Tests/TransitionTests.cs Millrace.sln
 ```
 
 ```bash
 git commit -m "$(cat <<'MSG'
 feat(control): add the control catalogue module and the transition slot
 
-Dse.Control.Catalogue sees Core and Dse.Control, so the blocks keep
+Millrace.Control.Catalogue sees Core and Millrace.Control, so the blocks keep
 seeing the I/O contract alone. It carries the shared condition and write
 groups and the sequencer's when/after transitions.
 
@@ -2700,12 +2700,12 @@ descriptor's factory calls the 5c constructor; its `OwnedTags` repeats the 5c
 block's own names, kinds, units and descriptions, and conformance proves it.
 
 **Files:**
-- Create: `src/Dse.Control.Catalogue/TimerCatalogue.cs`
-- Create: `src/Dse.Control.Catalogue/PermissiveCatalogue.cs`
-- Create: `src/Dse.Control.Catalogue/InterlockCatalogue.cs`
-- Modify: `src/Dse.Control.Catalogue/ControlModule.cs`
-- Modify: `tests/Dse.Control.Catalogue.Tests/ControlFixtures.cs`
-- Create: `tests/Dse.Control.Catalogue.Tests/BlockFactoryTests.cs`
+- Create: `src/Millrace.Control.Catalogue/TimerCatalogue.cs`
+- Create: `src/Millrace.Control.Catalogue/PermissiveCatalogue.cs`
+- Create: `src/Millrace.Control.Catalogue/InterlockCatalogue.cs`
+- Modify: `src/Millrace.Control.Catalogue/ControlModule.cs`
+- Modify: `tests/Millrace.Control.Catalogue.Tests/ControlFixtures.cs`
+- Create: `tests/Millrace.Control.Catalogue.Tests/BlockFactoryTests.cs`
 
 **Interfaces:**
 - Consumes: `Timer(string id, TimerMode mode, string input, TimeSpan preset, TimeSpan scanPeriod)`
@@ -2718,13 +2718,13 @@ block's own names, kinds, units and descriptions, and conformance proves it.
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `tests/Dse.Control.Catalogue.Tests/BlockFactoryTests.cs`:
+Create `tests/Millrace.Control.Catalogue.Tests/BlockFactoryTests.cs`:
 
 ```csharp
-using Dse.Core.Catalogue;
-using Dse.Io;
+using Millrace.Core.Catalogue;
+using Millrace.Io;
 
-namespace Dse.Control.Catalogue.Tests;
+namespace Millrace.Control.Catalogue.Tests;
 
 public class BlockFactoryTests
 {
@@ -2786,18 +2786,18 @@ public class BlockFactoryTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet build tests/Dse.Control.Catalogue.Tests --nologo`
+Run: `dotnet build tests/Millrace.Control.Catalogue.Tests --nologo`
 Expected: FAIL — `error CS0103: The name 'TimerCatalogue' does not exist in the current context`.
 
 - [ ] **Step 3: Write the three descriptors**
 
-Create `src/Dse.Control.Catalogue/TimerCatalogue.cs`:
+Create `src/Millrace.Control.Catalogue/TimerCatalogue.cs`:
 
 ```csharp
-using Dse.Core.Catalogue;
-using Dse.Io;
+using Millrace.Core.Catalogue;
+using Millrace.Io;
 
-namespace Dse.Control.Catalogue;
+namespace Millrace.Control.Catalogue;
 
 /// <summary>The <see cref="Timer"/> in a plant file: <c>{ "type": "timer", … }</c>.</summary>
 public static class TimerCatalogue
@@ -2834,13 +2834,13 @@ public static class TimerCatalogue
 }
 ```
 
-Create `src/Dse.Control.Catalogue/PermissiveCatalogue.cs`:
+Create `src/Millrace.Control.Catalogue/PermissiveCatalogue.cs`:
 
 ```csharp
-using Dse.Core.Catalogue;
-using Dse.Io;
+using Millrace.Core.Catalogue;
+using Millrace.Io;
 
-namespace Dse.Control.Catalogue;
+namespace Millrace.Control.Catalogue;
 
 /// <summary>The <see cref="Permissive"/> in a plant file: <c>{ "type": "permissive", … }</c>.</summary>
 public static class PermissiveCatalogue
@@ -2863,13 +2863,13 @@ public static class PermissiveCatalogue
 }
 ```
 
-Create `src/Dse.Control.Catalogue/InterlockCatalogue.cs`:
+Create `src/Millrace.Control.Catalogue/InterlockCatalogue.cs`:
 
 ```csharp
-using Dse.Core.Catalogue;
-using Dse.Io;
+using Millrace.Core.Catalogue;
+using Millrace.Io;
 
-namespace Dse.Control.Catalogue;
+namespace Millrace.Control.Catalogue;
 
 /// <summary>The <see cref="Interlock"/> in a plant file: <c>{ "type": "interlock", … }</c>.</summary>
 public static class InterlockCatalogue
@@ -2896,7 +2896,7 @@ public static class InterlockCatalogue
 }
 ```
 
-In `src/Dse.Control.Catalogue/ControlModule.cs`, add before `// Transitions`:
+In `src/Millrace.Control.Catalogue/ControlModule.cs`, add before `// Transitions`:
 
 ```csharp
         // Blocks
@@ -2906,7 +2906,7 @@ In `src/Dse.Control.Catalogue/ControlModule.cs`, add before `// Transitions`:
 
 ```
 
-In `tests/Dse.Control.Catalogue.Tests/ControlFixtures.cs`, append to the chain in
+In `tests/Millrace.Control.Catalogue.Tests/ControlFixtures.cs`, append to the chain in
 `Create()` (after the `after` line, before the `;`):
 
 ```csharp
@@ -2919,21 +2919,21 @@ In `tests/Dse.Control.Catalogue.Tests/ControlFixtures.cs`, append to the chain i
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Control.Catalogue.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Catalogue.Tests --nologo`
 Expected: PASS, **15** tests. `EveryDescriptorMatchesWhatItBuilds` now checks
 three blocks; if it reports a mismatch, the descriptor is wrong — the 5c block
 is the reference.
 
 - [ ] **Step 5: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, **1162** tests (Control.Catalogue 15).
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Control.Catalogue/TimerCatalogue.cs src/Dse.Control.Catalogue/PermissiveCatalogue.cs src/Dse.Control.Catalogue/InterlockCatalogue.cs src/Dse.Control.Catalogue/ControlModule.cs tests/Dse.Control.Catalogue.Tests/ControlFixtures.cs tests/Dse.Control.Catalogue.Tests/BlockFactoryTests.cs
+git add src/Millrace.Control.Catalogue/TimerCatalogue.cs src/Millrace.Control.Catalogue/PermissiveCatalogue.cs src/Millrace.Control.Catalogue/InterlockCatalogue.cs src/Millrace.Control.Catalogue/ControlModule.cs tests/Millrace.Control.Catalogue.Tests/ControlFixtures.cs tests/Millrace.Control.Catalogue.Tests/BlockFactoryTests.cs
 ```
 
 ```bash
@@ -2958,14 +2958,14 @@ Spec 3.4 and 3.5. The alarm's owned tags follow its configured limits, in limit
 order (the constructor sorts by kind, so file order never matters); conformance
 checks it with one limit and with four. The sequencer's steps take a
 `transition` object. A reflection sweep proves every public concrete
-`IScanBlock` in `Dse.Control` has a descriptor.
+`IScanBlock` in `Millrace.Control` has a descriptor.
 
 **Files:**
-- Create: `src/Dse.Control.Catalogue/AlarmCatalogue.cs`
-- Create: `src/Dse.Control.Catalogue/SequencerCatalogue.cs`
-- Modify: `src/Dse.Control.Catalogue/ControlModule.cs`
-- Modify: `tests/Dse.Control.Catalogue.Tests/ControlFixtures.cs`
-- Test: `tests/Dse.Control.Catalogue.Tests/BlockFactoryTests.cs`, `ControlCatalogueTests.cs`
+- Create: `src/Millrace.Control.Catalogue/AlarmCatalogue.cs`
+- Create: `src/Millrace.Control.Catalogue/SequencerCatalogue.cs`
+- Modify: `src/Millrace.Control.Catalogue/ControlModule.cs`
+- Modify: `tests/Millrace.Control.Catalogue.Tests/ControlFixtures.cs`
+- Test: `tests/Millrace.Control.Catalogue.Tests/BlockFactoryTests.cs`, `ControlCatalogueTests.cs`
 
 **Interfaces:**
 - Consumes: `Alarm(string id, string input, IReadOnlyList<AlarmLimit> limits, TimeSpan scanPeriod)`,
@@ -2979,7 +2979,7 @@ checks it with one limit and with four. The sequencer's steps take a
 
 - [ ] **Step 1: Write the failing tests**
 
-Append to `tests/Dse.Control.Catalogue.Tests/BlockFactoryTests.cs`, inside the class:
+Append to `tests/Millrace.Control.Catalogue.Tests/BlockFactoryTests.cs`, inside the class:
 
 ```csharp
     [Fact]
@@ -3035,12 +3035,12 @@ Append to `tests/Dse.Control.Catalogue.Tests/BlockFactoryTests.cs`, inside the c
     }
 ```
 
-Append to `tests/Dse.Control.Catalogue.Tests/ControlCatalogueTests.cs`, adding
-`using Dse.Core.Catalogue;` and `using Dse.Io;` to its usings:
+Append to `tests/Millrace.Control.Catalogue.Tests/ControlCatalogueTests.cs`, adding
+`using Millrace.Core.Catalogue;` and `using Millrace.Io;` to its usings:
 
 ```csharp
     [Fact]
-    public void EveryPublicScanBlockInDseControlHasADescriptor()
+    public void EveryPublicScanBlockInMillraceControlHasADescriptor()
     {
         List<Type> blocks = typeof(Timer).Assembly.GetTypes()
             .Where(t => t is { IsClass: true, IsAbstract: false, IsPublic: true } && typeof(IScanBlock).IsAssignableFrom(t))
@@ -3056,7 +3056,7 @@ Append to `tests/Dse.Control.Catalogue.Tests/ControlCatalogueTests.cs`, adding
     {
         ComponentCatalogue catalogue = ControlFixtures.Catalogue;
 
-        Assert.Equal(["Dse.Control"], catalogue.Modules);
+        Assert.Equal(["Millrace.Control"], catalogue.Modules);
         Assert.Empty(catalogue.Components);
         Assert.Equal(["alarm", "interlock", "permissive", "sequencer", "timer"], catalogue.Blocks.Select(b => b.Type));
         Assert.Equal(
@@ -3067,18 +3067,18 @@ Append to `tests/Dse.Control.Catalogue.Tests/ControlCatalogueTests.cs`, adding
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet build tests/Dse.Control.Catalogue.Tests --nologo`
+Run: `dotnet build tests/Millrace.Control.Catalogue.Tests --nologo`
 Expected: FAIL — `error CS0103: The name 'AlarmCatalogue' does not exist in the current context`.
 
 - [ ] **Step 3: Write the two descriptors**
 
-Create `src/Dse.Control.Catalogue/AlarmCatalogue.cs`:
+Create `src/Millrace.Control.Catalogue/AlarmCatalogue.cs`:
 
 ```csharp
-using Dse.Core.Catalogue;
-using Dse.Io;
+using Millrace.Core.Catalogue;
+using Millrace.Io;
 
-namespace Dse.Control.Catalogue;
+namespace Millrace.Control.Catalogue;
 
 /// <summary>The <see cref="Alarm"/> in a plant file: <c>{ "type": "alarm", … }</c>.</summary>
 public static class AlarmCatalogue
@@ -3134,13 +3134,13 @@ public static class AlarmCatalogue
 }
 ```
 
-Create `src/Dse.Control.Catalogue/SequencerCatalogue.cs`:
+Create `src/Millrace.Control.Catalogue/SequencerCatalogue.cs`:
 
 ```csharp
-using Dse.Core.Catalogue;
-using Dse.Io;
+using Millrace.Core.Catalogue;
+using Millrace.Io;
 
-namespace Dse.Control.Catalogue;
+namespace Millrace.Control.Catalogue;
 
 /// <summary>The <see cref="Sequencer"/> in a plant file: <c>{ "type": "sequencer", … }</c>.</summary>
 public static class SequencerCatalogue
@@ -3194,7 +3194,7 @@ public static class SequencerCatalogue
 }
 ```
 
-In `src/Dse.Control.Catalogue/ControlModule.cs`, after
+In `src/Millrace.Control.Catalogue/ControlModule.cs`, after
 `builder.AddBlock(InterlockCatalogue.Descriptor);`, add:
 
 ```csharp
@@ -3202,7 +3202,7 @@ In `src/Dse.Control.Catalogue/ControlModule.cs`, after
         builder.AddBlock(SequencerCatalogue.Descriptor);
 ```
 
-In `tests/Dse.Control.Catalogue.Tests/ControlFixtures.cs`, append to the chain
+In `tests/Millrace.Control.Catalogue.Tests/ControlFixtures.cs`, append to the chain
 in `Create()`:
 
 ```csharp
@@ -3229,21 +3229,21 @@ in `Create()`:
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Control.Catalogue.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Catalogue.Tests --nologo`
 Expected: PASS, **20** tests. `EveryDescriptorMatchesWhatItBuilds` checks the
 alarm twice (labelled `alarm (fixture 1)` and `alarm (fixture 2)` if anything is
 wrong) and the sequencer once.
 
 - [ ] **Step 5: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, **1167** tests (Control.Catalogue 20).
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Control.Catalogue/AlarmCatalogue.cs src/Dse.Control.Catalogue/SequencerCatalogue.cs src/Dse.Control.Catalogue/ControlModule.cs tests/Dse.Control.Catalogue.Tests/ControlFixtures.cs tests/Dse.Control.Catalogue.Tests/BlockFactoryTests.cs tests/Dse.Control.Catalogue.Tests/ControlCatalogueTests.cs
+git add src/Millrace.Control.Catalogue/AlarmCatalogue.cs src/Millrace.Control.Catalogue/SequencerCatalogue.cs src/Millrace.Control.Catalogue/ControlModule.cs tests/Millrace.Control.Catalogue.Tests/ControlFixtures.cs tests/Millrace.Control.Catalogue.Tests/BlockFactoryTests.cs tests/Millrace.Control.Catalogue.Tests/ControlCatalogueTests.cs
 ```
 
 ```bash
@@ -3253,7 +3253,7 @@ feat(control): describe the alarm and the sequencer
 The alarm's owned tags follow its configured limits in limit order and
 conformance checks it with one limit and with four; a sequencer step
 takes a when/after transition. A sweep proves every public block in
-Dse.Control has a descriptor.
+Millrace.Control has a descriptor.
 
 Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
 MSG
@@ -3273,17 +3273,17 @@ components-only golden changes by one inserted line; a new golden records the
 control catalogue.
 
 **Files:**
-- Modify: `src/Dse.Core/Catalogue/CatalogueJson.cs`
-- Test: `tests/Dse.Core.Tests/Catalogue/CatalogueJsonTests.cs`
-- Regenerate: `tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json`
-- Modify: `tests/Dse.Control.Catalogue.Tests/Dse.Control.Catalogue.Tests.csproj` (link `Golden.cs`)
-- Test: `tests/Dse.Control.Catalogue.Tests/ControlCatalogueTests.cs`
-- Create (generated): `tests/Dse.Control.Catalogue.Tests/Golden/control-catalogue.json`
+- Modify: `src/Millrace.Core/Catalogue/CatalogueJson.cs`
+- Test: `tests/Millrace.Core.Tests/Catalogue/CatalogueJsonTests.cs`
+- Regenerate: `tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json`
+- Modify: `tests/Millrace.Control.Catalogue.Tests/Millrace.Control.Catalogue.Tests.csproj` (link `Golden.cs`)
+- Test: `tests/Millrace.Control.Catalogue.Tests/ControlCatalogueTests.cs`
+- Create (generated): `tests/Millrace.Control.Catalogue.Tests/Golden/control-catalogue.json`
 
 **Interfaces:**
 - Consumes: `ComponentCatalogue.Blocks`, `ModuleOf(BlockDescriptor)` (Task 3);
   `ParameterDescriptor.RequiredKind`, `IsWriteTarget`, `TagParameter` (Task 4);
-  `Dse.Tests.Shared.Golden.Assert(string relativePath, string actual)`.
+  `Millrace.Tests.Shared.Golden.Assert(string relativePath, string actual)`.
 - Produces: export shape `{ formatVersion, modules, components, blocks, objects, materials }`;
   a block entry `{ type, module, description, parameters }`; parameter members
   `tagKind` (camel-cased `TagKind`: `bool`, `double`, `int64`), `writes` (`true`),
@@ -3291,7 +3291,7 @@ control catalogue.
 
 - [ ] **Step 1: Write the failing Core test**
 
-In `tests/Dse.Core.Tests/Catalogue/CatalogueJsonTests.cs`, add to `Module.Register`,
+In `tests/Millrace.Core.Tests/Catalogue/CatalogueJsonTests.cs`, add to `Module.Register`,
 after the `ObjectDescriptor` line:
 
 ```csharp
@@ -3343,13 +3343,13 @@ and add this fact:
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo --filter FullyQualifiedName~CatalogueJsonTests`
+Run: `dotnet test tests/Millrace.Core.Tests --nologo --filter FullyQualifiedName~CatalogueJsonTests`
 Expected: FAIL — `WritesBlocksBetweenComponentsAndObjects`: the root member list
 has no `blocks`.
 
 - [ ] **Step 3: Export blocks**
 
-In `src/Dse.Core/Catalogue/CatalogueJson.cs`, in `Export`, between the
+In `src/Millrace.Core/Catalogue/CatalogueJson.cs`, in `Export`, between the
 `components` array's `writer.WriteEndArray();` and `writer.WriteStartArray("objects");`,
 add:
 
@@ -3391,21 +3391,21 @@ In `WriteParameters`, after the `minCount` block and before
 
 - [ ] **Step 4: Run the Core tests and see the components golden move**
 
-Run: `dotnet test tests/Dse.Core.Tests --nologo`
+Run: `dotnet test tests/Millrace.Core.Tests --nologo`
 Expected: PASS, **460** tests.
 
-Run: `dotnet test tests/Dse.Components.Tests --nologo --filter FullyQualifiedName~ComponentsExportTests`
+Run: `dotnet test tests/Millrace.Components.Tests --nologo --filter FullyQualifiedName~ComponentsExportTests`
 Expected: FAIL — `TheShippedCatalogueExportsExactlyTheGoldenFile`: output differs
 from `components-catalogue.json`.
 
 - [ ] **Step 5: Regenerate the components golden and read its diff**
 
 ```bash
-DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Components.Tests --nologo --filter FullyQualifiedName~TheShippedCatalogueExportsExactlyTheGoldenFile
+MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Components.Tests --nologo --filter FullyQualifiedName~TheShippedCatalogueExportsExactlyTheGoldenFile
 ```
 
 ```bash
-git diff --unified=1 tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json
+git diff --unified=1 tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json
 ```
 
 Read the diff. Expected, and report it copied: **exactly one inserted line,
@@ -3414,7 +3414,7 @@ Read the diff. Expected, and report it copied: **exactly one inserted line,
 
 - [ ] **Step 6: Write the control catalogue's golden test**
 
-In `tests/Dse.Control.Catalogue.Tests/Dse.Control.Catalogue.Tests.csproj`, add
+In `tests/Millrace.Control.Catalogue.Tests/Millrace.Control.Catalogue.Tests.csproj`, add
 before the `ProjectReference` item group:
 
 ```xml
@@ -3423,8 +3423,8 @@ before the `ProjectReference` item group:
   </ItemGroup>
 ```
 
-In `tests/Dse.Control.Catalogue.Tests/ControlCatalogueTests.cs`, add
-`using System.Text.Json;` and `using Dse.Tests.Shared;`, and these facts:
+In `tests/Millrace.Control.Catalogue.Tests/ControlCatalogueTests.cs`, add
+`using System.Text.Json;` and `using Millrace.Tests.Shared;`, and these facts:
 
 ```csharp
     [Fact]
@@ -3446,7 +3446,7 @@ In `tests/Dse.Control.Catalogue.Tests/ControlCatalogueTests.cs`, add
     }
 ```
 
-Run: `dotnet test tests/Dse.Control.Catalogue.Tests --nologo --filter FullyQualifiedName~TheControlCatalogue`
+Run: `dotnet test tests/Millrace.Control.Catalogue.Tests --nologo --filter FullyQualifiedName~TheControlCatalogue`
 Expected: `TheControlCatalogueHasTheExpectedCounts` PASSES;
 `TheControlCatalogueExportsExactlyTheGoldenFile` FAILS with `Golden file
 '…/Golden/control-catalogue.json' does not exist.`
@@ -3454,16 +3454,16 @@ Expected: `TheControlCatalogueHasTheExpectedCounts` PASSES;
 - [ ] **Step 7: Generate the control golden and read it**
 
 ```bash
-DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Control.Catalogue.Tests --nologo --filter FullyQualifiedName~TheControlCatalogueExportsExactlyTheGoldenFile
+MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Control.Catalogue.Tests --nologo --filter FullyQualifiedName~TheControlCatalogueExportsExactlyTheGoldenFile
 ```
 
-**Read the whole file** `tests/Dse.Control.Catalogue.Tests/Golden/control-catalogue.json`
+**Read the whole file** `tests/Millrace.Control.Catalogue.Tests/Golden/control-catalogue.json`
 and check, reporting each answer with the line copied:
 
 | # | What the golden must show |
 |---|---|
-| 1 | `"formatVersion": 1`, `"modules": [ "Dse.Control" ]`, `"components": []`, `"materials": []` |
-| 2 | five blocks in the order `alarm`, `interlock`, `permissive`, `sequencer`, `timer`, each `"module": "Dse.Control"` and exactly the members `type`, `module`, `description`, `parameters` |
+| 1 | `"formatVersion": 1`, `"modules": [ "Millrace.Control" ]`, `"components": []`, `"materials": []` |
+| 2 | five blocks in the order `alarm`, `interlock`, `permissive`, `sequencer`, `timer`, each `"module": "Millrace.Control"` and exactly the members `type`, `module`, `description`, `parameters` |
 | 3 | every `…S` duration (`presetS`, `onDelayS`, `timeoutS`, `delayS`) has `"unit": "s"`, `"minimum": 0` and `"maximum": 31536000`; `timeoutS` also has `"optional": true` and `"exclusiveMinimum": true` |
 | 4 | the `conditions` lists carry `"group": "Condition"` with `tag` (`"kind": "tag"`, `"tagKind": "bool"`) and `normal` (`"kind": "bool"`, `"required": true`) |
 | 5 | `trip`, `abort` and a step's `writes` carry `"group": "BlockWrite"` with `tag` (`"writes": true`, no `tagKind`) and `value` (`"kind": "value"`, `"tagParameter": "tag"`), and are `"required": false` |
@@ -3471,19 +3471,19 @@ and check, reporting each answer with the line copied:
 | 7 | the sequencer's `steps` has `"group": "SequenceStep"` and its `transition` child `"kind": "object"`, `"slot": "transition"` |
 | 8 | two objects, `after` then `when`, both `"slot": "transition"`; `when`'s `op` lists `==`, `!=`, `<`, `<=`, `>`, `>=` |
 
-Run: `dotnet test tests/Dse.Control.Catalogue.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Catalogue.Tests --nologo`
 Expected: PASS, **22** tests.
 
 - [ ] **Step 8: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, **1170** tests (Core 460, Components 126, Control.Catalogue 22).
 
 - [ ] **Step 9: Commit**
 
 ```bash
-git add src/Dse.Core/Catalogue/CatalogueJson.cs tests/Dse.Core.Tests/Catalogue/CatalogueJsonTests.cs tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json tests/Dse.Control.Catalogue.Tests/Dse.Control.Catalogue.Tests.csproj tests/Dse.Control.Catalogue.Tests/ControlCatalogueTests.cs tests/Dse.Control.Catalogue.Tests/Golden/control-catalogue.json
+git add src/Millrace.Core/Catalogue/CatalogueJson.cs tests/Millrace.Core.Tests/Catalogue/CatalogueJsonTests.cs tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json tests/Millrace.Control.Catalogue.Tests/Millrace.Control.Catalogue.Tests.csproj tests/Millrace.Control.Catalogue.Tests/ControlCatalogueTests.cs tests/Millrace.Control.Catalogue.Tests/Golden/control-catalogue.json
 ```
 
 ```bash
@@ -3514,12 +3514,12 @@ The configuration tests' catalogue gains `ControlModule`, so the schema golden
 is regenerated and read.
 
 **Files:**
-- Modify: `src/Dse.Configuration/Dse.Configuration.csproj` (reference `Dse.Control.Catalogue`)
-- Modify: `src/Dse.Configuration/PlantSchema.cs`
-- Modify: `src/Dse.Configuration/Loading/PlantSchemas.cs` (`TopLevelKeys`)
-- Modify: `tests/Dse.Configuration.Tests/Plants.cs` (the catalogue)
-- Test: `tests/Dse.Configuration.Tests/PlantSchemaTests.cs`
-- Regenerate: `tests/Dse.Configuration.Tests/Golden/plant.schema.json`
+- Modify: `src/Millrace.Configuration/Millrace.Configuration.csproj` (reference `Millrace.Control.Catalogue`)
+- Modify: `src/Millrace.Configuration/PlantSchema.cs`
+- Modify: `src/Millrace.Configuration/Loading/PlantSchemas.cs` (`TopLevelKeys`)
+- Modify: `tests/Millrace.Configuration.Tests/Plants.cs` (the catalogue)
+- Test: `tests/Millrace.Configuration.Tests/PlantSchemaTests.cs`
+- Regenerate: `tests/Millrace.Configuration.Tests/Golden/plant.schema.json`
 
 **Interfaces:**
 - Consumes: `ComponentCatalogue.Blocks` (Task 3); `ParameterKind.Tag/Value`,
@@ -3531,14 +3531,14 @@ is regenerated and read.
 
 - [ ] **Step 1: Point the configuration tests at the control catalogue**
 
-In `src/Dse.Configuration/Dse.Configuration.csproj`, add to the project
+In `src/Millrace.Configuration/Millrace.Configuration.csproj`, add to the project
 references:
 
 ```xml
-    <ProjectReference Include="..\Dse.Control.Catalogue\Dse.Control.Catalogue.csproj" />
+    <ProjectReference Include="..\Millrace.Control.Catalogue\Millrace.Control.Catalogue.csproj" />
 ```
 
-In `tests/Dse.Configuration.Tests/Plants.cs`, add `using Dse.Control.Catalogue;`
+In `tests/Millrace.Configuration.Tests/Plants.cs`, add `using Millrace.Control.Catalogue;`
 and replace the `Catalogue` property with:
 
 ```csharp
@@ -3546,7 +3546,7 @@ and replace the `Catalogue` property with:
         new CatalogueBuilder().Add<ComponentsModule>().Add<ControlModule>().Build();
 ```
 
-In `src/Dse.Configuration/Loading/PlantSchemas.cs`, replace `TopLevelKeys` with:
+In `src/Millrace.Configuration/Loading/PlantSchemas.cs`, replace `TopLevelKeys` with:
 
 ```csharp
     public static readonly string[] TopLevelKeys = ["$schema", "defaults", "materials", "components", "signals", "flows", "tags", "controllers"];
@@ -3556,8 +3556,8 @@ In `src/Dse.Configuration/Loading/PlantSchemas.cs`, replace `TopLevelKeys` with:
 
 - [ ] **Step 2: Write the failing tests**
 
-In `tests/Dse.Configuration.Tests/PlantSchemaTests.cs`, add
-`using Dse.Components;` and `using Dse.Core.Catalogue;`. In
+In `tests/Millrace.Configuration.Tests/PlantSchemaTests.cs`, add
+`using Millrace.Components;` and `using Millrace.Core.Catalogue;`. In
 `DeclaresItsDialectAndClosesTheRoot`, replace the expected key list with:
 
 ```csharp
@@ -3638,7 +3638,7 @@ and add these facts:
 
 - [ ] **Step 3: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo --filter "FullyQualifiedName~PlantSchemaTests|FullyQualifiedName~SchemaAgreementTests"`
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo --filter "FullyQualifiedName~PlantSchemaTests|FullyQualifiedName~SchemaAgreementTests"`
 Expected: FAIL — **every** test in both classes, each with
 `System.TypeInitializationException`. Both classes generate the schema in a
 static field initializer (`PlantSchemaTests.Text`, `SchemaAgreementTests.Schema`),
@@ -3650,7 +3650,7 @@ which does not use `Text`, fails the same way. The inner exception names the
 
 - [ ] **Step 4: Generate the controllers schema**
 
-In `src/Dse.Configuration/PlantSchema.cs`, add `using Dse.Io;`.
+In `src/Millrace.Configuration/PlantSchema.cs`, add `using Millrace.Io;`.
 
 In `Generate`, after the `foreach (string slot in catalogue.Slots)` loop, add:
 
@@ -3779,7 +3779,7 @@ and add after `Describe`:
 
 - [ ] **Step 5: Run the tests; everything but the golden passes**
 
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo`
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo`
 Expected: every test PASSES except `PlantSchemaTests.MatchesTheGoldenFile`
 (output differs from `plant.schema.json`). `TheSchemaIsItselfValidDraft202012`
 passes: the generated schema is valid draft 2020-12.
@@ -3787,22 +3787,22 @@ passes: the generated schema is valid draft 2020-12.
 - [ ] **Step 6: Regenerate the schema golden and read its diff**
 
 ```bash
-DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Configuration.Tests --nologo --filter FullyQualifiedName~MatchesTheGoldenFile
+MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Configuration.Tests --nologo --filter FullyQualifiedName~MatchesTheGoldenFile
 ```
 
 ```bash
-git diff --stat tests/Dse.Configuration.Tests/Golden/plant.schema.json
+git diff --stat tests/Millrace.Configuration.Tests/Golden/plant.schema.json
 ```
 
 ```bash
-git diff tests/Dse.Configuration.Tests/Golden/plant.schema.json
+git diff tests/Millrace.Configuration.Tests/Golden/plant.schema.json
 ```
 
 **Read the whole diff**, then check and report, copying the lines:
 
 | # | What the diff must show |
 |---|---|
-| 1 | (R101) the `description` line changes to `Generated from the catalogue of modules: Dse.Components, Dse.Control. Do not edit; run \`dse schema export\`.` — the only changed pre-existing text besides row 2 |
+| 1 | (R101) the `description` line changes to `Generated from the catalogue of modules: Millrace.Components, Millrace.Control. Do not edit; run \`millrace schema export\`.` — the only changed pre-existing text besides row 2 |
 | 2 | the root `tags` property's closing brace gains a comma, and a `controllers` property follows with `"type": "array"` and `items.oneOf` over `block.alarm`, `block.interlock`, `block.permissive`, `block.sequencer`, `block.timer` |
 | 3 | twelve new `$defs`, each inserted in sorted position: `block.alarm`, `block.interlock`, `block.permissive`, `block.sequencer`, `block.timer`, `group.AlarmLimit`, `group.BlockWrite`, `group.Condition`, `group.SequenceStep`, `object.transition`, `object.transition.after`, `object.transition.when` |
 | 4 | every `block.*` requires `id`, `type`, `scanPeriodMs`, `parameters`, closes itself and its parameters, and declares `scanPeriodMs` with `exclusiveMinimum: 0` and `maximum: 86400000` |
@@ -3811,14 +3811,14 @@ git diff tests/Dse.Configuration.Tests/Golden/plant.schema.json
 
 - [ ] **Step 7: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, **1175** tests (Configuration 142).
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/Dse.Configuration/Dse.Configuration.csproj src/Dse.Configuration/PlantSchema.cs src/Dse.Configuration/Loading/PlantSchemas.cs tests/Dse.Configuration.Tests/Plants.cs tests/Dse.Configuration.Tests/PlantSchemaTests.cs tests/Dse.Configuration.Tests/Golden/plant.schema.json
+git add src/Millrace.Configuration/Millrace.Configuration.csproj src/Millrace.Configuration/PlantSchema.cs src/Millrace.Configuration/Loading/PlantSchemas.cs tests/Millrace.Configuration.Tests/Plants.cs tests/Millrace.Configuration.Tests/PlantSchemaTests.cs tests/Millrace.Configuration.Tests/Golden/plant.schema.json
 ```
 
 ```bash
@@ -3842,31 +3842,31 @@ MSG
 Model: opus
 
 Spec 4.1–4.5 with R80. The structure stage walks each controller as it walks a
-component: unknown key `DSE101`, unknown type `DSE102`, a bad or missing
-parameter or `scanPeriodMs` `DSE103`, an id equal to another controller's or a
-component's `DSE107`. The build stage adds components and binds and validates
+component: unknown key `MR101`, unknown type `MR102`, a bad or missing
+parameter or `scanPeriodMs` `MR103`, an id equal to another controller's or a
+component's `MR107`. The build stage adds components and binds and validates
 the plant alone; only if that is clean does it run `ControllerPass`: it builds the tag table from `builder.PlantTags()` and
 every controller's `OwnedTags`, binds every controller in construct mode
-against it (`DSE113`–`DSE115`, all collected), and only then calls the
-factories in file order (`DSE111`, including every plugin defect, R100) and adds
-the blocks; a second `Validate()` then passes Core's `DSE013`–`DSE015` through
+against it (`MR113`–`MR115`, all collected), and only then calls the
+factories in file order (`MR111`, including every plugin defect, R100) and adds
+the blocks; a second `Validate()` then passes Core's `MR013`–`MR015` through
 onto the controller's path (R92).
 
 **Files:**
-- Modify: `src/Dse.Configuration/Loading/PlantSchemas.cs` (`ControllerKeys`)
-- Modify: `src/Dse.Configuration/Loading/LoadState.cs` (`ControllerEntry`, `Controllers`)
-- Modify: `src/Dse.Configuration/Loading/StructureStage.cs` (`ReadControllers` and helpers)
-- Create: `src/Dse.Configuration/Loading/ControllerPass.cs`
-- Modify: `src/Dse.Configuration/Loading/BuildStage.cs` (runs the pass; `PathOf`)
-- Modify: `src/Dse.Configuration/Loading/InstantiateStage.cs` (`AsSentence` becomes internal)
-- Modify: `src/Dse.Configuration/ConfigDiagnostics.cs`, `DiagnosticsReference.cs`,
+- Modify: `src/Millrace.Configuration/Loading/PlantSchemas.cs` (`ControllerKeys`)
+- Modify: `src/Millrace.Configuration/Loading/LoadState.cs` (`ControllerEntry`, `Controllers`)
+- Modify: `src/Millrace.Configuration/Loading/StructureStage.cs` (`ReadControllers` and helpers)
+- Create: `src/Millrace.Configuration/Loading/ControllerPass.cs`
+- Modify: `src/Millrace.Configuration/Loading/BuildStage.cs` (runs the pass; `PathOf`)
+- Modify: `src/Millrace.Configuration/Loading/InstantiateStage.cs` (`AsSentence` becomes internal)
+- Modify: `src/Millrace.Configuration/ConfigDiagnostics.cs`, `DiagnosticsReference.cs`,
   `PlantSummary.cs`, `PlantLoader.cs`
-- Modify: `tests/Dse.Configuration.Tests/TestModule.cs` (five defective blocks, R100)
-- Modify: `tests/Dse.Configuration.Tests/ConfigDiagnosticTests.cs` (13 → 16 codes, R98)
-- Create: `tests/Dse.Configuration.Tests/ControllerTests.cs`
-- Create: `tests/Dse.Configuration.Tests/Plants/invalid/DSE113-unknown-tag.json`,
-  `DSE114-fraction-into-an-int64-tag.json`, `DSE114-bool-into-a-double-tag.json`,
-  `DSE115-write-to-a-read-only-tag.json`
+- Modify: `tests/Millrace.Configuration.Tests/TestModule.cs` (five defective blocks, R100)
+- Modify: `tests/Millrace.Configuration.Tests/ConfigDiagnosticTests.cs` (13 → 16 codes, R98)
+- Create: `tests/Millrace.Configuration.Tests/ControllerTests.cs`
+- Create: `tests/Millrace.Configuration.Tests/Plants/invalid/MR113-unknown-tag.json`,
+  `MR114-fraction-into-an-int64-tag.json`, `MR114-bool-into-a-double-tag.json`,
+  `MR115-write-to-a-read-only-tag.json`
 - Regenerate: `docs/configuration-diagnostics.md`
 
 **Interfaces:**
@@ -3877,7 +3877,7 @@ onto the controller's path (R92).
   `SimulationBuilder.AddScanBlock(IScanBlock)`; `SimulationBuilder.Validate()` → `ValidationResult` with
   `IReadOnlyList<ValidationError> Errors`; `Permissive` and `Condition` (for the `wrong-id` test block).
 - Produces:
-  - `ConfigDiagnostics.UnknownTag` = `"DSE113"`, `WrongKind` = `"DSE114"`, `ReadOnlyTag` = `"DSE115"`.
+  - `ConfigDiagnostics.UnknownTag` = `"MR113"`, `WrongKind` = `"MR114"`, `ReadOnlyTag` = `"MR115"`.
   - `internal sealed class ControllerEntry(int index, string id, BlockDescriptor descriptor, TimeSpan scanPeriod, JsonElement parameters, ParameterValues checkedValues)`
     with `Path` = `$.controllers[i]`, `ParametersPath`; `LoadState.Controllers`.
   - `internal static class ControllerPass` — `bool Run(LoadState state, SimulationBuilder builder)`.
@@ -3886,9 +3886,9 @@ onto the controller's path (R92).
 
 - [ ] **Step 1: Add five defective blocks to the test module**
 
-In `tests/Dse.Configuration.Tests/TestModule.cs`, add `using Dse.Control;` to the
+In `tests/Millrace.Configuration.Tests/TestModule.cs`, add `using Millrace.Control;` to the
 usings and, at the end of `Register` (R100 — every way a plugin's block
-descriptor can be wrong must become `DSE111`, never a crash):
+descriptor can be wrong must become `MR111`, never a crash):
 
 ```csharp
         builder.AddBlock(new BlockDescriptor(
@@ -3920,13 +3920,13 @@ descriptor can be wrong must become `DSE111`, never a crash):
 
 - [ ] **Step 2: Write the failing loader tests**
 
-Create `tests/Dse.Configuration.Tests/ControllerTests.cs`:
+Create `tests/Millrace.Configuration.Tests/ControllerTests.cs`:
 
 ```csharp
-using Dse.Core;
-using Dse.Io;
+using Millrace.Core;
+using Millrace.Io;
 
-namespace Dse.Configuration.Tests;
+namespace Millrace.Configuration.Tests;
 
 public class ControllerTests
 {
@@ -3985,7 +3985,7 @@ public class ControllerTests
     {
         ConfigDiagnostic d = Plants.Only(Plant(Perm01, Int01.Replace("FEED.Enabled", "FEED.Enabeld", StringComparison.Ordinal)));
 
-        Assert.Equal("DSE113", d.Code);
+        Assert.Equal("MR113", d.Code);
         Assert.Equal("$.controllers[1].parameters.trip[0].tag", d.Path);
         Assert.Equal("'FEED.Enabeld' is not a tag in this plant.", d.Message);
         Assert.Equal("Use a tag the plant has — 'FEED.Enabled' is closest.", d.Fix);
@@ -4001,41 +4001,41 @@ public class ControllerTests
         Assert.Equal(
             new[]
             {
-                ("DSE114", "$.controllers[0].parameters.conditions[0].tag"),
-                ("DSE113", "$.controllers[1].parameters.conditions[0].tag"),
-                ("DSE115", "$.controllers[1].parameters.trip[0].tag"),
+                ("MR114", "$.controllers[0].parameters.conditions[0].tag"),
+                ("MR113", "$.controllers[1].parameters.conditions[0].tag"),
+                ("MR115", "$.controllers[1].parameters.trip[0].tag"),
             },
             Plants.Load(json).Diagnostics.Select(d => (d.Code, d.Path)));
     }
 
     [Fact]
-    public void AWriteToAnInputASignalLinkDrivesIsDse115()
+    public void AWriteToAnInputASignalLinkDrivesIsMr115()
     {
         string json = Plant(Perm01, Int01).Replace(
             "\"flows\":", "\"signals\": [ { \"from\": \"CHUTE.Full\", \"to\": \"FEED.Enabled\" } ],\n  \"flows\":", StringComparison.Ordinal);
 
         ConfigDiagnostic d = Plants.Only(json);
 
-        Assert.Equal("DSE115", d.Code);
+        Assert.Equal("MR115", d.Code);
         Assert.Equal("$.controllers[1].parameters.trip[0].tag", d.Path);
         Assert.Equal("'FEED.Enabled' is read-only, so a block cannot command it.", d.Message);
     }
 
     [Fact]
-    public void AWriteToAnotherBlocksOutputIsDse115()
+    public void AWriteToAnotherBlocksOutputIsMr115()
     {
         ConfigDiagnostic d = Plants.Only(Plant(Perm01, Int01.Replace("\"tag\": \"FEED.Enabled\"", "\"tag\": \"PERM01.Ok\"", StringComparison.Ordinal)));
 
-        Assert.Equal("DSE115", d.Code);
+        Assert.Equal("MR115", d.Code);
         Assert.Equal("$.controllers[1].parameters.trip[0].tag", d.Path);
     }
 
     [Fact]
-    public void AScanPeriodOffTheStepIsDse013AtTheScanPeriod()
+    public void AScanPeriodOffTheStepIsMr013AtTheScanPeriod()
     {
         ConfigDiagnostic d = Plants.Only(Plant(Perm01.Replace("\"scanPeriodMs\": 100", "\"scanPeriodMs\": 15", StringComparison.Ordinal), Int01));
 
-        Assert.Equal("DSE013", d.Code);
+        Assert.Equal("MR013", d.Code);
         Assert.Equal("$.controllers[0].scanPeriodMs", d.Path);
         Assert.Equal("Block 'PERM01' scans every 15 ms, which is not a whole number of 10 ms steps.", d.Message);
         Assert.Equal("Use a period that is a multiple of the time step.", d.Fix);
@@ -4052,7 +4052,7 @@ public class ControllerTests
     {
         ConfigDiagnostic d = Plants.Only(Plant(Perm01.Replace("\"scanPeriodMs\": 100, ", replacement, StringComparison.Ordinal)));
 
-        Assert.Equal("DSE103", d.Code);
+        Assert.Equal("MR103", d.Code);
         Assert.Equal("$.controllers[0].scanPeriodMs", d.Path);
         Assert.Equal(message, d.Message);
     }
@@ -4065,7 +4065,7 @@ public class ControllerTests
     {
         ConfigDiagnostic d = Plants.Only(Plant(Perm01, Int01.Replace("\"id\": \"INT01\"", $"\"id\": \"{id}\"", StringComparison.Ordinal)));
 
-        Assert.Equal("DSE103", d.Code);
+        Assert.Equal("MR103", d.Code);
         Assert.Equal("$.controllers[1].id", d.Path);
     }
 
@@ -4078,7 +4078,7 @@ public class ControllerTests
 
         ConfigDiagnostic d = Plants.Only(json);
 
-        Assert.Equal("DSE107", d.Code);
+        Assert.Equal("MR107", d.Code);
         Assert.Equal(path, d.Path);
         Assert.Equal(message, d.Message);
     }
@@ -4088,7 +4088,7 @@ public class ControllerTests
     {
         ConfigDiagnostic d = Plants.Only(Plant(Perm01.Replace("\"permissive\"", "\"permisive\"", StringComparison.Ordinal)));
 
-        Assert.Equal("DSE102", d.Code);
+        Assert.Equal("MR102", d.Code);
         Assert.Equal("$.controllers[0].type", d.Path);
         Assert.Equal("'permisive' is not a block type in this catalogue.", d.Message);
         Assert.Contains("'permissive' is closest", d.Fix, StringComparison.Ordinal);
@@ -4099,33 +4099,33 @@ public class ControllerTests
     {
         ConfigDiagnostic d = Plants.Only(Plants.Minimal.Replace("\"flows\":", "\"controllers\": { },\n  \"flows\":", StringComparison.Ordinal));
 
-        Assert.Equal("DSE103", d.Code);
+        Assert.Equal("MR103", d.Code);
         Assert.Equal("$.controllers", d.Path);
         Assert.Equal("\"controllers\" must be an array.", d.Message);
     }
 
     [Fact]
-    public void AnOwnedTagThatABindAlreadyNamedIsDse015AtTheController()
+    public void AnOwnedTagThatABindAlreadyNamedIsMr015AtTheController()
     {
         string json = Plant(Perm01, Int01).Replace(
             "\"flows\":", "\"tags\": [ { \"name\": \"PERM01.Ok\", \"port\": \"PILE.Full\" } ],\n  \"flows\":", StringComparison.Ordinal);
 
         ConfigDiagnostic d = Plants.Only(json);
 
-        Assert.Equal("DSE015", d.Code);
+        Assert.Equal("MR015", d.Code);
         Assert.Equal("$.controllers[0]", d.Path);
         Assert.Contains("'PERM01.Ok'", d.Message, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void ABlockConstructorsRefusalIsDse111AtTheController()
+    public void ABlockConstructorsRefusalIsMr111AtTheController()
     {
         const string LevelAlarm =
             """{ "id": "LVL01", "type": "alarm", "scanPeriodMs": 100, "parameters": { "input": "CHUTE.Level", "limits": [ { "kind": "hi", "value": 0.9 }, { "kind": "hi-hi", "value": 0.5 } ] } }""";
 
         ConfigDiagnostic d = Plants.Only(Plant(LevelAlarm));
 
-        Assert.Equal("DSE111", d.Code);
+        Assert.Equal("MR111", d.Code);
         Assert.Equal("$.controllers[0]", d.Path);
         Assert.Equal(
             "'LVL01' (alarm) rejected its parameters: Limits must ascend LoLo < Lo < Hi < HiHi, but Hi is 0.9 and HiHi is 0.5.",
@@ -4138,13 +4138,13 @@ public class ControllerTests
     [InlineData("null-tags", "The owned-tag function of type 'null-tags' returned null or a null tag.")]
     [InlineData("null-block", "The factory for type 'null-block' returned null.")]
     [InlineData("wrong-id", "The factory for type 'wrong-id' built block 'OTHER' scanning every 100 ms, but was given 'B1' and 100 ms.")]
-    public void AModuleDefectIsDse111NamingTheModule(string type, string message)
+    public void AModuleDefectIsMr111NamingTheModule(string type, string message)
     {
         string json = $$"""{ "components": [ { "id": "PILE", "type": "bulk-sink" } ], "controllers": [ { "id": "B1", "type": "{{type}}", "scanPeriodMs": 100 } ] }""";
 
         ConfigDiagnostic d = TestPlants.Only(json);
 
-        Assert.Equal("DSE111", d.Code);
+        Assert.Equal("MR111", d.Code);
         Assert.Equal("$.controllers[0]", d.Path);
         Assert.Equal(message, d.Message);
         Assert.Contains("module 'Test'", d.Fix, StringComparison.Ordinal);
@@ -4153,8 +4153,8 @@ public class ControllerTests
     [Fact]
     public void APlantTagConflictIsReportedAsItselfNotAsAnUnknownTag()
     {
-        // FEED.Go binds FEED.Enabled for writing, but a signal link already drives that input: DSE010.
-        // PlantTags() leaves the rejected tag out, so resolving INT01 first would have said DSE113 (R80).
+        // FEED.Go binds FEED.Enabled for writing, but a signal link already drives that input: MR010.
+        // PlantTags() leaves the rejected tag out, so resolving INT01 first would have said MR113 (R80).
         string json = Plant(Int01.Replace("FEED.Enabled", "FEED.Go", StringComparison.Ordinal).Replace("PERM01.Ok\", \"normal\": true", "CHUTE.Full\", \"normal\": false", StringComparison.Ordinal))
             .Replace(
                 "\"flows\":",
@@ -4164,7 +4164,7 @@ public class ControllerTests
 
         ConfigDiagnostic d = Plants.Only(json);
 
-        Assert.Equal("DSE010", d.Code);
+        Assert.Equal("MR010", d.Code);
         Assert.Equal("$.components[0]", d.Path);
         Assert.Contains("'FEED.Go'", d.Message, StringComparison.Ordinal);
     }
@@ -4180,50 +4180,50 @@ public class ControllerTests
     }
 
     [Fact]
-    public void ADurationLongerThanAYearIsDse103AtTheParameter()
+    public void ADurationLongerThanAYearIsMr103AtTheParameter()
     {
         const string SlowTimer =
             """{ "id": "TMR01", "type": "timer", "scanPeriodMs": 100, "parameters": { "mode": "on-delay", "input": "CHUTE.Full", "presetS": 1e30 } }""";
 
         ConfigDiagnostic d = Plants.Only(Plant(SlowTimer));
 
-        Assert.Equal("DSE103", d.Code);
+        Assert.Equal("MR103", d.Code);
         Assert.Equal("$.controllers[0].parameters.presetS", d.Path);
     }
 }
 ```
 
-In `tests/Dse.Configuration.Tests/ConfigDiagnosticTests.cs`, in
+In `tests/Millrace.Configuration.Tests/ConfigDiagnosticTests.cs`, in
 `TheTableListsEveryCodeOnceInOrder`, replace `Assert.Equal(13, codes.Length);`
-with `Assert.Equal(16, codes.Length);` and `Assert.Equal("DSE112", codes[^1]);`
-with `Assert.Equal("DSE115", codes[^1]);` (R98).
+with `Assert.Equal(16, codes.Length);` and `Assert.Equal("MR112", codes[^1]);`
+with `Assert.Equal("MR115", codes[^1]);` (R98).
 
 - [ ] **Step 3: Run the tests to verify they fail**
 
-Run: `dotnet build tests/Dse.Configuration.Tests --nologo`
+Run: `dotnet build tests/Millrace.Configuration.Tests --nologo`
 Expected: FAIL — `error CS1729: 'PlantSummary' does not contain a constructor that takes 5 arguments`.
 
 - [ ] **Step 4: The summary, the codes and the state**
 
-Replace `src/Dse.Configuration/PlantSummary.cs` with:
+Replace `src/Millrace.Configuration/PlantSummary.cs` with:
 
 ```csharp
-namespace Dse.Configuration;
+namespace Millrace.Configuration;
 
 /// <summary>What a valid plant file declared. Counts are of entries in the file, not of flattened leaves.</summary>
 public sealed record PlantSummary(int Components, int SignalLinks, int FlowLinks, int ExplicitTags, int Controllers = 0);
 ```
 
-In `src/Dse.Configuration/PlantLoader.cs`, replace the summary construction with
+In `src/Millrace.Configuration/PlantLoader.cs`, replace the summary construction with
 `new PlantSummary(state.Components.Count, state.Signals.Count, state.Flows.Count, state.Tags.Count, state.Controllers.Count)`.
 
-In `src/Dse.Configuration/Loading/PlantSchemas.cs`, add after `ComponentKeys`:
+In `src/Millrace.Configuration/Loading/PlantSchemas.cs`, add after `ComponentKeys`:
 
 ```csharp
     public static readonly string[] ControllerKeys = ["id", "type", "scanPeriodMs", "parameters"];
 ```
 
-In `src/Dse.Configuration/Loading/LoadState.cs`, add after `ComponentEntry`:
+In `src/Millrace.Configuration/Loading/LoadState.cs`, add after `ComponentEntry`:
 
 ```csharp
 internal sealed class ControllerEntry(
@@ -4256,36 +4256,36 @@ and in `LoadState`, after `BuildOrder`:
     public List<ControllerEntry> Controllers { get; } = [];
 ```
 
-In `src/Dse.Configuration/Loading/InstantiateStage.cs`, change
+In `src/Millrace.Configuration/Loading/InstantiateStage.cs`, change
 `private static string AsSentence(string message)` to
 `internal static string AsSentence(string message)`.
 
-Replace `src/Dse.Configuration/ConfigDiagnostics.cs` with:
+Replace `src/Millrace.Configuration/ConfigDiagnostics.cs` with:
 
 ```csharp
-using Dse.Core.Catalogue;
+using Millrace.Core.Catalogue;
 
-namespace Dse.Configuration;
+namespace Millrace.Configuration;
 
 /// <summary>Every configuration diagnostic code. The reference page in docs/ is generated from <see cref="All"/>.</summary>
 public static class ConfigDiagnostics
 {
-    public const string Syntax = "DSE100";
-    public const string UnknownKey = "DSE101";
-    public const string UnknownType = "DSE102";
-    public const string BadParameter = "DSE103";
-    public const string MissingReference = "DSE104";
-    public const string MissingCapability = "DSE105";
-    public const string ReferenceCycle = "DSE106";
-    public const string Duplicate = "DSE107";
-    public const string UnknownAddress = "DSE108";
-    public const string CannotConnect = "DSE109";
-    public const string UnknownState = "DSE110";
-    public const string Rejected = "DSE111";
-    public const string TagCannotBind = "DSE112";
-    public const string UnknownTag = "DSE113";
-    public const string WrongKind = "DSE114";
-    public const string ReadOnlyTag = "DSE115";
+    public const string Syntax = "MR100";
+    public const string UnknownKey = "MR101";
+    public const string UnknownType = "MR102";
+    public const string BadParameter = "MR103";
+    public const string MissingReference = "MR104";
+    public const string MissingCapability = "MR105";
+    public const string ReferenceCycle = "MR106";
+    public const string Duplicate = "MR107";
+    public const string UnknownAddress = "MR108";
+    public const string CannotConnect = "MR109";
+    public const string UnknownState = "MR110";
+    public const string Rejected = "MR111";
+    public const string TagCannotBind = "MR112";
+    public const string UnknownTag = "MR113";
+    public const string WrongKind = "MR114";
+    public const string ReadOnlyTag = "MR115";
 
     public static IReadOnlyList<DiagnosticInfo> All { get; } =
     [
@@ -4316,7 +4316,7 @@ public static class ConfigDiagnostics
         new(TagCannotBind, "A tag cannot bind that port",
             "A tag names a port that has no tag kind (a flow port, an enum output), or asks to write an output."),
         new(UnknownTag, "A controller names a tag the plant does not have",
-            "A controller's tag parameter names no component tag, composite exposure or \"tags\" bind of the plant, and no tag a controller owns. Names match exactly, including case; the fix suggests the nearest, and `dse tags` lists them all."),
+            "A controller's tag parameter names no component tag, composite exposure or \"tags\" bind of the plant, and no tag a controller owns. Names match exactly, including case; the fix suggests the nearest, and `millrace tags` lists them all."),
         new(WrongKind, "A controller's tag or value is of the wrong kind",
             "A controller's value does not fit the kind of the tag it is for — 1.5 for an Int64 tag, true for a Double one — or a controller names a tag of a kind the block cannot use, such as a Double tag as an interlock condition. Integer-valued numbers fit Int64 and Double tags; only true and false fit a Bool tag."),
         new(ReadOnlyTag, "A controller commands a read-only tag",
@@ -4347,14 +4347,14 @@ public static class ConfigDiagnostics
 }
 ```
 
-In `src/Dse.Configuration/DiagnosticsReference.cs`, replace the two constants
+In `src/Millrace.Configuration/DiagnosticsReference.cs`, replace the two constants
 with (R96 — the trailer heading is unchanged):
 
 ```csharp
     private const string ConfigurationIntroduction =
         "<!-- Generated from ConfigDiagnostics.All by DiagnosticsReference.Render(). Do not edit by hand:\n" +
-        "     run the Dse.Configuration tests with DSE_UPDATE_GOLDEN=1, read the result, commit it. -->\n\n" +
-        "`dse validate` and `PlantLoader.Load` report every problem in a plant file as a diagnostic with four\n" +
+        "     run the Millrace.Configuration tests with MILLRACE_UPDATE_GOLDEN=1, read the result, commit it. -->\n\n" +
+        "`millrace validate` and `PlantLoader.Load` report every problem in a plant file as a diagnostic with four\n" +
         "parts: a **code**, a **JSON path** into the file (`$.components[3].parameters.motor.ratedPowerW`), a\n" +
         "**message** saying what is wrong, and a **fix** saying what to do. A diagnostic without a fix cannot be\n" +
         "constructed.\n\n" +
@@ -4363,25 +4363,25 @@ with (R96 — the trailer heading is unchanged):
         "what is reported may therefore reveal errors from a later stage.\n\n" +
         "A plant's `controllers` are resolved in the build stage, once the plant itself has validated: every tag\n" +
         "they name and every value they give is checked against the plant's tags and the blocks' own\n" +
-        "(DSE113–DSE115) before any block is built.\n\n";
+        "(MR113–MR115) before any block is built.\n\n";
 
     private const string ConfigurationTrailer =
-        "## DSE001–DSE015 — plant validation\n\n" +
-        "Codes below DSE100 come from `SimulationBuilder.Validate()` and mean the same for a plant built in code:\n" +
+        "## MR001–MR015 — plant validation\n\n" +
+        "Codes below MR100 come from `SimulationBuilder.Validate()` and mean the same for a plant built in code:\n" +
         "duplicate ids, unconnected required inputs, algebraic loops, belts too fast for their cells, incompatible\n" +
         "flow links, tag conflicts — and, for a control block declared under `controllers` or attached with\n" +
-        "`AddScanBlock`, a scan period that is not a positive whole number of time steps (DSE013), a pin naming a\n" +
-        "tag the plant does not have, publishes with another kind or will not accept a command (DSE014), and a\n" +
-        "block id or owned tag name that collides with something the plant already has (DSE015). The numbering\n" +
+        "`AddScanBlock`, a scan period that is not a positive whole number of time steps (MR013), a pin naming a\n" +
+        "tag the plant does not have, publishes with another kind or will not accept a command (MR014), and a\n" +
+        "block id or owned tag name that collides with something the plant already has (MR015). The numbering\n" +
         "skips 012. The loader passes them through with the path of the first component involved, or of the\n" +
-        "controller (for DSE013, its `scanPeriodMs`); their message is split at its first sentence into message\n" +
-        "and fix. A plant file's controllers are resolved before the blocks are validated, so DSE113–DSE115\n" +
-        "report what DSE014 would. See `docs/architecture.md` and `docs/control-blocks.md`.\n";
+        "controller (for MR013, its `scanPeriodMs`); their message is split at its first sentence into message\n" +
+        "and fix. A plant file's controllers are resolved before the blocks are validated, so MR113–MR115\n" +
+        "report what MR014 would. See `docs/architecture.md` and `docs/control-blocks.md`.\n";
 ```
 
 - [ ] **Step 5: Read controllers in the structure stage**
 
-In `src/Dse.Configuration/Loading/StructureStage.cs`:
+In `src/Millrace.Configuration/Loading/StructureStage.cs`:
 
 Replace the `MaxTimeStepMs` summary with
 `/// <summary>A time step or a scan period longer than a day is a mistake, and 1e30 ms overflows <see cref="TimeSpan"/>.</summary>`.
@@ -4518,7 +4518,7 @@ Add these methods after `ReadType`:
     {
         if (!element.TryGetProperty("type", out JsonElement typeElement) || typeElement.ValueKind != JsonValueKind.String)
         {
-            state.Error(ConfigDiagnostics.BadParameter, $"{path}.type", "A controller needs a string \"type\".", "Add \"type\": \"…\" naming a block type; `dse catalog export` lists them under \"blocks\".");
+            state.Error(ConfigDiagnostics.BadParameter, $"{path}.type", "A controller needs a string \"type\".", "Add \"type\": \"…\" naming a block type; `millrace catalog export` lists them under \"blocks\".");
             return null;
         }
 
@@ -4534,8 +4534,8 @@ Add these methods after `ReadType`:
             $"{path}.type",
             $"'{type}' is not a block type in this catalogue.",
             closest is null
-                ? "Run `dse catalog export` to list the block types. A custom type needs its assembly loaded with --assembly."
-                : $"Use a block type that `dse catalog export` lists — '{closest}' is closest. A custom type needs its assembly loaded with --assembly.");
+                ? "Run `millrace catalog export` to list the block types. A custom type needs its assembly loaded with --assembly."
+                : $"Use a block type that `millrace catalog export` lists — '{closest}' is closest. A custom type needs its assembly loaded with --assembly.");
         return null;
     }
 
@@ -4579,16 +4579,16 @@ Add these methods after `ReadType`:
 
 - [ ] **Step 6: Resolve and build them in the build stage**
 
-Create `src/Dse.Configuration/Loading/ControllerPass.cs`:
+Create `src/Millrace.Configuration/Loading/ControllerPass.cs`:
 
 ```csharp
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using Dse.Core;
-using Dse.Core.Catalogue;
-using Dse.Io;
+using Millrace.Core;
+using Millrace.Core.Catalogue;
+using Millrace.Io;
 
-namespace Dse.Configuration.Loading;
+namespace Millrace.Configuration.Loading;
 
 /// <summary>
 /// The build stage's middle step (R80), run once the plant alone has validated: the controllers. Every tag a controller
@@ -4607,7 +4607,7 @@ internal static class ControllerPass
             return true;
         }
 
-        // Plant tags first: on a name clash the plant's entry wins and Validate() reports DSE015 (R85).
+        // Plant tags first: on a name clash the plant's entry wins and Validate() reports MR015 (R85).
         var tags = new List<(string Name, TagKind Kind, TagAccess Access)>();
         foreach (TagDescriptor tag in builder.PlantTags())
         {
@@ -4717,7 +4717,7 @@ internal static class ControllerPass
             }
 
             // An id the factory was not given would publish tags nothing resolved against, and one that
-            // breaks the name rules would throw out of AddScanBlock; a period it was not given breaks DSE013's path.
+            // breaks the name rules would throw out of AddScanBlock; a period it was not given breaks MR013's path.
             if (!string.Equals(made.Id, entry.Id, StringComparison.Ordinal) || made.ScanPeriod != entry.ScanPeriod)
             {
                 state.Error(
@@ -4763,7 +4763,7 @@ internal static class ControllerPass
 }
 ```
 
-In `src/Dse.Configuration/Loading/BuildStage.cs`, replace the loop
+In `src/Millrace.Configuration/Loading/BuildStage.cs`, replace the loop
 
 ```csharp
         foreach (ValidationError error in builder.Validate().Errors)
@@ -4774,9 +4774,9 @@ In `src/Dse.Configuration/Loading/BuildStage.cs`, replace the loop
 ```
 
 with (R80 — the plant is validated alone first, so a plant error such as
-`DSE009` or `DSE010`, whose tag `PlantTags()` leaves out, is reported as itself
-and never as a misleading `DSE113`/`DSE115`; only a valid plant gets its
-controllers, and the second `Validate()` checks the blocks, `DSE013`–`DSE015`):
+`MR009` or `MR010`, whose tag `PlantTags()` leaves out, is reported as itself
+and never as a misleading `MR113`/`MR115`; only a valid plant gets its
+controllers, and the second `Validate()` checks the blocks, `MR013`–`MR015`):
 
 ```csharp
         IReadOnlyList<ValidationError> errors = builder.Validate().Errors;
@@ -4816,7 +4816,7 @@ and replace `PathOf` with:
             if (controller is not null)
             {
                 // R92: a scan period off the step is the one block check with a key of its own.
-                return string.Equals(error.Code, "DSE013", StringComparison.Ordinal) ? $"{controller.Path}.scanPeriodMs" : controller.Path;
+                return string.Equals(error.Code, "MR013", StringComparison.Ordinal) ? $"{controller.Path}.scanPeriodMs" : controller.Path;
             }
         }
 
@@ -4831,7 +4831,7 @@ Update `BuildStage`'s class summary to
 
 `CorpusTests.EveryConfigurationCodeHasAnInvalidPlant` requires a fixture for
 every code in `ConfigDiagnostics.All`. Create
-`tests/Dse.Configuration.Tests/Plants/invalid/DSE113-unknown-tag.json`:
+`tests/Millrace.Configuration.Tests/Plants/invalid/MR113-unknown-tag.json`:
 
 ```json
 {
@@ -4850,7 +4850,7 @@ every code in `ConfigDiagnostics.All`. Create
 }
 ```
 
-Create `tests/Dse.Configuration.Tests/Plants/invalid/DSE114-fraction-into-an-int64-tag.json`:
+Create `tests/Millrace.Configuration.Tests/Plants/invalid/MR114-fraction-into-an-int64-tag.json`:
 
 ```json
 {
@@ -4873,7 +4873,7 @@ Create `tests/Dse.Configuration.Tests/Plants/invalid/DSE114-fraction-into-an-int
 }
 ```
 
-Create `tests/Dse.Configuration.Tests/Plants/invalid/DSE114-bool-into-a-double-tag.json`:
+Create `tests/Millrace.Configuration.Tests/Plants/invalid/MR114-bool-into-a-double-tag.json`:
 
 ```json
 {
@@ -4894,7 +4894,7 @@ Create `tests/Dse.Configuration.Tests/Plants/invalid/DSE114-bool-into-a-double-t
 }
 ```
 
-Create `tests/Dse.Configuration.Tests/Plants/invalid/DSE115-write-to-a-read-only-tag.json`:
+Create `tests/Millrace.Configuration.Tests/Plants/invalid/MR115-write-to-a-read-only-tag.json`:
 
 ```json
 {
@@ -4917,34 +4917,34 @@ Create `tests/Dse.Configuration.Tests/Plants/invalid/DSE115-write-to-a-read-only
 
 - [ ] **Step 8: Run the loader tests**
 
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo --filter "FullyQualifiedName~ControllerTests|FullyQualifiedName~CorpusTests|FullyQualifiedName~SchemaAgreementTests|FullyQualifiedName~ConfigDiagnosticTests"`
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo --filter "FullyQualifiedName~ControllerTests|FullyQualifiedName~CorpusTests|FullyQualifiedName~SchemaAgreementTests|FullyQualifiedName~ConfigDiagnosticTests"`
 Expected: PASS. `ControllerTests` runs 30 tests; each of the four new fixtures
 yields only its named code, and the schema accepts all four (they are semantic).
 
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo --filter FullyQualifiedName~TheCommittedReferencePageIsCurrent`
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo --filter FullyQualifiedName~TheCommittedReferencePageIsCurrent`
 Expected: FAIL — the reference page differs from `docs/configuration-diagnostics.md`.
 
 - [ ] **Step 9: Regenerate the diagnostics page and read it**
 
 ```bash
-DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Configuration.Tests --nologo --filter FullyQualifiedName~TheCommittedReferencePageIsCurrent
+MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Configuration.Tests --nologo --filter FullyQualifiedName~TheCommittedReferencePageIsCurrent
 ```
 
 ```bash
 git diff docs/configuration-diagnostics.md
 ```
 
-Read the diff and report: the table gains rows `DSE113`, `DSE114`, `DSE115`
-after `DSE112`; `DSE102`'s and `DSE107`'s titles read `Unknown component, block,
+Read the diff and report: the table gains rows `MR113`, `MR114`, `MR115`
+after `MR112`; `MR102`'s and `MR107`'s titles read `Unknown component, block,
 object or material type` and `Duplicate id or material name`; three new
-sections follow `DSE112`'s; the introduction gains the controllers paragraph;
-the trailer heading is still `## DSE001–DSE015 — plant validation` and the page
-nowhere prints `DSE012`.
+sections follow `MR112`'s; the introduction gains the controllers paragraph;
+the trailer heading is still `## MR001–MR015 — plant validation` and the page
+nowhere prints `MR012`.
 
 - [ ] **Step 10: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, **1213** tests (Configuration 180: 142 + 30 `ControllerTests` +
 4 rows each in `EveryInvalidPlantYieldsExactlyTheCodeInItsName` and
 `TheSchemaRejectsStructuralErrorsAndOnlyThose`).
@@ -4952,7 +4952,7 @@ Expected: PASS, **1213** tests (Configuration 180: 142 + 30 `ControllerTests` +
 - [ ] **Step 11: Commit**
 
 ```bash
-git add src/Dse.Configuration/Loading/PlantSchemas.cs src/Dse.Configuration/Loading/LoadState.cs src/Dse.Configuration/Loading/StructureStage.cs src/Dse.Configuration/Loading/ControllerPass.cs src/Dse.Configuration/Loading/BuildStage.cs src/Dse.Configuration/Loading/InstantiateStage.cs src/Dse.Configuration/ConfigDiagnostics.cs src/Dse.Configuration/DiagnosticsReference.cs src/Dse.Configuration/PlantSummary.cs src/Dse.Configuration/PlantLoader.cs tests/Dse.Configuration.Tests/TestModule.cs tests/Dse.Configuration.Tests/ControllerTests.cs tests/Dse.Configuration.Tests/ConfigDiagnosticTests.cs tests/Dse.Configuration.Tests/Plants/invalid/DSE113-unknown-tag.json tests/Dse.Configuration.Tests/Plants/invalid/DSE114-fraction-into-an-int64-tag.json tests/Dse.Configuration.Tests/Plants/invalid/DSE114-bool-into-a-double-tag.json tests/Dse.Configuration.Tests/Plants/invalid/DSE115-write-to-a-read-only-tag.json docs/configuration-diagnostics.md
+git add src/Millrace.Configuration/Loading/PlantSchemas.cs src/Millrace.Configuration/Loading/LoadState.cs src/Millrace.Configuration/Loading/StructureStage.cs src/Millrace.Configuration/Loading/ControllerPass.cs src/Millrace.Configuration/Loading/BuildStage.cs src/Millrace.Configuration/Loading/InstantiateStage.cs src/Millrace.Configuration/ConfigDiagnostics.cs src/Millrace.Configuration/DiagnosticsReference.cs src/Millrace.Configuration/PlantSummary.cs src/Millrace.Configuration/PlantLoader.cs tests/Millrace.Configuration.Tests/TestModule.cs tests/Millrace.Configuration.Tests/ControllerTests.cs tests/Millrace.Configuration.Tests/ConfigDiagnosticTests.cs tests/Millrace.Configuration.Tests/Plants/invalid/MR113-unknown-tag.json tests/Millrace.Configuration.Tests/Plants/invalid/MR114-fraction-into-an-int64-tag.json tests/Millrace.Configuration.Tests/Plants/invalid/MR114-bool-into-a-double-tag.json tests/Millrace.Configuration.Tests/Plants/invalid/MR115-write-to-a-read-only-tag.json docs/configuration-diagnostics.md
 ```
 
 ```bash
@@ -4961,7 +4961,7 @@ feat(config): load controllers from the plant file
 
 The structure stage reads each controller like a component. The build
 stage resolves every tag and value against the plant's tags and the
-blocks' own before any block is built (DSE113-DSE115), then builds them
+blocks' own before any block is built (MR113-MR115), then builds them
 in file order. Core's block checks land on the controller's path.
 
 Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
@@ -4984,24 +4984,24 @@ automatically; a new agreement theory asserts that the schema and the loader
 reject the same controller mistakes.
 
 **Files:**
-- Create: `tests/Dse.Configuration.Tests/Plants/valid/conveyor-control.json`
-- Create (all under `tests/Dse.Configuration.Tests/Plants/invalid/`):
-  `DSE102-unknown-block-type.json`, `DSE103-controller-without-scan-period.json`,
-  `DSE103-unknown-transition-operator.json`, `DSE103-negative-preset.json`,
-  `DSE101-unknown-controller-key.json`, `DSE107-controller-id-is-a-component-id.json`,
-  `DSE111-alarm-limits-out-of-order.json`, `DSE013-scan-period-off-the-step.json`
-- Test: `tests/Dse.Configuration.Tests/SchemaAgreementTests.cs`
+- Create: `tests/Millrace.Configuration.Tests/Plants/valid/conveyor-control.json`
+- Create (all under `tests/Millrace.Configuration.Tests/Plants/invalid/`):
+  `MR102-unknown-block-type.json`, `MR103-controller-without-scan-period.json`,
+  `MR103-unknown-transition-operator.json`, `MR103-negative-preset.json`,
+  `MR101-unknown-controller-key.json`, `MR107-controller-id-is-a-component-id.json`,
+  `MR111-alarm-limits-out-of-order.json`, `MR013-scan-period-off-the-step.json`
+- Test: `tests/Millrace.Configuration.Tests/SchemaAgreementTests.cs`
 
 **Interfaces:**
 - Consumes: the loader of Task 11, the schema of Task 10, `Corpus.Valid()`,
   `Corpus.Invalid()`, `Corpus.Read(kind, name)`, `Plants.Load(json)`.
 - Produces: `Plants/valid/conveyor-control.json`, which Tasks 13, 14 and 15 load
-  (it is linked into `Dse.Control.Tests`, `Dse.Scenarios.Tests` and, in Task 15,
-  `Dse.Cli.Tests`).
+  (it is linked into `Millrace.Control.Tests`, `Millrace.Scenarios.Tests` and, in Task 15,
+  `Millrace.Cli.Tests`).
 
 - [ ] **Step 1: Write the worked example as a plant file**
 
-Create `tests/Dse.Configuration.Tests/Plants/valid/conveyor-control.json`:
+Create `tests/Millrace.Configuration.Tests/Plants/valid/conveyor-control.json`:
 
 ```json
 {
@@ -5071,7 +5071,7 @@ Create `tests/Dse.Configuration.Tests/Plants/valid/conveyor-control.json`:
 ```
 
 Everything above `controllers` is byte-identical to `valid/conveyor-line.json`;
-check it with `diff <(head -21 tests/Dse.Configuration.Tests/Plants/valid/conveyor-control.json) tests/Dse.Configuration.Tests/Plants/valid/conveyor-line.json`,
+check it with `diff <(head -21 tests/Millrace.Configuration.Tests/Plants/valid/conveyor-control.json) tests/Millrace.Configuration.Tests/Plants/valid/conveyor-line.json`,
 which must report exactly two differing lines: line 20 (`  ]` in
 `conveyor-line.json`, `  ],` here) and line 21 (`}` there, `  "controllers": [`
 here).
@@ -5079,7 +5079,7 @@ here).
 - [ ] **Step 2: Write the eight invalid fixtures**
 
 Each is the minimal plant with one controller mistake. Create
-`tests/Dse.Configuration.Tests/Plants/invalid/DSE102-unknown-block-type.json`:
+`tests/Millrace.Configuration.Tests/Plants/invalid/MR102-unknown-block-type.json`:
 
 ```json
 {
@@ -5098,7 +5098,7 @@ Each is the minimal plant with one controller mistake. Create
 }
 ```
 
-`DSE103-controller-without-scan-period.json`:
+`MR103-controller-without-scan-period.json`:
 
 ```json
 {
@@ -5117,7 +5117,7 @@ Each is the minimal plant with one controller mistake. Create
 }
 ```
 
-`DSE103-unknown-transition-operator.json`:
+`MR103-unknown-transition-operator.json`:
 
 ```json
 {
@@ -5138,7 +5138,7 @@ Each is the minimal plant with one controller mistake. Create
 }
 ```
 
-`DSE103-negative-preset.json`:
+`MR103-negative-preset.json`:
 
 ```json
 {
@@ -5157,7 +5157,7 @@ Each is the minimal plant with one controller mistake. Create
 }
 ```
 
-`DSE101-unknown-controller-key.json`:
+`MR101-unknown-controller-key.json`:
 
 ```json
 {
@@ -5176,7 +5176,7 @@ Each is the minimal plant with one controller mistake. Create
 }
 ```
 
-`DSE107-controller-id-is-a-component-id.json`:
+`MR107-controller-id-is-a-component-id.json`:
 
 ```json
 {
@@ -5195,7 +5195,7 @@ Each is the minimal plant with one controller mistake. Create
 }
 ```
 
-`DSE111-alarm-limits-out-of-order.json` (the constructor sorts limits by kind,
+`MR111-alarm-limits-out-of-order.json` (the constructor sorts limits by kind,
 so "out of order" means values that do not ascend with the kinds):
 
 ```json
@@ -5217,7 +5217,7 @@ so "out of order" means values that do not ascend with the kinds):
 }
 ```
 
-`DSE013-scan-period-off-the-step.json`:
+`MR013-scan-period-off-the-step.json`:
 
 ```json
 {
@@ -5238,7 +5238,7 @@ so "out of order" means values that do not ascend with the kinds):
 
 - [ ] **Step 3: Write the controller agreement theory**
 
-In `tests/Dse.Configuration.Tests/SchemaAgreementTests.cs`, add after
+In `tests/Millrace.Configuration.Tests/SchemaAgreementTests.cs`, add after
 `BothValidatorsRejectTheSameStructuralMistakes`. Every `from` has been checked
 against `Good` byte for byte: `"scanPeriodMs": 100,` ends its line (a newline,
 not a space, follows the comma), which is why that row has no trailing space;
@@ -5271,28 +5271,28 @@ the `Assert.NotEqual` guard catches a row that silently replaces nothing.
 
 - [ ] **Step 4: Run the configuration tests**
 
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo`
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo`
 Expected: PASS, **204** tests: 180 + 1 valid and 8 invalid rows in each of the two
 corpus theories (18) + 6 agreement rows. In particular:
 `EveryValidPlantLoadsCleanAndBuilds(conveyor-control.json)` loads with no
 diagnostic and runs two seconds; `TheSchemaAcceptsEveryPlantTheLoaderAccepts(conveyor-control.json)`
-passes; the schema rejects `DSE101-unknown-controller-key`, `DSE102-unknown-block-type`
-and the three new `DSE103` fixtures, and accepts `DSE107-controller-id-is-a-component-id`,
-`DSE111-alarm-limits-out-of-order` and `DSE013-scan-period-off-the-step`. If a
+passes; the schema rejects `MR101-unknown-controller-key`, `MR102-unknown-block-type`
+and the three new `MR103` fixtures, and accepts `MR107-controller-id-is-a-component-id`,
+`MR111-alarm-limits-out-of-order` and `MR013-scan-period-off-the-step`. If a
 fixture yields a second code, report it and fix the fixture, not the loader.
 
 - [ ] **Step 5: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, **1237** tests (Configuration 204). The new valid plant is also
-copied beside `Dse.Control.Tests` and `Dse.Scenarios.Tests` by their existing
+copied beside `Millrace.Control.Tests` and `Millrace.Scenarios.Tests` by their existing
 `Plants\valid\*.json` links; nothing there iterates it.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add tests/Dse.Configuration.Tests/Plants/valid/conveyor-control.json tests/Dse.Configuration.Tests/Plants/invalid/DSE102-unknown-block-type.json tests/Dse.Configuration.Tests/Plants/invalid/DSE103-controller-without-scan-period.json tests/Dse.Configuration.Tests/Plants/invalid/DSE103-unknown-transition-operator.json tests/Dse.Configuration.Tests/Plants/invalid/DSE103-negative-preset.json tests/Dse.Configuration.Tests/Plants/invalid/DSE101-unknown-controller-key.json tests/Dse.Configuration.Tests/Plants/invalid/DSE107-controller-id-is-a-component-id.json tests/Dse.Configuration.Tests/Plants/invalid/DSE111-alarm-limits-out-of-order.json tests/Dse.Configuration.Tests/Plants/invalid/DSE013-scan-period-off-the-step.json tests/Dse.Configuration.Tests/SchemaAgreementTests.cs
+git add tests/Millrace.Configuration.Tests/Plants/valid/conveyor-control.json tests/Millrace.Configuration.Tests/Plants/invalid/MR102-unknown-block-type.json tests/Millrace.Configuration.Tests/Plants/invalid/MR103-controller-without-scan-period.json tests/Millrace.Configuration.Tests/Plants/invalid/MR103-unknown-transition-operator.json tests/Millrace.Configuration.Tests/Plants/invalid/MR103-negative-preset.json tests/Millrace.Configuration.Tests/Plants/invalid/MR101-unknown-controller-key.json tests/Millrace.Configuration.Tests/Plants/invalid/MR107-controller-id-is-a-component-id.json tests/Millrace.Configuration.Tests/Plants/invalid/MR111-alarm-limits-out-of-order.json tests/Millrace.Configuration.Tests/Plants/invalid/MR013-scan-period-off-the-step.json tests/Millrace.Configuration.Tests/SchemaAgreementTests.cs
 ```
 
 ```bash
@@ -5320,8 +5320,8 @@ driven identically for 120 s, must produce the same directory and the same
 regenerated. Nothing is regenerated here: a mismatch is a finding.
 
 **Files:**
-- Modify: `tests/Dse.Control.Tests/Dse.Control.Tests.csproj` (reference `Dse.Control.Catalogue`)
-- Test: `tests/Dse.Control.Tests/WorkedExampleTests.cs`
+- Modify: `tests/Millrace.Control.Tests/Millrace.Control.Tests.csproj` (reference `Millrace.Control.Catalogue`)
+- Test: `tests/Millrace.Control.Tests/WorkedExampleTests.cs`
 
 **Interfaces:**
 - Consumes: `valid/conveyor-control.json` (Task 12, linked as `Plants/conveyor-control.json`);
@@ -5331,17 +5331,17 @@ regenerated. Nothing is regenerated here: a mismatch is a finding.
 
 - [ ] **Step 1: Reference the control catalogue**
 
-In `tests/Dse.Control.Tests/Dse.Control.Tests.csproj`, add to the project
+In `tests/Millrace.Control.Tests/Millrace.Control.Tests.csproj`, add to the project
 references:
 
 ```xml
-    <ProjectReference Include="..\..\src\Dse.Control.Catalogue\Dse.Control.Catalogue.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Control.Catalogue\Millrace.Control.Catalogue.csproj" />
 ```
 
 - [ ] **Step 2: Share the timeline and add the JSON twin**
 
-In `tests/Dse.Control.Tests/WorkedExampleTests.cs`, add
-`using Dse.Control.Catalogue;`, replace the `Catalogue` property with:
+In `tests/Millrace.Control.Tests/WorkedExampleTests.cs`, add
+`using Millrace.Control.Catalogue;`, replace the `Catalogue` property with:
 
 ```csharp
     private static ComponentCatalogue Catalogue { get; } =
@@ -5413,8 +5413,8 @@ these facts after `TheWorkedExampleRunsTwiceByteIdentically`:
 
 - [ ] **Step 3: Run the worked-example tests**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo --filter FullyQualifiedName~WorkedExampleTests`
-Expected: PASS, 5 tests. Do **not** set `DSE_UPDATE_GOLDEN`: the golden is
+Run: `dotnet test tests/Millrace.Control.Tests --nologo --filter FullyQualifiedName~WorkedExampleTests`
+Expected: PASS, 5 tests. Do **not** set `MILLRACE_UPDATE_GOLDEN`: the golden is
 Task 1's. If `TheJsonWorkedExampleWritesTheCodeBuiltEventLogByteForByte` fails,
 diff the two logs line by line, report the first divergent line and its cause
 (a parameter in `conveyor-control.json` that differs from `Build()`, a block
@@ -5422,14 +5422,14 @@ order, a value kind), and fix the JSON — never the golden.
 
 - [ ] **Step 4: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, **1239** tests (Control 104).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add tests/Dse.Control.Tests/Dse.Control.Tests.csproj tests/Dse.Control.Tests/WorkedExampleTests.cs
+git add tests/Millrace.Control.Tests/Millrace.Control.Tests.csproj tests/Millrace.Control.Tests/WorkedExampleTests.cs
 ```
 
 ```bash
@@ -5463,8 +5463,8 @@ phase 1 of tick N+1. The `WriteAt(1 s)` lands at phase 1 of tick 100 and is
 recorded at tick 100, so its `at` is `100 × 10 ms = 1` s.
 
 **Files:**
-- Modify: `tests/Dse.Scenarios.Tests/Dse.Scenarios.Tests.csproj` (reference `Dse.Control.Catalogue`)
-- Create: `tests/Dse.Scenarios.Tests/ControlledRecordAndReplayTests.cs`
+- Modify: `tests/Millrace.Scenarios.Tests/Millrace.Scenarios.Tests.csproj` (reference `Millrace.Control.Catalogue`)
+- Create: `tests/Millrace.Scenarios.Tests/ControlledRecordAndReplayTests.cs`
 
 **Interfaces:**
 - Consumes: `ScenarioRecorder` (`Count`, `ToScenario(string plantPath, SimulationOptions options, TimeSpan duration)`),
@@ -5475,27 +5475,27 @@ recorded at tick 100, so its `at` is `100 × 10 ms = 1` s.
 
 - [ ] **Step 1: Reference the control catalogue**
 
-In `tests/Dse.Scenarios.Tests/Dse.Scenarios.Tests.csproj`, add to the project
+In `tests/Millrace.Scenarios.Tests/Millrace.Scenarios.Tests.csproj`, add to the project
 references:
 
 ```xml
-    <ProjectReference Include="..\..\src\Dse.Control.Catalogue\Dse.Control.Catalogue.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Control.Catalogue\Millrace.Control.Catalogue.csproj" />
 ```
 
 - [ ] **Step 2: Write the tests**
 
-Create `tests/Dse.Scenarios.Tests/ControlledRecordAndReplayTests.cs`:
+Create `tests/Millrace.Scenarios.Tests/ControlledRecordAndReplayTests.cs`:
 
 ```csharp
-using Dse.Components;
-using Dse.Configuration;
-using Dse.Control.Catalogue;
-using Dse.Core;
-using Dse.Core.Catalogue;
-using Dse.Core.Faults;
-using Dse.Io;
+using Millrace.Components;
+using Millrace.Configuration;
+using Millrace.Control.Catalogue;
+using Millrace.Core;
+using Millrace.Core.Catalogue;
+using Millrace.Core.Faults;
+using Millrace.Io;
 
-namespace Dse.Scenarios.Tests;
+namespace Millrace.Scenarios.Tests;
 
 /// <summary>
 /// R77, closed: a recording of a run with control blocks holds the external
@@ -5587,22 +5587,22 @@ public class ControlledRecordAndReplayTests
 
 - [ ] **Step 3: Run the tests**
 
-Run: `dotnet test tests/Dse.Scenarios.Tests --nologo --filter FullyQualifiedName~ControlledRecordAndReplayTests`
+Run: `dotnet test tests/Millrace.Scenarios.Tests --nologo --filter FullyQualifiedName~ControlledRecordAndReplayTests`
 Expected: PASS, 2 tests. Before Task 1 the recording would have held 13 actions
 (the ten block writes too) and the replay would have applied every block write
 twice; report `recorder.Count` as measured.
 
 - [ ] **Step 4: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, **1241** tests (Scenarios 163). The four 5b goldens are
-unchanged: `git status --short tests/Dse.Scenarios.Tests/Golden` prints nothing.
+unchanged: `git status --short tests/Millrace.Scenarios.Tests/Golden` prints nothing.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add tests/Dse.Scenarios.Tests/Dse.Scenarios.Tests.csproj tests/Dse.Scenarios.Tests/ControlledRecordAndReplayTests.cs
+git add tests/Millrace.Scenarios.Tests/Millrace.Scenarios.Tests.csproj tests/Millrace.Scenarios.Tests/ControlledRecordAndReplayTests.cs
 ```
 
 ```bash
@@ -5632,19 +5632,19 @@ plugin registers a block type, seen by `catalog export`, `schema export` and
 `validate`.
 
 **Files:**
-- Modify: `src/Dse.Cli/Dse.Cli.csproj`, `src/Dse.Cli/CliApp.cs`, `src/Dse.Cli/CommandTable.cs`,
-  `src/Dse.Cli/Commands/Validate.cs`
-- Create: `tests/Dse.Cli.Tests.SampleModule/Latch.cs`
-- Modify: `tests/Dse.Cli.Tests.SampleModule/SampleCatalogueModule.cs`
-- Modify: `tests/Dse.Cli.Tests/Dse.Cli.Tests.csproj`, `tests/Dse.Cli.Tests/Cli.cs`
-- Create: `tests/Dse.Cli.Tests/Plants/sample-block.json`, `tests/Dse.Cli.Tests/Scenarios/conveyor-control.json`
-- Test: `tests/Dse.Cli.Tests/ValidateCommandTests.cs`, `TagsCommandTests.cs`,
+- Modify: `src/Millrace.Cli/Millrace.Cli.csproj`, `src/Millrace.Cli/CliApp.cs`, `src/Millrace.Cli/CommandTable.cs`,
+  `src/Millrace.Cli/Commands/Validate.cs`
+- Create: `tests/Millrace.Cli.Tests.SampleModule/Latch.cs`
+- Modify: `tests/Millrace.Cli.Tests.SampleModule/SampleCatalogueModule.cs`
+- Modify: `tests/Millrace.Cli.Tests/Millrace.Cli.Tests.csproj`, `tests/Millrace.Cli.Tests/Cli.cs`
+- Create: `tests/Millrace.Cli.Tests/Plants/sample-block.json`, `tests/Millrace.Cli.Tests/Scenarios/conveyor-control.json`
+- Test: `tests/Millrace.Cli.Tests/ValidateCommandTests.cs`, `TagsCommandTests.cs`,
   `RunCommandTests.cs`, `PluginTests.cs`, `ExportCommandTests.cs`
 
 **Interfaces:**
 - Consumes: `ControlModule` (Tasks 6–8); `PlantSummary.Controllers` (Task 11);
   `valid/conveyor-control.json` (Task 12); the regenerated
-  `tests/Dse.Control.Tests/Golden/conveyor-control.log` (Task 1);
+  `tests/Millrace.Control.Tests/Golden/conveyor-control.log` (Task 1);
   `BlockDescriptor`, `Param.Tag`, `CatalogueBuilder.AddBlock`.
 - Produces: `Cli.Golden(string name)` (test helper); the plugin block type
   `latch` (module `Sample`) with parameters `set`, `reset` (Bool tags) and owned
@@ -5652,23 +5652,23 @@ plugin registers a block type, seen by `catalog export`, `schema export` and
 
 - [ ] **Step 1: Write the failing tests**
 
-In `tests/Dse.Cli.Tests/Cli.cs`, add after `Scenario`:
+In `tests/Millrace.Cli.Tests/Cli.cs`, add after `Scenario`:
 
 ```csharp
     public static string Golden(string name) => Path.Combine(AppContext.BaseDirectory, "Golden", name);
 ```
 
-In `tests/Dse.Cli.Tests/Dse.Cli.Tests.csproj`, add to the item group that holds
+In `tests/Millrace.Cli.Tests/Millrace.Cli.Tests.csproj`, add to the item group that holds
 the `Plants` and `Scenarios` items:
 
 ```xml
-    <None Include="..\Dse.Configuration.Tests\Plants\valid\conveyor-control.json"
+    <None Include="..\Millrace.Configuration.Tests\Plants\valid\conveyor-control.json"
           Link="Plants\conveyor-control.json" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\Dse.Control.Tests\Golden\conveyor-control.log"
+    <None Include="..\Millrace.Control.Tests\Golden\conveyor-control.log"
           Link="Golden\conveyor-control.log" CopyToOutputDirectory="PreserveNewest" />
 ```
 
-Create `tests/Dse.Cli.Tests/Scenarios/conveyor-control.json`:
+Create `tests/Millrace.Cli.Tests/Scenarios/conveyor-control.json`:
 
 ```json
 {
@@ -5682,7 +5682,7 @@ Create `tests/Dse.Cli.Tests/Scenarios/conveyor-control.json`:
 }
 ```
 
-Create `tests/Dse.Cli.Tests/Plants/sample-block.json`:
+Create `tests/Millrace.Cli.Tests/Plants/sample-block.json`:
 
 ```json
 {
@@ -5700,7 +5700,7 @@ Create `tests/Dse.Cli.Tests/Plants/sample-block.json`:
 }
 ```
 
-In `tests/Dse.Cli.Tests/ValidateCommandTests.cs`: in `AValidPlantPrintsASummary`
+In `tests/Millrace.Cli.Tests/ValidateCommandTests.cs`: in `AValidPlantPrintsASummary`
 add `Assert.Matches(@"controllers\s+0\n", run.Out);` after the `flow links`
 assertion; in `JsonFormatOfAValidPlantCarriesTheSummary` add
 `Assert.Equal(0, summary.GetProperty("controllers").GetInt32());` after the
@@ -5734,7 +5734,7 @@ assertion; in `JsonFormatOfAValidPlantCarriesTheSummary` add
     }
 ```
 
-In `tests/Dse.Cli.Tests/TagsCommandTests.cs`, add:
+In `tests/Millrace.Cli.Tests/TagsCommandTests.cs`, add:
 
 ```csharp
     [Fact]
@@ -5751,7 +5751,7 @@ In `tests/Dse.Cli.Tests/TagsCommandTests.cs`, add:
     }
 ```
 
-In `tests/Dse.Cli.Tests/RunCommandTests.cs`, add:
+In `tests/Millrace.Cli.Tests/RunCommandTests.cs`, add:
 
 ```csharp
     [Fact]
@@ -5767,11 +5767,11 @@ In `tests/Dse.Cli.Tests/RunCommandTests.cs`, add:
     }
 ```
 
-In `tests/Dse.Cli.Tests/PluginTests.cs`: in
+In `tests/Millrace.Cli.Tests/PluginTests.cs`: in
 `APluginsTypesAppearInTheCatalogueExport`, replace the modules assertion with
 
 ```csharp
-        Assert.Equal(["Dse.Components", "Dse.Control", "Sample"], document.RootElement.GetProperty("modules").EnumerateArray().Select(m => m.GetString()));
+        Assert.Equal(["Millrace.Components", "Millrace.Control", "Sample"], document.RootElement.GetProperty("modules").EnumerateArray().Select(m => m.GetString()));
 ```
 
 in `ThePluginPassesCatalogueConformance`, replace the fixtures argument and add
@@ -5827,12 +5827,12 @@ and add these facts:
         Assert.Equal(ExitCodes.Ok, with.ExitCode);
         Assert.Matches(@"controllers\s+1\n", with.Out);
         Assert.Equal(ExitCodes.PlantInvalid, without.ExitCode);
-        Assert.Contains("DSE102 $.controllers[0].type", without.Err, StringComparison.Ordinal);
+        Assert.Contains("MR102 $.controllers[0].type", without.Err, StringComparison.Ordinal);
         Assert.Contains("--assembly", without.Err, StringComparison.Ordinal);
     }
 ```
 
-In `tests/Dse.Cli.Tests/ExportCommandTests.cs`, add `using Dse.Control.Catalogue;`
+In `tests/Millrace.Cli.Tests/ExportCommandTests.cs`, add `using Millrace.Control.Catalogue;`
 and replace `Shipped` with:
 
 ```csharp
@@ -5842,25 +5842,25 @@ and replace `Shipped` with:
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Cli.Tests --nologo`
+Run: `dotnet test tests/Millrace.Cli.Tests --nologo`
 Expected: the build succeeds — `ControlModule` already reaches the test project
-through `Dse.Cli` → `Dse.Configuration` (Task 10) — and these fail:
+through `Millrace.Cli` → `Millrace.Configuration` (Task 10) — and these fail:
 `ExportCommandTests.CatalogExportPrintsExactlyTheLibrarysExport` and
 `SchemaExportPrintsExactlyTheLibrarysSchema` (the CLI still ships components
 only), the four validate tests that look for `controllers`, the tags and run
-tests on `conveyor-control.json` (`DSE102`: the CLI does not know `permissive`),
+tests on `conveyor-control.json` (`MR102`: the CLI does not know `permissive`),
 `APluginsTypesAppearInTheCatalogueExport` (module list) and the three plugin
 block tests (`latch` is not registered yet).
 
 - [ ] **Step 3: Add the plugin block**
 
-Create `tests/Dse.Cli.Tests.SampleModule/Latch.cs`:
+Create `tests/Millrace.Cli.Tests.SampleModule/Latch.cs`:
 
 ```csharp
-using Dse.Core.Catalogue;
-using Dse.Io;
+using Millrace.Core.Catalogue;
+using Millrace.Io;
 
-namespace Dse.Cli.Tests.SampleModule;
+namespace Millrace.Cli.Tests.SampleModule;
 
 /// <summary>
 /// A set/reset latch, reset dominant: the worked example of a block type a
@@ -5920,30 +5920,30 @@ public sealed class Latch : IScanBlock
 }
 ```
 
-In `tests/Dse.Cli.Tests.SampleModule/SampleCatalogueModule.cs`, add
+In `tests/Millrace.Cli.Tests.SampleModule/SampleCatalogueModule.cs`, add
 `builder.AddBlock(Latch.Descriptor);` after `builder.Add(HysteresisSwitch.Descriptor);`.
 
 - [ ] **Step 4: Ship the control blocks in the CLI**
 
-In `src/Dse.Cli/Dse.Cli.csproj`, add to the project references:
+In `src/Millrace.Cli/Millrace.Cli.csproj`, add to the project references:
 
 ```xml
-    <ProjectReference Include="..\Dse.Control.Catalogue\Dse.Control.Catalogue.csproj" />
+    <ProjectReference Include="..\Millrace.Control.Catalogue\Millrace.Control.Catalogue.csproj" />
 ```
 
-In `src/Dse.Cli/CliApp.cs`, add `using Dse.Control.Catalogue;` and replace the
+In `src/Millrace.Cli/CliApp.cs`, add `using Millrace.Control.Catalogue;` and replace the
 builder line with:
 
 ```csharp
         CatalogueBuilder builder = new CatalogueBuilder().Add<ComponentsModule>().Add<ControlModule>();
 ```
 
-In `src/Dse.Cli/CommandTable.cs`, replace the `Assembly` option's help with
+In `src/Millrace.Cli/CommandTable.cs`, replace the `Assembly` option's help with
 `"Load catalogue modules from this assembly, in addition to the shipped components and control blocks."`
 and the `catalog export` summary with
 `"Print every component, block, transform, transition, hold and material type as JSON."`.
 
-In `src/Dse.Cli/Commands/Validate.cs`, in the JSON branch add
+In `src/Millrace.Cli/Commands/Validate.cs`, in the JSON branch add
 `w.WriteNumber("controllers", summary.Controllers);` after the `explicitTags`
 line, and replace the text block with:
 
@@ -5963,10 +5963,10 @@ line, and replace the text block with:
 
 - [ ] **Step 5: Run the CLI tests**
 
-Run: `dotnet test tests/Dse.Cli.Tests --nologo`
+Run: `dotnet test tests/Millrace.Cli.Tests --nologo`
 Expected: PASS, **76** tests. `TheWorkedExampleRunsFromItsFilesAndMatchesTheControlGolden`
 proves criterion 2 through the shipped binary's code path: a scenario file
-writes the block command `SEQ01.Start` (resolved by `DSE206` against the built
+writes the block command `SEQ01.Start` (resolved by `MR206` against the built
 plant) and the log matches the 5c golden. If it fails, read the `.actual` file
 it leaves beside the linked golden in the test output directory, report the
 first differing line, and fix the scenario — never the golden.
@@ -5974,29 +5974,29 @@ first differing line, and fix the scenario — never the golden.
 - [ ] **Step 6: Check the shipped binary by hand**
 
 ```bash
-dotnet run --project src/Dse.Cli -c Release -- validate tests/Dse.Configuration.Tests/Plants/valid/conveyor-control.json
+dotnet run --project src/Millrace.Cli -c Release -- validate tests/Millrace.Configuration.Tests/Plants/valid/conveyor-control.json
 ```
 
 Expected: exit 0 and the summary with `controllers   4`.
 
 ```bash
-dotnet run --project src/Dse.Cli -c Release -- validate tests/Dse.Configuration.Tests/Plants/invalid/DSE113-unknown-tag.json
+dotnet run --project src/Millrace.Cli -c Release -- validate tests/Millrace.Configuration.Tests/Plants/invalid/MR113-unknown-tag.json
 ```
 
-Expected: exit 1 and `DSE113 $.controllers[0].parameters.conditions[0].tag`
+Expected: exit 1 and `MR113 $.controllers[0].parameters.conditions[0].tag`
 with `Fix: Use a tag the plant has — 'CHUTE.Full' is closest.` Paste both outputs
 into the task report.
 
 - [ ] **Step 7: Run everything**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, **1248** tests (Cli 76).
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/Dse.Cli/Dse.Cli.csproj src/Dse.Cli/CliApp.cs src/Dse.Cli/CommandTable.cs src/Dse.Cli/Commands/Validate.cs tests/Dse.Cli.Tests.SampleModule/Latch.cs tests/Dse.Cli.Tests.SampleModule/SampleCatalogueModule.cs tests/Dse.Cli.Tests/Dse.Cli.Tests.csproj tests/Dse.Cli.Tests/Cli.cs tests/Dse.Cli.Tests/Plants/sample-block.json tests/Dse.Cli.Tests/Scenarios/conveyor-control.json tests/Dse.Cli.Tests/ValidateCommandTests.cs tests/Dse.Cli.Tests/TagsCommandTests.cs tests/Dse.Cli.Tests/RunCommandTests.cs tests/Dse.Cli.Tests/PluginTests.cs tests/Dse.Cli.Tests/ExportCommandTests.cs
+git add src/Millrace.Cli/Millrace.Cli.csproj src/Millrace.Cli/CliApp.cs src/Millrace.Cli/CommandTable.cs src/Millrace.Cli/Commands/Validate.cs tests/Millrace.Cli.Tests.SampleModule/Latch.cs tests/Millrace.Cli.Tests.SampleModule/SampleCatalogueModule.cs tests/Millrace.Cli.Tests/Millrace.Cli.Tests.csproj tests/Millrace.Cli.Tests/Cli.cs tests/Millrace.Cli.Tests/Plants/sample-block.json tests/Millrace.Cli.Tests/Scenarios/conveyor-control.json tests/Millrace.Cli.Tests/ValidateCommandTests.cs tests/Millrace.Cli.Tests/TagsCommandTests.cs tests/Millrace.Cli.Tests/RunCommandTests.cs tests/Millrace.Cli.Tests/PluginTests.cs tests/Millrace.Cli.Tests/ExportCommandTests.cs
 ```
 
 ```bash
@@ -6027,7 +6027,7 @@ test pins the control-blocks page.
 - Modify: `docs/control-blocks.md`, `docs/authoring-a-component.md`, `docs/scenarios.md`,
   `docs/architecture.md`, `README.md`
 - Modify: `docs/superpowers/specs/2026-09-20-catalogue-configuration-cli-design.md` (§4.1)
-- Test: `tests/Dse.Control.Tests/DocumentationTests.cs`
+- Test: `tests/Millrace.Control.Tests/DocumentationTests.cs`
 - Verify (already regenerated in Task 11): `docs/configuration-diagnostics.md`
 
 **Interfaces:**
@@ -6037,7 +6037,7 @@ test pins the control-blocks page.
 
 - [ ] **Step 1: Write the failing documentation test**
 
-In `tests/Dse.Control.Tests/DocumentationTests.cs`, add:
+In `tests/Millrace.Control.Tests/DocumentationTests.cs`, add:
 
 ```csharp
     [Fact]
@@ -6048,8 +6048,8 @@ In `tests/Dse.Control.Tests/DocumentationTests.cs`, add:
         foreach (string token in new[]
                  {
                      "\"controllers\"", "scanPeriodMs", "presetS", "timeoutS", "delayS", "onDelayS",
-                     "DSE113", "DSE114", "DSE115", "Set to false by INT01.", "File order is scan order",
-                     "ControlModule", "Dse.Control.Catalogue",
+                     "MR113", "MR114", "MR115", "Set to false by INT01.", "File order is scan order",
+                     "ControlModule", "Millrace.Control.Catalogue",
                  })
         {
             Assert.Contains(token, page, StringComparison.Ordinal);
@@ -6059,18 +6059,18 @@ In `tests/Dse.Control.Tests/DocumentationTests.cs`, add:
     }
 ```
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo --filter FullyQualifiedName~DocumentationTests`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo --filter FullyQualifiedName~DocumentationTests`
 Expected: FAIL — `"controllers"` is not on the page.
 
 - [ ] **Step 2: `docs/control-blocks.md`**
 
 In **Attaching a block**, replace the paragraph that begins "Blocks are attached
-**in code**." (ending "`dse run` therefore cannot attach blocks yet.") with:
+**in code**." (ending "`millrace run` therefore cannot attach blocks yet.") with:
 
 ```markdown
 That is the code form. A plant file declares the same block under
-`controllers` — see *In the plant file* below — and `dse validate`, `dse tags`
-and `dse run` handle it with no C#.
+`controllers` — see *In the plant file* below — and `millrace validate`, `millrace tags`
+and `millrace run` handle it with no C#.
 ```
 
 At the end of **Attaching a block** (after the paragraph ending "so an interlock
@@ -6109,12 +6109,12 @@ value before it builds any block, and reports every mistake at its path:
 
 | code | check |
 |---|---|
-| DSE113 | The tag exists; the fix names the nearest one. |
-| DSE114 | The tag is of a kind the block can use, and the value fits the tag. |
-| DSE115 | A tag the block commands is read-write — not a measured value, another block's output, or an input a signal link drives. |
+| MR113 | The tag exists; the fix names the nearest one. |
+| MR114 | The tag is of a kind the block can use, and the value fits the tag. |
+| MR115 | A tag the block commands is read-write — not a measured value, another block's output, or an input a signal link drives. |
 
 Block types come from the catalogue: `ControlModule`, in
-`Dse.Control.Catalogue`, registers the five below, and `dse catalog export`
+`Millrace.Control.Catalogue`, registers the five below, and `millrace catalog export`
 lists them under `"blocks"`. A module loaded with `--assembly` may register
 more.
 
@@ -6132,8 +6132,8 @@ excerpt's closing fence:
 A write a block issues is logged with its origin — `Set to false by INT01.` —
 and every other write keeps the plain `Set to false.`, so the log tells a
 block's command from an operator's. The example is also a plant file,
-`tests/Dse.Configuration.Tests/Plants/valid/conveyor-control.json`; with the
-scenario `tests/Dse.Cli.Tests/Scenarios/conveyor-control.json`, `dse run`
+`tests/Millrace.Configuration.Tests/Plants/valid/conveyor-control.json`; with the
+scenario `tests/Millrace.Cli.Tests/Scenarios/conveyor-control.json`, `millrace run`
 reproduces this golden byte for byte.
 ```
 
@@ -6228,7 +6228,7 @@ Append at the end of the file:
 ## 11. Registering a block
 
 A control block is registered the same way, with a `BlockDescriptor` instead of
-a `ComponentDescriptor`. `tests/Dse.Cli.Tests.SampleModule/Latch.cs` is the
+a `ComponentDescriptor`. `tests/Millrace.Cli.Tests.SampleModule/Latch.cs` is the
 worked example:
 
 ```csharp
@@ -6287,10 +6287,10 @@ A plant's **controllers** are read in the structure stage like components and
 resolved in the build stage, after the plant alone has passed `Validate()`. The tag table is
 `SimulationBuilder.PlantTags()` — the directory `Build()` would publish, R23
 downgrades included — plus every controller's declared owned tags, so every tag
-and value is checked (`DSE113`–`DSE115`) before any block is built; the blocks
-are then added in file order and pass `Validate()`'s `DSE013`–`DSE015` like a
+and value is checked (`MR113`–`MR115`) before any block is built; the blocks
+are then added in file order and pass `Validate()`'s `MR013`–`MR015` like a
 block attached in code. Block descriptors live beside component and object
-descriptors in the catalogue; `ControlModule`, in `Dse.Control.Catalogue`,
+descriptors in the catalogue; `ControlModule`, in `Millrace.Control.Catalogue`,
 registers the five shipped ones.
 ```
 
@@ -6305,8 +6305,8 @@ control block's write carries its origin: it is logged `by <block id>` and is
 not recorded, because a replay re-runs the block.
 ```
 
-In **The control layer**, replace "Nothing in `TagImage`, `Dse.Realtime` or the
-scenario recorder had to learn what a block is." with "Nothing in `Dse.Realtime`
+In **The control layer**, replace "Nothing in `TagImage`, `Millrace.Realtime` or the
+scenario recorder had to learn what a block is." with "Nothing in `Millrace.Realtime`
 or the scenario recorder had to learn what a block is; `TagImage` learned only a
 write's origin, so the log attributes a block's write and the recorder skips
 it.", and replace the paragraph "Blocks are attached in code. Describing them in
@@ -6315,8 +6315,8 @@ into a format." with:
 
 ```markdown
 Blocks are declared in a plant file's `controllers` section or attached in
-code. `Dse.Control.Catalogue` — which sees `Dse.Core` and `Dse.Control` —
-registers them in the catalogue through `ControlModule`, so `Dse.Control` itself
+code. `Millrace.Control.Catalogue` — which sees `Millrace.Core` and `Millrace.Control` —
+registers them in the catalogue through `ControlModule`, so `Millrace.Control` itself
 still sees the I/O contract alone.
 ```
 
@@ -6324,7 +6324,7 @@ still sees the I/O contract alone.
 
 In **Status**, replace "Blocks are attached in code for now; describing them in
 the plant file, and the reference samples, are planned." with "Blocks are
-declared in a plant file's `controllers` section — `Dse.Control.Catalogue`
+declared in a plant file's `controllers` section — `Millrace.Control.Catalogue`
 registers them — or attached in code; the reference samples are planned."
 
 In **Command line**, replace the `catalog export` comment with
@@ -6358,35 +6358,35 @@ components, flattened leaves, signal links, flow links, tags, controllers (plan
 
 - [ ] **Step 8: Run the documentation tests and read the pages**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo --filter FullyQualifiedName~DocumentationTests`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo --filter FullyQualifiedName~DocumentationTests`
 Expected: PASS, 2 tests.
 
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo --filter FullyQualifiedName~DiagnosticsReferenceTests`
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo --filter FullyQualifiedName~DiagnosticsReferenceTests`
 Expected: PASS — `docs/configuration-diagnostics.md` is still Task 11's.
 
 Read `docs/control-blocks.md` from **Attaching a block** to the end and check
-every JSON snippet against `tests/Dse.Configuration.Tests/Plants/valid/conveyor-control.json`
+every JSON snippet against `tests/Millrace.Configuration.Tests/Plants/valid/conveyor-control.json`
 and the descriptors: every key is a parameter the descriptor declares, every
 duration ends in `S`. Report any snippet you corrected.
 
 - [ ] **Step 9: Run everything and check the constraints**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo`
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo`
 Expected: PASS, **1249** tests — 37 Io.Abstractions / 460 Core / 126 Components /
 56 Realtime / 204 Configuration / 163 Scenarios / 76 Cli / 105 Control / 22
 Control.Catalogue.
 
 Run: `grep -rn "PackageReference" src/` — expect no output.
-Run: `grep -n "ProjectReference" src/Dse.Control/Dse.Control.csproj` — expect one
-line, `Dse.Io.Abstractions`.
-Run: `git status --short tests/Dse.Scenarios.Tests/Golden` — expect no output
+Run: `grep -n "ProjectReference" src/Millrace.Control/Millrace.Control.csproj` — expect one
+line, `Millrace.Io.Abstractions`.
+Run: `git status --short tests/Millrace.Scenarios.Tests/Golden` — expect no output
 (the four 5b goldens are untouched).
 
 - [ ] **Step 10: Commit**
 
 ```bash
-git add docs/control-blocks.md docs/authoring-a-component.md docs/scenarios.md docs/architecture.md README.md docs/superpowers/specs/2026-09-20-catalogue-configuration-cli-design.md tests/Dse.Control.Tests/DocumentationTests.cs
+git add docs/control-blocks.md docs/authoring-a-component.md docs/scenarios.md docs/architecture.md README.md docs/superpowers/specs/2026-09-20-catalogue-configuration-cli-design.md tests/Millrace.Control.Tests/DocumentationTests.cs
 ```
 
 ```bash
@@ -6413,42 +6413,42 @@ MSG
 | 1, criterion 2 | JSON-built and code-built worked example, byte-identical logs | 13 (tests), 15 (CLI `run --expect`) |
 | 1, criterion 3 | a recording holds only external actions and replays byte for byte | 1, 14 |
 | 1, criterion 4 | 5b goldens unchanged; 5c golden changes only by ` by <id>`; `validate` only by `controllers`; export goldens only by additions | 1, 9, 10, 15 (measured diffs; the schema golden's module-list `description` line is the one rewritten pre-existing line, R101) |
-| 1, criterion 5 | `Dse.Control` references only `Dse.Io.Abstractions`; no package under `src/` | 6, 16 (checks) |
+| 1, criterion 5 | `Millrace.Control` references only `Millrace.Io.Abstractions`; no package under `src/` | 6, 16 (checks) |
 | 1, criterion 6 | Release build 0 warnings; every existing test passes | every task; R98 lists the eleven changed tests |
 | 2 | project layout, new projects | 6 (Control.Catalogue + tests), 10 (Configuration reference), 15 (CLI reference) |
 | 3.1 | `BlockDescriptor`, `AddBlock`, `Blocks`/`TryGetBlock`/`ModuleOf`, shared namespace | 3 (R91) |
 | 3.2 | `Tag` / `Value` kinds, conversion table | 4 (every cell a row; R83, R84) |
 | 3.3 | `condition`, `write`, `transition` | 6 (R88) |
-| 3.4 | the five blocks, owned tags, constructor checks as `DSE111` | 7, 8, 11 (R89) |
+| 3.4 | the five blocks, owned tags, constructor checks as `MR111` | 7, 8, 11 (R89) |
 | 3.5 | conformance for blocks (owned tags incl. unit and description, an undeclared parameter read); several fixtures; export `blocks` | 5 (R102), 8, 9 (R90) |
 | 4.1 | the `controllers` section (including an empty one) | 11 (R87) |
 | 4.2 | the stages gain a controllers pass | 11 (R80: build stage, after a first `Validate()`) |
 | 4.3 | file order is scan order | 11 (`ControllerPass` adds in file order), 16 (docs) |
 | 4.4 | resolve tags and values before any block; `PlantTags` query | 2 (R81), 4, 11 (R82, R85) |
-| 4.5 | `DSE113`–`DSE115`; diagnostics page regenerated | 11 (R96) |
+| 4.5 | `MR113`–`MR115`; diagnostics page regenerated | 11 (R96) |
 | 4.6 | schema: `oneOf` per block type, `$defs`, `Tag`/`Value`; agreement | 10 (R94), 12 |
 | 5 | the write origin; `IActionRecorder` narrowed | 1 (R99) |
 | 6 | CLI default catalogue, `validate` count, help line, plugin blocks | 15 (R95) |
 | 7 | worked example plant file, round trip, CLI golden, 5c golden diff measured | 1, 12, 13, 15 (R93) |
 | 8 | the test list | 1–15 (placement noted per task) |
 | 9 | documentation, 5a §4.1 amendment | 16 |
-| 10 | JsonSchema.Net pin; `--out` ruling; `DSE112` taken | Global Constraints, 16, 11 |
+| 10 | JsonSchema.Net pin; `--out` ruling; `MR112` taken | Global Constraints, 16, 11 |
 
 ## Test-count arithmetic
 
-Measured on `834758b` with `dotnet test Dse.sln`: **1108**.
+Measured on `834758b` with `dotnet test Millrace.sln`: **1108**.
 
 | Project | Before | Task deltas | After |
 |---|---|---|---|
-| Dse.Io.Abstractions | 37 | — | 37 |
-| Dse.Core | 420 | T1 +2, T2 +3, T3 +5, T4 +22 (10 facts + 12 rows), T5 +7, T9 +1 | 460 |
-| Dse.Components | 126 | — (T9 regenerates its golden) | 126 |
-| Dse.Realtime | 56 | — | 56 |
-| Dse.Configuration | 137 | T10 +5, T11 +38 (30 `ControllerTests` + 4 fixtures × 2 theories), T12 +24 (9 fixtures × 2 theories + 6 agreement rows) | 204 |
-| Dse.Scenarios | 161 | T14 +2 | 163 |
-| Dse.Cli | 69 | T15 +7 (2 validate, 1 tags, 1 run, 3 plugin) | 76 |
-| Dse.Control | 102 | T1 ±0 (one test renamed), T13 +2, T16 +1 | 105 |
-| Dse.Control.Catalogue (new) | 0 | T6 +9, T7 +6, T8 +5, T9 +2 | 22 |
+| Millrace.Io.Abstractions | 37 | — | 37 |
+| Millrace.Core | 420 | T1 +2, T2 +3, T3 +5, T4 +22 (10 facts + 12 rows), T5 +7, T9 +1 | 460 |
+| Millrace.Components | 126 | — (T9 regenerates its golden) | 126 |
+| Millrace.Realtime | 56 | — | 56 |
+| Millrace.Configuration | 137 | T10 +5, T11 +38 (30 `ControllerTests` + 4 fixtures × 2 theories), T12 +24 (9 fixtures × 2 theories + 6 agreement rows) | 204 |
+| Millrace.Scenarios | 161 | T14 +2 | 163 |
+| Millrace.Cli | 69 | T15 +7 (2 validate, 1 tags, 1 run, 3 plugin) | 76 |
+| Millrace.Control | 102 | T1 ±0 (one test renamed), T13 +2, T16 +1 | 105 |
+| Millrace.Control.Catalogue (new) | 0 | T6 +9, T7 +6, T8 +5, T9 +2 | 22 |
 | **Total** | **1108** | +141 | **1249** |
 
 Running totals after each task: 1110, 1113, 1118, 1140, 1147, 1156, 1162, 1167,

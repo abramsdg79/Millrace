@@ -6,18 +6,18 @@
 directory with units, ranges and per-tag quality; a double-buffered I/O image
 that any thread may read; a queued write path that lands at phase 1 of the next
 tick; an immutable `TickFrame` per tick; and, downstream of that boundary, a
-`Dse.Realtime` package (event engine, live state engine, subscriptions with
+`Millrace.Realtime` package (event engine, live state engine, subscriptions with
 deadbands, decimation and declared backpressure, a command bus) that cannot
 perturb the simulation whether zero or fifty consumers are attached.
 
-**Architecture:** `Dse.Io.Abstractions` gains the whole I/O contract and nothing
+**Architecture:** `Millrace.Io.Abstractions` gains the whole I/O contract and nothing
 else: `TagValue`, `TagQuality`, `TagDescriptor`, `ITagDirectory`, `ITagReader`,
-`ITagWriter`, `TickFrame`, `ITickFrameSink`. `Dse.Core` implements it: leaf
+`ITagWriter`, `TickFrame`, `ITickFrameSink`. `Millrace.Core` implements it: leaf
 components declare `TagBinding`s with relative names and metadata, composites
 rename through their existing `Expose` aliases, the builder collects them into a
 `TagDirectory` and a `TagImage`, and `Simulation` gains three real phases —
 external writes drained at phase 1, the image published at phase 4, a frame
-enqueued at phase 5. `Dse.Realtime` references `Dse.Io.Abstractions` only and
+enqueued at phase 5. `Millrace.Realtime` references `Millrace.Io.Abstractions` only and
 consumes frames: a `RealtimeHub` owns the ring buffer and the pump, a `LiveState`
 holds current truth for late joiners, `Subscription`s pull deltas under
 `Conflate` or `Lossless` policy, and a `CommandBus` validates writes against the
@@ -40,15 +40,15 @@ and says so.
 
 ## Global Constraints
 
-- Target framework `net10.0` for every project. `Dse.Io.Abstractions` references
-  nothing. `Dse.Core` references `Dse.Io.Abstractions`. `Dse.Components`
-  references `Dse.Core`. **`Dse.Realtime` references `Dse.Io.Abstractions` only
-  — never `Dse.Core`, never `Dse.Components`.** The test project
-  `Dse.Realtime.Tests` may additionally reference `Dse.Components` for the one
+- Target framework `net10.0` for every project. `Millrace.Io.Abstractions` references
+  nothing. `Millrace.Core` references `Millrace.Io.Abstractions`. `Millrace.Components`
+  references `Millrace.Core`. **`Millrace.Realtime` references `Millrace.Io.Abstractions` only
+  — never `Millrace.Core`, never `Millrace.Components`.** The test project
+  `Millrace.Realtime.Tests` may additionally reference `Millrace.Components` for the one
   end-to-end test (Task 13); that is a test-only edge and is documented as such.
   **Zero external runtime package references** in any shipping project. Test
   projects use the same test package versions as
-  `tests/Dse.Core.Tests/Dse.Core.Tests.csproj`.
+  `tests/Millrace.Core.Tests/Millrace.Core.Tests.csproj`.
 - `Nullable` enabled, `TreatWarningsAsErrors` true, `GenerateDocumentationFile`
   true (a `<see cref>` to a type that does not exist yet is a **build error**;
   reference only types that already exist when the file is compiled),
@@ -82,8 +82,8 @@ and says so.
 - xUnit analyzers run under warnings-as-errors: prefer `Assert.Single`,
   `Assert.Contains`, `Assert.Empty` over `Assert.True(x.Any())` and
   `Assert.Equal(1, x.Count())`.
-- Licence: MIT. Namespace root `Dse`. Contract namespace `Dse.Io`. Core
-  additions live in `Dse.Core.Io`. Real-time namespace `Dse.Realtime`.
+- Licence: MIT. Namespace root `Millrace`. Contract namespace `Millrace.Io`. Core
+  additions live in `Millrace.Core.Io`. Real-time namespace `Millrace.Realtime`.
 - Commit trailers: every commit message body ends with the two attribution
   lines the session specifies (`Co-Authored-By: …` and `Claude-Session: …`),
   copied verbatim, in the body, never on the subject line: subject, blank line,
@@ -91,10 +91,10 @@ and says so.
 
 ## Decisions settled here (carry forward as rulings R20–R27)
 
-- **R20 — `InstrumentHealth` is replaced by `Dse.Io.TagQuality`.** Plan 3 kept
-  `Dse.Components` free of `Quality` because the contract did not exist. It
-  exists now, `Dse.Components` already sees `Dse.Io` transitively through
-  `Dse.Core`, and a second enum that "maps onto" quality is a translation table
+- **R20 — `InstrumentHealth` is replaced by `Millrace.Io.TagQuality`.** Plan 3 kept
+  `Millrace.Components` free of `Quality` because the contract did not exist. It
+  exists now, `Millrace.Components` already sees `Millrace.Io` transitively through
+  `Millrace.Core`, and a second enum that "maps onto" quality is a translation table
   nobody needs. `InstrumentBase.Health` becomes `OutputPort<TagQuality>` and the
   `InstrumentHealth` enum is deleted. `Uncertain` is emitted when the unclamped
   reading leaves the instrument's range without a fail fault — the saturated
@@ -123,7 +123,7 @@ and says so.
   `Build()`: the plant wired a controller there, so the tag observes the
   command instead of issuing it, and the directory says `ReadOnly`. An
   *explicit* `Bind` of a writable binding on a driven input is validation error
-  `DSE010`, because the author asked for something the wiring forbids. There is
+  `MR010`, because the author asked for something the wiring forbids. There is
   no `TagInput` component and no ordering edge; the tag list is the only record
   that the plant has an operator.
 - **R24 — writes drain before scheduled events.** Phase 1 applies every write
@@ -167,7 +167,7 @@ The code is the authority where it differs from the task text below.
   `Set()` in a `catch (ObjectDisposedException)`; a frame published after
   `Dispose` is counted, never signalled, never throws.
 - **R31 — writable tags satisfy a required input at validation time.** The
-  builder collects tags before the `DSE002` check and skips it for any port a
+  builder collects tags before the `MR002` check and skips it for any port a
   `ReadWrite` binding drives; the plan's Task 6 ordering (collect last) made
   R23 unreachable for `required: true` inputs.
 - **R32 — a ring gap faults only subscriptions that existed when it happened.**
@@ -206,22 +206,22 @@ The code is the authority where it differs from the task text below.
 - `EventLog.Records` is an append-only `IReadOnlyList<SimEventRecord>`;
   `SimEventRecord(long Tick, DateTimeOffset SimTime, string Source, string
   Code, string Message)`.
-- Validation codes `DSE001`–`DSE008` exist. This plan adds `DSE009`, `DSE010`,
-  `DSE011`.
+- Validation codes `MR001`–`MR008` exist. This plan adds `MR009`, `MR010`,
+  `MR011`.
 - `InstrumentBase` sets `Value.Value` and `Health.Value` in `Evaluate` after
   calibration, drift, noise, lag, freeze and fail handling; `Spec` carries
   `Unit`, `RangeLow`, `RangeHigh`.
 - The `Conveyor` composite exposes `In`, `Out` (flow), `Start`, `Reset`,
   `SafetyReset`, `EStop`, `PullKey1..N` (inputs), `Speed`, `TonnesPerHour`,
   `Current`, `Stopped`, `Contactor`, `Tripped`, `SafetyOk` (outputs).
-- Test helpers: `tests/Dse.Core.Tests/Fakes/ConstantSource` (double out),
-  `Recorder` (double in, `Samples`), `tests/Dse.Components.Tests/Fakes/Switch`
+- Test helpers: `tests/Millrace.Core.Tests/Fakes/ConstantSource` (double out),
+  `Recorder` (double in, `Samples`), `tests/Millrace.Components.Tests/Fakes/Switch`
   (bool out, settable `Value`), `Setpoint` (double out), `TestContexts`.
 
 ## File Structure
 
 ```
-src/Dse.Io.Abstractions/
+src/Millrace.Io.Abstractions/
   Placeholder.cs                         (deleted)
   Quality.cs                             Quality, QualityDetail, TagQuality
   TagKind.cs                             Bool | Double | Int64
@@ -238,7 +238,7 @@ src/Dse.Io.Abstractions/
   TickFrame.cs                           the determinism boundary
   ITickFrameSink.cs                      Publish(frame), non-blocking
 
-src/Dse.Core/
+src/Millrace.Core/
   Graph/Port.cs                          (modified: Freeze, IsFrozen)
   Graph/InputPort.cs                     (modified: external driver, frozen ConnectFrom)
   Graph/CompositeComponent.cs            (modified: internal ExposedSignalPorts, Composites())
@@ -247,10 +247,10 @@ src/Dse.Core/
   Io/TagBinding.cs                       port + relative name + metadata + capture/apply
   Io/TagDirectory.cs                     ITagDirectory over a sorted TagBinding[]
   Io/TagImage.cs                         ITagReader + ITagWriter: double buffer, dirty mask, write queue
-  SimulationBuilder.cs                   (modified: Bind, tag collection, DSE009–011, freeze)
+  SimulationBuilder.cs                   (modified: Bind, tag collection, MR009–011, freeze)
   Simulation.cs                          (modified: IO, AttachFrameSink, phases 1/4/5)
 
-src/Dse.Components/
+src/Millrace.Components/
   Instruments/InstrumentHealth.cs        (deleted — R20)
   Instruments/InstrumentBase.cs          (modified: TagQuality health, Uncertain, ITagProvider)
   Instruments/ZeroSpeedSwitch.cs         (modified: Stopped tag)
@@ -262,8 +262,8 @@ src/Dse.Components/
   Flow/TransferChute.cs, Former.cs, BulkProcessUnit.cs, ItemProcessUnit.cs
                                          (modified: tags per R21)
 
-src/Dse.Realtime/
-  Dse.Realtime.csproj                    references Dse.Io.Abstractions only
+src/Millrace.Realtime/
+  Millrace.Realtime.csproj                    references Millrace.Io.Abstractions only
   TagState.cs                            value + last-change tick and time
   StateSnapshot.cs                       tick, sim time, TagState[], recent events
   LiveState.cs                           current truth; Apply(frame); Snapshot()
@@ -280,23 +280,23 @@ src/Dse.Realtime/
   ICommandRecorder.cs                    plan 5's seam
   CommandBus.cs                          validate against the directory, forward to ITagWriter
 
-tests/Dse.Io.Abstractions.Tests/
-  Dse.Io.Abstractions.Tests.csproj
+tests/Millrace.Io.Abstractions.Tests/
+  Millrace.Io.Abstractions.Tests.csproj
   TagValueTests.cs, TagQualityTests.cs, DirtyMaskTests.cs,
   TagAccessExtensionsTests.cs, Fakes/ArrayTagReader.cs
 
-tests/Dse.Core.Tests/
+tests/Millrace.Core.Tests/
   ExternalInputTests.cs, GraphFreezeTests.cs, TagBindingTests.cs,
   TagImageTests.cs, IoIntegrationTests.cs,
   Fakes/Thermostat.cs, Fakes/Pair.cs, Fakes/FrameCollector.cs
 
-tests/Dse.Components.Tests/
+tests/Millrace.Components.Tests/
   InstrumentBaseTests.cs                 (modified: TagQuality assertions)
   SignalInstrumentTests.cs               (modified)
   InstrumentQualityTests.cs, ComponentTagTests.cs, ConveyorIoTests.cs
 
-tests/Dse.Realtime.Tests/
-  Dse.Realtime.Tests.csproj              references Dse.Realtime and Dse.Components (test-only)
+tests/Millrace.Realtime.Tests/
+  Millrace.Realtime.Tests.csproj              references Millrace.Realtime and Millrace.Components (test-only)
   Fakes/Frames.cs                        hand-built directory and frames
   LiveStateTests.cs, RealtimeHubTests.cs, SubscriptionPolicyTests.cs,
   DispatcherThreadTests.cs, CommandBusTests.cs, ConveyorRealtimeTests.cs
@@ -310,15 +310,15 @@ README.md                                (modified: status)
 ### Task 1: Quality and TagValue
 
 **Files:**
-- Delete: `src/Dse.Io.Abstractions/Placeholder.cs`
-- Create: `src/Dse.Io.Abstractions/Quality.cs`
-- Create: `src/Dse.Io.Abstractions/TagKind.cs`
-- Create: `src/Dse.Io.Abstractions/TagAccess.cs`
-- Create: `src/Dse.Io.Abstractions/TagValue.cs`
-- Create: `tests/Dse.Io.Abstractions.Tests/Dse.Io.Abstractions.Tests.csproj`
-- Test: `tests/Dse.Io.Abstractions.Tests/TagQualityTests.cs`
-- Test: `tests/Dse.Io.Abstractions.Tests/TagValueTests.cs`
-- Modify: `Dse.sln` (add the test project with `dotnet sln add`)
+- Delete: `src/Millrace.Io.Abstractions/Placeholder.cs`
+- Create: `src/Millrace.Io.Abstractions/Quality.cs`
+- Create: `src/Millrace.Io.Abstractions/TagKind.cs`
+- Create: `src/Millrace.Io.Abstractions/TagAccess.cs`
+- Create: `src/Millrace.Io.Abstractions/TagValue.cs`
+- Create: `tests/Millrace.Io.Abstractions.Tests/Millrace.Io.Abstractions.Tests.csproj`
+- Test: `tests/Millrace.Io.Abstractions.Tests/TagQualityTests.cs`
+- Test: `tests/Millrace.Io.Abstractions.Tests/TagValueTests.cs`
+- Modify: `Millrace.sln` (add the test project with `dotnet sln add`)
 
 **Interfaces:**
 - Consumes: nothing.
@@ -344,7 +344,7 @@ wants.
 
 - [ ] **Step 1: Create the test project and add it to the solution**
 
-`tests/Dse.Io.Abstractions.Tests/Dse.Io.Abstractions.Tests.csproj`:
+`tests/Millrace.Io.Abstractions.Tests/Millrace.Io.Abstractions.Tests.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -368,26 +368,26 @@ wants.
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Dse.Io.Abstractions\Dse.Io.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Io.Abstractions\Millrace.Io.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>
 ```
 
-Run: `dotnet sln Dse.sln add tests/Dse.Io.Abstractions.Tests/Dse.Io.Abstractions.Tests.csproj --solution-folder tests`
+Run: `dotnet sln Millrace.sln add tests/Millrace.Io.Abstractions.Tests/Millrace.Io.Abstractions.Tests.csproj --solution-folder tests`
 
-Also add `<InternalsVisibleTo Include="Dse.Io.Abstractions.Tests" />` to the
-existing `ItemGroup` in `src/Dse.Io.Abstractions/Dse.Io.Abstractions.csproj`
-(keep the existing `Dse.Core.Tests` entry).
+Also add `<InternalsVisibleTo Include="Millrace.Io.Abstractions.Tests" />` to the
+existing `ItemGroup` in `src/Millrace.Io.Abstractions/Millrace.Io.Abstractions.csproj`
+(keep the existing `Millrace.Core.Tests` entry).
 
 - [ ] **Step 2: Write the failing tests**
 
-`tests/Dse.Io.Abstractions.Tests/TagQualityTests.cs`:
+`tests/Millrace.Io.Abstractions.Tests/TagQualityTests.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Io.Abstractions.Tests;
+namespace Millrace.Io.Abstractions.Tests;
 
 public class TagQualityTests
 {
@@ -422,12 +422,12 @@ public class TagQualityTests
 }
 ```
 
-`tests/Dse.Io.Abstractions.Tests/TagValueTests.cs`:
+`tests/Millrace.Io.Abstractions.Tests/TagValueTests.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Io.Abstractions.Tests;
+namespace Millrace.Io.Abstractions.Tests;
 
 public class TagValueTests
 {
@@ -519,17 +519,17 @@ public class TagValueTests
 
 - [ ] **Step 3: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Io.Abstractions.Tests --filter "FullyQualifiedName~TagValueTests|FullyQualifiedName~TagQualityTests"`
+Run: `dotnet test tests/Millrace.Io.Abstractions.Tests --filter "FullyQualifiedName~TagValueTests|FullyQualifiedName~TagQualityTests"`
 Expected: build FAILS — `TagValue`, `TagQuality`, `Quality` do not exist.
 
 - [ ] **Step 4: Write the types**
 
-Delete `src/Dse.Io.Abstractions/Placeholder.cs`.
+Delete `src/Millrace.Io.Abstractions/Placeholder.cs`.
 
-`src/Dse.Io.Abstractions/Quality.cs`:
+`src/Millrace.Io.Abstractions/Quality.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// The quality code carried by every tag value (spec 9.5). Ordered so that
@@ -581,10 +581,10 @@ public readonly record struct TagQuality(Quality Code, QualityDetail Detail)
 }
 ```
 
-`src/Dse.Io.Abstractions/TagKind.cs`:
+`src/Millrace.Io.Abstractions/TagKind.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>The three value kinds a tag can carry. Ordered so <c>default</c> is Bool.</summary>
 public enum TagKind
@@ -600,10 +600,10 @@ public enum TagKind
 }
 ```
 
-`src/Dse.Io.Abstractions/TagAccess.cs`:
+`src/Millrace.Io.Abstractions/TagAccess.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>Whether a tag accepts external writes.</summary>
 public enum TagAccess
@@ -616,12 +616,12 @@ public enum TagAccess
 }
 ```
 
-`src/Dse.Io.Abstractions/TagValue.cs`:
+`src/Millrace.Io.Abstractions/TagValue.cs`:
 
 ```csharp
 using System.Globalization;
 
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// One tag's value with its quality. Sixteen bytes, no references, immutable.
@@ -726,17 +726,17 @@ public readonly record struct TagValue
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Io.Abstractions.Tests`
+Run: `dotnet test tests/Millrace.Io.Abstractions.Tests`
 Expected: PASS, 12 tests. Then `dotnet build -c Release` — 0 warnings.
-`tests/Dse.Core.Tests/ScaffoldingTests.cs` line 11 reads
-`typeof(Dse.Io.Placeholder).Assembly`; change it to
-`typeof(Dse.Io.TagValue).Assembly` (that test only needs the assembly) and run
-`dotnet test tests/Dse.Core.Tests --filter "FullyQualifiedName~ScaffoldingTests"`.
+`tests/Millrace.Core.Tests/ScaffoldingTests.cs` line 11 reads
+`typeof(Millrace.Io.Placeholder).Assembly`; change it to
+`typeof(Millrace.Io.TagValue).Assembly` (that test only needs the assembly) and run
+`dotnet test tests/Millrace.Core.Tests --filter "FullyQualifiedName~ScaffoldingTests"`.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add -A src/Dse.Io.Abstractions tests/Dse.Io.Abstractions.Tests tests/Dse.Core.Tests/ScaffoldingTests.cs Dse.sln
+git add -A src/Millrace.Io.Abstractions tests/Millrace.Io.Abstractions.Tests tests/Millrace.Core.Tests/ScaffoldingTests.cs Millrace.sln
 git commit -m "feat(io): add Quality, TagQuality, TagKind, TagAccess and TagValue"
 ```
 
@@ -745,19 +745,19 @@ git commit -m "feat(io): add Quality, TagQuality, TagKind, TagAccess and TagValu
 ### Task 2: The rest of the contract — directory, reader, writer, frame
 
 **Files:**
-- Create: `src/Dse.Io.Abstractions/TagDescriptor.cs`
-- Create: `src/Dse.Io.Abstractions/ITagDirectory.cs`
-- Create: `src/Dse.Io.Abstractions/TagHandle.cs`
-- Create: `src/Dse.Io.Abstractions/ITagReader.cs`
-- Create: `src/Dse.Io.Abstractions/ITagWriter.cs`
-- Create: `src/Dse.Io.Abstractions/TagAccessExtensions.cs`
-- Create: `src/Dse.Io.Abstractions/DiscreteEvent.cs`
-- Create: `src/Dse.Io.Abstractions/DirtyMask.cs`
-- Create: `src/Dse.Io.Abstractions/TickFrame.cs`
-- Create: `src/Dse.Io.Abstractions/ITickFrameSink.cs`
-- Test: `tests/Dse.Io.Abstractions.Tests/Fakes/ArrayTagReader.cs`
-- Test: `tests/Dse.Io.Abstractions.Tests/DirtyMaskTests.cs`
-- Test: `tests/Dse.Io.Abstractions.Tests/TagAccessExtensionsTests.cs`
+- Create: `src/Millrace.Io.Abstractions/TagDescriptor.cs`
+- Create: `src/Millrace.Io.Abstractions/ITagDirectory.cs`
+- Create: `src/Millrace.Io.Abstractions/TagHandle.cs`
+- Create: `src/Millrace.Io.Abstractions/ITagReader.cs`
+- Create: `src/Millrace.Io.Abstractions/ITagWriter.cs`
+- Create: `src/Millrace.Io.Abstractions/TagAccessExtensions.cs`
+- Create: `src/Millrace.Io.Abstractions/DiscreteEvent.cs`
+- Create: `src/Millrace.Io.Abstractions/DirtyMask.cs`
+- Create: `src/Millrace.Io.Abstractions/TickFrame.cs`
+- Create: `src/Millrace.Io.Abstractions/ITickFrameSink.cs`
+- Test: `tests/Millrace.Io.Abstractions.Tests/Fakes/ArrayTagReader.cs`
+- Test: `tests/Millrace.Io.Abstractions.Tests/DirtyMaskTests.cs`
+- Test: `tests/Millrace.Io.Abstractions.Tests/TagAccessExtensionsTests.cs`
 
 **Interfaces:**
 - Consumes: Task 1.
@@ -784,19 +784,19 @@ git commit -m "feat(io): add Quality, TagQuality, TagKind, TagAccess and TagValu
 `TagDescriptor.RangeLow`/`RangeHigh` are `double.NaN` when a tag has no range
 (bools, counters without one); `HasRange` tests that. The reader interface is
 deliberately small — `Read(int)`, `Read(string)`, `Handle<T>` — and the typed
-`ReadBool(...)` family are extension methods, so `Dse.Core`'s `TagImage` and any
+`ReadBool(...)` family are extension methods, so `Millrace.Core`'s `TagImage` and any
 test fake implement three members. `Handle<T>` is where kind checking happens:
 `Handle<double>("CV001.Start")` on a bool tag throws at resolve time, not on
 every scan.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Io.Abstractions.Tests/Fakes/ArrayTagReader.cs`:
+`tests/Millrace.Io.Abstractions.Tests/Fakes/ArrayTagReader.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Io.Abstractions.Tests.Fakes;
+namespace Millrace.Io.Abstractions.Tests.Fakes;
 
 /// <summary>A reader and writer over two arrays — the smallest possible implementation of the contract.</summary>
 public sealed class ArrayTagReader : ITagReader, ITagWriter, ITagDirectory
@@ -871,12 +871,12 @@ public sealed class ArrayTagReader : ITagReader, ITagWriter, ITagDirectory
 }
 ```
 
-`tests/Dse.Io.Abstractions.Tests/DirtyMaskTests.cs`:
+`tests/Millrace.Io.Abstractions.Tests/DirtyMaskTests.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Io.Abstractions.Tests;
+namespace Millrace.Io.Abstractions.Tests;
 
 public class DirtyMaskTests
 {
@@ -940,13 +940,13 @@ public class DirtyMaskTests
 }
 ```
 
-`tests/Dse.Io.Abstractions.Tests/TagAccessExtensionsTests.cs`:
+`tests/Millrace.Io.Abstractions.Tests/TagAccessExtensionsTests.cs`:
 
 ```csharp
-using Dse.Io;
-using Dse.Io.Abstractions.Tests.Fakes;
+using Millrace.Io;
+using Millrace.Io.Abstractions.Tests.Fakes;
 
-namespace Dse.Io.Abstractions.Tests;
+namespace Millrace.Io.Abstractions.Tests;
 
 public class TagAccessExtensionsTests
 {
@@ -1030,15 +1030,15 @@ public class TagAccessExtensionsTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Io.Abstractions.Tests`
+Run: `dotnet test tests/Millrace.Io.Abstractions.Tests`
 Expected: build FAILS — `TagDescriptor`, `ITagReader`, `DirtyMask`, `TickFrame` do not exist.
 
 - [ ] **Step 3: Write the contract**
 
-`src/Dse.Io.Abstractions/TagDescriptor.cs`:
+`src/Millrace.Io.Abstractions/TagDescriptor.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// One entry of the tag directory (spec 9.1): everything a consumer, an HMI
@@ -1069,10 +1069,10 @@ public sealed record TagDescriptor(
 }
 ```
 
-`src/Dse.Io.Abstractions/ITagDirectory.cs`:
+`src/Millrace.Io.Abstractions/ITagDirectory.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// The printable list of tags (spec 9.1). Ordered by index; names are unique
@@ -1097,10 +1097,10 @@ public interface ITagDirectory
 }
 ```
 
-`src/Dse.Io.Abstractions/TagHandle.cs`:
+`src/Millrace.Io.Abstractions/TagHandle.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// A tag name resolved once to an index and a checked kind (spec 9.2). Reading
@@ -1130,10 +1130,10 @@ public readonly struct TagHandle<T>
 }
 ```
 
-`src/Dse.Io.Abstractions/ITagReader.cs`:
+`src/Millrace.Io.Abstractions/ITagReader.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// Reads the published I/O image (spec 9.3). Every read sees the consistent
@@ -1164,10 +1164,10 @@ public interface ITagReader
 }
 ```
 
-`src/Dse.Io.Abstractions/ITagWriter.cs`:
+`src/Millrace.Io.Abstractions/ITagWriter.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// Queues writes into the simulation (spec 9.3). A write is applied at phase 1
@@ -1188,10 +1188,10 @@ public interface ITagWriter
 }
 ```
 
-`src/Dse.Io.Abstractions/TagAccessExtensions.cs`:
+`src/Millrace.Io.Abstractions/TagAccessExtensions.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>The typed front door over <see cref="ITagReader"/> and <see cref="ITagWriter"/> (spec 9.2).</summary>
 public static class TagAccessExtensions
@@ -1247,10 +1247,10 @@ public static class TagAccessExtensions
 }
 ```
 
-`src/Dse.Io.Abstractions/DiscreteEvent.cs`:
+`src/Millrace.Io.Abstractions/DiscreteEvent.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// One event-log record as it crosses the determinism boundary. The source is
@@ -1264,10 +1264,10 @@ public sealed record DiscreteEvent(
     string Message);
 ```
 
-`src/Dse.Io.Abstractions/DirtyMask.cs`:
+`src/Millrace.Io.Abstractions/DirtyMask.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// Which tag indices changed in a frame, as an immutable bitset. A change is
@@ -1356,10 +1356,10 @@ public readonly struct DirtyMask
 }
 ```
 
-`src/Dse.Io.Abstractions/TickFrame.cs`:
+`src/Millrace.Io.Abstractions/TickFrame.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// The only thing that crosses out of the engine (spec 10.1): one tick's
@@ -1410,10 +1410,10 @@ public sealed class TickFrame
 }
 ```
 
-`src/Dse.Io.Abstractions/ITickFrameSink.cs`:
+`src/Millrace.Io.Abstractions/ITickFrameSink.cs`:
 
 ```csharp
-namespace Dse.Io;
+namespace Millrace.Io;
 
 /// <summary>
 /// Where the simulation hands each frame at phase 5. Called once per tick on
@@ -1430,13 +1430,13 @@ public interface ITickFrameSink
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Io.Abstractions.Tests`
+Run: `dotnet test tests/Millrace.Io.Abstractions.Tests`
 Expected: PASS, 23 tests. `dotnet build -c Release` — 0 warnings.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Io.Abstractions tests/Dse.Io.Abstractions.Tests
+git add src/Millrace.Io.Abstractions tests/Millrace.Io.Abstractions.Tests
 git commit -m "feat(io): add the tag directory, reader, writer, dirty mask and tick frame contract"
 ```
 
@@ -1445,11 +1445,11 @@ git commit -m "feat(io): add the tag directory, reader, writer, dirty mask and t
 ### Task 3: External input drivers and the graph freeze
 
 **Files:**
-- Modify: `src/Dse.Core/Graph/Port.cs`
-- Modify: `src/Dse.Core/Graph/InputPort.cs`
-- Modify: `src/Dse.Core/SimulationBuilder.cs` (`_built` flag, `Add` guard, freeze in `Build`)
-- Test: `tests/Dse.Core.Tests/ExternalInputTests.cs`
-- Test: `tests/Dse.Core.Tests/GraphFreezeTests.cs`
+- Modify: `src/Millrace.Core/Graph/Port.cs`
+- Modify: `src/Millrace.Core/Graph/InputPort.cs`
+- Modify: `src/Millrace.Core/SimulationBuilder.cs` (`_built` flag, `Add` guard, freeze in `Build`)
+- Test: `tests/Millrace.Core.Tests/ExternalInputTests.cs`
+- Test: `tests/Millrace.Core.Tests/GraphFreezeTests.cs`
 
 **Interfaces:**
 - Consumes: `Port`, `InputPort<T>`, `SimulationBuilder` as they exist.
@@ -1470,14 +1470,14 @@ required input: an operator is a valid source.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/ExternalInputTests.cs`:
+`tests/Millrace.Core.Tests/ExternalInputTests.cs`:
 
 ```csharp
-using Dse.Core.Graph;
-using Dse.Core.Tests.Fakes;
+using Millrace.Core.Graph;
+using Millrace.Core.Tests.Fakes;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class ExternalInputTests
 {
@@ -1556,15 +1556,15 @@ public class ExternalInputTests
 }
 ```
 
-`tests/Dse.Core.Tests/GraphFreezeTests.cs`:
+`tests/Millrace.Core.Tests/GraphFreezeTests.cs`:
 
 ```csharp
-using Dse.Core.Graph;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Time;
+using Millrace.Core.Graph;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Time;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class GraphFreezeTests
 {
@@ -1620,12 +1620,12 @@ public class GraphFreezeTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Core.Tests --filter "FullyQualifiedName~ExternalInputTests|FullyQualifiedName~GraphFreezeTests"`
+Run: `dotnet test tests/Millrace.Core.Tests --filter "FullyQualifiedName~ExternalInputTests|FullyQualifiedName~GraphFreezeTests"`
 Expected: build FAILS — `DriveExternally`, `IsFrozen` do not exist.
 
 - [ ] **Step 3: Modify `Port`**
 
-In `src/Dse.Core/Graph/Port.cs`, add after `IsLatchedInput`:
+In `src/Millrace.Core/Graph/Port.cs`, add after `IsLatchedInput`:
 
 ```csharp
     /// <summary>True once the plant containing this port has been built; wiring is then immutable.</summary>
@@ -1636,18 +1636,18 @@ In `src/Dse.Core/Graph/Port.cs`, add after `IsLatchedInput`:
 ```
 
 (The `<see cref="SimulationBuilder.Build"/>` resolves because `SimulationBuilder`
-already exists in `Dse.Core`; add `using Dse.Core;` is not needed — same
+already exists in `Millrace.Core`; add `using Millrace.Core;` is not needed — same
 assembly, but the namespace differs, so write the cref as
-`<see cref="Dse.Core.SimulationBuilder.Build"/>`.)
+`<see cref="Millrace.Core.SimulationBuilder.Build"/>`.)
 
 - [ ] **Step 4: Modify `InputPort<T>`**
 
-Replace the body of `src/Dse.Core/Graph/InputPort.cs` so the class reads (keep
+Replace the body of `src/Millrace.Core/Graph/InputPort.cs` so the class reads (keep
 the existing XML docs on members that already have them; the new members carry
 the docs shown):
 
 ```csharp
-namespace Dse.Core.Graph;
+namespace Millrace.Core.Graph;
 
 public sealed class InputPort<T> : Port
     where T : unmanaged
@@ -1751,7 +1751,7 @@ public sealed class InputPort<T> : Port
 
 - [ ] **Step 5: Modify `SimulationBuilder`**
 
-In `src/Dse.Core/SimulationBuilder.cs`:
+In `src/Millrace.Core/SimulationBuilder.cs`:
 
 Add a field `private bool _built;` after `_options`.
 
@@ -1805,13 +1805,13 @@ Replace `Build()`:
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Core.Tests`
+Run: `dotnet test tests/Millrace.Core.Tests`
 Expected: PASS — the 221 existing Core tests plus 10 new. `dotnet build -c Release` — 0 warnings.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/Dse.Core/Graph/Port.cs src/Dse.Core/Graph/InputPort.cs src/Dse.Core/SimulationBuilder.cs tests/Dse.Core.Tests/ExternalInputTests.cs tests/Dse.Core.Tests/GraphFreezeTests.cs
+git add src/Millrace.Core/Graph/Port.cs src/Millrace.Core/Graph/InputPort.cs src/Millrace.Core/SimulationBuilder.cs tests/Millrace.Core.Tests/ExternalInputTests.cs tests/Millrace.Core.Tests/GraphFreezeTests.cs
 git commit -m "feat(core): let a writable tag drive an input port and freeze the graph after Build"
 ```
 
@@ -1820,10 +1820,10 @@ git commit -m "feat(core): let a writable tag drive an input port and freeze the
 ### Task 4: Tag bindings and the provider interface
 
 **Files:**
-- Create: `src/Dse.Core/Io/ITagProvider.cs`
-- Create: `src/Dse.Core/Io/EnumBits.cs`
-- Create: `src/Dse.Core/Io/TagBinding.cs`
-- Test: `tests/Dse.Core.Tests/TagBindingTests.cs`
+- Create: `src/Millrace.Core/Io/ITagProvider.cs`
+- Create: `src/Millrace.Core/Io/EnumBits.cs`
+- Create: `src/Millrace.Core/Io/TagBinding.cs`
+- Test: `tests/Millrace.Core.Tests/TagBindingTests.cs`
 
 **Interfaces:**
 - Consumes: Task 1–3 (`TagValue`, `TagQuality`, `TagKind`, `TagAccess`,
@@ -1857,15 +1857,15 @@ the assembly.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/TagBindingTests.cs`:
+`tests/Millrace.Core.Tests/TagBindingTests.cs`:
 
 ```csharp
-using Dse.Core.Graph;
-using Dse.Core.Io;
-using Dse.Io;
+using Millrace.Core.Graph;
+using Millrace.Core.Io;
+using Millrace.Io;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class TagBindingTests
 {
@@ -2053,15 +2053,15 @@ public class TagBindingTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Core.Tests --filter "FullyQualifiedName~TagBindingTests"`
-Expected: build FAILS — `Dse.Core.Io.TagBinding` does not exist.
+Run: `dotnet test tests/Millrace.Core.Tests --filter "FullyQualifiedName~TagBindingTests"`
+Expected: build FAILS — `Millrace.Core.Io.TagBinding` does not exist.
 
 - [ ] **Step 3: Write the provider interface and the enum helper**
 
-`src/Dse.Core/Io/ITagProvider.cs`:
+`src/Millrace.Core/Io/ITagProvider.cs`:
 
 ```csharp
-namespace Dse.Core.Io;
+namespace Millrace.Core.Io;
 
 /// <summary>
 /// A component that publishes tags (spec 9.1). Names are relative to the
@@ -2077,12 +2077,12 @@ public interface ITagProvider
 }
 ```
 
-`src/Dse.Core/Io/EnumBits.cs`:
+`src/Millrace.Core/Io/EnumBits.cs`:
 
 ```csharp
 using System.Runtime.CompilerServices;
 
-namespace Dse.Core.Io;
+namespace Millrace.Core.Io;
 
 /// <summary>Reads an enum's underlying integer without boxing, whatever its underlying type.</summary>
 internal static class EnumBits<TEnum>
@@ -2106,14 +2106,14 @@ internal static class EnumBits<TEnum>
 
 - [ ] **Step 4: Write `TagBinding`**
 
-`src/Dse.Core/Io/TagBinding.cs`:
+`src/Millrace.Core/Io/TagBinding.cs`:
 
 ```csharp
 using System.Globalization;
-using Dse.Core.Graph;
-using Dse.Io;
+using Millrace.Core.Graph;
+using Millrace.Io;
 
-namespace Dse.Core.Io;
+namespace Millrace.Core.Io;
 
 /// <summary>
 /// Maps a tag name to a port with the metadata the directory publishes
@@ -2361,13 +2361,13 @@ public sealed class TagBinding
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Core.Tests --filter "FullyQualifiedName~TagBindingTests"`
+Run: `dotnet test tests/Millrace.Core.Tests --filter "FullyQualifiedName~TagBindingTests"`
 Expected: PASS, 19 tests (14 facts + 5 theory rows). `dotnet build -c Release` — 0 warnings.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Core/Io tests/Dse.Core.Tests/TagBindingTests.cs
+git add src/Millrace.Core/Io tests/Millrace.Core.Tests/TagBindingTests.cs
 git commit -m "feat(core): add TagBinding factories and the ITagProvider interface"
 ```
 
@@ -2376,9 +2376,9 @@ git commit -m "feat(core): add TagBinding factories and the ITagProvider interfa
 ### Task 5: The tag directory and the I/O image
 
 **Files:**
-- Create: `src/Dse.Core/Io/TagDirectory.cs`
-- Create: `src/Dse.Core/Io/TagImage.cs`
-- Test: `tests/Dse.Core.Tests/TagImageTests.cs`
+- Create: `src/Millrace.Core/Io/TagDirectory.cs`
+- Create: `src/Millrace.Core/Io/TagImage.cs`
+- Test: `tests/Millrace.Core.Tests/TagImageTests.cs`
 
 **Interfaces:**
 - Consumes: Task 2 (`ITagDirectory`, `ITagReader`, `ITagWriter`, `DirtyMask`),
@@ -2406,17 +2406,17 @@ observed on entry (R24).
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Core.Tests/TagImageTests.cs`:
+`tests/Millrace.Core.Tests/TagImageTests.cs`:
 
 ```csharp
-using Dse.Core.Graph;
-using Dse.Core.Io;
-using Dse.Core.Logging;
-using Dse.Core.Tests.Fakes;
-using Dse.Io;
+using Millrace.Core.Graph;
+using Millrace.Core.Io;
+using Millrace.Core.Logging;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Io;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class TagImageTests
 {
@@ -2662,27 +2662,27 @@ public class TagImageTests
 }
 ```
 
-Note: `TestContexts` in `Dse.Core.Tests.Fakes` already has `Tick(long tick,
+Note: `TestContexts` in `Millrace.Core.Tests.Fakes` already has `Tick(long tick,
 double dt = 0.01, EventLog? log = null)` — check with
-`grep -n "public static TickContext Tick" tests/Dse.Core.Tests/Fakes/TestContexts.cs`;
+`grep -n "public static TickContext Tick" tests/Millrace.Core.Tests/Fakes/TestContexts.cs`;
 if its signature differs, adapt the two calls above to it rather than changing
 the fake.
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Core.Tests --filter "FullyQualifiedName~TagImageTests"`
+Run: `dotnet test tests/Millrace.Core.Tests --filter "FullyQualifiedName~TagImageTests"`
 Expected: build FAILS — `TagDirectory`, `TagImage` do not exist.
 
 - [ ] **Step 3: Write `TagDirectory`**
 
-`src/Dse.Core/Io/TagDirectory.cs`:
+`src/Millrace.Core/Io/TagDirectory.cs`:
 
 ```csharp
 using System.Globalization;
 using System.Text;
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Core.Io;
+namespace Millrace.Core.Io;
 
 /// <summary>
 /// The plant's tag directory (spec 9.1): bindings sorted by ordinal name, each
@@ -2788,14 +2788,14 @@ public sealed class TagDirectory : ITagDirectory
 
 - [ ] **Step 4: Write `TagImage`**
 
-`src/Dse.Core/Io/TagImage.cs`:
+`src/Millrace.Core/Io/TagImage.cs`:
 
 ```csharp
 using System.Collections.Concurrent;
-using Dse.Core.Contexts;
-using Dse.Io;
+using Millrace.Core.Contexts;
+using Millrace.Io;
 
-namespace Dse.Core.Io;
+namespace Millrace.Core.Io;
 
 /// <summary>
 /// The I/O image (spec 9.3): a double-buffered snapshot any thread may read,
@@ -2949,15 +2949,15 @@ public sealed class TagImage : ITagReader, ITagWriter
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Core.Tests --filter "FullyQualifiedName~TagImageTests"`
+Run: `dotnet test tests/Millrace.Core.Tests --filter "FullyQualifiedName~TagImageTests"`
 Expected: PASS, 12 tests. The thread test must pass ten times in a row:
-`for i in $(seq 10); do dotnet test tests/Dse.Core.Tests --filter "FullyQualifiedName~ReadsFromAnotherThreadSeeWholeSnapshots" --no-build || break; done`.
+`for i in $(seq 10); do dotnet test tests/Millrace.Core.Tests --filter "FullyQualifiedName~ReadsFromAnotherThreadSeeWholeSnapshots" --no-build || break; done`.
 `dotnet build -c Release` — 0 warnings.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Core/Io/TagDirectory.cs src/Dse.Core/Io/TagImage.cs tests/Dse.Core.Tests/TagImageTests.cs
+git add src/Millrace.Core/Io/TagDirectory.cs src/Millrace.Core/Io/TagImage.cs tests/Millrace.Core.Tests/TagImageTests.cs
 git commit -m "feat(core): add the tag directory and the double-buffered I/O image with its write queue"
 ```
 
@@ -2966,21 +2966,21 @@ git commit -m "feat(core): add the tag directory and the double-buffered I/O ima
 ### Task 6: Tag collection in the builder and the three real phases in `Simulation`
 
 **Files:**
-- Modify: `src/Dse.Core/Graph/CompositeComponent.cs` (two internal enumerators)
-- Modify: `src/Dse.Core/SimulationBuilder.cs`
-- Modify: `src/Dse.Core/Simulation.cs`
-- Test: `tests/Dse.Core.Tests/Fakes/Thermostat.cs`
-- Test: `tests/Dse.Core.Tests/Fakes/Pair.cs`
-- Test: `tests/Dse.Core.Tests/Fakes/FrameCollector.cs`
-- Test: `tests/Dse.Core.Tests/IoIntegrationTests.cs`
+- Modify: `src/Millrace.Core/Graph/CompositeComponent.cs` (two internal enumerators)
+- Modify: `src/Millrace.Core/SimulationBuilder.cs`
+- Modify: `src/Millrace.Core/Simulation.cs`
+- Test: `tests/Millrace.Core.Tests/Fakes/Thermostat.cs`
+- Test: `tests/Millrace.Core.Tests/Fakes/Pair.cs`
+- Test: `tests/Millrace.Core.Tests/Fakes/FrameCollector.cs`
+- Test: `tests/Millrace.Core.Tests/IoIntegrationTests.cs`
 
 **Interfaces:**
 - Consumes: Tasks 2–5.
 - Produces: `SimulationBuilder.Bind(string name, TagBinding binding)`;
   `Simulation.AttachFrameSink(ITickFrameSink sink)` (once, any time; the hub
   needs the directory, which exists only after `Build()`); validation codes
-  `DSE009` (duplicate tag name or port bound twice), `DSE010` (explicitly bound
-  writable tag on a driven input; a *declared* one degrades to read-only), `DSE011` (binding on a port outside the plant or outside the
+  `MR009` (duplicate tag name or port bound twice), `MR010` (explicitly bound
+  writable tag on a driven input; a *declared* one degrades to read-only), `MR011` (binding on a port outside the plant or outside the
   declaring component); `Simulation.IO` (`TagImage`), `Simulation.FrameSink`
   (`ITickFrameSink?`); `Simulation.Tick()` applies writes at phase 1, publishes
   at phase 4, emits a `TickFrame` at phase 5; `Simulation.Initialize()` primes
@@ -2992,21 +2992,21 @@ Collection order (R22): leaf declarations first, qualified by component id;
 then composite renames, inside-out, so an outer alias overrides an inner one;
 then explicit `Bind` calls, which add or replace. Duplicate names and explicit
 writable binds on driven inputs are validation errors, not exceptions, so a
-plant author sees them all at once with the other DSE codes. A declared
+plant author sees them all at once with the other Millrace codes. A declared
 writable binding on a driven input degrades to read-only (R23) so a plant that
 wires a controller or a test switch into a starter keeps building.
 
 - [ ] **Step 1: Write the fakes and the failing tests**
 
-`tests/Dse.Core.Tests/Fakes/Thermostat.cs`:
+`tests/Millrace.Core.Tests/Fakes/Thermostat.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
-using Dse.Core.Io;
-using Dse.Io;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
+using Millrace.Core.Io;
+using Millrace.Io;
 
-namespace Dse.Core.Tests.Fakes;
+namespace Millrace.Core.Tests.Fakes;
 
 /// <summary>
 /// Two writable inputs, one analog output with a quality source. Output is
@@ -3049,12 +3049,12 @@ public sealed class Thermostat : ComponentBase, ITagProvider
 }
 ```
 
-`tests/Dse.Core.Tests/Fakes/Pair.cs`:
+`tests/Millrace.Core.Tests/Fakes/Pair.cs`:
 
 ```csharp
-using Dse.Core.Graph;
+using Millrace.Core.Graph;
 
-namespace Dse.Core.Tests.Fakes;
+namespace Millrace.Core.Tests.Fakes;
 
 /// <summary>Two thermostats; exposes A's setpoint as SP and B's output as Out.</summary>
 public sealed class Pair : CompositeComponent
@@ -3074,12 +3074,12 @@ public sealed class Pair : CompositeComponent
 }
 ```
 
-`tests/Dse.Core.Tests/Fakes/FrameCollector.cs`:
+`tests/Millrace.Core.Tests/Fakes/FrameCollector.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Core.Tests.Fakes;
+namespace Millrace.Core.Tests.Fakes;
 
 /// <summary>Keeps every frame it is handed.</summary>
 public sealed class FrameCollector : ITickFrameSink
@@ -3090,19 +3090,19 @@ public sealed class FrameCollector : ITickFrameSink
 }
 ```
 
-`tests/Dse.Core.Tests/IoIntegrationTests.cs`:
+`tests/Millrace.Core.Tests/IoIntegrationTests.cs`:
 
 ```csharp
-using Dse.Core.Contexts;
-using Dse.Core.Graph;
-using Dse.Core.Io;
-using Dse.Core.Tests.Fakes;
-using Dse.Core.Time;
-using Dse.Core.Validation;
-using Dse.Io;
+using Millrace.Core.Contexts;
+using Millrace.Core.Graph;
+using Millrace.Core.Io;
+using Millrace.Core.Tests.Fakes;
+using Millrace.Core.Time;
+using Millrace.Core.Validation;
+using Millrace.Io;
 using Xunit;
 
-namespace Dse.Core.Tests;
+namespace Millrace.Core.Tests;
 
 public class IoIntegrationTests
 {
@@ -3191,7 +3191,7 @@ public class IoIntegrationTests
     }
 
     [Fact]
-    public void DuplicateTagNameIsDse009()
+    public void DuplicateTagNameIsMr009()
     {
         var s1 = new ConstantSource("S1", 1.0);
         var s2 = new ConstantSource("S2", 2.0);
@@ -3202,7 +3202,7 @@ public class IoIntegrationTests
             .Validate();
 
         ValidationError error = Assert.Single(result.Errors);
-        Assert.Equal("DSE009", error.Code);
+        Assert.Equal("MR009", error.Code);
         Assert.Contains("S1.Out", error.Message, StringComparison.Ordinal);
         Assert.Contains("S2.Out", error.Message, StringComparison.Ordinal);
     }
@@ -3224,7 +3224,7 @@ public class IoIntegrationTests
     }
 
     [Fact]
-    public void ExplicitlyBoundWritableTagOnADrivenInputIsDse010()
+    public void ExplicitlyBoundWritableTagOnADrivenInputIsMr010()
     {
         var t = new Thermostat("T");
         var source = new ConstantSource("S", 30.0);
@@ -3236,13 +3236,13 @@ public class IoIntegrationTests
             .Validate();
 
         ValidationError error = Assert.Single(result.Errors);
-        Assert.Equal("DSE010", error.Code);
+        Assert.Equal("MR010", error.Code);
         Assert.Contains("T.Setpoint", error.Message, StringComparison.Ordinal);
         Assert.Contains("S.Out", error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void BindOnAPortOutsideThePlantIsDse011()
+    public void BindOnAPortOutsideThePlantIsMr011()
     {
         var inside = new ConstantSource("In", 1.0);
         var outside = new ConstantSource("Out", 1.0);
@@ -3252,11 +3252,11 @@ public class IoIntegrationTests
             .Bind("X", TagBinding.Read("Out", outside.Out, "V", 0.0, 1.0))
             .Validate();
 
-        Assert.Equal("DSE011", Assert.Single(result.Errors).Code);
+        Assert.Equal("MR011", Assert.Single(result.Errors).Code);
     }
 
     [Fact]
-    public void DeclaringATagOnAnotherComponentsPortIsDse011()
+    public void DeclaringATagOnAnotherComponentsPortIsMr011()
     {
         var victim = new ConstantSource("V", 1.0);
         var naughty = new Naughty("N", victim.Out);
@@ -3264,7 +3264,7 @@ public class IoIntegrationTests
         ValidationResult result = new SimulationBuilder(Options).Add(victim).Add(naughty).Validate();
 
         ValidationError error = Assert.Single(result.Errors);
-        Assert.Equal("DSE011", error.Code);
+        Assert.Equal("MR011", error.Code);
         Assert.Contains("N", error.ComponentIds);
     }
 
@@ -3443,12 +3443,12 @@ public class IoIntegrationTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Core.Tests --filter "FullyQualifiedName~IoIntegrationTests"`
+Run: `dotnet test tests/Millrace.Core.Tests --filter "FullyQualifiedName~IoIntegrationTests"`
 Expected: build FAILS — `Bind`, `AttachFrameSink`, `Simulation.IO` do not exist.
 
 - [ ] **Step 3: Add the composite enumerators**
 
-In `src/Dse.Core/Graph/CompositeComponent.cs`, add after `Leaves()`:
+In `src/Millrace.Core/Graph/CompositeComponent.cs`, add after `Leaves()`:
 
 ```csharp
     /// <summary>Every nested composite, children before parents, this one last. Build-time only.</summary>
@@ -3478,18 +3478,18 @@ In `src/Dse.Core/Graph/CompositeComponent.cs`, add after `Leaves()`:
 
 - [ ] **Step 4: Rewrite `SimulationBuilder`**
 
-Replace `src/Dse.Core/SimulationBuilder.cs` with (existing XML docs kept where the
-member is unchanged; the DSE001–DSE008 checks are verbatim from the current file):
+Replace `src/Millrace.Core/SimulationBuilder.cs` with (existing XML docs kept where the
+member is unchanged; the MR001–MR008 checks are verbatim from the current file):
 
 ```csharp
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Io;
-using Dse.Core.Time;
-using Dse.Core.Validation;
-using Dse.Io;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Io;
+using Millrace.Core.Time;
+using Millrace.Core.Validation;
+using Millrace.Io;
 
-namespace Dse.Core;
+namespace Millrace.Core;
 
 public sealed class SimulationBuilder
 {
@@ -3579,7 +3579,7 @@ public sealed class SimulationBuilder
             if (!seen.Add(component.Id))
             {
                 errors.Add(new ValidationError(
-                    "DSE001",
+                    "MR001",
                     $"Duplicate component id '{component.Id}'. Ids must be unique across the " +
                     $"whole plant; rename one of them or place it inside a composite.",
                     [component.Id]));
@@ -3593,7 +3593,7 @@ public sealed class SimulationBuilder
                 if (port.IsMissingRequiredConnection)
                 {
                     errors.Add(new ValidationError(
-                        "DSE002",
+                        "MR002",
                         $"Input '{port.QualifiedName}' is required but nothing drives it. " +
                         $"Connect an output to it, or declare the input optional with a default.",
                         [component.Id]));
@@ -3608,7 +3608,7 @@ public sealed class SimulationBuilder
                 if (port.SourcePort is { } source && !seen.Contains(source.OwnerId))
                 {
                     errors.Add(new ValidationError(
-                        "DSE004",
+                        "MR004",
                         $"Input '{port.QualifiedName}' is driven by '{source.QualifiedName}', but " +
                         $"component '{source.OwnerId}' is not part of the plant. Add it to the " +
                         $"builder, or add the composite that contains it.",
@@ -3621,7 +3621,7 @@ public sealed class SimulationBuilder
         {
             string path = string.Join(" -> ", cycle.Append(cycle.Count > 0 ? cycle[0] : string.Empty));
             errors.Add(new ValidationError(
-                "DSE003",
+                "MR003",
                 $"Algebraic loop: {path}. Insert a UnitDelay on one connection in the cycle to " +
                 $"break it; one tick of lag is physically irrelevant and makes the solve order " +
                 $"unambiguous.",
@@ -3659,7 +3659,7 @@ public sealed class SimulationBuilder
                 if (!string.Equals(binding.Port.OwnerId, component.Id, StringComparison.Ordinal))
                 {
                     errors.Add(new ValidationError(
-                        "DSE011",
+                        "MR011",
                         $"Component '{component.Id}' declares tag '{binding.Name}' on port " +
                         $"'{binding.Port.QualifiedName}', which belongs to '{binding.Port.OwnerId}'. " +
                         $"A component declares tags on its own ports only.",
@@ -3671,7 +3671,7 @@ public sealed class SimulationBuilder
                 if (byPort.TryGetValue(binding.Port, out TagBinding? first))
                 {
                     errors.Add(new ValidationError(
-                        "DSE009",
+                        "MR009",
                         $"Port '{binding.Port.QualifiedName}' is bound to two tags ('{first.Name}' and " +
                         $"'{qualified.Name}') by '{component.Id}'. Bind each port once.",
                         [component.Id]));
@@ -3702,7 +3702,7 @@ public sealed class SimulationBuilder
             if (!componentIds.Contains(binding.Port.OwnerId))
             {
                 errors.Add(new ValidationError(
-                    "DSE011",
+                    "MR011",
                     $"Tag '{name}' binds port '{binding.Port.QualifiedName}', but component " +
                     $"'{binding.Port.OwnerId}' is not part of the plant. Add it to the builder.",
                     [binding.Port.OwnerId]));
@@ -3726,7 +3726,7 @@ public sealed class SimulationBuilder
             if (byName.TryGetValue(binding.Name, out TagBinding? other))
             {
                 errors.Add(new ValidationError(
-                    "DSE009",
+                    "MR009",
                     $"Tag '{binding.Name}' is bound to both '{other.Port.QualifiedName}' and " +
                     $"'{binding.Port.QualifiedName}'. Rename one with Bind or a composite alias.",
                     [other.Port.OwnerId, binding.Port.OwnerId]));
@@ -3738,7 +3738,7 @@ public sealed class SimulationBuilder
                 if (explicitPorts.Contains(port))
                 {
                     errors.Add(new ValidationError(
-                        "DSE010",
+                        "MR010",
                         $"Tag '{binding.Name}' would drive input '{port.QualifiedName}', but " +
                         $"'{source.QualifiedName}' already drives it. Remove the connection, or bind a " +
                         $"read-only tag instead.",
@@ -3784,9 +3784,9 @@ public sealed class SimulationBuilder
 
 - [ ] **Step 5: Wire `Simulation`**
 
-In `src/Dse.Core/Simulation.cs`:
+In `src/Millrace.Core/Simulation.cs`:
 
-Add `using Dse.Core.Io;` and `using Dse.Io;`.
+Add `using Millrace.Core.Io;` and `using Millrace.Io;`.
 
 Change the constructor signature and body:
 
@@ -3893,16 +3893,16 @@ Replace `Tick()` and delete the two static stubs `PublishIo` and `EmitFrame`:
 
 - [ ] **Step 6: Run the whole Core suite**
 
-Run: `dotnet test tests/Dse.Core.Tests`
+Run: `dotnet test tests/Millrace.Core.Tests`
 Expected: PASS — every existing test plus 20 new in `IoIntegrationTests`.
-Then `dotnet test` at the root: `Dse.Components.Tests` must still pass (no
+Then `dotnet test` at the root: `Millrace.Components.Tests` must still pass (no
 component declares tags yet, so every directory is empty and every sim behaves
 as before). `dotnet build -c Release` — 0 warnings.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/Dse.Core tests/Dse.Core.Tests
+git add src/Millrace.Core tests/Millrace.Core.Tests
 git commit -m "feat(core): collect tag bindings at Build and run the write, publish and frame phases"
 ```
 
@@ -3911,13 +3911,13 @@ git commit -m "feat(core): collect tag bindings at Build and run the write, publ
 ### Task 7: Instrument quality on the contract type, `Uncertain`, and instrument tags
 
 **Files:**
-- Delete: `src/Dse.Components/Instruments/InstrumentHealth.cs`
-- Modify: `src/Dse.Components/Instruments/InstrumentBase.cs`
-- Modify: `src/Dse.Components/Instruments/ZeroSpeedSwitch.cs`
-- Modify: `src/Dse.Components/Instruments/PartCounter.cs`
-- Modify: `tests/Dse.Components.Tests/InstrumentBaseTests.cs` (assertions only)
-- Modify: `tests/Dse.Components.Tests/SignalInstrumentTests.cs` (one assertion)
-- Test: `tests/Dse.Components.Tests/InstrumentQualityTests.cs`
+- Delete: `src/Millrace.Components/Instruments/InstrumentHealth.cs`
+- Modify: `src/Millrace.Components/Instruments/InstrumentBase.cs`
+- Modify: `src/Millrace.Components/Instruments/ZeroSpeedSwitch.cs`
+- Modify: `src/Millrace.Components/Instruments/PartCounter.cs`
+- Modify: `tests/Millrace.Components.Tests/InstrumentBaseTests.cs` (assertions only)
+- Modify: `tests/Millrace.Components.Tests/SignalInstrumentTests.cs` (one assertion)
+- Test: `tests/Millrace.Components.Tests/InstrumentQualityTests.cs`
 
 **Interfaces:**
 - Consumes: `TagQuality`, `QualityDetail` (Task 1), `TagBinding`, `ITagProvider`
@@ -3936,26 +3936,26 @@ reads `Good`.
 
 - [ ] **Step 1: Update the existing assertions and write the failing tests**
 
-In `tests/Dse.Components.Tests/InstrumentBaseTests.cs` add `using Dse.Io;` and
+In `tests/Millrace.Components.Tests/InstrumentBaseTests.cs` add `using Millrace.Io;` and
 replace every `InstrumentHealth.Good` with `TagQuality.Good` and every
 `InstrumentHealth.Bad` with `TagQuality.Bad(QualityDetail.SensorFailure)` (six
 occurrences at the current lines 47, 56, 117, 130, 135, 139). In
-`tests/Dse.Components.Tests/SignalInstrumentTests.cs` add `using Dse.Io;` and
+`tests/Millrace.Components.Tests/SignalInstrumentTests.cs` add `using Millrace.Io;` and
 make the same replacement at line 43.
 
-`tests/Dse.Components.Tests/InstrumentQualityTests.cs`:
+`tests/Millrace.Components.Tests/InstrumentQualityTests.cs`:
 
 ```csharp
-using Dse.Components.Instruments;
-using Dse.Components.Tests.Fakes;
-using Dse.Core;
-using Dse.Core.Faults;
-using Dse.Core.Io;
-using Dse.Core.Time;
-using Dse.Io;
+using Millrace.Components.Instruments;
+using Millrace.Components.Tests.Fakes;
+using Millrace.Core;
+using Millrace.Core.Faults;
+using Millrace.Core.Io;
+using Millrace.Core.Time;
+using Millrace.Io;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 public class InstrumentQualityTests
 {
@@ -4044,7 +4044,7 @@ public class InstrumentQualityTests
     [Fact]
     public void ThePartCounterDeclaresCountAndPresent()
     {
-        var belt = new Dse.Core.Flow.DiscreteBelt("B", length: 2.0, maxSpeed: 1.0);
+        var belt = new Millrace.Core.Flow.DiscreteBelt("B", length: 2.0, maxSpeed: 1.0);
         var counter = new PartCounter("PC", belt, positionM: 1.0, windowM: 0.1);
 
         Assert.Equal(new[] { ("Count", TagKind.Int64, "count"), ("Present", TagKind.Bool, string.Empty) },
@@ -4055,16 +4055,16 @@ public class InstrumentQualityTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --filter "FullyQualifiedName~InstrumentQualityTests"`
+Run: `dotnet test tests/Millrace.Components.Tests --filter "FullyQualifiedName~InstrumentQualityTests"`
 Expected: build FAILS — `Health` is `OutputPort<InstrumentHealth>`, `DescribeTags` missing.
 
 - [ ] **Step 3: Change `InstrumentBase`**
 
-Delete `src/Dse.Components/Instruments/InstrumentHealth.cs`.
+Delete `src/Millrace.Components/Instruments/InstrumentHealth.cs`.
 
-In `src/Dse.Components/Instruments/InstrumentBase.cs`:
+In `src/Millrace.Components/Instruments/InstrumentBase.cs`:
 
-Add `using Dse.Core.Io;` and `using Dse.Io;`. Change the class declaration to
+Add `using Millrace.Core.Io;` and `using Millrace.Io;`. Change the class declaration to
 `public abstract class InstrumentBase : ComponentBase, IFaultTarget, ITagProvider`.
 
 Change the port: `Health = AddOutput<TagQuality>("Health");` and
@@ -4123,7 +4123,7 @@ Add after `OnEvaluated`:
 
 - [ ] **Step 4: Add the tags on the two instruments with extra outputs**
 
-`src/Dse.Components/Instruments/ZeroSpeedSwitch.cs`: add `using Dse.Core.Io;`
+`src/Millrace.Components/Instruments/ZeroSpeedSwitch.cs`: add `using Millrace.Core.Io;`
 and, after `DelaySeconds`:
 
 ```csharp
@@ -4133,7 +4133,7 @@ and, after `DelaySeconds`:
         base.DescribeTags().Append(TagBinding.Read("Stopped", Stopped, "Below the threshold for the delay"));
 ```
 
-`src/Dse.Components/Instruments/PartCounter.cs`: add `using Dse.Core.Io;`,
+`src/Millrace.Components/Instruments/PartCounter.cs`: add `using Millrace.Core.Io;`,
 declare `public sealed class PartCounter : ComponentBase, IFaultTarget, ITagProvider`,
 and add after `SupportedFaults`:
 
@@ -4147,7 +4147,7 @@ and add after `SupportedFaults`:
 
 - [ ] **Step 5: Run the Components suite**
 
-Run: `dotnet test tests/Dse.Components.Tests`
+Run: `dotnet test tests/Millrace.Components.Tests`
 Expected: PASS — the 91 existing tests (assertions updated) plus 6 new.
 `dotnet build -c Release` — 0 warnings. `grep -rn InstrumentHealth src tests
 docs/architecture.md` must return nothing (update `docs/architecture.md` if it
@@ -4156,7 +4156,7 @@ names the enum).
 - [ ] **Step 6: Commit**
 
 ```bash
-git add -A src/Dse.Components/Instruments tests/Dse.Components.Tests docs/architecture.md
+git add -A src/Millrace.Components/Instruments tests/Millrace.Components.Tests docs/architecture.md
 git commit -m "feat(components): report instrument health as TagQuality with Uncertain on saturation, and declare instrument tags"
 ```
 
@@ -4165,14 +4165,14 @@ git commit -m "feat(components): report instrument health as TagQuality with Unc
 ### Task 8: Tags across the library and the conveyor driven through the image
 
 **Files:**
-- Modify: `src/Dse.Components/Mechanical/MotorStarter.cs`
-- Modify: `src/Dse.Components/Safety/SafetySwitch.cs`
-- Modify: `src/Dse.Components/Safety/SafetyRelay.cs`
-- Modify: `src/Dse.Components/Flow/BulkSource.cs`, `BulkSink.cs`, `ItemSource.cs`,
+- Modify: `src/Millrace.Components/Mechanical/MotorStarter.cs`
+- Modify: `src/Millrace.Components/Safety/SafetySwitch.cs`
+- Modify: `src/Millrace.Components/Safety/SafetyRelay.cs`
+- Modify: `src/Millrace.Components/Flow/BulkSource.cs`, `BulkSink.cs`, `ItemSource.cs`,
   `ItemSink.cs`, `TransferChute.cs`, `Former.cs`, `BulkProcessUnit.cs`,
   `ItemProcessUnit.cs`
-- Test: `tests/Dse.Components.Tests/ComponentTagTests.cs`
-- Test: `tests/Dse.Components.Tests/ConveyorIoTests.cs`
+- Test: `tests/Millrace.Components.Tests/ComponentTagTests.cs`
+- Test: `tests/Millrace.Components.Tests/ConveyorIoTests.cs`
 
 **Interfaces:**
 - Consumes: Tasks 4–7.
@@ -4222,18 +4222,18 @@ the tests keep passing untouched.
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Components.Tests/ComponentTagTests.cs`:
+`tests/Millrace.Components.Tests/ComponentTagTests.cs`:
 
 ```csharp
-using Dse.Components.Flow;
-using Dse.Components.Mechanical;
-using Dse.Components.Safety;
-using Dse.Core.Flow;
-using Dse.Core.Io;
-using Dse.Io;
+using Millrace.Components.Flow;
+using Millrace.Components.Mechanical;
+using Millrace.Components.Safety;
+using Millrace.Core.Flow;
+using Millrace.Core.Io;
+using Millrace.Io;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 public class ComponentTagTests
 {
@@ -4323,20 +4323,20 @@ public class ComponentTagTests
 }
 ```
 
-`tests/Dse.Components.Tests/ConveyorIoTests.cs`:
+`tests/Millrace.Components.Tests/ConveyorIoTests.cs`:
 
 ```csharp
-using Dse.Components.Conveyors;
-using Dse.Components.Flow;
-using Dse.Components.Instruments;
-using Dse.Components.Mechanical;
-using Dse.Core;
-using Dse.Core.Flow;
-using Dse.Core.Time;
-using Dse.Io;
+using Millrace.Components.Conveyors;
+using Millrace.Components.Flow;
+using Millrace.Components.Instruments;
+using Millrace.Components.Mechanical;
+using Millrace.Core;
+using Millrace.Core.Flow;
+using Millrace.Core.Time;
+using Millrace.Io;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 /// <summary>The conveyor operated the way a SCADA would: through tags only.</summary>
 public class ConveyorIoTests
@@ -4471,16 +4471,16 @@ public class ConveyorIoTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --filter "FullyQualifiedName~ComponentTagTests|FullyQualifiedName~ConveyorIoTests"`
+Run: `dotnet test tests/Millrace.Components.Tests --filter "FullyQualifiedName~ComponentTagTests|FullyQualifiedName~ConveyorIoTests"`
 Expected: build FAILS — `MotorStarter` is not an `ITagProvider`.
 
 - [ ] **Step 3: Declare the tags**
 
-Each file gains `using Dse.Core.Io;`, adds `ITagProvider` to its base list, and
+Each file gains `using Millrace.Core.Io;`, adds `ITagProvider` to its base list, and
 a `DescribeTags` method placed after `SupportedFaults` (or after the last port
 property where there is no fault list).
 
-`src/Dse.Components/Mechanical/MotorStarter.cs`:
+`src/Millrace.Components/Mechanical/MotorStarter.cs`:
 
 ```csharp
     public IEnumerable<TagBinding> DescribeTags() =>
@@ -4492,7 +4492,7 @@ property where there is no fault list).
     ];
 ```
 
-`src/Dse.Components/Safety/SafetySwitch.cs` (the abstract base, so both
+`src/Millrace.Components/Safety/SafetySwitch.cs` (the abstract base, so both
 `EStop` and `PullKey` inherit it):
 
 ```csharp
@@ -4503,7 +4503,7 @@ property where there is no fault list).
     ];
 ```
 
-`src/Dse.Components/Safety/SafetyRelay.cs`:
+`src/Millrace.Components/Safety/SafetyRelay.cs`:
 
 ```csharp
     public IEnumerable<TagBinding> DescribeTags() =>
@@ -4513,7 +4513,7 @@ property where there is no fault list).
     ];
 ```
 
-`src/Dse.Components/Flow/BulkSource.cs` (the constructor already stores the
+`src/Millrace.Components/Flow/BulkSource.cs` (the constructor already stores the
 capacity in `HopperCapacityKg`):
 
 ```csharp
@@ -4527,7 +4527,7 @@ capacity in `HopperCapacityKg`):
     ];
 ```
 
-`src/Dse.Components/Flow/BulkSink.cs`:
+`src/Millrace.Components/Flow/BulkSink.cs`:
 
 ```csharp
     public IEnumerable<TagBinding> DescribeTags() =>
@@ -4538,7 +4538,7 @@ capacity in `HopperCapacityKg`):
     ];
 ```
 
-`src/Dse.Components/Flow/ItemSource.cs`:
+`src/Millrace.Components/Flow/ItemSource.cs`:
 
 ```csharp
     public IEnumerable<TagBinding> DescribeTags() =>
@@ -4548,7 +4548,7 @@ capacity in `HopperCapacityKg`):
     ];
 ```
 
-`src/Dse.Components/Flow/ItemSink.cs`:
+`src/Millrace.Components/Flow/ItemSink.cs`:
 
 ```csharp
     public IEnumerable<TagBinding> DescribeTags() =>
@@ -4558,7 +4558,7 @@ capacity in `HopperCapacityKg`):
     ];
 ```
 
-`src/Dse.Components/Flow/TransferChute.cs`:
+`src/Millrace.Components/Flow/TransferChute.cs`:
 
 ```csharp
     public IEnumerable<TagBinding> DescribeTags() =>
@@ -4568,7 +4568,7 @@ capacity in `HopperCapacityKg`):
     ];
 ```
 
-`src/Dse.Components/Flow/Former.cs`:
+`src/Millrace.Components/Flow/Former.cs`:
 
 ```csharp
     public IEnumerable<TagBinding> DescribeTags() =>
@@ -4579,7 +4579,7 @@ capacity in `HopperCapacityKg`):
     ];
 ```
 
-`src/Dse.Components/Flow/BulkProcessUnit.cs`:
+`src/Millrace.Components/Flow/BulkProcessUnit.cs`:
 
 ```csharp
     public IEnumerable<TagBinding> DescribeTags() =>
@@ -4590,7 +4590,7 @@ capacity in `HopperCapacityKg`):
     ];
 ```
 
-`src/Dse.Components/Flow/ItemProcessUnit.cs`:
+`src/Millrace.Components/Flow/ItemProcessUnit.cs`:
 
 ```csharp
     public IEnumerable<TagBinding> DescribeTags() =>
@@ -4614,23 +4614,23 @@ the same — if they do not, the write path is wrong, not the window.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/Dse.Components tests/Dse.Components.Tests
+git add src/Millrace.Components tests/Millrace.Components.Tests
 git commit -m "feat(components): declare tags on the starter, safety circuit, sources, sinks and process units"
 ```
 
 ---
 
-### Task 9: The `Dse.Realtime` project and the live state engine
+### Task 9: The `Millrace.Realtime` project and the live state engine
 
 **Files:**
-- Create: `src/Dse.Realtime/Dse.Realtime.csproj`
-- Create: `src/Dse.Realtime/TagState.cs`
-- Create: `src/Dse.Realtime/StateSnapshot.cs`
-- Create: `src/Dse.Realtime/LiveState.cs`
-- Create: `tests/Dse.Realtime.Tests/Dse.Realtime.Tests.csproj`
-- Test: `tests/Dse.Realtime.Tests/Fakes/Frames.cs`
-- Test: `tests/Dse.Realtime.Tests/LiveStateTests.cs`
-- Modify: `Dse.sln` (add both projects)
+- Create: `src/Millrace.Realtime/Millrace.Realtime.csproj`
+- Create: `src/Millrace.Realtime/TagState.cs`
+- Create: `src/Millrace.Realtime/StateSnapshot.cs`
+- Create: `src/Millrace.Realtime/LiveState.cs`
+- Create: `tests/Millrace.Realtime.Tests/Millrace.Realtime.Tests.csproj`
+- Test: `tests/Millrace.Realtime.Tests/Fakes/Frames.cs`
+- Test: `tests/Millrace.Realtime.Tests/LiveStateTests.cs`
+- Modify: `Millrace.sln` (add both projects)
 
 **Interfaces:**
 - Consumes: `ITagDirectory`, `TagValue`, `TickFrame`, `DiscreteEvent` (Tasks 1–2).
@@ -4654,7 +4654,7 @@ events so a late joiner sees what just happened.
 
 - [ ] **Step 1: Create the projects and add them to the solution**
 
-`src/Dse.Realtime/Dse.Realtime.csproj`:
+`src/Millrace.Realtime/Millrace.Realtime.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -4666,19 +4666,19 @@ events so a late joiner sees what just happened.
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Dse.Io.Abstractions\Dse.Io.Abstractions.csproj" />
+    <ProjectReference Include="..\Millrace.Io.Abstractions\Millrace.Io.Abstractions.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Dse.Realtime.Tests" />
+    <InternalsVisibleTo Include="Millrace.Realtime.Tests" />
   </ItemGroup>
 
 </Project>
 ```
 
-`tests/Dse.Realtime.Tests/Dse.Realtime.Tests.csproj` (the `Dse.Components`
+`tests/Millrace.Realtime.Tests/Millrace.Realtime.Tests.csproj` (the `Millrace.Components`
 reference is test-only, for Task 13's end-to-end test; the shipping project
-never references `Dse.Core`):
+never references `Millrace.Core`):
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -4702,9 +4702,9 @@ never references `Dse.Core`):
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Dse.Realtime\Dse.Realtime.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Realtime\Millrace.Realtime.csproj" />
     <!-- Test-only: the end-to-end test drives a real conveyor through the hub. -->
-    <ProjectReference Include="..\..\src\Dse.Components\Dse.Components.csproj" />
+    <ProjectReference Include="..\..\src\Millrace.Components\Millrace.Components.csproj" />
   </ItemGroup>
 
 </Project>
@@ -4713,18 +4713,18 @@ never references `Dse.Core`):
 Run:
 
 ```bash
-dotnet sln Dse.sln add src/Dse.Realtime/Dse.Realtime.csproj --solution-folder src
-dotnet sln Dse.sln add tests/Dse.Realtime.Tests/Dse.Realtime.Tests.csproj --solution-folder tests
+dotnet sln Millrace.sln add src/Millrace.Realtime/Millrace.Realtime.csproj --solution-folder src
+dotnet sln Millrace.sln add tests/Millrace.Realtime.Tests/Millrace.Realtime.Tests.csproj --solution-folder tests
 ```
 
 - [ ] **Step 2: Write the frame fakes and the failing tests**
 
-`tests/Dse.Realtime.Tests/Fakes/Frames.cs`:
+`tests/Millrace.Realtime.Tests/Fakes/Frames.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Realtime.Tests.Fakes;
+namespace Millrace.Realtime.Tests.Fakes;
 
 /// <summary>A three-tag directory and hand-built frames over it: A.Speed (double), A.Run (bool), B.Count (long).</summary>
 public static class Frames
@@ -4809,13 +4809,13 @@ public sealed class ArrayDirectory : ITagDirectory
 }
 ```
 
-`tests/Dse.Realtime.Tests/LiveStateTests.cs`:
+`tests/Millrace.Realtime.Tests/LiveStateTests.cs`:
 
 ```csharp
-using Dse.Io;
-using Dse.Realtime.Tests.Fakes;
+using Millrace.Io;
+using Millrace.Realtime.Tests.Fakes;
 
-namespace Dse.Realtime.Tests;
+namespace Millrace.Realtime.Tests;
 
 public class LiveStateTests
 {
@@ -4913,28 +4913,28 @@ public class LiveStateTests
 
 - [ ] **Step 3: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Realtime.Tests`
+Run: `dotnet test tests/Millrace.Realtime.Tests`
 Expected: build FAILS — `LiveState` does not exist.
 
 - [ ] **Step 4: Write the state engine**
 
-`src/Dse.Realtime/TagState.cs`:
+`src/Millrace.Realtime/TagState.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Realtime;
+namespace Millrace.Realtime;
 
 /// <summary>One tag's current truth (spec 10.3): value with quality, and when it last changed.</summary>
 public readonly record struct TagState(TagValue Value, long LastChangeTick, DateTimeOffset LastChangeTime);
 ```
 
-`src/Dse.Realtime/StateSnapshot.cs`:
+`src/Millrace.Realtime/StateSnapshot.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Realtime;
+namespace Millrace.Realtime;
 
 /// <summary>An immutable copy of the live state at one tick: what a late joiner receives first.</summary>
 public sealed class StateSnapshot
@@ -4963,12 +4963,12 @@ public sealed class StateSnapshot
 }
 ```
 
-`src/Dse.Realtime/LiveState.cs`:
+`src/Millrace.Realtime/LiveState.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Realtime;
+namespace Millrace.Realtime;
 
 /// <summary>
 /// The live state engine (spec 10.3): current value, quality and last-change
@@ -5127,16 +5127,16 @@ public sealed class LiveState
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Realtime.Tests`
+Run: `dotnet test tests/Millrace.Realtime.Tests`
 Expected: PASS, 7 tests. `dotnet build -c Release` — 0 warnings. Confirm the
-dependency rule: `grep -n ProjectReference src/Dse.Realtime/Dse.Realtime.csproj`
-shows `Dse.Io.Abstractions` only.
+dependency rule: `grep -n ProjectReference src/Millrace.Realtime/Millrace.Realtime.csproj`
+shows `Millrace.Io.Abstractions` only.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add Dse.sln src/Dse.Realtime tests/Dse.Realtime.Tests
-git commit -m "feat(realtime): add the Dse.Realtime project with the live state engine"
+git add Millrace.sln src/Millrace.Realtime tests/Millrace.Realtime.Tests
+git commit -m "feat(realtime): add the Millrace.Realtime project with the live state engine"
 ```
 
 ---
@@ -5144,16 +5144,16 @@ git commit -m "feat(realtime): add the Dse.Realtime project with the live state 
 ### Task 10: The hub — ring, pump, no-gap subscribe, and the two backpressure policies
 
 **Files:**
-- Create: `src/Dse.Realtime/FrameRing.cs`
-- Create: `src/Dse.Realtime/BackpressurePolicy.cs`
-- Create: `src/Dse.Realtime/SubscriptionOptions.cs`
-- Create: `src/Dse.Realtime/TagChange.cs`
-- Create: `src/Dse.Realtime/FrameDelta.cs`
-- Create: `src/Dse.Realtime/DeltaAccumulator.cs`
-- Create: `src/Dse.Realtime/Subscription.cs`
-- Create: `src/Dse.Realtime/RealtimeHub.cs`
-- Test: `tests/Dse.Realtime.Tests/RealtimeHubTests.cs`
-- Test: `tests/Dse.Realtime.Tests/SubscriptionPolicyTests.cs`
+- Create: `src/Millrace.Realtime/FrameRing.cs`
+- Create: `src/Millrace.Realtime/BackpressurePolicy.cs`
+- Create: `src/Millrace.Realtime/SubscriptionOptions.cs`
+- Create: `src/Millrace.Realtime/TagChange.cs`
+- Create: `src/Millrace.Realtime/FrameDelta.cs`
+- Create: `src/Millrace.Realtime/DeltaAccumulator.cs`
+- Create: `src/Millrace.Realtime/Subscription.cs`
+- Create: `src/Millrace.Realtime/RealtimeHub.cs`
+- Test: `tests/Millrace.Realtime.Tests/RealtimeHubTests.cs`
+- Test: `tests/Millrace.Realtime.Tests/SubscriptionPolicyTests.cs`
 
 **Interfaces:**
 - Consumes: Task 9.
@@ -5195,13 +5195,13 @@ survives a ring gap. Consumers pull with `TryRead` (R27).
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Realtime.Tests/RealtimeHubTests.cs`:
+`tests/Millrace.Realtime.Tests/RealtimeHubTests.cs`:
 
 ```csharp
-using Dse.Io;
-using Dse.Realtime.Tests.Fakes;
+using Millrace.Io;
+using Millrace.Realtime.Tests.Fakes;
 
-namespace Dse.Realtime.Tests;
+namespace Millrace.Realtime.Tests;
 
 public class RealtimeHubTests
 {
@@ -5415,13 +5415,13 @@ In `FramesAlreadyInTheRingAtSubscribeTimeAreDelivered` the initial snapshot
 holds the defaults (0.0, false, 0), so frame 0 (1.0, false, 0) differs in
 `Speed` only — hence one change.
 
-`tests/Dse.Realtime.Tests/SubscriptionPolicyTests.cs`:
+`tests/Millrace.Realtime.Tests/SubscriptionPolicyTests.cs`:
 
 ```csharp
-using Dse.Io;
-using Dse.Realtime.Tests.Fakes;
+using Millrace.Io;
+using Millrace.Realtime.Tests.Fakes;
 
-namespace Dse.Realtime.Tests;
+namespace Millrace.Realtime.Tests;
 
 public class SubscriptionPolicyTests
 {
@@ -5546,17 +5546,17 @@ public class SubscriptionPolicyTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Realtime.Tests`
+Run: `dotnet test tests/Millrace.Realtime.Tests`
 Expected: build FAILS — `RealtimeHub`, `Subscription` do not exist.
 
 - [ ] **Step 3: Write the ring and the small types**
 
-`src/Dse.Realtime/FrameRing.cs`:
+`src/Millrace.Realtime/FrameRing.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Realtime;
+namespace Millrace.Realtime;
 
 /// <summary>
 /// A single-producer, single-consumer ring of frames. The producer owns
@@ -5614,10 +5614,10 @@ internal sealed class FrameRing
 }
 ```
 
-`src/Dse.Realtime/BackpressurePolicy.cs`:
+`src/Millrace.Realtime/BackpressurePolicy.cs`:
 
 ```csharp
-namespace Dse.Realtime;
+namespace Millrace.Realtime;
 
 /// <summary>What a subscription does when its consumer falls behind (spec 10.5).</summary>
 public enum BackpressurePolicy
@@ -5630,10 +5630,10 @@ public enum BackpressurePolicy
 }
 ```
 
-`src/Dse.Realtime/SubscriptionOptions.cs`:
+`src/Millrace.Realtime/SubscriptionOptions.cs`:
 
 ```csharp
-namespace Dse.Realtime;
+namespace Millrace.Realtime;
 
 /// <summary>What a subscriber declares when it subscribes.</summary>
 public sealed record SubscriptionOptions
@@ -5650,23 +5650,23 @@ public sealed record SubscriptionOptions
 }
 ```
 
-`src/Dse.Realtime/TagChange.cs`:
+`src/Millrace.Realtime/TagChange.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Realtime;
+namespace Millrace.Realtime;
 
 /// <summary>One tag's new value in a delta.</summary>
 public readonly record struct TagChange(int Index, TagValue Value);
 ```
 
-`src/Dse.Realtime/FrameDelta.cs`:
+`src/Millrace.Realtime/FrameDelta.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Realtime;
+namespace Millrace.Realtime;
 
 /// <summary>
 /// What a subscriber reads: the tags that changed since its previous delta
@@ -5681,12 +5681,12 @@ public sealed record FrameDelta(
     IReadOnlyList<DiscreteEvent> Events);
 ```
 
-`src/Dse.Realtime/DeltaAccumulator.cs`:
+`src/Millrace.Realtime/DeltaAccumulator.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Realtime;
+namespace Millrace.Realtime;
 
 /// <summary>
 /// Merges successive changes into one pending delta: latest value per tag,
@@ -5769,12 +5769,12 @@ internal sealed class DeltaAccumulator
 
 - [ ] **Step 4: Write `Subscription`**
 
-`src/Dse.Realtime/Subscription.cs`:
+`src/Millrace.Realtime/Subscription.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Realtime;
+namespace Millrace.Realtime;
 
 /// <summary>
 /// One consumer's view of the frame stream (spec 10.2, 10.5, 10.7). The hub
@@ -6044,12 +6044,12 @@ public sealed class Subscription : IDisposable
 
 - [ ] **Step 5: Write `RealtimeHub`**
 
-`src/Dse.Realtime/RealtimeHub.cs`:
+`src/Millrace.Realtime/RealtimeHub.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Realtime;
+namespace Millrace.Realtime;
 
 /// <summary>
 /// The real-time event engine (spec 10.1, 10.2): owns the ring the simulation
@@ -6205,15 +6205,15 @@ public sealed class RealtimeHub : ITickFrameSink, IDisposable
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Realtime.Tests`
+Run: `dotnet test tests/Millrace.Realtime.Tests`
 Expected: PASS, 24 tests. Run the threaded test ten times:
-`for i in $(seq 10); do dotnet test tests/Dse.Realtime.Tests --filter "FullyQualifiedName~ProducerAndPumpOnDifferentThreads" --no-build || break; done`.
+`for i in $(seq 10); do dotnet test tests/Millrace.Realtime.Tests --filter "FullyQualifiedName~ProducerAndPumpOnDifferentThreads" --no-build || break; done`.
 `dotnet build -c Release` — 0 warnings.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/Dse.Realtime tests/Dse.Realtime.Tests
+git add src/Millrace.Realtime tests/Millrace.Realtime.Tests
 git commit -m "feat(realtime): add the hub with its ring, pump, no-gap subscribe and the Conflate and Lossless policies"
 ```
 
@@ -6222,9 +6222,9 @@ git commit -m "feat(realtime): add the hub with its ring, pump, no-gap subscribe
 ### Task 11: Tag filters, deadbands and decimation
 
 **Files:**
-- Modify: `src/Dse.Realtime/SubscriptionOptions.cs`
-- Modify: `src/Dse.Realtime/Subscription.cs`
-- Test: `tests/Dse.Realtime.Tests/SubscriptionFilterTests.cs`
+- Modify: `src/Millrace.Realtime/SubscriptionOptions.cs`
+- Modify: `src/Millrace.Realtime/Subscription.cs`
+- Test: `tests/Millrace.Realtime.Tests/SubscriptionFilterTests.cs`
 
 **Interfaces:**
 - Consumes: Task 10.
@@ -6248,13 +6248,13 @@ newest frame folded in (spec 10.8).
 
 - [ ] **Step 1: Write the failing tests**
 
-`tests/Dse.Realtime.Tests/SubscriptionFilterTests.cs`:
+`tests/Millrace.Realtime.Tests/SubscriptionFilterTests.cs`:
 
 ```csharp
-using Dse.Io;
-using Dse.Realtime.Tests.Fakes;
+using Millrace.Io;
+using Millrace.Realtime.Tests.Fakes;
 
-namespace Dse.Realtime.Tests;
+namespace Millrace.Realtime.Tests;
 
 public class SubscriptionFilterTests
 {
@@ -6456,15 +6456,15 @@ check that frame 12 is still held in the window and not yet readable.
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Realtime.Tests --filter "FullyQualifiedName~SubscriptionFilterTests"`
+Run: `dotnet test tests/Millrace.Realtime.Tests --filter "FullyQualifiedName~SubscriptionFilterTests"`
 Expected: build FAILS — `Prefixes`, `Deadbands`, `Decimation` do not exist.
 
 - [ ] **Step 3: Extend the options**
 
-Replace `src/Dse.Realtime/SubscriptionOptions.cs` with:
+Replace `src/Millrace.Realtime/SubscriptionOptions.cs` with:
 
 ```csharp
-namespace Dse.Realtime;
+namespace Millrace.Realtime;
 
 /// <summary>What a subscriber declares when it subscribes (spec 10.2, 10.5, 10.8).</summary>
 public sealed record SubscriptionOptions
@@ -6507,7 +6507,7 @@ public sealed record SubscriptionOptions
 
 - [ ] **Step 4: Resolve the options in `Subscription`**
 
-In `src/Dse.Realtime/Subscription.cs`:
+In `src/Millrace.Realtime/Subscription.cs`:
 
 Add fields after `_scratch`:
 
@@ -6573,7 +6573,7 @@ In the constructor, after the `_lastSent` loop and before the policy branch:
         }
 ```
 
-Add `using Dse.Io;` is already present. Add the helper at the end of the class:
+Add `using Millrace.Io;` is already present. Add the helper at the end of the class:
 
 ```csharp
     private static bool Matches(string name, IReadOnlyList<string> prefixes)
@@ -6687,13 +6687,13 @@ to avoid copying the flushed array).
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Realtime.Tests`
+Run: `dotnet test tests/Millrace.Realtime.Tests`
 Expected: PASS, 35 tests. `dotnet build -c Release` — 0 warnings.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Realtime tests/Dse.Realtime.Tests
+git add src/Millrace.Realtime tests/Millrace.Realtime.Tests
 git commit -m "feat(realtime): add per-subscriber prefix filters, deadbands and decimation"
 ```
 
@@ -6702,19 +6702,19 @@ git commit -m "feat(realtime): add per-subscriber prefix filters, deadbands and 
 ### Task 12: The dispatcher thread and the command bus
 
 **Files:**
-- Create: `src/Dse.Realtime/DispatcherThread.cs`
-- Create: `src/Dse.Realtime/CommandOutcome.cs`
-- Create: `src/Dse.Realtime/TagCommand.cs`
-- Create: `src/Dse.Realtime/ICommandRecorder.cs`
-- Create: `src/Dse.Realtime/CommandBus.cs`
-- Test: `tests/Dse.Realtime.Tests/Fakes/RecordingWriter.cs`
-- Test: `tests/Dse.Realtime.Tests/DispatcherThreadTests.cs`
-- Test: `tests/Dse.Realtime.Tests/CommandBusTests.cs`
+- Create: `src/Millrace.Realtime/DispatcherThread.cs`
+- Create: `src/Millrace.Realtime/CommandOutcome.cs`
+- Create: `src/Millrace.Realtime/TagCommand.cs`
+- Create: `src/Millrace.Realtime/ICommandRecorder.cs`
+- Create: `src/Millrace.Realtime/CommandBus.cs`
+- Test: `tests/Millrace.Realtime.Tests/Fakes/RecordingWriter.cs`
+- Test: `tests/Millrace.Realtime.Tests/DispatcherThreadTests.cs`
+- Test: `tests/Millrace.Realtime.Tests/CommandBusTests.cs`
 
 **Interfaces:**
 - Consumes: Task 10 (`RealtimeHub`), `ITagWriter`, `ITagDirectory`.
 - Produces: `sealed class DispatcherThread : IDisposable` with
-  `DispatcherThread(RealtimeHub hub, string name = "dse-dispatcher", TimeSpan?
+  `DispatcherThread(RealtimeHub hub, string name = "millrace-dispatcher", TimeSpan?
   idleWait = null)`, `void Start()`, `bool IsRunning`, `long PumpedFrames`,
   `Exception? Failure`; `enum CommandOutcome { Accepted, UnknownTag,
   KindMismatch, ReadOnly, OutOfRange }`; `sealed record TagCommand(string Tag,
@@ -6736,12 +6736,12 @@ an outcome rather than throwing because callers are remote and send junk.
 
 - [ ] **Step 1: Write the fake and the failing tests**
 
-`tests/Dse.Realtime.Tests/Fakes/RecordingWriter.cs`:
+`tests/Millrace.Realtime.Tests/Fakes/RecordingWriter.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Realtime.Tests.Fakes;
+namespace Millrace.Realtime.Tests.Fakes;
 
 /// <summary>An <see cref="ITagWriter"/> that remembers what it was asked to write.</summary>
 public sealed class RecordingWriter : ITagWriter
@@ -6758,13 +6758,13 @@ public sealed class RecordingWriter : ITagWriter
 }
 ```
 
-`tests/Dse.Realtime.Tests/DispatcherThreadTests.cs`:
+`tests/Millrace.Realtime.Tests/DispatcherThreadTests.cs`:
 
 ```csharp
 using System.Diagnostics;
-using Dse.Realtime.Tests.Fakes;
+using Millrace.Realtime.Tests.Fakes;
 
-namespace Dse.Realtime.Tests;
+namespace Millrace.Realtime.Tests;
 
 public class DispatcherThreadTests
 {
@@ -6851,13 +6851,13 @@ public class DispatcherThreadTests
 }
 ```
 
-`tests/Dse.Realtime.Tests/CommandBusTests.cs`:
+`tests/Millrace.Realtime.Tests/CommandBusTests.cs`:
 
 ```csharp
-using Dse.Io;
-using Dse.Realtime.Tests.Fakes;
+using Millrace.Io;
+using Millrace.Realtime.Tests.Fakes;
 
-namespace Dse.Realtime.Tests;
+namespace Millrace.Realtime.Tests;
 
 public class CommandBusTests
 {
@@ -6936,15 +6936,15 @@ public class CommandBusTests
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Realtime.Tests --filter "FullyQualifiedName~DispatcherThreadTests|FullyQualifiedName~CommandBusTests"`
+Run: `dotnet test tests/Millrace.Realtime.Tests --filter "FullyQualifiedName~DispatcherThreadTests|FullyQualifiedName~CommandBusTests"`
 Expected: build FAILS — `DispatcherThread`, `CommandBus` do not exist.
 
 - [ ] **Step 3: Write the dispatcher**
 
-`src/Dse.Realtime/DispatcherThread.cs`:
+`src/Millrace.Realtime/DispatcherThread.cs`:
 
 ```csharp
-namespace Dse.Realtime;
+namespace Millrace.Realtime;
 
 /// <summary>
 /// A background thread that pumps a <see cref="RealtimeHub"/> whenever frames
@@ -6963,7 +6963,7 @@ public sealed class DispatcherThread : IDisposable
     private Exception? _failure;
 
     /// <summary>Creates a dispatcher for <paramref name="hub"/>; call <see cref="Start"/> to run it.</summary>
-    public DispatcherThread(RealtimeHub hub, string name = "dse-dispatcher", TimeSpan? idleWait = null)
+    public DispatcherThread(RealtimeHub hub, string name = "millrace-dispatcher", TimeSpan? idleWait = null)
     {
         ArgumentNullException.ThrowIfNull(hub);
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
@@ -7036,10 +7036,10 @@ public sealed class DispatcherThread : IDisposable
 
 - [ ] **Step 4: Write the command bus**
 
-`src/Dse.Realtime/CommandOutcome.cs`:
+`src/Millrace.Realtime/CommandOutcome.cs`:
 
 ```csharp
-namespace Dse.Realtime;
+namespace Millrace.Realtime;
 
 /// <summary>What the command bus decided about a write (spec 10.6).</summary>
 public enum CommandOutcome
@@ -7061,21 +7061,21 @@ public enum CommandOutcome
 }
 ```
 
-`src/Dse.Realtime/TagCommand.cs`:
+`src/Millrace.Realtime/TagCommand.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Realtime;
+namespace Millrace.Realtime;
 
 /// <summary>One inbound write and what became of it.</summary>
 public sealed record TagCommand(string Tag, TagValue Value, CommandOutcome Outcome);
 ```
 
-`src/Dse.Realtime/ICommandRecorder.cs`:
+`src/Millrace.Realtime/ICommandRecorder.cs`:
 
 ```csharp
-namespace Dse.Realtime;
+namespace Millrace.Realtime;
 
 /// <summary>
 /// Receives every command the bus handles, accepted or rejected. Plan 5's
@@ -7089,12 +7089,12 @@ public interface ICommandRecorder
 }
 ```
 
-`src/Dse.Realtime/CommandBus.cs`:
+`src/Millrace.Realtime/CommandBus.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Realtime;
+namespace Millrace.Realtime;
 
 /// <summary>
 /// The inbound channel (spec 10.6): validates a write against the tag
@@ -7196,14 +7196,14 @@ public sealed class CommandBus
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Realtime.Tests`
+Run: `dotnet test tests/Millrace.Realtime.Tests`
 Expected: PASS, 48 tests. Run `DispatcherThreadTests` ten times in a row with
 `--no-build`; all green. `dotnet build -c Release` — 0 warnings.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/Dse.Realtime tests/Dse.Realtime.Tests
+git add src/Millrace.Realtime tests/Millrace.Realtime.Tests
 git commit -m "feat(realtime): add the dispatcher thread and the validated command bus"
 ```
 
@@ -7212,12 +7212,12 @@ git commit -m "feat(realtime): add the dispatcher thread and the validated comma
 ### Task 13: The conveyor over the wire, and the docs
 
 **Files:**
-- Test: `tests/Dse.Realtime.Tests/ConveyorRealtimeTests.cs`
+- Test: `tests/Millrace.Realtime.Tests/ConveyorRealtimeTests.cs`
 - Modify: `docs/architecture.md` (two new sections)
 - Modify: `README.md` (status paragraph)
 
 **Interfaces:**
-- Consumes: everything above; `Dse.Components.Conveyors.Conveyor` and the
+- Consumes: everything above; `Millrace.Components.Conveyors.Conveyor` and the
   plant shape from `ConveyorIoTests` (Task 8).
 - Produces: the end-to-end proof that spec 10 holds against a real plant, and
   the documentation the repository standards (spec 19) require.
@@ -7231,18 +7231,18 @@ its own tests in Task 12.
 
 - [ ] **Step 1: Write the failing test**
 
-`tests/Dse.Realtime.Tests/ConveyorRealtimeTests.cs`:
+`tests/Millrace.Realtime.Tests/ConveyorRealtimeTests.cs`:
 
 ```csharp
-using Dse.Components.Conveyors;
-using Dse.Components.Flow;
-using Dse.Components.Mechanical;
-using Dse.Core;
-using Dse.Core.Flow;
-using Dse.Core.Time;
-using Dse.Io;
+using Millrace.Components.Conveyors;
+using Millrace.Components.Flow;
+using Millrace.Components.Mechanical;
+using Millrace.Core;
+using Millrace.Core.Flow;
+using Millrace.Core.Time;
+using Millrace.Io;
 
-namespace Dse.Realtime.Tests;
+namespace Millrace.Realtime.Tests;
 
 /// <summary>A conveyor operated and observed exclusively through the real-time layer.</summary>
 public class ConveyorRealtimeTests
@@ -7477,14 +7477,14 @@ exercised here; `CommandBusTests` covers it.
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `dotnet test tests/Dse.Realtime.Tests --filter "FullyQualifiedName~ConveyorRealtimeTests"`
+Run: `dotnet test tests/Millrace.Realtime.Tests --filter "FullyQualifiedName~ConveyorRealtimeTests"`
 Expected: FAIL only if an earlier task is incomplete; with Tasks 1–12 merged
 this compiles and must pass. If `Sim.AttachFrameSink` does not exist, Task 6
 was not finished — stop and report.
 
 - [ ] **Step 3: Run it and record the numbers**
 
-Run: `dotnet test tests/Dse.Realtime.Tests --filter "FullyQualifiedName~ConveyorRealtimeTests"`
+Run: `dotnet test tests/Millrace.Realtime.Tests --filter "FullyQualifiedName~ConveyorRealtimeTests"`
 Expected: PASS, 6 tests. Report the measured `Speed`, `TonnesPerHour`, the
 historian delta count and the HMI `reads` value. Do not widen a window; if one
 fails, the layer is wrong.
@@ -7515,7 +7515,7 @@ SCADA that could read true motor current would not need the current sensor.
 A writable tag drives an `InputPort` from outside. If the plant already wires
 an output into that input, the declared tag degrades to read-only (the tag
 observes the command instead of issuing it); an explicit `Bind` of a writable
-tag on a driven input is validation error `DSE010`.
+tag on a driven input is validation error `MR010`.
 
 `Simulation.IO` is the image. Reads (`Read`, `ReadDouble`, `Handle<T>` …) see
 the snapshot published at the last tick's phase 4, from any thread, without a
@@ -7533,7 +7533,7 @@ affect the run.
 
 ## The real-time boundary
 
-`Dse.Realtime` references only `Dse.Io.Abstractions`. It cannot see the model,
+`Millrace.Realtime` references only `Millrace.Io.Abstractions`. It cannot see the model,
 which is what makes a protocol adapter a genuine bolt-on.
 
 `RealtimeHub` is the frame sink. `Publish` is a single-producer enqueue into a
@@ -7566,7 +7566,7 @@ declarative configuration and the reference samples are planned." with:
 It also contains the I/O layer (a declared, printable tag directory with
 units, ranges and per-tag quality; a lock-free double-buffered image any thread
 may read; queued writes that land at phase 1 of the next tick; one immutable
-`TickFrame` per tick) and the in-process real-time layer (`Dse.Realtime`: a
+`TickFrame` per tick) and the in-process real-time layer (`Millrace.Realtime`: a
 ring-buffered hub, a live state engine for late joiners, subscriptions with
 prefix filters, deadbands, decimation and declared backpressure, and a
 validated command bus), which references the I/O contract only.
@@ -7586,7 +7586,7 @@ Expected: 0 warnings; all five test projects green. Record the total test count.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add tests/Dse.Realtime.Tests/ConveyorRealtimeTests.cs docs/architecture.md README.md
+git add tests/Millrace.Realtime.Tests/ConveyorRealtimeTests.cs docs/architecture.md README.md
 git commit -m "test(realtime): operate the conveyor through the hub and command bus, and document the I/O and real-time layers"
 ```
 
@@ -7595,7 +7595,7 @@ git commit -m "test(realtime): operate the conveyor through the hub and command 
 ## Definition of done for this plan
 
 - `dotnet build -c Release` — 0 warnings; `dotnet test` — every project green.
-- `Dse.Realtime.csproj` references `Dse.Io.Abstractions` only.
+- `Millrace.Realtime.csproj` references `Millrace.Io.Abstractions` only.
 - Spec 9: tag directory with direction, unit, range, description (`ToText()`);
   string and handle APIs; snapshot reads, queued writes at phase 1; per-tag
   quality with `Uncertain` in use; the thread-safety contract holds under the
@@ -7615,7 +7615,7 @@ git commit -m "test(realtime): operate the conveyor through the hub and command 
 - Scenario recording of writes and commands (spec 10.6 "records into the active
   scenario") — plan 5; the seams are the `WRITE` event records and
   `ICommandRecorder`.
-- Any protocol adapter, `Dse.Realtime.Http`, OPC UA, MQTT, Modbus (spec 18).
+- Any protocol adapter, `Millrace.Realtime.Http`, OPC UA, MQTT, Modbus (spec 18).
 - Frame and mask pooling. Every tick allocates; at a hundred tags that is well
   under 2 KB per tick and is not worth a lifetime rule yet.
 - Raw-count scaling (spec 18).

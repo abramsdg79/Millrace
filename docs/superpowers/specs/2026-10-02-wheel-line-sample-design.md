@@ -12,7 +12,7 @@ merged.
 R171–R183), where the code or a measured run forced a choice:
 
 - **`ALM_QUEUE` watches a hot-metal detector (R173).** An `alarm` reads a
-  Double tag and `CV.ItemCount` is Int64 (`DSE114`), so `ALM_QUEUE` raises on
+  Double tag and `CV.ItemCount` is Int64 (`MR114`), so `ALM_QUEUE` raises on
   `HMD.Value`, a pyrometer aimed at the belt's queue-full position (4 m, 5 s
   lag; `Hi` 200 °C, 60 s on-delay). `CV.ItemCount` stays read-bound.
   Criterion 1 gains `HMD` (a second `pyrometer`, observing `CV`); criteria
@@ -97,10 +97,10 @@ with the line protections a real cell carries. The sample is a data folder,
    | `zone-low` | zone setpoint written below the discharge target | `ALM_ZONE` Lo; billets never reach target; the furnace never discharges; the press starves. |
    | `pyro-fail-high` | `PYRO` `fail-high` | Every billet reads hot and is rejected, good ones included — the reject's fail-safe direction. |
 
-6. `Dse.Samples.Tests` gains tests mirroring the mine-conveyor sample's: the
+6. `Millrace.Samples.Tests` gains tests mirroring the mine-conveyor sample's: the
    plant validates and agrees with the schema; every scenario matches its
    golden; record and replay are byte-identical; each scenario's quiet tail;
-   `dse tags` lists `GATE.Reject` claimed by `COIL_REJECT` and
+   `millrace tags` lists `GATE.Reject` claimed by `COIL_REJECT` and
    `Billets.Enabled` claimed by `INT_BAY`; a causal-chain test for
    `slow-press` asserting the event order and traces of the held billet's
    temperature (past HiHi only while the press is slow) and of `CV`'s item

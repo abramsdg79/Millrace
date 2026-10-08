@@ -11,14 +11,14 @@ that drives a Bool tag to follow a condition, writing on its first scan and on
 each change — then prove the physical half of the chain end to end with the
 `SimulationBuilder`.
 
-**Architecture:** `Dse.Components` only for the physics: `ItemProcessUnit`
+**Architecture:** `Millrace.Components` only for the physics: `ItemProcessUnit`
 gains one constructor argument, one fault and a fault-id switch; `RejectGate` is
 a new flow leaf with two discrete outlets, `Out` and `RejectOut`, showing its
-item on exactly one of them per tick. `Dse.Control` gains `Coil`, an
-`IScanBlock`; `Dse.Control.Catalogue` gains `CoilCatalogue` and a
-`ControlCatalogue.ConditionOf` helper. No change in `Dse.Core`,
-`Dse.Io.Abstractions`, `Dse.Configuration`, `Dse.Scenarios`, `Dse.Cli` or
-`Dse.Realtime`: the flow graph already builds one link per connected outlet
+item on exactly one of them per tick. `Millrace.Control` gains `Coil`, an
+`IScanBlock`; `Millrace.Control.Catalogue` gains `CoilCatalogue` and a
+`ControlCatalogue.ConditionOf` helper. No change in `Millrace.Core`,
+`Millrace.Io.Abstractions`, `Millrace.Configuration`, `Millrace.Scenarios`, `Millrace.Cli` or
+`Millrace.Realtime`: the flow graph already builds one link per connected outlet
 (R163), and the plant schema and catalogue export are generated.
 
 **Tech Stack:** .NET 10 (`net10.0`, SDK 10.0.401, runtime 10.0.12), C#, xUnit
@@ -33,10 +33,10 @@ of plan 2, the component library of plan 3 and the control blocks of
 
 **Plan sequence:** This is plan 6b.1. Plans 1–5d, 6a, 6a.1, 6c, 6d and 6e are
 merged on `master`; this plan starts from `45a1b52` (the commit that added the
-6b.1 spec). Measured on that commit with `dotnet test Dse.sln`: **1445 tests**,
-all passing — 37 `Dse.Io.Abstractions` / 498 `Dse.Core` / 137 `Dse.Components`
-/ 57 `Dse.Realtime` / 230 `Dse.Configuration` / 167 `Dse.Scenarios` / 78
-`Dse.Cli` / 140 `Dse.Control` / 23 `Dse.Control.Catalogue` / 78 `Dse.Samples`.
+6b.1 spec). Measured on that commit with `dotnet test Millrace.sln`: **1445 tests**,
+all passing — 37 `Millrace.Io.Abstractions` / 498 `Millrace.Core` / 137 `Millrace.Components`
+/ 57 `Millrace.Realtime` / 230 `Millrace.Configuration` / 167 `Millrace.Scenarios` / 78
+`Millrace.Cli` / 140 `Millrace.Control` / 23 `Millrace.Control.Catalogue` / 78 `Millrace.Samples`.
 Release build `0 Warning(s)`, `0 Error(s)`.
 
 **Task shape.** Four tasks, sequential, each leaving the whole suite green:
@@ -62,27 +62,27 @@ otherwise the golden tests would fail between tasks.
 
 - **`src/` changes in exactly seven files.** After Task 4,
   `git diff --stat 45a1b52 -- src/` lists exactly
-  `src/Dse.Components/ComponentsModule.cs`,
-  `src/Dse.Components/Flow/ItemProcessUnit.cs`,
-  `src/Dse.Components/Flow/RejectGate.cs` (new),
-  `src/Dse.Control/Coil.cs` (new),
-  `src/Dse.Control.Catalogue/CoilCatalogue.cs` (new),
-  `src/Dse.Control.Catalogue/ControlCatalogue.cs` and
-  `src/Dse.Control.Catalogue/ControlModule.cs`. Nothing under `src/Dse.Core`,
-  `src/Dse.Io.Abstractions`, `src/Dse.Configuration`, `src/Dse.Scenarios`,
-  `src/Dse.Cli` or `src/Dse.Realtime`. `git grep -n PackageReference -- 'src/*.csproj'`
+  `src/Millrace.Components/ComponentsModule.cs`,
+  `src/Millrace.Components/Flow/ItemProcessUnit.cs`,
+  `src/Millrace.Components/Flow/RejectGate.cs` (new),
+  `src/Millrace.Control/Coil.cs` (new),
+  `src/Millrace.Control.Catalogue/CoilCatalogue.cs` (new),
+  `src/Millrace.Control.Catalogue/ControlCatalogue.cs` and
+  `src/Millrace.Control.Catalogue/ControlModule.cs`. Nothing under `src/Millrace.Core`,
+  `src/Millrace.Io.Abstractions`, `src/Millrace.Configuration`, `src/Millrace.Scenarios`,
+  `src/Millrace.Cli` or `src/Millrace.Realtime`. `git grep -n PackageReference -- 'src/*.csproj'`
   prints nothing.
 - **With the defaults, nothing existing changes** (criterion 1). No event-log
   golden moves: measured with this plan's whole change applied, every
-  `samples/mine-conveyors/expected/*.log`, every `Dse.Scenarios.Tests` golden
+  `samples/mine-conveyors/expected/*.log`, every `Millrace.Scenarios.Tests` golden
   (including `item-line-blinded-counter.log`, whose plant has an
   `item-process-unit`) and `conveyor-control.log` are byte-identical. The only
-  goldens that move are `tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json`,
-  `tests/Dse.Configuration.Tests/Golden/plant.schema.json` and
-  `tests/Dse.Control.Catalogue.Tests/Golden/control-catalogue.json`, each by
+  goldens that move are `tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json`,
+  `tests/Millrace.Configuration.Tests/Golden/plant.schema.json` and
+  `tests/Millrace.Control.Catalogue.Tests/Golden/control-catalogue.json`, each by
   additions only (0 lines removed; measured sizes in *Measurements*).
 - **Goldens are generated and read, never invented or hand-edited.** Regenerate
-  only with `DSE_UPDATE_GOLDEN=1` and the `--filter` the task names, then read
+  only with `MILLRACE_UPDATE_GOLDEN=1` and the `--filter` the task names, then read
   the whole `git diff` of each file that moved, check it against the shape this
   plan quotes, and quote the `--stat` in the task report. After an update run,
   do a normal run (a `bin/` copy can be stale until the next build). A
@@ -96,7 +96,7 @@ otherwise the golden tests would fail between tasks.
 - **Warnings are errors** (`Directory.Build.props`: `TreatWarningsAsErrors`,
   `EnforceCodeStyleInBuild`, `GenerateDocumentationFile`, `Nullable`). The
   Release build prints `0 Warning(s)` and `0 Error(s)` after every task:
-  `dotnet build Dse.sln -c Release --nologo`.
+  `dotnet build Millrace.sln -c Release --nologo`.
 - **xUnit analyzers run under warnings-as-errors:** prefer `Assert.Single`,
   `Assert.Contains`, `Assert.DoesNotContain`, `Assert.Empty`, `Assert.All`;
   never `Assert.True(x.Any())` or `Assert.Equal(1, x.Count())`. Fault arguments
@@ -141,8 +141,8 @@ otherwise the golden tests would fail between tasks.
   whichever implementer model a task names. Never put it on the subject line.
   Write each message with the Write tool to
   `.superpowers/sdd/6b.1/msg-taskN.txt` and commit with `git commit -F`.
-- **Commands**, from the repository root: `dotnet build Dse.sln -c Release --nologo`
-  (expect `0 Warning(s)`, `0 Error(s)`) and `dotnet test Dse.sln --nologo`
+- **Commands**, from the repository root: `dotnet build Millrace.sln -c Release --nologo`
+  (expect `0 Warning(s)`, `0 Error(s)`) and `dotnet test Millrace.sln --nologo`
   (expect the task's total). `.superpowers/` is git-ignored; scratch work and
   commit messages go under `.superpowers/sdd/6b.1/` and are never added. Inside
   a worktree the harness refuses Bash text that mentions git inside a heredoc,
@@ -213,7 +213,7 @@ cleared independently, and a stopped (`fraction` 1) hold resuming on clear
 240 ticks of a toggling kicker; an unconnected `Out` holding a passed item
 (`AnUnconnectedOutHoldsAPassedItemOnTheStation`); a deposit on an occupied
 station refused with its message (`ADepositOnAnOccupiedStationIsRefused`); a
-coil output that is read-only is `DSE115` at `$.controllers[1].parameters.output`;
+coil output that is read-only is `MR115` at `$.controllers[1].parameters.output`;
 and the dwell that covers the pyrometer → alarm → coil chain, and the one that
 does not (`RejectChainTests.AHotItemIsRejectedOnlyWhenTheDwellCoversTheChain`,
 R168).
@@ -312,9 +312,9 @@ R170 gives the amendment note that records them in the spec.
   that means the condition is satisfied." — for a coil that is the value that
   energises it. Measured binding paths: a read-only output → `$.output`; a
   non-Bool condition tag → `$.condition.tag`; a missing `normal` →
-  `$.condition.normal`. In a plant file a read-only output is `DSE115` at
+  `$.condition.normal`. In a plant file a read-only output is `MR115` at
   `$.controllers[<n>].parameters.output`. A coil in code whose output is not a
-  read-write Bool is `DSE014`, as for every block.
+  read-write Bool is `MR014`, as for every block.
 - **R162 — Observation and the pyrometer.** `RejectGate.TryObserve` ignores
   position and window and reports the item on the station, or nothing, like a
   process unit. Its descriptor lists `Provides = [typeof(IMaterialObservable)]`
@@ -333,22 +333,22 @@ R170 gives the amendment note that records them in the spec.
 - **R164 — What moves.** Goldens: three, by additions only, each regenerated in
   the task that reaches it (sizes in *Measurements*). Existing tests changed:
   `ComponentsExportTests.TheShippedCatalogueHasTheExpectedCounts` (29 → 30
-  components, Task 2); `ControlCatalogueTests.EveryPublicScanBlockInDseControlHasADescriptor`
+  components, Task 2); `ControlCatalogueTests.EveryPublicScanBlockInMillraceControlHasADescriptor`
   (5 → 6), `TheModuleRegistersFiveBlocksAndTwoTransitions` (renamed
   `TheModuleRegistersSixBlocksAndTwoTransitions`, `"coil"` added to its list)
   and `TheControlCatalogueHasTheExpectedCounts` (5 → 6);
   `PlantSchemaTests.HasOneBranchPerBlockType` (5 → 6) (all Task 3). Helpers
   changed: `ItemProcessUnitTests.Build` gains two optional parameters (existing
-  calls unchanged); `tests/Dse.Control.Tests/Scan.cs` gains
+  calls unchanged); `tests/Millrace.Control.Tests/Scan.cs` gains
   `Set(string, TagValue)`; the two conformance fixture files gain one entry
   each. Measured: with the whole change applied every other existing test
   passes unchanged.
-- **R165 — Where the tests live.** Component behaviour in `Dse.Components.Tests`
+- **R165 — Where the tests live.** Component behaviour in `Millrace.Components.Tests`
   (`ItemProcessUnitTests`, new `RejectGateTests`, new `RejectLineTests`,
-  `Catalogue/FlowFactoryTests`); the coil in `Dse.Control.Tests` (new
+  `Catalogue/FlowFactoryTests`); the coil in `Millrace.Control.Tests` (new
   `CoilTests`, pure scans plus one plant over the `Vessel` fake with a claim)
-  and `Dse.Control.Catalogue.Tests` (`BlockFactoryTests`); the plant file in
-  `Dse.Configuration.Tests`, whose `Plants.Catalogue` holds both modules — a new
+  and `Millrace.Control.Catalogue.Tests` (`BlockFactoryTests`); the plant file in
+  `Millrace.Configuration.Tests`, whose `Plants.Catalogue` holds both modules — a new
   valid corpus plant, `Plants/valid/reject-station.json` (which adds a row to
   `CorpusTests.EveryValidPlantLoadsCleanAndBuilds` and one to
   `SchemaAgreementTests`' valid-plant theory), and a new `RejectStationTests`.
@@ -379,7 +379,7 @@ R170 gives the amendment note that records them in the spec.
   `docs/authoring-a-component.md` (§7) and the root `README.md` status; blocks
   in `docs/control-blocks.md`, `docs/architecture.md` (*The control layer*)
   and the `README.md`. `docs/scenarios.md` names no fault per type (it defers to
-  `dse catalog export`) and does not change; nor do
+  `millrace catalog export`) and does not change; nor do
   `docs/configuration-diagnostics.md` or any sample README. Only
   `docs/control-blocks.md` is pinned by tests (`DocumentationTests`); its new
   coil section quotes the write messages inline, never as a timestamped line,
@@ -508,37 +508,37 @@ trip written for 500 ms, cleared for 800 ms; `V1.Fill` published `ReadOnly`,
 ## File structure
 
 ```
-src/Dse.Components/Flow/ItemProcessUnit.cs                         heatWhileHeld; slow-cycle; fault-id switch (Task 1)
-tests/Dse.Components.Tests/ItemProcessUnitTests.cs                 Build helper; + 9 facts, + theory of 4, + theory of 2 (Task 1)
-tests/Dse.Components.Tests/Catalogue/FlowFactoryTests.cs           + 1 fact (Task 1), + 1 fact (Task 2)
-tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json   regenerated (Tasks 1, 2)
-tests/Dse.Configuration.Tests/Golden/plant.schema.json             regenerated (Tasks 1, 2, 3)
+src/Millrace.Components/Flow/ItemProcessUnit.cs                         heatWhileHeld; slow-cycle; fault-id switch (Task 1)
+tests/Millrace.Components.Tests/ItemProcessUnitTests.cs                 Build helper; + 9 facts, + theory of 4, + theory of 2 (Task 1)
+tests/Millrace.Components.Tests/Catalogue/FlowFactoryTests.cs           + 1 fact (Task 1), + 1 fact (Task 2)
+tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json   regenerated (Tasks 1, 2)
+tests/Millrace.Configuration.Tests/Golden/plant.schema.json             regenerated (Tasks 1, 2, 3)
 docs/architecture.md                                               Material flow + Faults (Tasks 1, 2), control layer (Task 3)
 docs/authoring-a-component.md                                      §7 fault-id switch (Task 1)
-src/Dse.Components/Flow/RejectGate.cs                              new (Task 2)
-src/Dse.Components/ComponentsModule.cs                             registers RejectGate (Task 2)
-tests/Dse.Components.Tests/RejectGateTests.cs                      new: 16 facts, theory of 4 (Task 2)
-tests/Dse.Components.Tests/Catalogue/ComponentsFixtures.cs         reject-gate fixture (Task 2)
-tests/Dse.Components.Tests/Catalogue/ComponentsExportTests.cs      29 → 30 (Task 2)
+src/Millrace.Components/Flow/RejectGate.cs                              new (Task 2)
+src/Millrace.Components/ComponentsModule.cs                             registers RejectGate (Task 2)
+tests/Millrace.Components.Tests/RejectGateTests.cs                      new: 16 facts, theory of 4 (Task 2)
+tests/Millrace.Components.Tests/Catalogue/ComponentsFixtures.cs         reject-gate fixture (Task 2)
+tests/Millrace.Components.Tests/Catalogue/ComponentsExportTests.cs      29 → 30 (Task 2)
 README.md                                                          status (Tasks 2, 3, 4)
 docs/superpowers/specs/2026-09-02-industrial-process-simulation-engine-design.md   §18 (Task 2)
-src/Dse.Control/Coil.cs                                            new (Task 3)
-src/Dse.Control.Catalogue/CoilCatalogue.cs                         new (Task 3)
-src/Dse.Control.Catalogue/ControlCatalogue.cs                      ConditionOf (Task 3)
-src/Dse.Control.Catalogue/ControlModule.cs                         registers the coil (Task 3)
-tests/Dse.Control.Tests/Scan.cs                                    Set(string, TagValue) (Task 3)
-tests/Dse.Control.Tests/CoilTests.cs                               new: 6 facts, theory of 2 (Task 3)
-tests/Dse.Control.Tests/DocumentationTests.cs                      + 1 fact (Task 3)
-tests/Dse.Control.Catalogue.Tests/BlockFactoryTests.cs             + 1 fact, + theory of 3 (Task 3)
-tests/Dse.Control.Catalogue.Tests/ControlFixtures.cs               coil fixture (Task 3)
-tests/Dse.Control.Catalogue.Tests/ControlCatalogueTests.cs         3 tests changed, 1 renamed (Task 3)
-tests/Dse.Control.Catalogue.Tests/Golden/control-catalogue.json    regenerated (Task 3)
-tests/Dse.Configuration.Tests/PlantSchemaTests.cs                  5 → 6 (Task 3)
-tests/Dse.Configuration.Tests/Plants/valid/reject-station.json     new corpus plant (Task 3)
-tests/Dse.Configuration.Tests/RejectStationTests.cs                new: 2 facts (Task 3)
-tests/Dse.Configuration.Tests/RejectChainTests.cs                  new: theory of 3, the dwell covering the PLC chain (Task 3)
+src/Millrace.Control/Coil.cs                                            new (Task 3)
+src/Millrace.Control.Catalogue/CoilCatalogue.cs                         new (Task 3)
+src/Millrace.Control.Catalogue/ControlCatalogue.cs                      ConditionOf (Task 3)
+src/Millrace.Control.Catalogue/ControlModule.cs                         registers the coil (Task 3)
+tests/Millrace.Control.Tests/Scan.cs                                    Set(string, TagValue) (Task 3)
+tests/Millrace.Control.Tests/CoilTests.cs                               new: 6 facts, theory of 2 (Task 3)
+tests/Millrace.Control.Tests/DocumentationTests.cs                      + 1 fact (Task 3)
+tests/Millrace.Control.Catalogue.Tests/BlockFactoryTests.cs             + 1 fact, + theory of 3 (Task 3)
+tests/Millrace.Control.Catalogue.Tests/ControlFixtures.cs               coil fixture (Task 3)
+tests/Millrace.Control.Catalogue.Tests/ControlCatalogueTests.cs         3 tests changed, 1 renamed (Task 3)
+tests/Millrace.Control.Catalogue.Tests/Golden/control-catalogue.json    regenerated (Task 3)
+tests/Millrace.Configuration.Tests/PlantSchemaTests.cs                  5 → 6 (Task 3)
+tests/Millrace.Configuration.Tests/Plants/valid/reject-station.json     new corpus plant (Task 3)
+tests/Millrace.Configuration.Tests/RejectStationTests.cs                new: 2 facts (Task 3)
+tests/Millrace.Configuration.Tests/RejectChainTests.cs                  new: theory of 3, the dwell covering the PLC chain (Task 3)
 docs/control-blocks.md                                             six blocks; the Coil section (Task 3)
-tests/Dse.Components.Tests/RejectLineTests.cs                      new: 2 facts (Task 4)
+tests/Millrace.Components.Tests/RejectLineTests.cs                      new: 2 facts (Task 4)
 ```
 
 ## Task map
@@ -562,10 +562,10 @@ Task 3's plant file needs Task 2's gate, Task 4 needs everything.
 **Model:** implementer sonnet; reviewer sonnet.
 
 **Files:**
-- Modify: `src/Dse.Components/Flow/ItemProcessUnit.cs` (summary; a fault constant and descriptor; the factory; a parameter; a constructor argument and property; `Advance`; `ApplyFault`/`ClearFault`)
-- Test: `tests/Dse.Components.Tests/ItemProcessUnitTests.cs` (helper changed; + 9 facts, + theory of 4, + theory of 2 = 15)
-- Test: `tests/Dse.Components.Tests/Catalogue/FlowFactoryTests.cs` (+ 1 fact)
-- Regenerate: `tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json`, `tests/Dse.Configuration.Tests/Golden/plant.schema.json`
+- Modify: `src/Millrace.Components/Flow/ItemProcessUnit.cs` (summary; a fault constant and descriptor; the factory; a parameter; a constructor argument and property; `Advance`; `ApplyFault`/`ClearFault`)
+- Test: `tests/Millrace.Components.Tests/ItemProcessUnitTests.cs` (helper changed; + 9 facts, + theory of 4, + theory of 2 = 15)
+- Test: `tests/Millrace.Components.Tests/Catalogue/FlowFactoryTests.cs` (+ 1 fact)
+- Regenerate: `tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json`, `tests/Millrace.Configuration.Tests/Golden/plant.schema.json`
 - Modify: `docs/architecture.md` (*Material flow*, *Faults*), `docs/authoring-a-component.md` (§7)
 
 **Interfaces:**
@@ -581,19 +581,19 @@ Task 3's plant file needs Task 2's gate, Task 4 needs everything.
 
 - [ ] **Step 1: Write the failing unit tests**
 
-In `tests/Dse.Components.Tests/ItemProcessUnitTests.cs`, replace
+In `tests/Millrace.Components.Tests/ItemProcessUnitTests.cs`, replace
 
 ```csharp
-using Dse.Core;
-using Dse.Core.Flow;
+using Millrace.Core;
+using Millrace.Core.Flow;
 ```
 
 with
 
 ```csharp
-using Dse.Core;
-using Dse.Core.Faults;
-using Dse.Core.Flow;
+using Millrace.Core;
+using Millrace.Core.Faults;
+using Millrace.Core.Flow;
 ```
 
 Replace
@@ -834,7 +834,7 @@ with
 
 - [ ] **Step 2: Write the failing factory test**
 
-In `tests/Dse.Components.Tests/Catalogue/FlowFactoryTests.cs`, replace
+In `tests/Millrace.Components.Tests/Catalogue/FlowFactoryTests.cs`, replace
 
 ```csharp
     [Fact]
@@ -862,7 +862,7 @@ with
 
 - [ ] **Step 3: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --nologo --filter "FullyQualifiedName~Dse.Components.Tests.ItemProcessUnitTests|FullyQualifiedName~Dse.Components.Tests.Catalogue.FlowFactoryTests"`
+Run: `dotnet test tests/Millrace.Components.Tests --nologo --filter "FullyQualifiedName~Millrace.Components.Tests.ItemProcessUnitTests|FullyQualifiedName~Millrace.Components.Tests.Catalogue.FlowFactoryTests"`
 Expected: the test project does not build. Measured, twelve distinct errors:
 eleven `error CS0117: 'ItemProcessUnit' does not contain a definition for 'SlowCycle'`,
 two `error CS1061: 'ItemProcessUnit' does not contain a definition for 'HeatWhileHeld' …`
@@ -872,7 +872,7 @@ two `error CS1061: 'ItemProcessUnit' does not contain a definition for 'HeatWhil
 
 - [ ] **Step 4: Implement `heatWhileHeld` and `slow-cycle`**
 
-In `src/Dse.Components/Flow/ItemProcessUnit.cs`, replace
+In `src/Millrace.Components/Flow/ItemProcessUnit.cs`, replace
 
 ```csharp
 /// applies the yield, and discharges in arrival order. A furnace and a press
@@ -1089,10 +1089,10 @@ with
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Components.Tests --nologo --filter "FullyQualifiedName~Dse.Components.Tests.ItemProcessUnitTests|FullyQualifiedName~Dse.Components.Tests.Catalogue.FlowFactoryTests"`
+Run: `dotnet test tests/Millrace.Components.Tests --nologo --filter "FullyQualifiedName~Millrace.Components.Tests.ItemProcessUnitTests|FullyQualifiedName~Millrace.Components.Tests.Catalogue.FlowFactoryTests"`
 Expected: PASS, 29 (23 `ItemProcessUnitTests` + 6 `FlowFactoryTests`).
 
-Run: `dotnet test tests/Dse.Components.Tests --nologo --filter "FullyQualifiedName~Dse.Components.Tests.Catalogue"`
+Run: `dotnet test tests/Millrace.Components.Tests --nologo --filter "FullyQualifiedName~Millrace.Components.Tests.Catalogue"`
 Expected: FAIL — 1 failed, 17 passed, 18 total: only
 `ComponentsExportTests.TheShippedCatalogueExportsExactlyTheGoldenFile` (the
 export gained the parameter and the fault). `EveryDescriptorMatchesWhatItBuilds`
@@ -1100,8 +1100,8 @@ passes: the descriptor and the instance agree on `slow-cycle(fraction)`.
 
 - [ ] **Step 6: Regenerate the two goldens and read them**
 
-Run: `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Components.Tests --nologo --filter "FullyQualifiedName~ComponentsExportTests.TheShippedCatalogueExportsExactlyTheGoldenFile"`
-Run: `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Configuration.Tests --nologo --filter "FullyQualifiedName~PlantSchemaTests.MatchesTheGoldenFile"`
+Run: `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Components.Tests --nologo --filter "FullyQualifiedName~ComponentsExportTests.TheShippedCatalogueExportsExactlyTheGoldenFile"`
+Run: `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Configuration.Tests --nologo --filter "FullyQualifiedName~PlantSchemaTests.MatchesTheGoldenFile"`
 
 Run: `git diff --stat` — expect `components-catalogue.json | 19 +` and
 `plant.schema.json | 5 +` (no `-`). Read both diffs whole. The export gains,
@@ -1202,10 +1202,10 @@ and may be active together, as `item-process-unit`'s `discharge-jam` and
 
 - [ ] **Step 8: Run everything**
 
-Run: `dotnet test tests/Dse.Components.Tests --nologo` — expect PASS, 153.
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo` — expect PASS, 230.
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1461**: 37 / 498 / 153 / 57 /
+Run: `dotnet test tests/Millrace.Components.Tests --nologo` — expect PASS, 153.
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo` — expect PASS, 230.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1461**: 37 / 498 / 153 / 57 /
 230 / 167 / 78 / 140 / 23 / 78.
 Run: `git status --short` — expect exactly the seven files of Step 9. Run
 `git status --short --ignored -- 'tests/**/*.actual'` and delete every file it lists.
@@ -1213,7 +1213,7 @@ Run: `git status --short` — expect exactly the seven files of Step 9. Run
 - [ ] **Step 9: Commit**
 
 ```bash
-git add src/Dse.Components/Flow/ItemProcessUnit.cs tests/Dse.Components.Tests/ItemProcessUnitTests.cs tests/Dse.Components.Tests/Catalogue/FlowFactoryTests.cs tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json tests/Dse.Configuration.Tests/Golden/plant.schema.json docs/architecture.md docs/authoring-a-component.md
+git add src/Millrace.Components/Flow/ItemProcessUnit.cs tests/Millrace.Components.Tests/ItemProcessUnitTests.cs tests/Millrace.Components.Tests/Catalogue/FlowFactoryTests.cs tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json tests/Millrace.Configuration.Tests/Golden/plant.schema.json docs/architecture.md docs/authoring-a-component.md
 git commit -F .superpowers/sdd/6b.1/msg-task1.txt
 ```
 
@@ -1250,13 +1250,13 @@ line and the trailer.
 **Model:** implementer sonnet; reviewer **opus** (the two-outlet seam, R156–R157, R163).
 
 **Files:**
-- Create: `src/Dse.Components/Flow/RejectGate.cs`
-- Modify: `src/Dse.Components/ComponentsModule.cs` (registration)
-- Test: `tests/Dse.Components.Tests/RejectGateTests.cs` (new: 16 facts, theory of 4 = 20)
-- Test: `tests/Dse.Components.Tests/Catalogue/FlowFactoryTests.cs` (+ 1 fact)
-- Test: `tests/Dse.Components.Tests/Catalogue/ComponentsFixtures.cs` (conformance fixture)
-- Test: `tests/Dse.Components.Tests/Catalogue/ComponentsExportTests.cs` (29 → 30)
-- Regenerate: `tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json`, `tests/Dse.Configuration.Tests/Golden/plant.schema.json`
+- Create: `src/Millrace.Components/Flow/RejectGate.cs`
+- Modify: `src/Millrace.Components/ComponentsModule.cs` (registration)
+- Test: `tests/Millrace.Components.Tests/RejectGateTests.cs` (new: 16 facts, theory of 4 = 20)
+- Test: `tests/Millrace.Components.Tests/Catalogue/FlowFactoryTests.cs` (+ 1 fact)
+- Test: `tests/Millrace.Components.Tests/Catalogue/ComponentsFixtures.cs` (conformance fixture)
+- Test: `tests/Millrace.Components.Tests/Catalogue/ComponentsExportTests.cs` (29 → 30)
+- Regenerate: `tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json`, `tests/Millrace.Configuration.Tests/Golden/plant.schema.json`
 - Modify: `docs/architecture.md` (*Material flow*, *Faults*), `README.md` (status), `docs/superpowers/specs/2026-09-02-industrial-process-simulation-engine-design.md` (§18)
 
 **Interfaces:**
@@ -1278,20 +1278,20 @@ line and the trailer.
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `tests/Dse.Components.Tests/RejectGateTests.cs`:
+Create `tests/Millrace.Components.Tests/RejectGateTests.cs`:
 
 ```csharp
-using Dse.Components.Flow;
-using Dse.Components.Instruments;
-using Dse.Components.Tests.Fakes;
-using Dse.Core;
-using Dse.Core.Flow;
-using Dse.Core.Logging;
-using Dse.Core.Time;
-using Dse.Io;
+using Millrace.Components.Flow;
+using Millrace.Components.Instruments;
+using Millrace.Components.Tests.Fakes;
+using Millrace.Core;
+using Millrace.Core.Flow;
+using Millrace.Core.Logging;
+using Millrace.Core.Time;
+using Millrace.Io;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 public class RejectGateTests
 {
@@ -1614,7 +1614,7 @@ public class RejectGateTests
 }
 ```
 
-In `tests/Dse.Components.Tests/Catalogue/FlowFactoryTests.cs`, replace
+In `tests/Millrace.Components.Tests/Catalogue/FlowFactoryTests.cs`, replace
 
 ```csharp
     [Fact]
@@ -1637,7 +1637,7 @@ with
     public void ABulkMaterialCannotFeedAnItemSource()
 ```
 
-In `tests/Dse.Components.Tests/Catalogue/ComponentsFixtures.cs`, replace
+In `tests/Millrace.Components.Tests/Catalogue/ComponentsFixtures.cs`, replace
 
 ```csharp
         .Parameters("item-process-unit", """{ "batchSize": 4, "hold": { "type": "for-seconds", "seconds": 10 } }""")
@@ -1650,7 +1650,7 @@ with
         .Parameters("reject-gate", """{ "dwellSeconds": 2 }""")
 ```
 
-In `tests/Dse.Components.Tests/Catalogue/ComponentsExportTests.cs`, replace
+In `tests/Millrace.Components.Tests/Catalogue/ComponentsExportTests.cs`, replace
 
 ```csharp
         Assert.Equal(29, document.RootElement.GetProperty("components").GetArrayLength());
@@ -1664,7 +1664,7 @@ with
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --nologo --filter "FullyQualifiedName~Dse.Components.Tests.RejectGateTests"`
+Run: `dotnet test tests/Millrace.Components.Tests --nologo --filter "FullyQualifiedName~Millrace.Components.Tests.RejectGateTests"`
 Expected: the test project does not build — `error CS0246: The type or
 namespace name 'RejectGate' could not be found` (measured: reported in
 `RejectGateTests.cs` only; the compiler stops before it reports the use in
@@ -1672,21 +1672,21 @@ namespace name 'RejectGate' could not be found` (measured: reported in
 
 - [ ] **Step 3: Write the gate**
 
-Create `src/Dse.Components/Flow/RejectGate.cs`:
+Create `src/Millrace.Components/Flow/RejectGate.cs`:
 
 ```csharp
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using Dse.Core.Catalogue;
-using Dse.Core.Contexts;
-using Dse.Core.Faults;
-using Dse.Core.Flow;
-using Dse.Core.Graph;
-using Dse.Core.Io;
-using Dse.Core.Telemetry;
-using Dse.Io;
+using Millrace.Core.Catalogue;
+using Millrace.Core.Contexts;
+using Millrace.Core.Faults;
+using Millrace.Core.Flow;
+using Millrace.Core.Graph;
+using Millrace.Core.Io;
+using Millrace.Core.Telemetry;
+using Millrace.Io;
 
-namespace Dse.Components.Flow;
+namespace Millrace.Components.Flow;
 
 /// <summary>
 /// A measuring station with a kicker: holds one item for a dwell, then sends
@@ -1922,7 +1922,7 @@ public sealed class RejectGate : FlowComponentBase, IItemConsumer, IItemProducer
 }
 ```
 
-In `src/Dse.Components/ComponentsModule.cs`, replace
+In `src/Millrace.Components/ComponentsModule.cs`, replace
 
 ```csharp
         builder.Add(ItemProcessUnit.Descriptor);
@@ -1937,10 +1937,10 @@ with
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `dotnet test tests/Dse.Components.Tests --nologo --filter "FullyQualifiedName~Dse.Components.Tests.RejectGateTests"`
+Run: `dotnet test tests/Millrace.Components.Tests --nologo --filter "FullyQualifiedName~Millrace.Components.Tests.RejectGateTests"`
 Expected: PASS, 20.
 
-Run: `dotnet test tests/Dse.Components.Tests --nologo --filter "FullyQualifiedName~Dse.Components.Tests.Catalogue"`
+Run: `dotnet test tests/Millrace.Components.Tests --nologo --filter "FullyQualifiedName~Millrace.Components.Tests.Catalogue"`
 Expected: FAIL — 1 failed, 18 passed, 19 total: only
 `ComponentsExportTests.TheShippedCatalogueExportsExactlyTheGoldenFile`.
 `EveryDescriptorMatchesWhatItBuilds` and
@@ -1950,8 +1950,8 @@ flow ports, fault, tags, telemetry and `Provides` all match), and
 
 - [ ] **Step 5: Regenerate the two goldens and read them**
 
-Run: `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Components.Tests --nologo --filter "FullyQualifiedName~ComponentsExportTests.TheShippedCatalogueExportsExactlyTheGoldenFile"`
-Run: `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Configuration.Tests --nologo --filter "FullyQualifiedName~PlantSchemaTests.MatchesTheGoldenFile"`
+Run: `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Components.Tests --nologo --filter "FullyQualifiedName~ComponentsExportTests.TheShippedCatalogueExportsExactlyTheGoldenFile"`
+Run: `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Configuration.Tests --nologo --filter "FullyQualifiedName~PlantSchemaTests.MatchesTheGoldenFile"`
 
 Run: `git diff --stat` — expect `components-catalogue.json | 105 +` and
 `plant.schema.json | 37 +` (no `-`). Read both diffs whole. The export gains
@@ -2040,7 +2040,7 @@ sensor-fault vocabulary, seven instruments, a motor with an I²t thermal model,
 a drivetrain, a safety circuit, a starter, and a `Conveyor` composite that
 trips its own overload when the belt downstream of it blocks — plus the I/O
 and real-time layers. A component catalogue, declarative JSON plants with a
-generated JSON Schema, and a `dse` command line sit on top.
+generated JSON Schema, and a `millrace` command line sit on top.
 ```
 
 with
@@ -2059,7 +2059,7 @@ sensor-fault vocabulary, seven instruments, a motor with an I²t thermal model,
 a drivetrain, a safety circuit, a starter, and a `Conveyor` composite that
 trips its own overload when the belt downstream of it blocks — plus the I/O
 and real-time layers. A component catalogue, declarative JSON plants with a
-generated JSON Schema, and a `dse` command line sit on top.
+generated JSON Schema, and a `millrace` command line sit on top.
 ```
 
 In `docs/superpowers/specs/2026-09-02-industrial-process-simulation-engine-design.md`
@@ -2081,10 +2081,10 @@ and vibration sensors; guard
 
 - [ ] **Step 7: Run everything**
 
-Run: `dotnet test tests/Dse.Components.Tests --nologo` — expect PASS, 174.
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo` — expect PASS, 230.
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1482**: 37 / 498 / 174 / 57 /
+Run: `dotnet test tests/Millrace.Components.Tests --nologo` — expect PASS, 174.
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo` — expect PASS, 230.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1482**: 37 / 498 / 174 / 57 /
 230 / 167 / 78 / 140 / 23 / 78.
 Run: `git status --short` — expect exactly the eleven files of Step 8. Run
 `git status --short --ignored -- 'tests/**/*.actual'` and delete every file it lists.
@@ -2092,7 +2092,7 @@ Run: `git status --short` — expect exactly the eleven files of Step 8. Run
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/Dse.Components/Flow/RejectGate.cs src/Dse.Components/ComponentsModule.cs tests/Dse.Components.Tests/RejectGateTests.cs tests/Dse.Components.Tests/Catalogue/FlowFactoryTests.cs tests/Dse.Components.Tests/Catalogue/ComponentsFixtures.cs tests/Dse.Components.Tests/Catalogue/ComponentsExportTests.cs tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json tests/Dse.Configuration.Tests/Golden/plant.schema.json docs/architecture.md README.md docs/superpowers/specs/2026-09-02-industrial-process-simulation-engine-design.md
+git add src/Millrace.Components/Flow/RejectGate.cs src/Millrace.Components/ComponentsModule.cs tests/Millrace.Components.Tests/RejectGateTests.cs tests/Millrace.Components.Tests/Catalogue/FlowFactoryTests.cs tests/Millrace.Components.Tests/Catalogue/ComponentsFixtures.cs tests/Millrace.Components.Tests/Catalogue/ComponentsExportTests.cs tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json tests/Millrace.Configuration.Tests/Golden/plant.schema.json docs/architecture.md README.md docs/superpowers/specs/2026-09-02-industrial-process-simulation-engine-design.md
 git commit -F .superpowers/sdd/6b.1/msg-task2.txt
 ```
 
@@ -2128,19 +2128,19 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 **Model:** implementer sonnet; reviewer **opus** (the scan semantics, R160–R161).
 
 **Files:**
-- Create: `src/Dse.Control/Coil.cs`, `src/Dse.Control.Catalogue/CoilCatalogue.cs`
-- Modify: `src/Dse.Control.Catalogue/ControlCatalogue.cs` (`ConditionOf`; summary), `src/Dse.Control.Catalogue/ControlModule.cs` (registration; summary)
-- Test: `tests/Dse.Control.Tests/Scan.cs` (`Set(string, TagValue)`)
-- Test: `tests/Dse.Control.Tests/CoilTests.cs` (new: 6 facts, theory of 2 = 8)
-- Test: `tests/Dse.Control.Tests/DocumentationTests.cs` (+ 1 fact)
-- Test: `tests/Dse.Control.Catalogue.Tests/BlockFactoryTests.cs` (+ 1 fact, + theory of 3)
-- Test: `tests/Dse.Control.Catalogue.Tests/ControlFixtures.cs` (coil fixture)
-- Test: `tests/Dse.Control.Catalogue.Tests/ControlCatalogueTests.cs` (three changed, one of them renamed)
-- Test: `tests/Dse.Configuration.Tests/PlantSchemaTests.cs` (5 → 6)
-- Test: `tests/Dse.Configuration.Tests/Plants/valid/reject-station.json` (new corpus plant: + 1 `CorpusTests` row, + 1 `SchemaAgreementTests` row)
-- Test: `tests/Dse.Configuration.Tests/RejectStationTests.cs` (new: 2 facts)
-- Test: `tests/Dse.Configuration.Tests/RejectChainTests.cs` (new: theory of 3, R168; written after the coil exists)
-- Regenerate: `tests/Dse.Control.Catalogue.Tests/Golden/control-catalogue.json`, `tests/Dse.Configuration.Tests/Golden/plant.schema.json`
+- Create: `src/Millrace.Control/Coil.cs`, `src/Millrace.Control.Catalogue/CoilCatalogue.cs`
+- Modify: `src/Millrace.Control.Catalogue/ControlCatalogue.cs` (`ConditionOf`; summary), `src/Millrace.Control.Catalogue/ControlModule.cs` (registration; summary)
+- Test: `tests/Millrace.Control.Tests/Scan.cs` (`Set(string, TagValue)`)
+- Test: `tests/Millrace.Control.Tests/CoilTests.cs` (new: 6 facts, theory of 2 = 8)
+- Test: `tests/Millrace.Control.Tests/DocumentationTests.cs` (+ 1 fact)
+- Test: `tests/Millrace.Control.Catalogue.Tests/BlockFactoryTests.cs` (+ 1 fact, + theory of 3)
+- Test: `tests/Millrace.Control.Catalogue.Tests/ControlFixtures.cs` (coil fixture)
+- Test: `tests/Millrace.Control.Catalogue.Tests/ControlCatalogueTests.cs` (three changed, one of them renamed)
+- Test: `tests/Millrace.Configuration.Tests/PlantSchemaTests.cs` (5 → 6)
+- Test: `tests/Millrace.Configuration.Tests/Plants/valid/reject-station.json` (new corpus plant: + 1 `CorpusTests` row, + 1 `SchemaAgreementTests` row)
+- Test: `tests/Millrace.Configuration.Tests/RejectStationTests.cs` (new: 2 facts)
+- Test: `tests/Millrace.Configuration.Tests/RejectChainTests.cs` (new: theory of 3, R168; written after the coil exists)
+- Regenerate: `tests/Millrace.Control.Catalogue.Tests/Golden/control-catalogue.json`, `tests/Millrace.Configuration.Tests/Golden/plant.schema.json`
 - Modify: `docs/control-blocks.md` (six blocks; the `Coil` section), `docs/architecture.md` (*The control layer*), `README.md` (status)
 
 **Interfaces:**
@@ -2162,7 +2162,7 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 
 - [ ] **Step 1: Write the failing block tests**
 
-In `tests/Dse.Control.Tests/Scan.cs`, replace
+In `tests/Millrace.Control.Tests/Scan.cs`, replace
 
 ```csharp
     public Scan Set(string tag, long value) => SetInput(tag, TagValue.Int64(value));
@@ -2177,15 +2177,15 @@ with
     public Scan Set(string tag, TagValue value) => SetInput(tag, value);
 ```
 
-Create `tests/Dse.Control.Tests/CoilTests.cs`:
+Create `tests/Millrace.Control.Tests/CoilTests.cs`:
 
 ```csharp
-using Dse.Control.Tests.Fakes;
-using Dse.Core;
-using Dse.Core.Time;
-using Dse.Io;
+using Millrace.Control.Tests.Fakes;
+using Millrace.Core;
+using Millrace.Core.Time;
+using Millrace.Io;
 
-namespace Dse.Control.Tests;
+namespace Millrace.Control.Tests;
 
 public class CoilTests
 {
@@ -2310,7 +2310,7 @@ public class CoilTests
 }
 ```
 
-In `tests/Dse.Control.Tests/DocumentationTests.cs`, replace
+In `tests/Millrace.Control.Tests/DocumentationTests.cs`, replace
 
 ```csharp
     [Fact]
@@ -2343,7 +2343,7 @@ with
 
 - [ ] **Step 2: Write the failing catalogue tests**
 
-In `tests/Dse.Control.Catalogue.Tests/BlockFactoryTests.cs`, replace the end of the class
+In `tests/Millrace.Control.Catalogue.Tests/BlockFactoryTests.cs`, replace the end of the class
 
 ```csharp
         Assert.Contains("[0, 31536000]", issue.Message, StringComparison.Ordinal);
@@ -2388,7 +2388,7 @@ with
 }
 ```
 
-In `tests/Dse.Control.Catalogue.Tests/ControlFixtures.cs`, replace
+In `tests/Millrace.Control.Catalogue.Tests/ControlFixtures.cs`, replace
 
 ```csharp
         .BlockParameters("alarm", """{ "input": "V1.Level", "limits": [ { "kind": "hi", "value": 80 } ] }""")
@@ -2401,7 +2401,7 @@ with
         .BlockParameters("coil", """{ "condition": { "tag": "V1.Tripped", "normal": true }, "output": "V1.Fill" }""")
 ```
 
-In `tests/Dse.Control.Catalogue.Tests/ControlCatalogueTests.cs`, replace
+In `tests/Millrace.Control.Catalogue.Tests/ControlCatalogueTests.cs`, replace
 
 ```csharp
         Assert.Equal(5, blocks.Count);
@@ -2451,7 +2451,7 @@ with
 
 - [ ] **Step 3: Write the failing plant-file tests**
 
-In `tests/Dse.Configuration.Tests/PlantSchemaTests.cs`, replace
+In `tests/Millrace.Configuration.Tests/PlantSchemaTests.cs`, replace
 
 ```csharp
         Assert.Equal(5, branches.Length);
@@ -2463,7 +2463,7 @@ with
         Assert.Equal(6, branches.Length);
 ```
 
-Create `tests/Dse.Configuration.Tests/Plants/valid/reject-station.json` (the
+Create `tests/Millrace.Configuration.Tests/Plants/valid/reject-station.json` (the
 furnace's zone temperature is a writable tag that reads 20 °C until written,
 so nothing reaches the alarm in the corpus test's 2 s; this plant proves
 binding, not the chain):
@@ -2500,13 +2500,13 @@ binding, not the chain):
 }
 ```
 
-Create `tests/Dse.Configuration.Tests/RejectStationTests.cs`:
+Create `tests/Millrace.Configuration.Tests/RejectStationTests.cs`:
 
 ```csharp
-using Dse.Core;
-using Dse.Io;
+using Millrace.Core;
+using Millrace.Io;
 
-namespace Dse.Configuration.Tests;
+namespace Millrace.Configuration.Tests;
 
 /// <summary>Spec 6b.1 criteria 3-5 in a plant file: a reject gate, a pyrometer aimed at it, and a coil that claims its Reject.</summary>
 public class RejectStationTests
@@ -2536,32 +2536,32 @@ public class RejectStationTests
     }
 
     [Fact]
-    public void ACoilWhoseOutputIsReadOnlyIsDse115AtTheOutput()
+    public void ACoilWhoseOutputIsReadOnlyIsMr115AtTheOutput()
     {
         ConfigDiagnostic d = Plants.Only(Plant.Replace("\"output\": \"GATE.Reject\"", "\"output\": \"GATE.Occupied\"", StringComparison.Ordinal)
             .Replace("\"claims\": [ \"GATE.Reject\" ],", string.Empty, StringComparison.Ordinal));   // a coil may not claim what it does not command
 
-        Assert.Equal(("DSE115", "$.controllers[1].parameters.output"), (d.Code, d.Path));
+        Assert.Equal(("MR115", "$.controllers[1].parameters.output"), (d.Code, d.Path));
     }
 }
 ```
 
 - [ ] **Step 4: Run the tests to verify they fail**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo --filter "FullyQualifiedName~Dse.Control.Tests.CoilTests|FullyQualifiedName~Dse.Control.Tests.DocumentationTests"`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo --filter "FullyQualifiedName~Millrace.Control.Tests.CoilTests|FullyQualifiedName~Millrace.Control.Tests.DocumentationTests"`
 Expected: the test project does not build — `error CS0246: The type or
 namespace name 'Coil' could not be found`.
 
-Run: `dotnet test tests/Dse.Control.Catalogue.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Catalogue.Tests --nologo`
 Expected: the test project does not build — measured, four
 `error CS0103: The name 'CoilCatalogue' does not exist in the current context`
 and one `error CS0246: The type or namespace name 'Coil' could not be found`.
 
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo --filter "FullyQualifiedName~RejectStationTests|FullyQualifiedName~CorpusTests.EveryValidPlantLoadsCleanAndBuilds|FullyQualifiedName~SchemaAgreementTests|FullyQualifiedName~PlantSchemaTests.HasOneBranchPerBlockType"`
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo --filter "FullyQualifiedName~RejectStationTests|FullyQualifiedName~CorpusTests.EveryValidPlantLoadsCleanAndBuilds|FullyQualifiedName~SchemaAgreementTests|FullyQualifiedName~PlantSchemaTests.HasOneBranchPerBlockType"`
 Expected: FAIL — 5 failed, 55 passed, 60 total. The loader does not know
-`coil` yet (measured: `DSE102` at `$.controllers[1].type`), so
+`coil` yet (measured: `MR102` at `$.controllers[1].type`), so
 `TheGateThePyrometerOnItAndTheCoilsClaimBind`,
-`ACoilWhoseOutputIsReadOnlyIsDse115AtTheOutput` and
+`ACoilWhoseOutputIsReadOnlyIsMr115AtTheOutput` and
 `CorpusTests.EveryValidPlantLoadsCleanAndBuilds(name: "reject-station.json")`
 fail; the schema has no `block.coil` branch, so
 `SchemaAgreementTests.TheSchemaAcceptsEveryPlantTheLoaderAccepts(name: "reject-station.json")`
@@ -2571,12 +2571,12 @@ selected through their test methods.)
 
 - [ ] **Step 5: Write the coil**
 
-Create `src/Dse.Control/Coil.cs`:
+Create `src/Millrace.Control/Coil.cs`:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Control;
+namespace Millrace.Control;
 
 /// <summary>
 /// An output coil: energised while one Bool tag equals its normal value, and
@@ -2657,13 +2657,13 @@ public sealed class Coil : IScanBlock
 
 - [ ] **Step 6: Register it in the catalogue**
 
-Create `src/Dse.Control.Catalogue/CoilCatalogue.cs`:
+Create `src/Millrace.Control.Catalogue/CoilCatalogue.cs`:
 
 ```csharp
-using Dse.Core.Catalogue;
-using Dse.Io;
+using Millrace.Core.Catalogue;
+using Millrace.Io;
 
-namespace Dse.Control.Catalogue;
+namespace Millrace.Control.Catalogue;
 
 /// <summary>The <see cref="Coil"/> in a plant file: <c>{ "type": "coil", … }</c>.</summary>
 public static class CoilCatalogue
@@ -2686,7 +2686,7 @@ public static class CoilCatalogue
 }
 ```
 
-In `src/Dse.Control.Catalogue/ControlCatalogue.cs`, replace
+In `src/Millrace.Control.Catalogue/ControlCatalogue.cs`, replace
 
 ```csharp
 /// <summary>What the five block descriptors share: the condition and write groups, the transition slot, the duration bound.</summary>
@@ -2714,16 +2714,16 @@ with
     internal static Condition ConditionOf(ParameterValues group) => new(group.Tag("tag"), group.Bool("normal"));
 ```
 
-In `src/Dse.Control.Catalogue/ControlModule.cs`, replace
+In `src/Millrace.Control.Catalogue/ControlModule.cs`, replace
 
 ```csharp
-/// The five control blocks of <c>Dse.Control</c> and the sequencer's
+/// The five control blocks of <c>Millrace.Control</c> and the sequencer's
 ```
 
 with
 
 ```csharp
-/// The six control blocks of <c>Dse.Control</c> and the sequencer's
+/// The six control blocks of <c>Millrace.Control</c> and the sequencer's
 ```
 
 and replace
@@ -2741,28 +2741,28 @@ with
 
 - [ ] **Step 7: Run the block and catalogue tests**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo --filter "FullyQualifiedName~Dse.Control.Tests.CoilTests"`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo --filter "FullyQualifiedName~Millrace.Control.Tests.CoilTests"`
 Expected: PASS, 8.
 
-Create `tests/Dse.Configuration.Tests/RejectChainTests.cs` (R168; it needs the
+Create `tests/Millrace.Configuration.Tests/RejectChainTests.cs` (R168; it needs the
 coil to compile, so it comes after it, and its `0.2` row is its own failing
 case):
 
 ```csharp
-using Dse.Components.Flow;
-using Dse.Components.Instruments;
-using Dse.Control;
-using Dse.Core;
-using Dse.Core.Flow;
-using Dse.Core.Time;
+using Millrace.Components.Flow;
+using Millrace.Components.Instruments;
+using Millrace.Control;
+using Millrace.Core;
+using Millrace.Core.Flow;
+using Millrace.Core.Time;
 
-namespace Dse.Configuration.Tests;
+namespace Millrace.Configuration.Tests;
 
 /// <summary>
 /// R169: a reject gate's dwell must cover the PLC chain that decides it — the
 /// pyrometer's tick, an alarm scan, a coil scan and the tick the write lands.
 /// Built in code here because this project is the one that sees both
-/// Dse.Components and Dse.Control.
+/// Millrace.Components and Millrace.Control.
 /// </summary>
 public class RejectChainTests
 {
@@ -2802,10 +2802,10 @@ public class RejectChainTests
 }
 ```
 
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo --filter "FullyQualifiedName~Dse.Configuration.Tests.RejectChainTests"`
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo --filter "FullyQualifiedName~Millrace.Configuration.Tests.RejectChainTests"`
 Expected: PASS, 3.
 
-Run: `dotnet test tests/Dse.Control.Catalogue.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Catalogue.Tests --nologo`
 Expected: FAIL — exactly 1 failed, 26 passed:
 `ControlCatalogueTests.TheControlCatalogueExportsExactlyTheGoldenFile`
 (`EveryDescriptorMatchesWhatItBuilds` passes: the fixture's owned tag
@@ -2814,8 +2814,8 @@ description).
 
 - [ ] **Step 8: Regenerate the two goldens and read them**
 
-Run: `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Control.Catalogue.Tests --nologo --filter "FullyQualifiedName~ControlCatalogueTests.TheControlCatalogueExportsExactlyTheGoldenFile"`
-Run: `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Configuration.Tests --nologo --filter "FullyQualifiedName~PlantSchemaTests.MatchesTheGoldenFile"`
+Run: `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Control.Catalogue.Tests --nologo --filter "FullyQualifiedName~ControlCatalogueTests.TheControlCatalogueExportsExactlyTheGoldenFile"`
+Run: `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Configuration.Tests --nologo --filter "FullyQualifiedName~PlantSchemaTests.MatchesTheGoldenFile"`
 
 Run: `git diff --stat` — expect `control-catalogue.json | 37 +` and
 `plant.schema.json | 55 +` (no `-`). Read both diffs whole. The control
@@ -2824,7 +2824,7 @@ export gains, between `alarm` and `interlock`:
 ```json
     {
       "type": "coil",
-      "module": "Dse.Control",
+      "module": "Millrace.Control",
       "description": "An output coil: drives a Bool tag true while a condition is at its normal value and false otherwise, writing on its first scan and on each change.",
       "parameters": [
         {
@@ -2873,29 +2873,29 @@ controller keys every block has (`id`, `type` const `coil`, `scanPeriodMs`,
 In `docs/control-blocks.md`, replace
 
 ```markdown
-reads, scanned at its own period, whose outputs are ordinary tags. `Dse.Control`
+reads, scanned at its own period, whose outputs are ordinary tags. `Millrace.Control`
 carries five of them — a timer, a permissive, an interlock, an alarm and a
-sequencer — and `Dse.Core` carries the host that scans them.
+sequencer — and `Millrace.Core` carries the host that scans them.
 ```
 
 with
 
 ```markdown
-reads, scanned at its own period, whose outputs are ordinary tags. `Dse.Control`
+reads, scanned at its own period, whose outputs are ordinary tags. `Millrace.Control`
 carries six of them — a timer, a permissive, an interlock, an alarm, a
-sequencer and a coil — and `Dse.Core` carries the host that scans them.
+sequencer and a coil — and `Millrace.Core` carries the host that scans them.
 ```
 
 replace
 
 ```markdown
-`Dse.Control.Catalogue`, registers the five below, and `dse catalog export`
+`Millrace.Control.Catalogue`, registers the five below, and `millrace catalog export`
 ```
 
 with
 
 ```markdown
-`Dse.Control.Catalogue`, registers the six below, and `dse catalog export`
+`Millrace.Control.Catalogue`, registers the six below, and `millrace catalog export`
 ```
 
 and insert, immediately before the line `## Writing your own`, the following
@@ -2960,28 +2960,28 @@ same latency decides when `Reject` falls for the item that follows.
 In `docs/architecture.md`, replace
 
 ```markdown
-descriptors in the catalogue; `ControlModule`, in `Dse.Control.Catalogue`,
+descriptors in the catalogue; `ControlModule`, in `Millrace.Control.Catalogue`,
 registers the five shipped ones.
 ```
 
 with
 
 ```markdown
-descriptors in the catalogue; `ControlModule`, in `Dse.Control.Catalogue`,
+descriptors in the catalogue; `ControlModule`, in `Millrace.Control.Catalogue`,
 registers the six shipped ones.
 ```
 
 and replace
 
 ```markdown
-A control block is a PLC rung: `Dse.Control` holds five of them — a timer, a
+A control block is a PLC rung: `Millrace.Control` holds five of them — a timer, a
 permissive, an interlock, an alarm and a sequencer — and sees
 ```
 
 with
 
 ```markdown
-A control block is a PLC rung: `Dse.Control` holds six of them — a timer, a
+A control block is a PLC rung: `Millrace.Control` holds six of them — a timer, a
 permissive, an interlock, an alarm, a sequencer and a coil — and sees
 ```
 
@@ -2989,11 +2989,11 @@ In `README.md`, rewrap the control-layer paragraph whole: replace
 
 ```markdown
 On top of that sits the control layer: a scan-block contract in
-`Dse.Io.Abstractions`, a host in `Dse.Core` that scans each block at its own
+`Millrace.Io.Abstractions`, a host in `Millrace.Core` that scans each block at its own
 period through the event queue and publishes its outputs as ordinary tags, and
-`Dse.Control` — a timer, a permissive, an interlock, an alarm and a sequencer,
+`Millrace.Control` — a timer, a permissive, an interlock, an alarm and a sequencer,
 which reference the I/O contract alone. Blocks are declared in a plant file's
-`controllers` section — `Dse.Control.Catalogue` registers them — or attached in
+`controllers` section — `Millrace.Control.Catalogue` registers them — or attached in
 code.
 ```
 
@@ -3001,21 +3001,21 @@ with
 
 ```markdown
 On top of that sits the control layer: a scan-block contract in
-`Dse.Io.Abstractions`, a host in `Dse.Core` that scans each block at its own
+`Millrace.Io.Abstractions`, a host in `Millrace.Core` that scans each block at its own
 period through the event queue and publishes its outputs as ordinary tags, and
-`Dse.Control` — a timer, a permissive, an interlock, an alarm, a sequencer and
+`Millrace.Control` — a timer, a permissive, an interlock, an alarm, a sequencer and
 a coil, which reference the I/O contract alone. Blocks are declared in a plant
-file's `controllers` section — `Dse.Control.Catalogue` registers them — or
+file's `controllers` section — `Millrace.Control.Catalogue` registers them — or
 attached in code.
 ```
 
 - [ ] **Step 10: Run everything**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo` — expect PASS, 149.
-Run: `dotnet test tests/Dse.Control.Catalogue.Tests --nologo` — expect PASS, 27.
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo` — expect PASS, 237.
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1502**: 37 / 498 / 174 / 57 /
+Run: `dotnet test tests/Millrace.Control.Tests --nologo` — expect PASS, 149.
+Run: `dotnet test tests/Millrace.Control.Catalogue.Tests --nologo` — expect PASS, 27.
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo` — expect PASS, 237.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1502**: 37 / 498 / 174 / 57 /
 237 / 167 / 78 / 149 / 27 / 78.
 Run: `git status --short` — expect exactly the nineteen files of Step 11. Run
 `git status --short --ignored -- 'tests/**/*.actual'` and delete every file it lists.
@@ -3023,7 +3023,7 @@ Run: `git status --short` — expect exactly the nineteen files of Step 11. Run
 - [ ] **Step 11: Commit**
 
 ```bash
-git add src/Dse.Control/Coil.cs src/Dse.Control.Catalogue/CoilCatalogue.cs src/Dse.Control.Catalogue/ControlCatalogue.cs src/Dse.Control.Catalogue/ControlModule.cs tests/Dse.Control.Tests/Scan.cs tests/Dse.Control.Tests/CoilTests.cs tests/Dse.Control.Tests/DocumentationTests.cs tests/Dse.Control.Catalogue.Tests/BlockFactoryTests.cs tests/Dse.Control.Catalogue.Tests/ControlFixtures.cs tests/Dse.Control.Catalogue.Tests/ControlCatalogueTests.cs tests/Dse.Control.Catalogue.Tests/Golden/control-catalogue.json tests/Dse.Configuration.Tests/PlantSchemaTests.cs tests/Dse.Configuration.Tests/Plants/valid/reject-station.json tests/Dse.Configuration.Tests/RejectStationTests.cs tests/Dse.Configuration.Tests/RejectChainTests.cs tests/Dse.Configuration.Tests/Golden/plant.schema.json docs/control-blocks.md docs/architecture.md README.md
+git add src/Millrace.Control/Coil.cs src/Millrace.Control.Catalogue/CoilCatalogue.cs src/Millrace.Control.Catalogue/ControlCatalogue.cs src/Millrace.Control.Catalogue/ControlModule.cs tests/Millrace.Control.Tests/Scan.cs tests/Millrace.Control.Tests/CoilTests.cs tests/Millrace.Control.Tests/DocumentationTests.cs tests/Millrace.Control.Catalogue.Tests/BlockFactoryTests.cs tests/Millrace.Control.Catalogue.Tests/ControlFixtures.cs tests/Millrace.Control.Catalogue.Tests/ControlCatalogueTests.cs tests/Millrace.Control.Catalogue.Tests/Golden/control-catalogue.json tests/Millrace.Configuration.Tests/PlantSchemaTests.cs tests/Millrace.Configuration.Tests/Plants/valid/reject-station.json tests/Millrace.Configuration.Tests/RejectStationTests.cs tests/Millrace.Configuration.Tests/RejectChainTests.cs tests/Millrace.Configuration.Tests/Golden/plant.schema.json docs/control-blocks.md docs/architecture.md README.md
 git commit -F .superpowers/sdd/6b.1/msg-task3.txt
 ```
 
@@ -3059,7 +3059,7 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 **Model:** implementer sonnet; reviewer sonnet.
 
 **Files:**
-- Test: `tests/Dse.Components.Tests/RejectLineTests.cs` (new: 2 facts)
+- Test: `tests/Millrace.Components.Tests/RejectLineTests.cs` (new: 2 facts)
 - Modify: `README.md` (the wheel-line sentence)
 
 **Interfaces:**
@@ -3075,21 +3075,21 @@ proves it can fail by taking away the feature it depends on.
 
 - [ ] **Step 1: Write the integration test**
 
-Create `tests/Dse.Components.Tests/RejectLineTests.cs`:
+Create `tests/Millrace.Components.Tests/RejectLineTests.cs`:
 
 ```csharp
-using Dse.Components.Flow;
-using Dse.Components.Tests.Fakes;
-using Dse.Components.Transforms;
-using Dse.Core;
-using Dse.Core.Faults;
-using Dse.Core.Flow;
-using Dse.Core.Logging;
-using Dse.Core.Time;
-using Dse.Io;
+using Millrace.Components.Flow;
+using Millrace.Components.Tests.Fakes;
+using Millrace.Components.Transforms;
+using Millrace.Core;
+using Millrace.Core.Faults;
+using Millrace.Core.Flow;
+using Millrace.Core.Logging;
+using Millrace.Core.Time;
+using Millrace.Io;
 using Xunit;
 
-namespace Dse.Components.Tests;
+namespace Millrace.Components.Tests;
 
 /// <summary>
 /// Spec 6b.1 criterion 6, the physical half of the wheel line's causal chain:
@@ -3212,12 +3212,12 @@ public class RejectLineTests
 }
 ```
 
-Run: `dotnet test tests/Dse.Components.Tests --nologo --filter "FullyQualifiedName~Dse.Components.Tests.RejectLineTests"`
+Run: `dotnet test tests/Millrace.Components.Tests --nologo --filter "FullyQualifiedName~Millrace.Components.Tests.RejectLineTests"`
 Expected: PASS, 2.
 
 - [ ] **Step 2: Prove the over-soak depends on `heatWhileHeld`**
 
-In `tests/Dse.Components.Tests/RejectLineTests.cs`, temporarily change
+In `tests/Millrace.Components.Tests/RejectLineTests.cs`, temporarily change
 `heatWhileHeld: true` to `heatWhileHeld: false` in `Build`, and run the same
 command.
 Expected: FAIL — exactly 1 failed,
@@ -3258,9 +3258,9 @@ reject path it needs are in place (plan 6b.1).
 
 - [ ] **Step 4: Run everything**
 
-Run: `dotnet test tests/Dse.Components.Tests --nologo` — expect PASS, 176.
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1504**: 37 / 498 / 176 / 57 /
+Run: `dotnet test tests/Millrace.Components.Tests --nologo` — expect PASS, 176.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1504**: 37 / 498 / 176 / 57 /
 237 / 167 / 78 / 149 / 27 / 78.
 Run: `git diff --stat 45a1b52 -- src/` — expect exactly the seven files of the
 Global Constraints.
@@ -3269,7 +3269,7 @@ Run: `git status --short` — expect exactly the two files of Step 5.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add tests/Dse.Components.Tests/RejectLineTests.cs README.md
+git add tests/Millrace.Components.Tests/RejectLineTests.cs README.md
 git commit -F .superpowers/sdd/6b.1/msg-task4.txt
 ```
 
@@ -3323,8 +3323,8 @@ Then `git log -1 --format='%h%n%s%n--%n%b'`.
 | 4. quality as the interlock (R160) | 3 | `ItReadsTheConditionsValueWhateverItsQualityAsTheInterlockDoes` (2 rows) |
 | 4. writes on first scan and on change only | 3 | `TheFirstScanWritesTheOutputEvenWhenItIsFalse`, `ItEnergisesAndDeEnergisesWithItsConditionAndWritesOnlyOnTransitions`, `OverAPlantItDrivesItsClaimedOutputAndLogsEachWriteWithItsId` |
 | 4. owned output `Energised` | 3 | `ThePinsAreTheConditionTheOutputAndEnergised`; `ControlCatalogueTests.EveryDescriptorMatchesWhatItBuilds`; `ACoilReadsItsConditionAndCommandsItsOutput` |
-| 4. output read-write Bool; pin checks; may be claimed | 3 | `ACoilRefusesAReadOnlyOutputANonBoolConditionAndAMissingNormal` (3 rows); `RejectStationTests.ACoilWhoseOutputIsReadOnlyIsDse115AtTheOutput`, `TheGateThePyrometerOnItAndTheCoilsClaimBind`; `OverAPlantItDrivesItsClaimedOutputAndLogsEachWriteWithItsId` |
-| 5. catalogue with descriptions; plant schema golden | 1, 2, 3 | the three golden tests; `ComponentsExportTests.TheShippedCatalogueHasTheExpectedCounts`; `ControlCatalogueTests.TheModuleRegistersSixBlocksAndTwoTransitions`, `TheControlCatalogueHasTheExpectedCounts`, `EveryPublicScanBlockInDseControlHasADescriptor`; `PlantSchemaTests.HasOneBranchPerBlockType`, `HasOneBranchPerComponentType`; `SchemaAgreementTests` (`reject-station.json` row) |
+| 4. output read-write Bool; pin checks; may be claimed | 3 | `ACoilRefusesAReadOnlyOutputANonBoolConditionAndAMissingNormal` (3 rows); `RejectStationTests.ACoilWhoseOutputIsReadOnlyIsMr115AtTheOutput`, `TheGateThePyrometerOnItAndTheCoilsClaimBind`; `OverAPlantItDrivesItsClaimedOutputAndLogsEachWriteWithItsId` |
+| 5. catalogue with descriptions; plant schema golden | 1, 2, 3 | the three golden tests; `ComponentsExportTests.TheShippedCatalogueHasTheExpectedCounts`; `ControlCatalogueTests.TheModuleRegistersSixBlocksAndTwoTransitions`, `TheControlCatalogueHasTheExpectedCounts`, `EveryPublicScanBlockInMillraceControlHasADescriptor`; `PlantSchemaTests.HasOneBranchPerBlockType`, `HasOneBranchPerComponentType`; `SchemaAgreementTests` (`reject-station.json` row) |
 | 5. docs where components, faults and blocks are documented (R167) | 1, 2, 3, 4 | `DocumentationTests.TheControlBlocksPageDescribesTheCoil`, `EveryLogLineThePageQuotesIsAWholeLineOfTheWorkedExampleGolden` (unchanged, still 3) |
 | 5. main spec §18 amended | 2 | reviewed text (Task 2 Step 6) |
 | §1 decision "a measuring station … the pyrometer, the alarm scan and the coil's write all complete while the item is still on the station" (R168, R169) | 2, 3 | `RejectChainTests.AHotItemIsRejectedOnlyWhenTheDwellCoversTheChain` (3 rows); the sizing paragraphs in `docs/architecture.md` and `docs/control-blocks.md` |
@@ -3349,7 +3349,7 @@ Final: **1504** = 37 Io.Abstractions / 498 Core / 176 Components / 57 Realtime
 / 237 Configuration / 167 Scenarios / 78 Cli / 149 Control / 27
 Control.Catalogue / 78 Samples (measured in the scratch run). Existing tests
 changed: five (`ComponentsExportTests.TheShippedCatalogueHasTheExpectedCounts`,
-`ControlCatalogueTests.EveryPublicScanBlockInDseControlHasADescriptor`,
+`ControlCatalogueTests.EveryPublicScanBlockInMillraceControlHasADescriptor`,
 `TheModuleRegistersFiveBlocksAndTwoTransitions` → `TheModuleRegistersSixBlocksAndTwoTransitions`,
 `TheControlCatalogueHasTheExpectedCounts`, `PlantSchemaTests.HasOneBranchPerBlockType`,
 R164); none removed. Goldens regenerated: `components-catalogue.json` (Tasks 1,

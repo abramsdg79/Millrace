@@ -88,7 +88,7 @@ zone temperature and a pyrometer at discharge sees it.
    that tick; time already counted stays counted. `ApplyFault`/`ClearFault`
    switch on the fault id: `discharge-jam` and `slow-cycle` are independent and
    may be active together.
-3. A new component **`reject-gate`** (`Dse.Components`, catalogue type
+3. A new component **`reject-gate`** (`Millrace.Components`, catalogue type
    `reject-gate`):
    - Flow: discrete inlet `In`; discrete outlets `Out` and `Reject`.
    - Parameter `dwellSeconds` (> 0).
@@ -106,7 +106,7 @@ zone temperature and a pyrometer at discharge sees it.
    - Fault `stuck` (no arguments): the kicker does not fire — every item leaves
      by `Out` whatever `Reject` says — until cleared.
    - Mass is conserved: every item that enters leaves by exactly one outlet.
-4. A new control block **`coil`** (`Dse.Control`, catalogue type `coil`):
+4. A new control block **`coil`** (`Millrace.Control`, catalogue type `coil`):
    - Parameters `condition` — `{ "tag": <bool tag>, "normal": <bool> }`, the
      shape the interlock and permissive use — and `output` (a bool tag).
    - The coil is energised while the condition's tag equals `normal`, with the
@@ -115,7 +115,7 @@ zone temperature and a pyrometer at discharge sees it.
      that value changes, and at no other time.
    - Owned output `Energised` (bool).
    - `output` must be a read-write bool tag the coil commands (its `Writes`);
-     the existing pin checks (DSE014) report otherwise. It may be claimed
+     the existing pin checks (MR014) report otherwise. It may be claimed
      (6d `claims`).
 5. Catalogue, plant schema and documentation: `reject-gate`, `coil`, the
    `heatWhileHeld` parameter and the `slow-cycle` fault appear in the catalogue
@@ -123,7 +123,7 @@ zone temperature and a pyrometer at discharge sees it.
    deliberately), and in `docs/` where components, faults and control blocks are
    documented. Main spec §18's "splitters … deferred" is amended to say a
    routed reject station exists; general splitters and mergers stay deferred.
-6. An integration test in `Dse.Components.Tests`, built with the
+6. An integration test in `Millrace.Components.Tests`, built with the
    `SimulationBuilder` like the existing flow tests, proves the physical half
    of the chain: an item source → furnace (`heatWhileHeld`, zone above the
    discharge target) → reject gate → discrete belt → press. With the press
@@ -132,7 +132,7 @@ zone temperature and a pyrometer at discharge sees it.
    with `Reject` written true the gate routes it to a reject sink. The full PLC
    chain (pyrometer → alarm → coil) is proven in 6b.2.
 
-## 2. Components (`Dse.Components`)
+## 2. Components (`Millrace.Components`)
 
 `ItemProcessUnit` gains the parameter and fault of criteria 1–2; its descriptor
 gains both. `RejectGate` is a new leaf in `Flow/` with its descriptor; it
@@ -142,7 +142,7 @@ the discrete protocol unchanged: `CanAcceptItem`, `TryPeekItem`/`WithdrawItem`
 per outlet, one tick per hand-off. No Core change is expected; the plan confirms
 it.
 
-## 3. Control (`Dse.Control`, `Dse.Control.Catalogue`)
+## 3. Control (`Millrace.Control`, `Millrace.Control.Catalogue`)
 
 `Coil` is an `IScanBlock`: `Inputs` = the condition's tag; `Writes` = the
 output tag; `Outputs` = `Energised`; no commands. It keeps the last value it

@@ -34,7 +34,7 @@ change. The sections below read as amended:
   writes last, after the scan period; a tag written as two kinds across the
   lists is refused; a tag twice in one list is refused with a message naming
   the list ("… commanded twice on reset."), which a plant file reports as
-  `DSE111`.
+  `MR111`.
 - **Criterion 6 (R127).** Eight existing tests assert an exact tag set or tag
   count that the four new tags change (two component shape tests, the
   conveyor's face, the worked example's two directory counts and three CLI
@@ -97,11 +97,11 @@ alarm; redundant safety contactors; any other block's semantics.
    behaves exactly as before: the 5b goldens, the 5c worked-example golden and
    every other event-log golden outside `samples/mine-conveyors/` are unchanged.
    The catalogue and schema goldens change only by additions.
-6. Zero package references under `src/`; `Dse.Control` still references only
-   `Dse.Io.Abstractions`; Release build with zero warnings; every existing test
+6. Zero package references under `src/`; `Millrace.Control` still references only
+   `Millrace.Io.Abstractions`; Release build with zero warnings; every existing test
    passes, updated only where criterion 5 allows.
 
-## 2. Components (`Dse.Components`)
+## 2. Components (`Millrace.Components`)
 
 **`MotorStarter`** gains an input `Permit` (Bool, default true) and a writable
 tag `Permit` — "Run permit; false holds the contactor open". Its run logic:
@@ -120,7 +120,7 @@ gains the port and the tag; conformance proves them.
 `Permit`; it creates mass only while `Enabled && Permit`. Its existing optional
 `enabled` parameter (6a) is unchanged.
 
-## 3. The interlock (`Dse.Control`, `Dse.Control.Catalogue`)
+## 3. The interlock (`Millrace.Control`, `Millrace.Control.Catalogue`)
 
 `Interlock` gains an optional list of **reset writes** (`BlockWrite`s, default
 empty), validated like the trip writes (one write per tag). On the scan that
@@ -170,17 +170,17 @@ reset) with a pointer to scenario 9.
 
 ## 5. Testing
 
-- `Dse.Components.Tests`: a starter with `Permit` false stays open under a true
+- `Millrace.Components.Tests`: a starter with `Permit` false stays open under a true
   command and closes when `Permit` goes true; a welded starter closes regardless;
   a source with `Permit` false creates nothing; descriptors and conformance.
-- `Dse.Control.Tests`: pure interlock tests — reset writes on the accepted reset
+- `Millrace.Control.Tests`: pure interlock tests — reset writes on the accepted reset
   scan only, none on a refused reset, none on a trip; the permit pattern (same
   tag in trip and reset writes) declares one pin; constructor validation
   (duplicate tag within the reset list).
-- `Dse.Control.Catalogue.Tests`: the `reset` parameter binds and builds; the
+- `Millrace.Control.Catalogue.Tests`: the `reset` parameter binds and builds; the
   control-catalogue golden regenerated (additions only).
 - Catalogue and schema goldens regenerated (additions only), read and checked.
-- `Dse.Samples.Tests`: the eight stories re-pinned, scenario 9 added (all its
+- `Millrace.Samples.Tests`: the eight stories re-pinned, scenario 9 added (all its
   rows), the README quote test covering scenario 9.
 
 ## 6. Documentation

@@ -12,19 +12,19 @@ resets each interlock one step before it starts the device, and with a new
 scenario 9, `start-while-tripped`, in which a start written while the cascade is
 tripped moves nothing — not then, and not after the line is reset.
 
-**Architecture:** Two `src/` changes. `Dse.Components` (Task 1): each of the
+**Architecture:** Two `src/` changes. `Millrace.Components` (Task 1): each of the
 three components gains a `Permit` Bool input, default true, bound as a writable
 tag, and ANDed into `MotorStarter`'s `closed` and `BulkSource.Advance`; the
-conveyor exposes its starter's. `Dse.Control` / `Dse.Control.Catalogue` (Task 2):
+conveyor exposes its starter's. `Millrace.Control` / `Millrace.Control.Catalogue` (Task 2):
 `Interlock` gains a five-argument constructor with `resetWrites`; its write pins
 are the trip tags in order followed by each tag only the reset writes name, one
 pin per distinct tag (R122), so an interlock with no reset writes declares
 exactly the pins it has today. The sample (Tasks 3–4) is data: `plant.json`
 (permit writes; `SEQ_START` restructured from six steps to nine), one new
 scenario, regenerated goldens, re-pinned stories, a README section. No change
-under `src/Dse.Core` or `src/Dse.Io.Abstractions`: the scan host already queues
+under `src/Millrace.Core` or `src/Millrace.Io.Abstractions`: the scan host already queues
 each write pin at most once per scan and checks every pin against the directory
-(DSE014), reset-only pins included.
+(MR014), reset-only pins included.
 
 **Tech Stack:** .NET 10 (`net10.0`, SDK 10.0.401), C#, xUnit 2.9.3. No package
 under `src/`. JsonSchema.Net 8.0.5, test-only and pinned (unchanged).
@@ -38,10 +38,10 @@ the sample of `docs/superpowers/specs/2026-09-25-mine-conveyor-sample-design.md`
 
 **Plan sequence:** This is plan 6c. Plans 1–5d, 6a and 6a.1 are merged on
 `master`; this plan starts from `aa3c403` (the commit that added the 6c spec).
-Measured on that commit with `dotnet test Dse.sln`: **1323 tests**, all passing —
-37 `Dse.Io.Abstractions` / 461 `Dse.Core` / 128 `Dse.Components` / 56
-`Dse.Realtime` / 209 `Dse.Configuration` / 163 `Dse.Scenarios` / 76 `Dse.Cli` /
-105 `Dse.Control` / 22 `Dse.Control.Catalogue` / 66 `Dse.Samples`.
+Measured on that commit with `dotnet test Millrace.sln`: **1323 tests**, all passing —
+37 `Millrace.Io.Abstractions` / 461 `Millrace.Core` / 128 `Millrace.Components` / 56
+`Millrace.Realtime` / 209 `Millrace.Configuration` / 163 `Millrace.Scenarios` / 76 `Millrace.Cli` /
+105 `Millrace.Control` / 22 `Millrace.Control.Catalogue` / 66 `Millrace.Samples`.
 
 **Task shape.** Five tasks; the spec's suggested six, with one merge the code
 argued for:
@@ -63,18 +63,18 @@ argued for:
 
 - **`src/` changes only in Tasks 1 and 2.** After Task 2,
   `git diff --stat aa3c403 -- src/` lists exactly
-  `src/Dse.Components/Conveyors/Conveyor.cs`,
-  `src/Dse.Components/Flow/BulkSource.cs`,
-  `src/Dse.Components/Mechanical/MotorStarter.cs`,
-  `src/Dse.Control.Catalogue/InterlockCatalogue.cs` and
-  `src/Dse.Control/Interlock.cs`. If a scenario exposes any other engine defect,
+  `src/Millrace.Components/Conveyors/Conveyor.cs`,
+  `src/Millrace.Components/Flow/BulkSource.cs`,
+  `src/Millrace.Components/Mechanical/MotorStarter.cs`,
+  `src/Millrace.Control.Catalogue/InterlockCatalogue.cs` and
+  `src/Millrace.Control/Interlock.cs`. If a scenario exposes any other engine defect,
   stop and report it rather than fixing `src/` inside a sample task.
   `git grep -n PackageReference -- 'src/*.csproj'` prints nothing (a plain
-  `grep -r` over `src/` also hits `obj/` after a build). `Dse.Control` still
-  references only `Dse.Io.Abstractions`.
+  `grep -r` over `src/` also hits `obj/` after a build). `Millrace.Control` still
+  references only `Millrace.Io.Abstractions`.
 - **Defaults change nothing** (spec criterion 5). With `Permit` unwired and no
   reset writes, every existing plant behaves exactly as before: the four
-  `Dse.Scenarios.Tests` goldens, `tests/Dse.Control.Tests/Golden/conveyor-control.log`
+  `Millrace.Scenarios.Tests` goldens, `tests/Millrace.Control.Tests/Golden/conveyor-control.log`
   and every other event log outside `samples/mine-conveyors/` stay
   byte-identical, and the three catalogue/schema goldens change by added lines
   only. Measured: regenerating every golden in the solution with this plan's
@@ -91,10 +91,10 @@ argued for:
   never `Assert.True(x.Any())` or `Assert.Equal(1, x.Count())`.
 - **Goldens are generated and read, never invented or hand-edited.** The three
   catalogue/schema goldens use `tests/Shared/Golden.cs`: regenerate each with
-  `DSE_UPDATE_GOLDEN=1` and a `--filter` naming its one test, then read the whole
+  `MILLRACE_UPDATE_GOLDEN=1` and a `--filter` naming its one test, then read the whole
   `git diff` of that file. A sample golden is written by the golden theory when
-  `DSE_UPDATE_GOLDEN=1`:
-  `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"`
+  `MILLRACE_UPDATE_GOLDEN=1`:
+  `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"`
   — **for this project and this theory only**, never over the whole solution.
   Then **read each changed golden in full** with a file-reading tool, check it
   against the task's checklist, quote the checked lines in the task report, and
@@ -115,7 +115,7 @@ argued for:
   T+110 ms; the sequencer's scan at T+200 ms sees `Ok` and enters the start step,
   whose `CVn.Start` true lands at T+210 ms — after the reset's `false` (R124).
 - **Names.** `CVn.Permit` (conveyor), `Feed.Permit` (bulk-source), `K1.Permit`
-  (a bare starter) — exactly what `dse tags` prints; the mine-conveyor plant now
+  (a bare starter) — exactly what `millrace tags` prints; the mine-conveyor plant now
   has 124 tags (120 + 4). The new scenario, its golden and its `Sample.Names`
   entry are all `start-while-tripped`.
 - **JSON and Markdown files** are written exactly as this plan shows them: LF
@@ -133,8 +133,8 @@ argued for:
   the model that implements a given task: it is the same on every commit,
   whichever implementer model a task names. Never put it on the subject line.
 - **Commands**, from the repository root:
-  `dotnet build Dse.sln -c Release --nologo` (expect `0 Warning(s)`,
-  `0 Error(s)`) and `dotnet test Dse.sln --nologo` (expect the task's total).
+  `dotnet build Millrace.sln -c Release --nologo` (expect `0 Warning(s)`,
+  `0 Error(s)`) and `dotnet test Millrace.sln --nologo` (expect the task's total).
   `.superpowers/` is git-ignored; scratch work goes under `.superpowers/sdd/6c/`
   and is never added.
 
@@ -172,14 +172,14 @@ likely to bite first. Each has its test in the owning task, named here.
    exactly as it defeats `Start` and the e-stop (6a R108). Test: Task 1,
    `MotorStarterTests.AWeldedContactorStaysClosedWithoutAPermit`.
 5. **An author who lists a tag twice under `reset`, or loads an old plant** —
-   the first expects a `DSE111` naming the tag and the list, not a crash or a
+   the first expects a `MR111` naming the tag and the list, not a crash or a
    silent double write; the second expects nothing to change. Tests: Task 2, the
-   corpus fixture `DSE111-reset-write-twice.json` (run by
+   corpus fixture `MR111-reset-write-twice.json` (run by
    `CorpusTests.EveryInvalidPlantYieldsExactlyTheCodeInItsName` and
    `SchemaAgreementTests.TheSchemaRejectsStructuralErrorsAndOnlyThose`) and
    `InterlockTests.WithoutResetWritesThePinsAreExactlyTheTripWrites`; the
-   unchanged event-log goldens of `Dse.Scenarios.Tests`, `Dse.Control.Tests` and
-   `Dse.Cli.Tests`, which Tasks 1 and 2 run without regenerating.
+   unchanged event-log goldens of `Millrace.Scenarios.Tests`, `Millrace.Control.Tests` and
+   `Millrace.Cli.Tests`, which Tasks 1 and 2 run without regenerating.
 
 ## Decisions settled here (rulings R122–R132)
 
@@ -196,7 +196,7 @@ spec is amended in place to agree (its "Amended 2026-09-25 by the plan" note), a
   reset write on a trip tag reuses that pin (the `Sequencer.Pin` pattern). The
   trip and reset branches are exclusive (`if (!allNormal && !_tripped) … else if
   (_tripped && resetEdge && allNormal)`), so a shared pin never receives two
-  values in one scan. The host's DSE014 check walks every pin in `Writes`, so a
+  values in one scan. The host's MR014 check walks every pin in `Writes`, so a
   reset-only tag that does not exist, has the wrong kind or is read-only is
   reported exactly as a trip tag is — no Core change. An interlock with no reset
   writes declares byte-identical `Writes` (criterion 5). The host queues one
@@ -333,8 +333,8 @@ spec is amended in place to agree (its "Amended 2026-09-25 by the plan" note), a
   80 s every existing chain and absence holds unchanged; `normal-start-stop`'s
   start-up chain is rewritten for the nine steps, and Task 3 re-pins all eight
   with the `Permit` lines.
-- **R130 — A duplicate reset tag is `DSE111` at the controller.** The loader
-  wraps the constructor's `ArgumentException` as `DSE111 $.controllers[0]`:
+- **R130 — A duplicate reset tag is `MR111` at the controller.** The loader
+  wraps the constructor's `ArgumentException` as `MR111 $.controllers[0]`:
   "'INT01' (interlock) rejected its parameters: Tag 'FEED.Permit' is commanded
   twice on reset. Command each tag once in each list." A corpus fixture pins it;
   the schema accepts it (a semantic error).
@@ -357,13 +357,13 @@ repository under `.superpowers/sdd/6c/scratch/`, deleted after).
 Per project: 37 / 461 / 132 Components / 56 / 211 Configuration / 163 / 76 / 117
 Control / 23 Control.Catalogue / 72 Samples.
 
-**Criterion 5:** `DSE_UPDATE_GOLDEN=1 dotnet test Dse.sln` over the whole
+**Criterion 5:** `MILLRACE_UPDATE_GOLDEN=1 dotnet test Millrace.sln` over the whole
 solution (scratch only — never in the repository), run on the finished change,
 rewrote nothing: every golden already matched. Against `aa3c403` the only
 goldens changed outside `samples/mine-conveyors/` are
 `components-catalogue.json` (+33 −0), `control-catalogue.json` (+23 −0) and
-`plant.schema.json` (+7 −0). The four `Dse.Scenarios.Tests` goldens,
-`conveyor-control.log` (5c) and the CLI's `dse run --expect` of the 5c scenario
+`plant.schema.json` (+7 −0). The four `Millrace.Scenarios.Tests` goldens,
+`conveyor-control.log` (5c) and the CLI's `millrace run --expect` of the 5c scenario
 are byte-identical. With Tasks 1–2 alone, the sample goldens are byte-identical
 too and all 66 sample tests pass (1341 in all).
 
@@ -408,33 +408,33 @@ too and all 66 sample tests pass (1341 in all).
 ## File structure
 
 ```
-src/Dse.Components/Mechanical/MotorStarter.cs      + Permit input, tag, AND in closed (Task 1)
-src/Dse.Components/Conveyors/Conveyor.cs           + Permit port, tag, Expose (Task 1)
-src/Dse.Components/Flow/BulkSource.cs              + Permit input, tag, AND in Advance (Task 1)
-src/Dse.Control/Interlock.cs                       + reset writes, five-argument constructor (Task 2)
-src/Dse.Control.Catalogue/InterlockCatalogue.cs    + reset parameter (Task 2)
-tests/Dse.Components.Tests/MotorStarterTests.cs    + 2 facts; Build takes an optional permit (Task 1)
-tests/Dse.Components.Tests/ConveyorIoTests.cs      + 1 fact; face +CV001.Permit (Task 1)
-tests/Dse.Components.Tests/SourceSinkTests.cs      + 1 fact (Task 1)
-tests/Dse.Components.Tests/ComponentTagTests.cs    + 2 rows (Task 1)
-tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json   regenerated (Task 1)
-tests/Dse.Control.Tests/WorkedExampleTests.cs      47 → 49 (Task 1)
-tests/Dse.Cli.Tests/ValidateCommandTests.cs        47 → 49 (Task 1)
-tests/Dse.Cli.Tests/TagsCommandTests.cs            47 → 49 (Task 1)
-tests/Dse.Control.Tests/InterlockTests.cs          + 10 facts (Task 2)
-tests/Dse.Control.Tests/HostTests.cs               + 1 fact (Task 2)
-tests/Dse.Control.Catalogue.Tests/BlockFactoryTests.cs            + 1 fact (Task 2)
-tests/Dse.Control.Catalogue.Tests/Golden/control-catalogue.json   regenerated (Task 2)
-tests/Dse.Configuration.Tests/Golden/plant.schema.json            regenerated (Task 2)
-tests/Dse.Configuration.Tests/Plants/invalid/DSE111-reset-write-twice.json   new (Task 2)
+src/Millrace.Components/Mechanical/MotorStarter.cs      + Permit input, tag, AND in closed (Task 1)
+src/Millrace.Components/Conveyors/Conveyor.cs           + Permit port, tag, Expose (Task 1)
+src/Millrace.Components/Flow/BulkSource.cs              + Permit input, tag, AND in Advance (Task 1)
+src/Millrace.Control/Interlock.cs                       + reset writes, five-argument constructor (Task 2)
+src/Millrace.Control.Catalogue/InterlockCatalogue.cs    + reset parameter (Task 2)
+tests/Millrace.Components.Tests/MotorStarterTests.cs    + 2 facts; Build takes an optional permit (Task 1)
+tests/Millrace.Components.Tests/ConveyorIoTests.cs      + 1 fact; face +CV001.Permit (Task 1)
+tests/Millrace.Components.Tests/SourceSinkTests.cs      + 1 fact (Task 1)
+tests/Millrace.Components.Tests/ComponentTagTests.cs    + 2 rows (Task 1)
+tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json   regenerated (Task 1)
+tests/Millrace.Control.Tests/WorkedExampleTests.cs      47 → 49 (Task 1)
+tests/Millrace.Cli.Tests/ValidateCommandTests.cs        47 → 49 (Task 1)
+tests/Millrace.Cli.Tests/TagsCommandTests.cs            47 → 49 (Task 1)
+tests/Millrace.Control.Tests/InterlockTests.cs          + 10 facts (Task 2)
+tests/Millrace.Control.Tests/HostTests.cs               + 1 fact (Task 2)
+tests/Millrace.Control.Catalogue.Tests/BlockFactoryTests.cs            + 1 fact (Task 2)
+tests/Millrace.Control.Catalogue.Tests/Golden/control-catalogue.json   regenerated (Task 2)
+tests/Millrace.Configuration.Tests/Golden/plant.schema.json            regenerated (Task 2)
+tests/Millrace.Configuration.Tests/Plants/invalid/MR111-reset-write-twice.json   new (Task 2)
 samples/mine-conveyors/plant.json                  interlocks gain permit/reset writes; SEQ_START in nine steps (Task 3)
 samples/mine-conveyors/expected/*.log              eight regenerated (Task 3), one new (Task 4)
 samples/mine-conveyors/scenarios/start-while-tripped.json   new (Task 4)
 samples/mine-conveyors/README.md                   quotes (Task 3), section 9 (Task 4), prose (Task 5)
-tests/Dse.Samples.Tests/Stories.cs                 re-pinned (Task 3), scenario 9 (Task 4)
-tests/Dse.Samples.Tests/Sample.cs                  + start-while-tripped (Task 4)
-tests/Dse.Samples.Tests/MineConveyorTests.cs       + 1 fact, one rename (Task 4)
-tests/Dse.Control.Tests/DocumentationTests.cs      + 1 fact (Task 5)
+tests/Millrace.Samples.Tests/Stories.cs                 re-pinned (Task 3), scenario 9 (Task 4)
+tests/Millrace.Samples.Tests/Sample.cs                  + start-while-tripped (Task 4)
+tests/Millrace.Samples.Tests/MineConveyorTests.cs       + 1 fact, one rename (Task 4)
+tests/Millrace.Control.Tests/DocumentationTests.cs      + 1 fact (Task 5)
 docs/control-blocks.md                             reset writes, run permit (Task 5)
 README.md                                          nine scenarios (Task 5)
 docs/superpowers/specs/2026-09-25-mine-conveyor-sample-design.md   amendment line (Task 5)
@@ -446,7 +446,7 @@ docs/superpowers/specs/2026-09-22-control-blocks-design.md         amendment lin
 | # | Task | Model | Tests after |
 |---|---|---|---|
 | 1 | `Permit` on `motor-starter`, `conveyor`, `bulk-source`; components golden; tag counts | opus | 1327 |
-| 2 | Interlock reset writes; catalogue `reset`; control-catalogue and schema goldens; DSE111 fixture | opus | 1341 |
+| 2 | Interlock reset writes; catalogue `reset`; control-catalogue and schema goldens; MR111 fixture | opus | 1341 |
 | 3 | The sample's interlocks write the permit and drop the command on reset; `SEQ_START` in nine steps; eight goldens regenerated; stories re-pinned | opus | 1341 |
 | 4 | Scenario 9, `start-while-tripped`, end to end | opus | 1347 |
 | 5 | README prose, `docs/control-blocks.md`, root README, 6a/5c amendment lines | sonnet | 1348 |
@@ -461,15 +461,15 @@ a shipped component or block, or a golden that must be read against its story).
 **Model:** opus.
 
 **Files:**
-- Modify: `src/Dse.Components/Mechanical/MotorStarter.cs` (summary, descriptor ports and tags, constructor, property, `DescribeTags`, `Evaluate`)
-- Modify: `src/Dse.Components/Conveyors/Conveyor.cs` (descriptor ports and tags, one `Expose`)
-- Modify: `src/Dse.Components/Flow/BulkSource.cs` (descriptor ports and tags, constructor, property, `DescribeTags`, `Advance`)
-- Test: `tests/Dse.Components.Tests/MotorStarterTests.cs` (+2 facts; `Build` gains an optional permit)
-- Test: `tests/Dse.Components.Tests/ConveyorIoTests.cs` (+1 fact; one face row)
-- Test: `tests/Dse.Components.Tests/SourceSinkTests.cs` (+1 fact)
-- Test: `tests/Dse.Components.Tests/ComponentTagTests.cs` (+2 rows, R127)
-- Test: `tests/Dse.Control.Tests/WorkedExampleTests.cs`, `tests/Dse.Cli.Tests/ValidateCommandTests.cs`, `tests/Dse.Cli.Tests/TagsCommandTests.cs` (47 → 49, R127)
-- Regenerate: `tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json`
+- Modify: `src/Millrace.Components/Mechanical/MotorStarter.cs` (summary, descriptor ports and tags, constructor, property, `DescribeTags`, `Evaluate`)
+- Modify: `src/Millrace.Components/Conveyors/Conveyor.cs` (descriptor ports and tags, one `Expose`)
+- Modify: `src/Millrace.Components/Flow/BulkSource.cs` (descriptor ports and tags, constructor, property, `DescribeTags`, `Advance`)
+- Test: `tests/Millrace.Components.Tests/MotorStarterTests.cs` (+2 facts; `Build` gains an optional permit)
+- Test: `tests/Millrace.Components.Tests/ConveyorIoTests.cs` (+1 fact; one face row)
+- Test: `tests/Millrace.Components.Tests/SourceSinkTests.cs` (+1 fact)
+- Test: `tests/Millrace.Components.Tests/ComponentTagTests.cs` (+2 rows, R127)
+- Test: `tests/Millrace.Control.Tests/WorkedExampleTests.cs`, `tests/Millrace.Cli.Tests/ValidateCommandTests.cs`, `tests/Millrace.Cli.Tests/TagsCommandTests.cs` (47 → 49, R127)
+- Regenerate: `tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json`
 
 **Interfaces:**
 - Consumes: `AddInput<bool>(string name, bool defaultValue)`,
@@ -481,7 +481,7 @@ a shipped component or block, or a golden that must be read against its story).
 
 - [ ] **Step 1: Write the failing tests and move the tag-shape assertions**
 
-In `tests/Dse.Components.Tests/MotorStarterTests.cs`, replace the `Build` helper
+In `tests/Millrace.Components.Tests/MotorStarterTests.cs`, replace the `Build` helper
 
 ```csharp
     private static Rig Build()
@@ -565,7 +565,7 @@ and insert before `    [Fact]\n    public void RejectsAResetLevelAboveTheTripLev
 
 ```
 
-In `tests/Dse.Components.Tests/ConveyorIoTests.cs`, in
+In `tests/Millrace.Components.Tests/ConveyorIoTests.cs`, in
 `TheConveyorPublishesExactlyItsFace`, replace
 
 ```csharp
@@ -603,7 +603,7 @@ and insert before `    [Fact]\n    public void AFailedSpeedSensorReadsBadOnTheWi
 
 ```
 
-In `tests/Dse.Components.Tests/SourceSinkTests.cs`, insert before
+In `tests/Millrace.Components.Tests/SourceSinkTests.cs`, insert before
 `    [Fact]\n    public void ASinkWithCapacityFillsOnceAndSaysSo()`:
 
 ```csharp
@@ -627,7 +627,7 @@ In `tests/Dse.Components.Tests/SourceSinkTests.cs`, insert before
 
 ```
 
-In `tests/Dse.Components.Tests/ComponentTagTests.cs`, in
+In `tests/Millrace.Components.Tests/ComponentTagTests.cs`, in
 `StarterPublishesCommandsAndStates`, replace
 
 ```csharp
@@ -658,34 +658,34 @@ with
                 ("Rate", TagKind.Double, TagAccess.ReadWrite),
 ```
 
-In `tests/Dse.Control.Tests/WorkedExampleTests.cs` make three replacements:
-`        // 25 plant tags (dse tags conveyor-line.json) plus 22 owned ones.` →
-`        // 27 plant tags (dse tags conveyor-line.json) plus 22 owned ones.`;
+In `tests/Millrace.Control.Tests/WorkedExampleTests.cs` make three replacements:
+`        // 25 plant tags (millrace tags conveyor-line.json) plus 22 owned ones.` →
+`        // 27 plant tags (millrace tags conveyor-line.json) plus 22 owned ones.`;
 `        Assert.Equal(47, sim.IO.Directory.Count);` →
 `        Assert.Equal(49, sim.IO.Directory.Count);`;
 `        Assert.Equal(47, fromJson.IO.Directory.Count);` →
 `        Assert.Equal(49, fromJson.IO.Directory.Count);`.
 
-In `tests/Dse.Cli.Tests/ValidateCommandTests.cs` replace
+In `tests/Millrace.Cli.Tests/ValidateCommandTests.cs` replace
 `        Assert.Matches(@"  tags          47 \(0 explicit\)\n  controllers   4\n  time step     10 ms\n", run.Out);`
 with
 `        Assert.Matches(@"  tags          49 \(0 explicit\)\n  controllers   4\n  time step     10 ms\n", run.Out);`
 and `        Assert.Equal(47, summary.GetProperty("tags").GetInt32());` with
 `        Assert.Equal(49, summary.GetProperty("tags").GetInt32());`.
 
-In `tests/Dse.Cli.Tests/TagsCommandTests.cs` replace
+In `tests/Millrace.Cli.Tests/TagsCommandTests.cs` replace
 `        Assert.Equal(47, run.Out.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length);`
 with
 `        Assert.Equal(49, run.Out.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length);`.
 
 - [ ] **Step 2: Run the component tests to see them fail**
 
-Run: `dotnet test tests/Dse.Components.Tests --nologo`
+Run: `dotnet test tests/Millrace.Components.Tests --nologo`
 Expected: the build fails with `error CS1061: 'MotorStarter' does not contain a definition for 'Permit'` (and the same for `BulkSource` if the compiler reaches it).
 
 - [ ] **Step 3: Add the permit to the starter**
 
-In `src/Dse.Components/Mechanical/MotorStarter.cs` make these replacements.
+In `src/Millrace.Components/Mechanical/MotorStarter.cs` make these replacements.
 
 The class summary's second sentence,
 
@@ -750,7 +750,7 @@ becomes
 
 - [ ] **Step 4: Expose it on the conveyor**
 
-In `src/Dse.Components/Conveyors/Conveyor.cs`: after
+In `src/Millrace.Components/Conveyors/Conveyor.cs`: after
 `            PortSpec.In<bool>("Start", description: "Run command to the starter."),` add
 
 ```csharp
@@ -771,7 +771,7 @@ and after `        Expose("Start", Starter.Command);` add
 
 - [ ] **Step 5: Add the permit to the feeder**
 
-In `src/Dse.Components/Flow/BulkSource.cs`: after
+In `src/Millrace.Components/Flow/BulkSource.cs`: after
 `            PortSpec.In<bool>("Enabled", description: "Defaults to the enabled parameter."),` add
 
 ```csharp
@@ -817,7 +817,7 @@ becomes
 
 - [ ] **Step 6: Run the component tests**
 
-Run: `dotnet test tests/Dse.Components.Tests --nologo`
+Run: `dotnet test tests/Millrace.Components.Tests --nologo`
 Expected: 131 passed, 1 failed —
 `ComponentsExportTests.TheShippedCatalogueExportsExactlyTheGoldenFile` (the
 catalogue golden lists ports and tags). The four new facts and the two moved
@@ -826,8 +826,8 @@ agree).
 
 - [ ] **Step 7: Regenerate the components golden and read its diff**
 
-Run: `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Components.Tests --nologo --filter "FullyQualifiedName~TheShippedCatalogueExportsExactlyTheGoldenFile"`
-Then read `git diff tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json`
+Run: `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Components.Tests --nologo --filter "FullyQualifiedName~TheShippedCatalogueExportsExactlyTheGoldenFile"`
+Then read `git diff tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json`
 in full. Checklist (measured): **+33 lines, 0 removed, six hunks**, each adding
 one object and nothing else —
 
@@ -847,8 +847,8 @@ change in this task (the schema lists parameters, not ports).
 
 - [ ] **Step 8: Build and test the solution**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1327** (Components 132; every
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1327** (Components 132; every
 other project as at `aa3c403`). The sample goldens, the scenario goldens and
 `conveyor-control.log` are untouched: `git status --short` lists only the eleven
 files of this task.
@@ -856,7 +856,7 @@ files of this task.
 - [ ] **Step 9: Commit**
 
 ```bash
-git add src/Dse.Components/Mechanical/MotorStarter.cs src/Dse.Components/Conveyors/Conveyor.cs src/Dse.Components/Flow/BulkSource.cs tests/Dse.Components.Tests/MotorStarterTests.cs tests/Dse.Components.Tests/ConveyorIoTests.cs tests/Dse.Components.Tests/SourceSinkTests.cs tests/Dse.Components.Tests/ComponentTagTests.cs tests/Dse.Components.Tests/Catalogue/Golden/components-catalogue.json tests/Dse.Control.Tests/WorkedExampleTests.cs tests/Dse.Cli.Tests/ValidateCommandTests.cs tests/Dse.Cli.Tests/TagsCommandTests.cs
+git add src/Millrace.Components/Mechanical/MotorStarter.cs src/Millrace.Components/Conveyors/Conveyor.cs src/Millrace.Components/Flow/BulkSource.cs tests/Millrace.Components.Tests/MotorStarterTests.cs tests/Millrace.Components.Tests/ConveyorIoTests.cs tests/Millrace.Components.Tests/SourceSinkTests.cs tests/Millrace.Components.Tests/ComponentTagTests.cs tests/Millrace.Components.Tests/Catalogue/Golden/components-catalogue.json tests/Millrace.Control.Tests/WorkedExampleTests.cs tests/Millrace.Cli.Tests/ValidateCommandTests.cs tests/Millrace.Cli.Tests/TagsCommandTests.cs
 ```
 
 ```bash
@@ -870,13 +870,13 @@ git commit -m "feat(components): give the starter, the conveyor and the feeder a
 **Model:** opus.
 
 **Files:**
-- Modify: `src/Dse.Control/Interlock.cs` (whole file below)
-- Modify: `src/Dse.Control.Catalogue/InterlockCatalogue.cs` (factory, one parameter)
-- Test: `tests/Dse.Control.Tests/InterlockTests.cs` (+2 helpers, +10 facts)
-- Test: `tests/Dse.Control.Tests/HostTests.cs` (+1 fact)
-- Test: `tests/Dse.Control.Catalogue.Tests/BlockFactoryTests.cs` (+1 fact)
-- Create: `tests/Dse.Configuration.Tests/Plants/invalid/DSE111-reset-write-twice.json` (+2 theory rows)
-- Regenerate: `tests/Dse.Control.Catalogue.Tests/Golden/control-catalogue.json`, `tests/Dse.Configuration.Tests/Golden/plant.schema.json`
+- Modify: `src/Millrace.Control/Interlock.cs` (whole file below)
+- Modify: `src/Millrace.Control.Catalogue/InterlockCatalogue.cs` (factory, one parameter)
+- Test: `tests/Millrace.Control.Tests/InterlockTests.cs` (+2 helpers, +10 facts)
+- Test: `tests/Millrace.Control.Tests/HostTests.cs` (+1 fact)
+- Test: `tests/Millrace.Control.Catalogue.Tests/BlockFactoryTests.cs` (+1 fact)
+- Create: `tests/Millrace.Configuration.Tests/Plants/invalid/MR111-reset-write-twice.json` (+2 theory rows)
+- Regenerate: `tests/Millrace.Control.Catalogue.Tests/Golden/control-catalogue.json`, `tests/Millrace.Configuration.Tests/Golden/plant.schema.json`
 
 **Interfaces:**
 - Consumes: `BlockWrite(string Tag, TagValue Value)`, `Condition(string Tag, bool Normal)`,
@@ -888,7 +888,7 @@ git commit -m "feat(components): give the starter, the conveyor and the feeder a
 
 - [ ] **Step 1: Write the failing pure tests**
 
-In `tests/Dse.Control.Tests/InterlockTests.cs`, after the `Healthy()` helper
+In `tests/Millrace.Control.Tests/InterlockTests.cs`, after the `Healthy()` helper
 (ending `        return scan;\n    }`), insert
 
 ```csharp
@@ -1052,7 +1052,7 @@ and before the class's closing brace append
 
 - [ ] **Step 2: Write the failing host, catalogue and loader tests**
 
-In `tests/Dse.Control.Tests/HostTests.cs`, insert before
+In `tests/Millrace.Control.Tests/HostTests.cs`, insert before
 `    [Fact]\n    public void TwoRunsOfThePlantWithEveryBlockAreByteIdentical()`:
 
 ```csharp
@@ -1093,7 +1093,7 @@ In `tests/Dse.Control.Tests/HostTests.cs`, insert before
 
 ```
 
-In `tests/Dse.Control.Catalogue.Tests/BlockFactoryTests.cs`, insert before
+In `tests/Millrace.Control.Catalogue.Tests/BlockFactoryTests.cs`, insert before
 `    [Fact]\n    public void AnAlarmOwnsAPairPerConfiguredLimitInLimitOrder()`:
 
 ```csharp
@@ -1115,7 +1115,7 @@ In `tests/Dse.Control.Catalogue.Tests/BlockFactoryTests.cs`, insert before
 
 ```
 
-Create `tests/Dse.Configuration.Tests/Plants/invalid/DSE111-reset-write-twice.json`:
+Create `tests/Millrace.Configuration.Tests/Plants/invalid/MR111-reset-write-twice.json`:
 
 ```json
 {
@@ -1142,21 +1142,21 @@ corpus theory and the schema-agreement theory each gain a row.)
 
 - [ ] **Step 3: Run them to see them fail**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo`
 Expected: the build fails with `error CS1729: 'Interlock' does not contain a constructor that takes 5 arguments`.
-Run: `dotnet test tests/Dse.Control.Catalogue.Tests --nologo`
+Run: `dotnet test tests/Millrace.Control.Catalogue.Tests --nologo`
 Expected: 22 passed, 1 failed — `AnInterlocksResetWritesBindAndShareAPinWithItsTripWrites` (the binder does not know `reset`).
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo`
-Expected: 209 passed, 2 failed — the two `DSE111-reset-write-twice.json` rows (measured: the loader reports `DSE101 $.controllers[0].parameters.reset — 'reset' is not a parameter here.`; the schema rejects the key).
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo`
+Expected: 209 passed, 2 failed — the two `MR111-reset-write-twice.json` rows (measured: the loader reports `MR101 $.controllers[0].parameters.reset — 'reset' is not a parameter here.`; the schema rejects the key).
 
 - [ ] **Step 4: Write the interlock**
 
-Replace the whole of `src/Dse.Control/Interlock.cs` with:
+Replace the whole of `src/Millrace.Control/Interlock.cs` with:
 
 ```csharp
-using Dse.Io;
+using Millrace.Io;
 
-namespace Dse.Control;
+namespace Millrace.Control;
 
 /// <summary>
 /// The conditions that stop a running thing. Any abnormal condition latches
@@ -1375,7 +1375,7 @@ public sealed class Interlock : IScanBlock
 
 - [ ] **Step 5: Add `reset` to the catalogue descriptor**
 
-In `src/Dse.Control.Catalogue/InterlockCatalogue.cs`, the factory
+In `src/Millrace.Control.Catalogue/InterlockCatalogue.cs`, the factory
 
 ```csharp
         (id, period, p) => new Interlock(
@@ -1401,20 +1401,20 @@ The descriptor's description line stays as it is (R123).
 
 - [ ] **Step 6: Run the three projects**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo` — expect **116** passed (105 + 10 + 1).
-Run: `dotnet test tests/Dse.Control.Catalogue.Tests --nologo` — expect 22 passed, 1 failed:
+Run: `dotnet test tests/Millrace.Control.Tests --nologo` — expect **116** passed (105 + 10 + 1).
+Run: `dotnet test tests/Millrace.Control.Catalogue.Tests --nologo` — expect 22 passed, 1 failed:
 `ControlCatalogueTests.TheControlCatalogueExportsExactlyTheGoldenFile`.
-Run: `dotnet test tests/Dse.Configuration.Tests --nologo` — expect 210 passed, 1 failed:
+Run: `dotnet test tests/Millrace.Configuration.Tests --nologo` — expect 210 passed, 1 failed:
 `PlantSchemaTests.MatchesTheGoldenFile`. (The fixture's two rows now pass: the
-loader reports exactly one `DSE111` — "'INT01' (interlock) rejected its
+loader reports exactly one `MR111` — "'INT01' (interlock) rejected its
 parameters: Tag 'FEED.Permit' is commanded twice on reset. Command each tag once
 in each list." — and the schema accepts the file.)
 
 - [ ] **Step 7: Regenerate the two goldens and read their diffs**
 
-Run: `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Control.Catalogue.Tests --nologo --filter "FullyQualifiedName~TheControlCatalogueExportsExactlyTheGoldenFile"`
-Run: `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Configuration.Tests --nologo --filter "FullyQualifiedName~PlantSchemaTests.MatchesTheGoldenFile"`
-Then read `git diff tests/Dse.Control.Catalogue.Tests/Golden/control-catalogue.json tests/Dse.Configuration.Tests/Golden/plant.schema.json`
+Run: `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Control.Catalogue.Tests --nologo --filter "FullyQualifiedName~TheControlCatalogueExportsExactlyTheGoldenFile"`
+Run: `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Configuration.Tests --nologo --filter "FullyQualifiedName~PlantSchemaTests.MatchesTheGoldenFile"`
+Then read `git diff tests/Millrace.Control.Catalogue.Tests/Golden/control-catalogue.json tests/Millrace.Configuration.Tests/Golden/plant.schema.json`
 in full. Checklist (measured):
 
 - `control-catalogue.json`: **+23 lines, 0 removed, one hunk** inside the
@@ -1431,8 +1431,8 @@ in full. Checklist (measured):
 
 - [ ] **Step 8: Build and test the solution**
 
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1341** (Control 116, Control.Catalogue
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1341** (Control 116, Control.Catalogue
 23, Configuration 211). The sample goldens are untouched (the plant has no
 `reset` yet): `git status --short` lists only the eight files of this task, and
 `git diff --stat aa3c403 -- src/` lists exactly the five files of the Global
@@ -1441,7 +1441,7 @@ Constraints.
 - [ ] **Step 9: Commit**
 
 ```bash
-git add src/Dse.Control/Interlock.cs src/Dse.Control.Catalogue/InterlockCatalogue.cs tests/Dse.Control.Tests/InterlockTests.cs tests/Dse.Control.Tests/HostTests.cs tests/Dse.Control.Catalogue.Tests/BlockFactoryTests.cs tests/Dse.Configuration.Tests/Plants/invalid/DSE111-reset-write-twice.json tests/Dse.Control.Catalogue.Tests/Golden/control-catalogue.json tests/Dse.Configuration.Tests/Golden/plant.schema.json
+git add src/Millrace.Control/Interlock.cs src/Millrace.Control.Catalogue/InterlockCatalogue.cs tests/Millrace.Control.Tests/InterlockTests.cs tests/Millrace.Control.Tests/HostTests.cs tests/Millrace.Control.Catalogue.Tests/BlockFactoryTests.cs tests/Millrace.Configuration.Tests/Plants/invalid/MR111-reset-write-twice.json tests/Millrace.Control.Catalogue.Tests/Golden/control-catalogue.json tests/Millrace.Configuration.Tests/Golden/plant.schema.json
 ```
 
 ```bash
@@ -1456,7 +1456,7 @@ git commit -m "feat(control): let an interlock send writes once, on the scan tha
 
 **Files:**
 - Modify: `samples/mine-conveyors/plant.json` (four interlocks; `SEQ_START`'s steps)
-- Modify: `tests/Dse.Samples.Tests/Stories.cs` (whole file below)
+- Modify: `tests/Millrace.Samples.Tests/Stories.cs` (whole file below)
 - Regenerate: the eight `samples/mine-conveyors/expected/*.log`
 - Modify: `samples/mine-conveyors/README.md` (three quoted blocks)
 
@@ -1471,10 +1471,10 @@ git commit -m "feat(control): let an interlock send writes once, on the scan tha
 
 - [ ] **Step 1: Re-pin the stories**
 
-Replace the whole of `tests/Dse.Samples.Tests/Stories.cs` with:
+Replace the whole of `tests/Millrace.Samples.Tests/Stories.cs` with:
 
 ```csharp
-namespace Dse.Samples.Tests;
+namespace Millrace.Samples.Tests;
 
 /// <summary>A scenario's causal chain, in order, and what must not happen.</summary>
 public sealed record Story(IReadOnlyList<EventPattern> Chain, IReadOnlyList<Absence> Absences);
@@ -1708,7 +1708,7 @@ public static class Stories
 
 - [ ] **Step 2: Run the stories to see them fail**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioTellsItsStory"`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioTellsItsStory"`
 Expected: 8 failed — each names its first missing pattern (a `Permit` write, or
 normal-start-stop's `2: Reset CV003's interlock.`).
 
@@ -1871,7 +1871,7 @@ controller are unchanged.
 
 - [ ] **Step 4: Regenerate the eight goldens**
 
-Run: `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"`
+Run: `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"`
 Expected: 8 passed. `git status --short samples/` lists the eight
 `expected/*.log` and `plant.json`.
 
@@ -1993,14 +1993,14 @@ Nothing else in the README changes in this task (Task 5 rewrites its prose).
 
 - [ ] **Step 7: Run the sample project and the solution**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo` — expect **66** passed.
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1341**.
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo` — expect **66** passed.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1341**.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add samples/mine-conveyors/plant.json samples/mine-conveyors/expected/normal-start-stop.log samples/mine-conveyors/expected/pull-key.log samples/mine-conveyors/expected/e-stop.log samples/mine-conveyors/expected/overload.log samples/mine-conveyors/expected/chute-blockage.log samples/mine-conveyors/expected/failed-zero-speed.log samples/mine-conveyors/expected/welded-contactor.log samples/mine-conveyors/expected/feed-starve.log samples/mine-conveyors/README.md tests/Dse.Samples.Tests/Stories.cs
+git add samples/mine-conveyors/plant.json samples/mine-conveyors/expected/normal-start-stop.log samples/mine-conveyors/expected/pull-key.log samples/mine-conveyors/expected/e-stop.log samples/mine-conveyors/expected/overload.log samples/mine-conveyors/expected/chute-blockage.log samples/mine-conveyors/expected/failed-zero-speed.log samples/mine-conveyors/expected/welded-contactor.log samples/mine-conveyors/expected/feed-starve.log samples/mine-conveyors/README.md tests/Millrace.Samples.Tests/Stories.cs
 ```
 
 ```bash
@@ -2016,9 +2016,9 @@ git commit -m "feat(samples): hold each interlocked device off with a run permit
 **Files:**
 - Create: `samples/mine-conveyors/scenarios/start-while-tripped.json`
 - Create (generated): `samples/mine-conveyors/expected/start-while-tripped.log`
-- Modify: `tests/Dse.Samples.Tests/Sample.cs` (one name, one summary)
-- Modify: `tests/Dse.Samples.Tests/Stories.cs` (three fields, one story)
-- Modify: `tests/Dse.Samples.Tests/MineConveyorTests.cs` (+1 fact, one rename)
+- Modify: `tests/Millrace.Samples.Tests/Sample.cs` (one name, one summary)
+- Modify: `tests/Millrace.Samples.Tests/Stories.cs` (three fields, one story)
+- Modify: `tests/Millrace.Samples.Tests/MineConveyorTests.cs` (+1 fact, one rename)
 - Modify: `samples/mine-conveyors/README.md` (intro counts, section 9)
 
 **Interfaces:**
@@ -2030,7 +2030,7 @@ git commit -m "feat(samples): hold each interlocked device off with a run permit
 
 - [ ] **Step 1: Name the scenario, write its story and its state check**
 
-In `tests/Dse.Samples.Tests/Sample.cs` replace
+In `tests/Millrace.Samples.Tests/Sample.cs` replace
 `    /// <summary>The eight scenarios, in the order the README tells them.</summary>` with
 `    /// <summary>The nine scenarios, in the order the README tells them.</summary>`
 and
@@ -2048,7 +2048,7 @@ with
     ];
 ```
 
-In `tests/Dse.Samples.Tests/Stories.cs`, replace
+In `tests/Millrace.Samples.Tests/Stories.cs`, replace
 `/// The stories of the design` with `/// The nine stories of the design`; after
 `    private static readonly EventPattern StartComplete = E("SEQ_START", "SEQUENCE_COMPLETE");`
 insert a blank line and
@@ -2125,7 +2125,7 @@ with
 `new(OperatorStart, …, OperatorStart)` spans exactly 100 s to 125 s: the refused
 start, the trip, the reset, up to the fresh start.)
 
-In `tests/Dse.Samples.Tests/MineConveyorTests.cs` rename
+In `tests/Millrace.Samples.Tests/MineConveyorTests.cs` rename
 `TheScenarioFolderHoldsExactlyTheEightScenariosEachWithAGoldenAndAStory` to
 `TheScenarioFolderHoldsExactlyTheNamedScenariosEachWithAGoldenAndAStory` (body
 unchanged, R127), and insert before
@@ -2162,7 +2162,7 @@ unchanged, R127), and insert before
 
 - [ ] **Step 2: Run the project to see it fail**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo`
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo`
 Expected: 8 failed — the folder test, the five `start-while-tripped` theory rows
 (golden, story, settle, replay, README quote), the README command test and the
 new fact, each on the missing scenario; 64 passed.
@@ -2198,7 +2198,7 @@ new fact, each on the missing scenario; 64 passed.
 
 - [ ] **Step 4: Generate its golden and read it**
 
-Run: `DSE_UPDATE_GOLDEN=1 dotnet test tests/Dse.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"`
+Run: `MILLRACE_UPDATE_GOLDEN=1 dotnet test tests/Millrace.Samples.Tests --nologo --filter "FullyQualifiedName~EveryScenarioMatchesItsGolden"`
 Expected: 9 passed; `git status --short samples/` shows the new golden and
 scenario only (the other eight are rewritten byte-identically).
 
@@ -2291,7 +2291,7 @@ stays empty from 100 s to the end. Before the permit existed, the writes at
 stopped CV002 — and, left alone, would have filled CH1 at 114.26 s.
 
 ```bash
-dotnet run --project src/Dse.Cli -- run samples/mine-conveyors/scenarios/start-while-tripped.json --expect samples/mine-conveyors/expected/start-while-tripped.log
+dotnet run --project src/Millrace.Cli -- run samples/mine-conveyors/scenarios/start-while-tripped.json --expect samples/mine-conveyors/expected/start-while-tripped.log
 ```
 ````
 
@@ -2304,16 +2304,16 @@ at 114.26 s.)
 
 - [ ] **Step 6: Run the project and the solution**
 
-Run: `dotnet test tests/Dse.Samples.Tests --nologo` — expect **72** passed (66 + five
+Run: `dotnet test tests/Millrace.Samples.Tests --nologo` — expect **72** passed (66 + five
 theory rows + one fact). Report the new fact's measured maxima. The replay row's
 recording holds exactly the sixteen timeline actions.
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1347**.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1347**.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add samples/mine-conveyors/scenarios/start-while-tripped.json samples/mine-conveyors/expected/start-while-tripped.log samples/mine-conveyors/README.md tests/Dse.Samples.Tests/Sample.cs tests/Dse.Samples.Tests/Stories.cs tests/Dse.Samples.Tests/MineConveyorTests.cs
+git add samples/mine-conveyors/scenarios/start-while-tripped.json samples/mine-conveyors/expected/start-while-tripped.log samples/mine-conveyors/README.md tests/Millrace.Samples.Tests/Sample.cs tests/Millrace.Samples.Tests/Stories.cs tests/Millrace.Samples.Tests/MineConveyorTests.cs
 ```
 
 ```bash
@@ -2327,7 +2327,7 @@ git commit -m "feat(samples): show a start written while tripped moving nothing,
 **Model:** sonnet.
 
 **Files:**
-- Test: `tests/Dse.Control.Tests/DocumentationTests.cs` (+1 fact)
+- Test: `tests/Millrace.Control.Tests/DocumentationTests.cs` (+1 fact)
 - Modify: `docs/control-blocks.md` (full-size example paragraph, `Interlock` section)
 - Modify: `samples/mine-conveyors/README.md` (start paragraph, run permits, sizing note, normal stop, leaves-out bullet, power-up)
 - Modify: `README.md` (sample paragraph)
@@ -2339,7 +2339,7 @@ git commit -m "feat(samples): show a start written while tripped moving nothing,
 
 - [ ] **Step 1: Write the failing documentation test**
 
-In `tests/Dse.Control.Tests/DocumentationTests.cs`, insert before
+In `tests/Millrace.Control.Tests/DocumentationTests.cs`, insert before
 `    /// <summary>Two levels up from this file is the repository root.</summary>`:
 
 ```csharp
@@ -2360,7 +2360,7 @@ In `tests/Dse.Control.Tests/DocumentationTests.cs`, insert before
     }
 ```
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo --filter "FullyQualifiedName~DocumentationTests"`
+Run: `dotnet test tests/Millrace.Control.Tests --nologo --filter "FullyQualifiedName~DocumentationTests"`
 Expected: 2 passed, 1 failed — the new fact, on `"reset"`.
 
 - [ ] **Step 2: Update `docs/control-blocks.md`**
@@ -2644,9 +2644,9 @@ unchanged. See `2026-09-25-interlock-start-inhibit-design.md` and its plan
 
 - [ ] **Step 6: Run everything**
 
-Run: `dotnet test tests/Dse.Control.Tests --nologo --filter "FullyQualifiedName~DocumentationTests"` — expect 3 passed.
-Run: `dotnet build Dse.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
-Run: `dotnet test Dse.sln --nologo` — expect **1348**: 37 / 461 / 132 / 56 / 211 /
+Run: `dotnet test tests/Millrace.Control.Tests --nologo --filter "FullyQualifiedName~DocumentationTests"` — expect 3 passed.
+Run: `dotnet build Millrace.sln -c Release --nologo` — expect `0 Warning(s)`, `0 Error(s)`.
+Run: `dotnet test Millrace.sln --nologo` — expect **1348**: 37 / 461 / 132 / 56 / 211 /
 163 / 76 / 117 / 23 / 72. The sample README quote tests still pass (Step 3
 touched prose only).
 Run: `git grep -n PackageReference -- 'src/*.csproj'` — expect no output.
@@ -2656,7 +2656,7 @@ Global Constraints.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add tests/Dse.Control.Tests/DocumentationTests.cs docs/control-blocks.md samples/mine-conveyors/README.md README.md docs/superpowers/specs/2026-09-25-mine-conveyor-sample-design.md docs/superpowers/specs/2026-09-22-control-blocks-design.md
+git add tests/Millrace.Control.Tests/DocumentationTests.cs docs/control-blocks.md samples/mine-conveyors/README.md README.md docs/superpowers/specs/2026-09-25-mine-conveyor-sample-design.md docs/superpowers/specs/2026-09-22-control-blocks-design.md
 ```
 
 ```bash
@@ -2674,12 +2674,12 @@ git commit -m "docs: describe the interlock's reset writes and the run permit" -
 | §1 criterion 3 | reset writes once, on the accepted reset scan, never on a refused one | 2 | `TheResetWritesGoOutOnTheAcceptedResetScanOnly`, `ARefusedResetSendsNoResetWrite`, `TheTripScanSendsTheTripWritesAndNoResetWrite`, `AResetWriteLandsTheTickAfterTheResetScanAndIsNotRecorded` |
 | §1 criterion 4 | scenario 9; the eight still tell their stories | 3, 4 | `EveryScenarioTellsItsStory` (nine rows), `AStartWrittenWhileTrippedMovesNothingAndTheResetDoesNotReleaseIt` |
 | §1 criterion 5 | defaults change nothing; catalogue/schema goldens by additions | 1, 2 | untouched event-log goldens; Task 1 Step 7, Task 2 Step 7 checklists; `WithoutResetWritesThePinsAreExactlyTheTripWrites` |
-| §1 criterion 6 | no packages; `Dse.Control` references; 0 warnings; tests pass | all | Task 5 Step 6 commands; R127 for the eight moved assertions |
+| §1 criterion 6 | no packages; `Millrace.Control` references; 0 warnings; tests pass | all | Task 5 Step 6 commands; R127 for the eight moved assertions |
 | §2 | starter `Permit` port and tag; `closed` formula; no refusal event | 1 | `AFalsePermitHolds…` (`Assert.Empty(Events)` before the permit) |
 | §2 | conveyor exposes `CVn.Permit` | 1 | `TheConveyorPublishesExactlyItsFace`, `APermitWrittenFalseHolds…` |
 | §2 | bulk-source `Permit`; `enabled` parameter unchanged | 1 | `ASourceWithoutItsPermit…`; 6a's `ASourceIsEnabledAtPowerUpUnlessTheFileSaysOtherwise` unchanged |
 | §2 | descriptors and conformance | 1 | components golden; the existing conformance sweep |
-| §3 | reset writes validated like trip writes (one per tag; not null; no blank tag; one kind per tag, R123) | 2 | `TheConstructorRejectsTwoResetWritesToOneTag`, `TheConstructorRejectsNullResetWrites`, `TheConstructorRejectsAResetWriteToABlankTag`, `TheConstructorRejectsATagCommandedAsTwoKinds`, DSE111 fixture |
+| §3 | reset writes validated like trip writes (one per tag; not null; no blank tag; one kind per tag, R123) | 2 | `TheConstructorRejectsTwoResetWritesToOneTag`, `TheConstructorRejectsNullResetWrites`, `TheConstructorRejectsAResetWriteToABlankTag`, `TheConstructorRejectsATagCommandedAsTwoKinds`, MR111 fixture |
 | §3 | `Writes` = union, one pin per distinct tag | 2 | `ATagInBothListsIsOneWritePinAfterTheTripPins`, `AResetOnlyTagGetsItsOwnPinAfterTheTripPins` |
 | §3 | catalogue `reset: [BlockWrite]`, default empty, spec wording | 2 | `AnInterlocksResetWritesBindAndShareAPinWithItsTripWrites`, control-catalogue and schema goldens |
 | §3 | existing constructor kept as an overload | 2 | every existing `new Interlock(…, Period)` call compiles; `WithoutResetWrites…` |
