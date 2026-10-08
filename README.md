@@ -27,10 +27,17 @@ furnace, a measuring station with a pyrometer and a reject kicker, a belt and a
 press — whose PLC rejects an over-soaked billet, with six scenarios. Both are
 data only: no C#.
 
+**Since 1.0.0 (unreleased):** DSE's first external consumer. `dse serve` runs a
+plant in real time and serves its tags over Modbus TCP, and `hmi/fuxa/` puts
+the mine-conveyor sample in the FUXA web SCADA with one `docker compose up` —
+see [A SCADA on the sample](#a-scada-on-the-sample) and the
+[changelog](CHANGELOG.md#unreleased).
+
 ## Getting started
 
 You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0);
-nothing else. From the repository root:
+nothing else ([Docker](https://docs.docker.com/get-docker/) only for the FUXA
+HMI). From the repository root:
 
 ```bash
 dotnet build Dse.sln
@@ -57,6 +64,22 @@ and the determinism rules; [scenarios](docs/scenarios.md),
 own. The design specs are in `docs/superpowers/specs/` and the implementation
 plans in `docs/superpowers/plans/`.
 
+## Projects
+
+| project | what it holds |
+|---|---|
+| `Dse.Core` | the clock, the five-phase tick, ports, signals, material flow, faults, the catalogue and the event log |
+| `Dse.Components` | the thirty component types: machines, instrumentation, process and discrete-item components |
+| `Dse.Io.Abstractions` | the I/O boundary: the tag directory, tag readers and writers, and the scan-block interface |
+| `Dse.Control` | the six PLC-style control blocks; `Dse.Control.Catalogue` registers them |
+| `Dse.Configuration` | loading JSON plants, the generated schema and the configuration diagnostics |
+| `Dse.Scenarios` | scenarios: timelines of writes and faults, replayed against golden logs |
+| `Dse.Realtime` | wall-clock pacing and the command bus that queues outside writes |
+| `Dse.Modbus` | the Modbus register map and a Modbus TCP server, with no external package |
+| `Dse.Cli` | the `dse` command line |
+
+Each has a test project under `tests/`; `Dse.Samples.Tests` runs both samples.
+
 ## Command line
 
 ```bash
@@ -73,7 +96,16 @@ dotnet run --project src/Dse.Cli -- serve samples/mine-conveyors/plant.json  # r
 
 Add `--assembly path/to/YourModule.dll` to any command to include your own
 components; add `--format json` to `validate` and `tags` for machine-readable
-output. A plant file looks like this:
+output. `modbus-map` takes `--format text|csv|fuxa`; `serve` takes
+`--scenario <file>` (run its timeline, ignoring its duration), `--port <n>`,
+`--bind <address>` and `--speed <x>`. `dse <command> --help` lists a
+command's options.
+
+Exit codes: 0 success; 1 the plant or scenario has errors; 2 usage error; 3 a
+file or assembly could not be read, or the port could not be opened; 4 the
+event log differs from `--expect`.
+
+A plant file looks like this:
 
 ```json
 {
