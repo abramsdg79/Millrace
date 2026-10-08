@@ -11,13 +11,19 @@ causally through the plant.
 
 ## Status
 
-**Version 1.0.0.** Everything in the v1 scope of the
+**Version 1.1.0.** Everything in the v1 scope of the
 [design](docs/superpowers/specs/2026-09-02-industrial-process-simulation-engine-design.md)
 is in: the deterministic core and material layer, a library of thirty
 component types, the I/O and real-time layers, six control blocks, scenarios
 replayed against golden event logs, JSON plants with a generated schema, the
-`millrace` command line, and two reference samples. The [changelog](CHANGELOG.md)
-lists what each project contains and links every spec and plan.
+`millrace` command line, and two reference samples. Since 1.0.0,
+`millrace serve` runs a plant in real time and serves its tags over Modbus
+TCP, and `hmi/fuxa/` puts the mine-conveyor sample in the FUXA web SCADA with
+one `docker compose up` — see [A SCADA on the sample](#a-scada-on-the-sample).
+The [changelog](CHANGELOG.md) lists what each release contains and links
+every spec and plan.
+
+Millrace was called DSE up to 1.0.0.
 
 The first reference sample, `samples/mine-conveyors/`, is three conveyors, a
 feeder and a stockpile with a sequenced start and stop, cascade interlocks,
@@ -26,12 +32,6 @@ permissives and alarms, and nine scenarios. The second sample,
 furnace, a measuring station with a pyrometer and a reject kicker, a belt and a
 press — whose PLC rejects an over-soaked billet, with six scenarios. Both are
 data only: no C#.
-
-**Since 1.0.0 (unreleased):** Millrace's first external consumer. `millrace serve` runs a
-plant in real time and serves its tags over Modbus TCP, and `hmi/fuxa/` puts
-the mine-conveyor sample in the FUXA web SCADA with one `docker compose up` —
-see [A SCADA on the sample](#a-scada-on-the-sample) and the
-[changelog](CHANGELOG.md#unreleased).
 
 ## Getting started
 

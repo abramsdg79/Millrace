@@ -5,14 +5,14 @@ using Millrace.Cli;
 namespace Millrace.Samples.Tests;
 
 /// <summary>
-/// The v1.0.0 release (plan 7): the version the build stamps, the changelog's
-/// one entry and the root README's "Getting started" agree, every link the
-/// changelog makes resolves, and every command the README tells a newcomer to
-/// run does what it says.
+/// The 1.1.0 release (plans 7 and 9): the version and product name the build
+/// stamps, the changelog's two entries and the root README's "Getting started"
+/// agree, every link the changelog makes resolves, and every command the README
+/// tells a newcomer to run does what it says.
 /// </summary>
 public partial class ReleaseTests
 {
-    [GeneratedRegex(@"^## 1\.0\.0 — \d{4}-\d{2}-\d{2}$", RegexOptions.Multiline)]
+    [GeneratedRegex(@"^## (\d+\.\d+\.\d+) — \d{4}-\d{2}-\d{2}$")]
     private static partial Regex ReleaseHeading();
 
     [GeneratedRegex(@"\]\((?!https?://)([^)#]+)\)")]
@@ -28,17 +28,17 @@ public partial class ReleaseTests
         string changelog = RepositoryFile("CHANGELOG.md");
         string readme = RepositoryFile("README.md");
 
-        Assert.Contains("    <Version>1.0.0</Version>\n", props, StringComparison.Ordinal);
+        Assert.Contains("    <Version>1.1.0</Version>\n", props, StringComparison.Ordinal);
+        Assert.Contains("    <Product>Millrace</Product>\n", props, StringComparison.Ordinal);
         Assert.All(
             Directory.EnumerateFiles(Path.Combine(RepositoryRoot(), "src"), "*.csproj", SearchOption.AllDirectories),
             path => Assert.False(File.ReadAllText(path).Contains("<Version>", StringComparison.Ordinal), $"{path} sets its own <Version>, overriding Directory.Build.props."));
 
         Assert.StartsWith("# Changelog\n", changelog, StringComparison.Ordinal);
-        Assert.Single(ReleaseHeading().Matches(changelog));
         string[] headings = changelog.Split('\n').Where(l => l.StartsWith("## ", StringComparison.Ordinal)).ToArray();
-        string[] expected = headings.Contains("## Unreleased") ? ["## Unreleased", headings[^1]] : [headings[^1]];
-        Assert.Equal(expected, headings);
-        Assert.Matches(ReleaseHeading(), headings[^1]);
+        Assert.All(headings, heading => Assert.Matches(ReleaseHeading(), heading));
+        Assert.Equal(["1.1.0", "1.0.0"], headings.Select(heading => ReleaseHeading().Match(heading).Groups[1].Value));
+        Assert.Equal("## 1.0.0 — 2026-10-07", headings[^1]);
         string[] areas = changelog.Split('\n').Where(l => l.StartsWith("### ", StringComparison.Ordinal)).Select(l => l[4..].Split(' ')[0]).ToArray();
         Assert.All(["Core", "Components", "Io", "Realtime", "Control", "Scenarios", "Configuration", "Cli", "Samples"], area => Assert.Contains(area, areas));
 
@@ -57,7 +57,7 @@ public partial class ReleaseTests
         Assert.Contains("[.NET 10 SDK]", readme, StringComparison.Ordinal);
         Assert.Contains("```bash\ndotnet build Millrace.sln\ndotnet test Millrace.sln\n```\n", readme, StringComparison.Ordinal);
         Assert.Contains("[changelog](CHANGELOG.md)", readme, StringComparison.Ordinal);
-        Assert.Contains("**Version 1.0.0.**", readme, StringComparison.Ordinal);
+        Assert.Contains("**Version 1.1.0.**", readme, StringComparison.Ordinal);
         Assert.DoesNotContain("Under construction", readme, StringComparison.Ordinal);
         Assert.DoesNotContain("## Build and test", readme, StringComparison.Ordinal);
     }

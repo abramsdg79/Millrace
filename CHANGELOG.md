@@ -3,10 +3,35 @@
 All notable changes to Millrace are recorded here. Versions follow
 [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 1.1.0 — 2026-10-08
 
-Millrace's first external consumer: a SCADA watching and operating a simulated
-plant over Modbus TCP
+The first public release, under a new name: DSE is now **Millrace**, the
+channel that drives a mill wheel. "DSE" is a known brand in the same
+industrial space
+([design](docs/superpowers/specs/2026-10-08-millrace-rename-design.md),
+[plan 9](docs/superpowers/plans/2026-10-08-millrace-rename.md)). The rename
+changes names only: no tick, event, value or register address changes, and a
+golden line changes only where it spells a name.
+
+### Rename
+
+- The solution is `Millrace.sln` (was `Dse.sln`); every project, folder,
+  assembly and namespace is `Millrace.*` (was `Dse.*`). A catalogue module
+  built against `Dse.Core` 1.0.0 must be rebuilt against `Millrace.Core`.
+- The command line is `millrace` (was `dse`).
+- Diagnostic codes are `MR` and the same three digits, with the same meanings
+  and order: `MR001`–`MR016`, `MR100`–`MR115` and `MR200`–`MR206` (were
+  `DSE001`–`DSE016`, `DSE100`–`DSE115` and `DSE200`–`DSE206`).
+- Goldens regenerate with `MILLRACE_UPDATE_GOLDEN=1` (was
+  `DSE_UPDATE_GOLDEN=1`).
+- The FUXA stack's compose project is `millrace-hmi`, its server service and
+  FUXA device `millrace`, its image `millrace-hmi/millrace:local` (were
+  `dse-hmi`, `dse` and `dse-hmi/dse:local`). The new project starts with
+  fresh volumes; `docker compose -p dse-hmi down -v` removes the old ones.
+- The assemblies carry the product name `Millrace` and version 1.1.0.
+
+Also in 1.1.0, Millrace's first external consumer: a SCADA watching and
+operating a simulated plant over Modbus TCP
 ([design](docs/superpowers/specs/2026-10-07-modbus-fuxa-hmi-design.md),
 [plan 8](docs/superpowers/plans/2026-10-07-modbus-fuxa-hmi.md)).
 
