@@ -6,8 +6,8 @@ All notable changes to Millrace are recorded here. Versions follow
 ## 1.1.0 — 2026-10-08
 
 The first public release, under a new name: DSE is now **Millrace**, the
-channel that drives a mill wheel. "DSE" is a known brand in the same
-industrial space
+channel that drives a mill wheel. It was renamed because "DSE" is already a
+well-known brand in the same industrial space
 ([design](docs/superpowers/specs/2026-10-08-millrace-rename-design.md),
 [plan 9](docs/superpowers/plans/2026-10-08-millrace-rename.md)). The rename
 changes names only: no tick, event, value or register address changes, and a
@@ -30,7 +30,7 @@ golden line changes only where it spells a name.
   fresh volumes; `docker compose -p dse-hmi down -v` removes the old ones.
 - The assemblies carry the product name `Millrace` and version 1.1.0.
 
-Also in 1.1.0, Millrace's first external consumer: a SCADA watching and
+1.1.0 also brings Millrace's first external consumer: a SCADA watching and
 operating a simulated plant over Modbus TCP
 ([design](docs/superpowers/specs/2026-10-07-modbus-fuxa-hmi-design.md),
 [plan 8](docs/superpowers/plans/2026-10-07-modbus-fuxa-hmi.md)).

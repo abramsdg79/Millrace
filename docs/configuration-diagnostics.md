@@ -108,7 +108,7 @@ flow links, tag conflicts — and, for a control block declared under `controlle
 tag the plant does not have, publishes with another kind or will not accept a command (MR014), a
 block id or owned tag name that collides with something the plant already has (MR015), and a claim
 that cannot stand (MR016): it names no tag, a read-only tag or a tag its block does not command, it
-repeats, another block already claims the tag, or another block commands a claimed tag. Fix a MR016 by
+repeats, another block already claims the tag, or another block commands a claimed tag. Fix an MR016 by
 correcting the claim's tag name, or by removing the claim or the other block's write. The numbering
 skips 012. The loader passes them through with the path of the first component involved, or of the
 controller (for MR013, its `scanPeriodMs`; for MR016, the `claims` entry it is about); their message

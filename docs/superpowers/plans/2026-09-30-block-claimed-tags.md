@@ -1376,13 +1376,13 @@ public sealed record ValidationError(
     IReadOnlyList<string> ComponentIds)
 {
     /// <summary>
-    /// The claimed tag a MR016 is about, exactly as the claim spelled it, so a
+    /// The claimed tag an MR016 is about, exactly as the claim spelled it, so a
     /// plant file can report it at the claim; empty for every other error.
     /// </summary>
     public string Tag { get; init; } = "";
 
     /// <summary>
-    /// For a MR016, the position of the claim it is about in the list its
+    /// For an MR016, the position of the claim it is about in the list its
     /// block was added with — the block's own claim, or, when another block
     /// commands the tag, the claimant's; -1 for every other error.
     /// </summary>
@@ -2182,7 +2182,7 @@ brace) with
 
 ```csharp
     /// <summary>
-    /// Core messages read "symptom. fix." (R40). A MR016 quotes its claim's tag
+    /// Core messages read "symptom. fix." (R40). An MR016 quotes its claim's tag
     /// in the symptom, and a claim is any string (R137), so the search for the
     /// cut starts after the quoted tag.
     /// </summary>
@@ -2314,7 +2314,7 @@ with
         "tag the plant does not have, publishes with another kind or will not accept a command (MR014), a\n" +
         "block id or owned tag name that collides with something the plant already has (MR015), and a claim\n" +
         "that cannot stand (MR016): it names no tag, a read-only tag or a tag its block does not command, it\n" +
-        "repeats, another block already claims the tag, or another block commands a claimed tag. Fix a MR016 by\n" +
+        "repeats, another block already claims the tag, or another block commands a claimed tag. Fix an MR016 by\n" +
         "correcting the claim's tag name, or by removing the claim or the other block's write. The numbering\n" +
         "skips 012. The loader passes them through with the path of the first component involved, or of the\n" +
         "controller (for MR013, its `scanPeriodMs`; for MR016, the `claims` entry it is about); their message\n" +
@@ -3133,7 +3133,7 @@ with `.superpowers/sdd/6d/msg-task6.txt`:
 docs: describe claimed tags and say each sample permit is claimed
 
 docs/control-blocks.md gains "Claiming a tag" (the plant-file "claims"
-array, AddScanBlock's list, what is refused and how) and a MR016 row,
+array, AddScanBlock's list, what is refused and how) and an MR016 row,
 and the run-permit caveat now says to claim the permit. The architecture
 page says how the scan-block host enforces a claim and lists MR016 with
 the other block checks; the root README says a scenario cannot write a

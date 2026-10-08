@@ -53,7 +53,7 @@ internal static class BuildStage
     }
 
     /// <summary>
-    /// Core messages read "symptom. fix." (R40). A MR016 quotes its claim's tag
+    /// Core messages read "symptom. fix." (R40). An MR016 quotes its claim's tag
     /// in the symptom, and a claim is any string (R137), so the search for the
     /// cut starts after the quoted tag.
     /// </summary>

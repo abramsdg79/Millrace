@@ -86,7 +86,7 @@ write access one block takes for itself.
    `Tag 'CV001.Permit' is claimed by INT_CV001; a scenario cannot write it.`
    — before tick 0, so it never produces a partial log.
 7. A plant file declares claims as `"claims": ["CV001.Permit"]` on a
-   controller entry. The plant schema accepts it; a MR016 is reported against
+   controller entry. The plant schema accepts it; an MR016 is reported against
    the controller's `claims[i]`.
 8. The mine-conveyor sample: `INT_CV001`, `INT_CV002`, `INT_CV003` claim
    `CV001.Permit`, `CV002.Permit`, `CV003.Permit`; `INT_FEED` claims
@@ -126,7 +126,7 @@ is MR016's, not MR014's.
 The controller entry gains an optional `claims` array of tag names (strings,
 unique within the entry). The plant JSON schema and `PlantSchema` agree on it
 (`SchemaAgreementTests`). `ControllerPass` passes the list to
-`AddScanBlock`. A MR016 from Core is reported against the controller entry's
+`AddScanBlock`. An MR016 from Core is reported against the controller entry's
 `claims[i]` path, the way Core's other validation errors reach a plant file;
 the plan measures and follows that existing mapping. MR016 is added to the
 diagnostics reference with a summary and a fix.
